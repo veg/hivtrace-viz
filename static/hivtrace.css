@@ -1,0 +1,138 @@
+circle.node, rect.node, path.node {
+  cursor: pointer;
+  stroke: #000;
+  fill: #CCC;
+  stroke-width: .5px;
+}
+
+circle.scatter {
+  fill: gray;
+}
+
+
+circle.legend, path.legend {
+  cursor: pointer;
+  stroke: #000;
+  stroke-width: .5px;
+}
+
+.hiv-trace-problematic {
+    stroke: #F00 !important;
+    stroke-width: 2px !important;
+}
+
+.hiv-trace-selected {
+    stroke-width: 0px !important;
+}
+
+.hiv-trace-muted {
+    opacity: 0.25;
+}
+
+g.node-group {
+  cursor: pointer;
+  stroke: #000;
+}
+
+
+.hiv-trace-legend {
+    font-family: sans-serif;
+    font-size: 14 pt;
+}
+
+@keyframes selected_object_animation {
+    from {
+        stroke-width: 1px;
+        stroke: #CCC;
+    }
+
+    50% {
+        stroke-width: 5px;
+        stroke: #000;
+    }
+
+    to {
+        stroke-width: 1px;
+        stroke: #CCC;
+    }
+}
+
+path.selected_object, circle.selected_object {
+
+    animation-duration: 2s;
+    animation-name : selected_object_animation;
+    animation-iteration-count: infinite;
+
+
+}
+
+path.cluster, circle.cluster {
+    cursor: pointer;
+    fill: #CCC;
+    stroke: #000;
+    stroke-width: 2.5px;
+}
+
+.histogram {
+   fill: #ccc;
+   stroke: #000;
+   stroke-width: 1px;
+}
+
+.bar text {
+  fill: #fff;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.link {
+  stroke: #AAAAAA;
+  stroke-width: 1.5px;
+}
+
+.unsupported, .line {
+  fill: none;
+  stroke: red;
+  stroke-width: 1.5px;
+  stroke-dasharray: 2,2;
+}
+
+.chord path {
+  fill-opacity: .67;
+  stroke: #000;
+  stroke-width: .5px;
+}
+
+#file-progress {
+  display: none;
+}
+
+.removed {
+  stroke: #CC3333;
+  stroke-opacity:0.3;
+}
+
+#network_tag {
+  margin-top: 15px;
+}
+
+.nav-trace {
+  margin-top: 5px;
+}
+
+.hivtrace-download-button {
+  margin-left: 5px;
+  margin-bottom : 5px;
+}
+
+#network_ui_bar_filter {
+  z-index: 0;
+}
+
+/*.hivtrace-tut-table {*/
+/*  max-width: 300px;*/
+/*}*/

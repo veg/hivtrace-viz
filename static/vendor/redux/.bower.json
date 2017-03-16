@@ -1,0 +1,11 @@
+{
+  "name": "redux",
+  "_cacheHeaders": {
+    "Content-Length": "30811",
+    "Content-Type": "application/javascript"
+  },
+  "main": "index.js",
+  "_source": "https://unpkg.com/redux/dist/redux.js",
+  "_target": "*",
+  "_originalSource": "https://unpkg.com/redux/dist/redux.js"
+}
