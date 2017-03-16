@@ -1,0 +1,14 @@
+{
+  "name": "hivtrace-viz",
+  "version": "0.0.1",
+  "main": ["static/hivtrace.js", "static/hivtrace.css"],
+  "keywords": ["hivtrace"],
+  "ignore" : ["results.html"],
+  "dependencies": {
+     "underscore"    : "1.x",
+     "font-awesome"  : "4.x",
+     "bootstrap"     : "3.x",
+     "d3"            : "3.x",
+     "jquery"        : "1.x"
+  }
+}
