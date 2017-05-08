@@ -27,9 +27,9 @@
   "_resolution": {
     "type": "version",
     "tag": "v0.1.4",
-    "commit": "76a306056cfce887ac749a19e251597d2d212bce"
+    "commit": "cc316572f8914c6e3651b2a29f41a25fdb3bb8d2"
   },
   "_source": "git@github.com:veg/phylotree.js.git",
-  "_target": "*",
+  "_target": "v0.1.4",
   "_originalSource": "git@github.com:veg/phylotree.js.git"
 }

@@ -1,9 +1,10 @@
 {
   "name": "redux",
   "_cacheHeaders": {
-    "Content-Length": "30811",
+    "ETag": "W/\"785b-156f6718128\"",
     "Content-Type": "application/javascript"
   },
+  "_release": "e-tag:W/\"785b-15",
   "main": "index.js",
   "_source": "https://unpkg.com/redux/dist/redux.js",
   "_target": "*",

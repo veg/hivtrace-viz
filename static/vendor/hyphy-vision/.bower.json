@@ -42,7 +42,7 @@
     "tag": "0.2.3",
     "commit": "318df95cdd081f10fde71d7de14f5b0d2dc7f1e2"
   },
-  "_source": "git@github.com:veg/hyphy-vision.git",
-  "_target": "0.2.3",
-  "_originalSource": "git@github.com:veg/hyphy-vision.git"
+  "_source": "https://github.com/veg/hyphy-vision.git",
+  "_target": "*",
+  "_originalSource": "https://github.com/veg/hyphy-vision.git"
 }
