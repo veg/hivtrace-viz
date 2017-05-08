@@ -14,16 +14,16 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify');
 
 var config = {
-     bowerDir: './static/vendor/'
+     bowerDir: 'static/vendor'
 }
 
 gulp.task("scripts", function() {
     var filterJS = gulpFilter('**/*.js');
     gulp.src(bower_files( { paths: {
         bowerDirectory: config.bowerDir,
-        bowerrc: './../../.bowerrc',
-        bowerJson: './../../bower.json'
-     }, 
+        bowerrc: '.bowerrc',
+        bowerJson: 'bower.json'
+     },
     "overrides": {
         "crossfilter": {
           "main": [
@@ -84,7 +84,7 @@ gulp.task("css", function() {
         "main": [
           "dist/css/shepherd-theme-default.css", "dist/css/shepherd-theme-arrows.css"
         ]
-      }    
+      }
     }}), { base: config.bowerDir })
     .pipe(filterJS)
     .pipe(sourcemaps.init())
@@ -104,7 +104,7 @@ gulp.task('bs-fonts', function() {
 });
 
 //gulp.task('build', ['scripts', 'worker-scripts', 'hivtrace-scripts', 'css', 'fonts', 'bs-fonts']);
-gulp.task('build', ['hivtrace-scripts']);
+gulp.task('build', ['scripts', 'hivtrace-scripts']);
 
 gulp.task('watch', function () {
     watch('static/**/*', function () {
