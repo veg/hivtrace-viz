@@ -1,25 +1,26 @@
 
-function hivtrace_render_scatterplot(points, w, h, id, labels) {
+function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
 
-    var margin = {top: 10, right: 10, bottom: 70, left: 70},
+    var margin = {top: 10, right: 10, bottom: 100, left: 100},
                 width = w - margin.left - margin.right,
                 height = h - margin.top - margin.bottom;
 
-    var x = d3.scale.linear()
+
+    var x = (dates ? d3.time.scale () : d3.scale.linear())
             .domain(d3.extent (points, function (p) {return p.x;}))
             .range([0, width]);
 
-    var y = d3.scale.linear()
+    var y = (dates ? d3.time.scale () : d3.scale.linear())
             .domain (d3.extent (points, function (p) {return p.y;}))
             .range  ([height,0]);
 
     var xAxis = d3.svg.axis()
         .scale(x)
-        .orient("bottom").tickFormat (_defaultFloatFormat);
+        .orient("bottom").tickFormat (dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
 
     var yAxis = d3.svg.axis()
         .scale(y)
-        .orient("left").tickFormat (_defaultFloatFormat);
+        .orient("left").tickFormat (dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
 
 
 

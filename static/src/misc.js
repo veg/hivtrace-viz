@@ -527,8 +527,12 @@ function hivtrace_export_csv_button(graph, tag) {
 
 function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
 
-    var the_button = d3.select(parent_id).append("a")
+    var the_button = d3.select(parent_id);
+    the_button.selectAll ("[data-type='download-button']").remove();
+
+    the_button = the_button.append("a")
         .attr("target", "_blank")
+        .attr("data-type", "download-button")
         .on("click", function(data, element) {
         	d3.event.preventDefault();
             var table_tag = d3.select(this).attr("data-table");

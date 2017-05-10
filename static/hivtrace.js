@@ -549,8 +549,12 @@ function hivtrace_export_csv_button(graph, tag) {
 
 function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
 
-    var the_button = d3.select(parent_id).append("a")
+    var the_button = d3.select(parent_id);
+    the_button.selectAll ("[data-type='download-button']").remove();
+
+    the_button = the_button.append("a")
         .attr("target", "_blank")
+        .attr("data-type", "download-button")
         .on("click", function(data, element) {
         	d3.event.preventDefault();
             var table_tag = d3.select(this).attr("data-table");
@@ -846,6 +850,7 @@ var _defaultFloatFormat     = d3.format(",.2r");
 var _defaultPercentFormat   = d3.format(",.3p");
 var _defaultDateFormat      = d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ");
 var _defaultDateViewFormat  = d3.time.format("%B %d, %Y");
+var _defaultDateViewFormatShort  = d3.time.format("%B %Y");
 
 var _networkCategorical     = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"];
 var _maximumValuesInCategories	= _networkCategorical.length;
@@ -984,7 +989,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
   var cluster_mapping = {},
       l_scale = 5000,   // link scale
       graph_data = self.json,     // the raw JSON network object
-      max_points_to_render = 500,
+      max_points_to_render = 1024,
       warning_string     = "",
       singletons         = 0,
       open_cluster_queue = [],
@@ -1002,14 +1007,14 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
     .gravity (gravity_scale(json.Nodes.length))
     .friction (0.25);
 
-  d3.select(network_container).selectAll (".my_progress").remove();
+  d3.select(self.container).selectAll (".my_progress").remove();
 
 
-  d3.select(network_container).selectAll ("svg").remove();
+  d3.select(self.container).selectAll ("svg").remove();
   self.node_table.selectAll ("*").remove();
   self.cluster_table.selectAll ("*").remove();
 
-  var network_svg = d3.select(network_container).append("svg:svg")
+  var network_svg = d3.select(self.container).append("svg:svg")
       //.style ("border", "solid black 1px")
       .attr("id", "network-svg")
       .attr("width", self.width + self.margin.left + self.margin.right)
@@ -1039,7 +1044,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
   /*------------ Network layout code ---------------*/
   var handle_cluster_click = function (cluster, release) {
 
-    var container = d3.select(network_container);
+    var container = d3.select(self.container);
     var id = "d3_context_menu_id";
     var menu_object = container.select ("#" + id);
 
@@ -1101,7 +1106,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
   };
 
   var handle_node_click = function (node) {
-    var container = d3.select(network_container);
+    var container = d3.select(self.container);
     var id = "d3_context_menu_id";
     var menu_object = container.select ("#" + id);
 
@@ -1429,6 +1434,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 
      if (button_bar_ui) {
 
+
         $('#' + button_bar_ui + '_cluster_zoom').on('show.bs.modal', function (event) {
             var link_clicked = $(event.relatedTarget);
             var cluster_id = link_clicked.data ("cluster");
@@ -1496,21 +1502,9 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
                 });
             }
         }
-        $('#' + button_bar_ui + '_cluster_list').on('hide.bs.modal', function (event) {
-            $('#' + button_bar_ui + '_cluster_list_view_toggle').off ("click");
-        });
 
-        $('#' + button_bar_ui + '_cluster_list').on('show.bs.modal', function (event) {
-            var link_clicked = $(event.relatedTarget);
-            var cluster_id = link_clicked.data ("cluster");
-            var modal = d3.select ('#' + button_bar_ui + '_cluster_list');
-            modal.selectAll (".modal-title").text ("Listing nodes in cluster " + cluster_id);
-
-
-            var group_by_id = $('#' + button_bar_ui + '_cluster_list_view_toggle').data ("view") == "id";
-
-            $('#' + button_bar_ui + '_cluster_list_view_toggle').click (function (event) {
-                event.preventDefault();
+        d3.select('#' + button_bar_ui + '_cluster_list_view_toggle').on ('click', function () {
+                d3.event.preventDefault();
                 var button_clicked = $(this);
                 if (button_clicked.data ('view') == 'id') {
                     button_clicked.data ('view', 'attribute');
@@ -1521,14 +1515,24 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
                     button_clicked.text ("Group by attribute");
                     group_by_id = true;
                 }
-                _cluster_list_view_render (cluster_id, !group_by_id, modal.select ('#' + button_bar_ui + '_cluster_list_payload'));
+                _cluster_list_view_render (button_clicked.data ('cluster'), !group_by_id, d3.select ('#' + button_bar_ui + '_cluster_list_payload'));
             });
 
-            _cluster_list_view_render (cluster_id, !group_by_id, modal.select ('#' + button_bar_ui + '_cluster_list_payload'));
+        $('#' + button_bar_ui + '_cluster_list').on('show.bs.modal', function (event) {
+            var link_clicked = $(event.relatedTarget);
+            var cluster_id = link_clicked.data ("cluster");
+            var modal = d3.select ('#' + button_bar_ui + '_cluster_list');
+            modal.selectAll (".modal-title").text ("Listing nodes in cluster " + cluster_id);
+            $('#' + button_bar_ui + '_cluster_list_view_toggle').data ('cluster', cluster_id);
+
+
+            _cluster_list_view_render (cluster_id, $('#' + button_bar_ui + '_cluster_list_view_toggle').data ("view") != "id", modal.select ('#' + button_bar_ui + '_cluster_list_payload'));
 
         });
 
          var cluster_ui_container = d3.select ("#" + button_bar_ui + "_cluster_operations_container");
+
+         cluster_ui_container.selectAll ("li").remove();
 
 		 var cluster_commands =
          [
@@ -1571,6 +1575,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
          var button_group  = d3.select ("#" + button_bar_ui + "_button_group");
 
          if (! button_group.empty()) {
+            button_group.selectAll ("button").remove();
             button_group.append ("button").classed ("btn btn-default btn-sm", true).attr ("title", "Expand spacing").on ("click", function (d) {change_spacing (5/4);}).append ("i").classed ("fa fa-plus", true);
             button_group.append ("button").classed ("btn btn-default btn-sm", true).attr ("title", "Compress spacing").on ("click", function (d) {change_spacing (4/5);}).append ("i").classed ("fa fa-minus", true);
             button_group.append ("button").classed ("btn btn-default btn-sm", true).attr ("title", "Enlarge window").on ("click", function (d) {change_window_size (100, true);}).append ("i").classed ("fa fa-expand", true);
@@ -1797,20 +1802,13 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 
 
             var valid_scales = _.filter (_.map (graph_data [_networkGraphAttrbuteID], function (d,k) {
-                d['raw_attribute_key'] = k;
-                if (d.type == "Number") {
-                    var values = _.filter (_.map (graph_data.Nodes, function (nd) {
-                        return attribute_node_value_by_id (nd, k);
-                     }), function (v) {
-                        return v == _networkMissing ? null : v;
-                    });
-                    // automatically determine the scale and see what spaces the values most evenly
-                    d['value_range'] = d3.extent (values);
 
-                     var low_var = Infinity;
+                function determine_scaling (d, values, scales) {
+                    var low_var = Infinity;
 
 
-                    _.each ([d3.scale.linear(), d3.scale.log(), d3.scale.pow().exponent (1/3),  d3.scale.pow().exponent (0.25), d3.scale.pow().exponent (0.5),  d3.scale.pow().exponent (1/8),  d3.scale.pow().exponent (1/16)], function (scl) {
+                    _.each (scales, function (scl) {
+                        d['value_range'] = d3.extent (values);
                         var bins = _.map (_.range (_networkContinuousColorStops), function () {return 0.});
                         scl.range ([0,_networkContinuousColorStops-1]).domain (d['value_range']);
                         _.each (values, function (v) {
@@ -1822,6 +1820,8 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
                             return p + (c-mean)*(c-mean);
                         });
 
+                        //console.log (d['value_range'], bins);
+
                         if (vrnc < low_var) {
                             low_var = vrnc;
                             d['scale'] = scl;
@@ -1829,9 +1829,40 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 
                     });
                 }
+
+                d['raw_attribute_key'] = k;
+                if (d.type == "Number") {
+                    var values = _.filter (_.map (graph_data.Nodes, function (nd) {
+                        return attribute_node_value_by_id (nd, k);
+                     }), function (v) {
+                        return v == _networkMissing ? null : v;
+                    });
+                    // automatically determine the scale and see what spaces the values most evenly
+                    determine_scaling (d, values, [d3.scale.linear(), d3.scale.log(), d3.scale.pow().exponent (1/3),  d3.scale.pow().exponent (0.25), d3.scale.pow().exponent (0.5),  d3.scale.pow().exponent (1/8),  d3.scale.pow().exponent (1/16)]);
+
+                } else {
+                    if (d.type == "Date") {
+                        var values = _.filter (_.map (graph_data.Nodes, function (nd) {
+                            try {
+                                var a_date = attribute_node_value_by_id (nd, k);
+                                //console.log (k, a_date, _defaultDateFormat.parse (a_date));
+                                inject_attribute_node_value_by_id (nd, k, _defaultDateFormat.parse (a_date));
+                            }
+                            catch (err) {
+                                inject_attribute_node_value_by_id (nd, k, _networkMissing);
+                            }
+                            return attribute_node_value_by_id (nd,k);
+
+                         }), function (v) {
+                            return v == _networkMissing ? null : v;
+                        });
+                        // automatically determine the scale and see what spaces the values most evenly
+                        determine_scaling (d, values, [d3.time.scale()]);
+                    }
+                }
                 return d;
             }), function (d) {
-                return d.type == "Number";
+                return d.type == "Number" || d.type == "Date";
             });
 
 
@@ -2302,7 +2333,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
             offset += 18;
 
             if (self.colorizer["continuous"]) {
-                var anchor_format = d3.format(",.4r");
+                var anchor_format = graph_data [_networkGraphAttrbuteID][self.colorizer['category_id']]['type'] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
                 var scale = graph_data [_networkGraphAttrbuteID][self.colorizer['category_id']]['scale'];
 
                 _.each (_.range (_networkContinuousColorStops), function (value) {
@@ -2352,7 +2383,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
             legend_svg.append ("g").attr ("transform", "translate(0," + offset + ")").classed ('hiv-trace-legend',true).append ("text").text ("Opacity: " + self.colorizer['opacity_id']).style ("font-weight", "bold");
             offset += 18;
 
-			var anchor_format = d3.format(",.4r");
+			var anchor_format = graph_data [_networkGraphAttrbuteID][self.colorizer['category_id']]['type'] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
 			var scale = graph_data [_networkGraphAttrbuteID][self.colorizer['opacity_id']]['scale'];
 
 			_.each (_.range (_networkContinuousColorStops), function (value) {
@@ -2479,7 +2510,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 		d3.select ("#" + button_bar_ui + "_aux_svg_holder_enclosed").style ("display", null);
 
 
-        datamonkey.hivtrace.scatterplot (points, 400, 400, "#" + button_bar_ui + "_aux_svg_holder", {x : "Source", y : "Target"});
+        datamonkey.hivtrace.scatterplot (points, 400, 400, "#" + button_bar_ui + "_aux_svg_holder", {x : "Source", y : "Target"}, graph_data [_networkGraphAttrbuteID][cat_id]['type'] == "Date");
 
     } else {
         self.colorizer['category']          = null;
@@ -2814,6 +2845,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
             if (v == _networkMissing) {
                 return _networkMissingColor;
             }
+            //console.log (v, self.colorizer['category'](v));
         }
         return self.colorizer['category'](v);
 
@@ -2851,18 +2883,21 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 	  _.each (_.union(self._additional_node_pop_fields, [self.colorizer['category_id'], self.node_shaper['id'], self.colorizer['opacity_id']]),
 	  		  function (key) {
 	  		  	if (key) {
-					  var attribute = attribute_node_value_by_id (n, key);
-					   if (graph_data[_networkGraphAttrbuteID][key]['type'] == "Date") {
-                        try {
-                                attribute = _defaultDateViewFormat(_defaultDateFormat.parse (attribute));
+	  		  	      if (key in graph_data[_networkGraphAttrbuteID]) {
+                          var attribute = attribute_node_value_by_id (n, key);
+
+                           if (graph_data[_networkGraphAttrbuteID][key]['type'] == "Date") {
+                            try {
+                                    attribute = _defaultDateViewFormat(attribute);
+                                }
+                                catch (err) {
+
+                                }
                             }
-                            catch (err) {
-                                pass;
-                            }
-                        }
-					  if (attribute) {
-						 str += "<br>"  + key + " <em>" + attribute + "</em>"
-					  }
+                          if (attribute) {
+                             str += "<br>"  + key + " <em>" + attribute + "</em>"
+                          }
+                      }
 
 	  		  	}
 	  		  });
@@ -3309,7 +3344,13 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 
 var hivtrace_cluster_graph_summary = function (graph, tag) {
 
-    var summary_table = d3.select (tag).append ("tbody");
+    var summary_table = d3.select (tag);
+
+    summary_table = d3.select (tag).select ("tbody");
+    if (summary_table.empty()) {
+        summary_table = d3.select (tag).append ("tbody");
+    }
+
 
     var table_data = [];
 
@@ -3349,34 +3390,41 @@ var hivtrace_cluster_graph_summary = function (graph, tag) {
     }
 
 
-    summary_table.selectAll ("tr").data (table_data).enter().append ("tr").selectAll ("td").data (function (d) {return d;}).enter().append ("td").html (function (d) {return d});
+    var rows = summary_table.selectAll ("tr").data (table_data);
+    rows.enter().append ("tr");
+    rows.exit().remove();
+    var columns = rows.selectAll ("td").data (function (d) {return d;});
+    columns.enter().append ("td");
+    columns.exit();
+    columns.html (function (d) {return d});
 }
 
 datamonkey.hivtrace.cluster_network_graph = hivtrace_cluster_network_graph;
 datamonkey.hivtrace.graph_summary = hivtrace_cluster_graph_summary;
 
 
-function hivtrace_render_scatterplot(points, w, h, id, labels) {
+function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
 
-    var margin = {top: 10, right: 10, bottom: 70, left: 70},
+    var margin = {top: 10, right: 10, bottom: 100, left: 100},
                 width = w - margin.left - margin.right,
                 height = h - margin.top - margin.bottom;
 
-    var x = d3.scale.linear()
+
+    var x = (dates ? d3.time.scale () : d3.scale.linear())
             .domain(d3.extent (points, function (p) {return p.x;}))
             .range([0, width]);
 
-    var y = d3.scale.linear()
+    var y = (dates ? d3.time.scale () : d3.scale.linear())
             .domain (d3.extent (points, function (p) {return p.y;}))
             .range  ([height,0]);
 
     var xAxis = d3.svg.axis()
         .scale(x)
-        .orient("bottom").tickFormat (_defaultFloatFormat);
+        .orient("bottom").tickFormat (dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
 
     var yAxis = d3.svg.axis()
         .scale(y)
-        .orient("left").tickFormat (_defaultFloatFormat);
+        .orient("left").tickFormat (dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
 
 
 
