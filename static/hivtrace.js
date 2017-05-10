@@ -2383,7 +2383,7 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
             legend_svg.append ("g").attr ("transform", "translate(0," + offset + ")").classed ('hiv-trace-legend',true).append ("text").text ("Opacity: " + self.colorizer['opacity_id']).style ("font-weight", "bold");
             offset += 18;
 
-			var anchor_format = graph_data [_networkGraphAttrbuteID][self.colorizer['category_id']]['type'] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
+			var anchor_format = graph_data [_networkGraphAttrbuteID][self.colorizer['opacity_id']]['type'] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
 			var scale = graph_data [_networkGraphAttrbuteID][self.colorizer['opacity_id']]['scale'];
 
 			_.each (_.range (_networkContinuousColorStops), function (value) {
