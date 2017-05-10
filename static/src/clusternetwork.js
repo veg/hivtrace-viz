@@ -124,13 +124,18 @@ var hivtrace_cluster_network_graph = function (json, network_container, network_
 			'label' : 'hiv_aids_dx_dt_year',
 			'type' : "String",
 			'map' : function (node) {
-				var value = _defaultDateFormat.parse (attribute_node_value_by_id (node, 'hiv_aids_dx_dt'));
-				if (value) {
-					value = "" + value.getFullYear();
-				} else {
-					value = _networkMissing;
-				}
-				return value;
+			    try {
+                    var value = _defaultDateFormat.parse (attribute_node_value_by_id (node, 'hiv_aids_dx_dt'));
+                    if (value) {
+                        value = "" + value.getFullYear();
+                    } else {
+                        value = _networkMissing;
+                    }
+                    return value;
+                }
+                catch (err) {
+                    return _networkMissing;
+                }
 			},
 			'color_scale': function (attr) {
 				var range_without_missing = _.without (attr.value_range,_networkMissing);
