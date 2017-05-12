@@ -1,0 +1,17 @@
+{
+  "name": "hivtrace-viz",
+  "description": "Visualization for the popular HIV-TRACE package",
+  "main": "dist/hivtrace.js",
+  "authors": [
+    "Steven Weaver <sweaver@temple.edu>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/veg/hivtrace-viz",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
