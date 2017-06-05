@@ -1,7 +1,8 @@
 var d3 = require('d3'),
   _ = require('underscore'),
   misc = require('misc'),
-  helpers = require('helpers');
+  helpers = require('helpers'),
+  scatterPlot = require ('scatterplot');
 
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
@@ -2099,7 +2100,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       });
       d3.select("#" + button_bar_ui + "_aux_svg_holder_enclosed").style("display", null);
 
-      scatterPlot(points, 400, 400, "#" + button_bar_ui + "_aux_svg_holder", {
+      scatterPlot.scatterPlot(points, 400, 400, "#" + button_bar_ui + "_aux_svg_holder", {
         x: "Source",
         y: "Target"
       }, graph_data[_networkGraphAttrbuteID][cat_id]['type'] == "Date");
