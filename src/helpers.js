@@ -352,16 +352,31 @@ function datamonkey_validate_email(email) {
 
 function datamonkey_describe_vector(vector, as_list) {
 
-  vector.sort(d3.ascending);
+  var d = {};
 
-  var d = {
-    'min': d3.min(vector),
-    'max': d3.max(vector),
-    'median': d3.median(vector),
-    'Q1': d3.quantile(vector, 0.25),
-    'Q3': d3.quantile(vector, 0.75),
-    'mean': d3.mean(vector)
-  };
+  if (vector.length) {
+
+      vector.sort(d3.ascending);
+
+      var d = {
+        'min': d3.min(vector),
+        'max': d3.max(vector),
+        'median': d3.median(vector),
+        'Q1': d3.quantile(vector, 0.25),
+        'Q3': d3.quantile(vector, 0.75),
+        'mean': d3.mean(vector)
+      };
+   } else {
+      var d = {
+        'min': null,
+        'max': null,
+        'median': null,
+        'Q1': null,
+        'Q3': null,
+        'mean': null
+      };
+
+   }
 
   if (as_list) {
 

@@ -2282,6 +2282,10 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   }
 
+  self.is_empty = function () {
+    return self.cluster_sizes.length == 0;
+  }
+
   self.update = function(soft, friction) {
 
     self.needs_an_update = false;
