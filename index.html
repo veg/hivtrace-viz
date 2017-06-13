@@ -1,4 +1,4 @@
-<html lang='en'> 
+<html lang='en'>
 
 <head>
   <meta charset="utf-8">
@@ -61,6 +61,11 @@
 
 
 <div class="container">
+   <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
+     <div class="col-lg-12">
+         <div class="alert alert-danger alert-lg" id='app-error' style='display:none;'></div>
+    </div>
+   </div>
   <div class="tabbable">
     <ul class="nav nav-tabs" id="top_level_tab_container">
       <li class="active" id="main-tab"><a href="#trace-results" data-toggle="tab">Network</a></li>
@@ -372,52 +377,61 @@ var init = function(data) {
 
   var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container);
 
-  hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
-  hivtrace.graphSummary(graph, graph_summary_tag);
+  if (user_graph.is_empty()) {
+      $('#main-tab').tab('show');
+      d3.select ("#app-error").text ("This network contains no clusters and cannot be displayed").style ('display', null);
+      d3.select (parent_container).selectAll ("li").classed ("disabled", true);
+      d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', 'none')});
+  } else {
 
-  d3.select ("#graph-tab").classed ("disabled", false);
-  d3.select ("#clusters-tab").classed ("disabled", false);
-  d3.select ("#nodes-tab").classed ("disabled", false);
-  d3.select ("#attributes-tab").classed ("disabled", false);
-  hivtrace.misc.export_table_to_text("#cluster-table-export", cluster_table);
-  hivtrace.misc.export_table_to_text("#node-table-export", node_table);
+      d3.select ("#app-error").style ('display', 'none');
+      hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
+      hivtrace.graphSummary(graph, graph_summary_tag);
 
-  $("#main-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-        if (user_graph.needs_an_update) {
-            user_graph.update(false, 0.5);
-        }
-  });
+      ["#main-tab","#graph-tab","#clusters-tab","#nodes-tab","#attributes-tab"].forEach (function (tab) {
+        d3.select (tab).classed ("disabled",false);
+      });
+      d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', null)});
 
-  $("#clusters-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-        user_graph.update_volatile_elements (d3.select (cluster_table));
-  });
+      hivtrace.misc.export_table_to_text("#cluster-table-export", cluster_table);
+      hivtrace.misc.export_table_to_text("#node-table-export", node_table);
 
-  $("#nodes-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-        user_graph.update_volatile_elements (d3.select (node_table));
-  });
+      $("#main-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
+            if (user_graph.needs_an_update) {
+                user_graph.update(false, 0.5);
+            }
+      });
 
-  if(data.lanl_trace_results > 0) {
-    // Only if the comparison was done
-    var lanl_network_container     = '#lanl-network_tag',
-        lanl_network_status_string = '#lanl-network_status_string',
-        lanl_network_warning       = '#lanl-main-warning',
-        lanl_histogram_tag         = '#lanl-histogram_tag',
-        lanl_histogram_label       = '#lanl-histogram_label',
-        lanl_csvexport_label       = '#lanl-csvexport',
-        lanl_button_bar_prefix     = 'lanl_network_ui_bar';
+      $("#clusters-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
+            user_graph.update_volatile_elements (d3.select (cluster_table));
+      });
 
-    d3.select ("#lanl-trace-results").classed ("disabled", false);
+      $("#nodes-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
+            user_graph.update_volatile_elements (d3.select (node_table));
+      });
 
-    var lanl_graph = data.lanl_trace_results;
-    var lanl_graph_rendered = new hivtrace.cluster_network_graph(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
-  }
+      if(data.lanl_trace_results > 0) {
+        // Only if the comparison was done
+        var lanl_network_container     = '#lanl-network_tag',
+            lanl_network_status_string = '#lanl-network_status_string',
+            lanl_network_warning       = '#lanl-main-warning',
+            lanl_histogram_tag         = '#lanl-histogram_tag',
+            lanl_histogram_label       = '#lanl-histogram_label',
+            lanl_csvexport_label       = '#lanl-csvexport',
+            lanl_button_bar_prefix     = 'lanl_network_ui_bar';
 
+        d3.select ("#lanl-trace-results").classed ("disabled", false);
+
+        var lanl_graph = data.lanl_trace_results;
+        var lanl_graph_rendered = new hivtrace.cluster_network_graph(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
+      }
+   }
 }
 
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "./example.json";
+  url = "./test/empty.json";
 
   d3.json(url, function(results) {
     init(results);
