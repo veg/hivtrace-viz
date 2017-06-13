@@ -129,10 +129,6 @@ path.cluster, circle.cluster {
   z-index: 0;
 }
 
-/*.hivtrace-tut-table {*/
-/*  max-width: 300px;*/
-/*}*/
-
 // Internet Explorer specific definitions
 @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
    /* IE10+ specific styles go here */  
@@ -140,7 +136,6 @@ path.cluster, circle.cluster {
     stroke-width : 5px;
     stroke: #000;
   }
-
 }
 
 path.selected_object, circle.selected_object {
