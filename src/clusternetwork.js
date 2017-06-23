@@ -3073,11 +3073,24 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
   var table_data = [];
 
   if (!summary_table.empty()) {
+
     _.each(graph["Network Summary"], function(value, key) {
+
       if (self._is_CDC_ && key == "Edges") {
         key = "Links";
       }
-      table_data.push([key, value]);
+
+      if(key=="contaminant_sequences") {
+        key = "Contaminant Sequences";
+      }
+
+      if(_.isArray(value)) {
+        table_data.push([key, _.first(value)]);
+        _.each(_.rest(value), function(d) { table_data.push(['', d]) });
+      } else {
+        table_data.push([key, value]);
+      }
+
     });
   }
 
