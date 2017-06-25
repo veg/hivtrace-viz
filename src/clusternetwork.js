@@ -10,7 +10,7 @@ var _networkMissing = 'missing';
 var _networkMissingOpacity = '0.1';
 var _networkMissingColor = '#999';
 var _networkContinuousColorStops = 9;
-var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon'];
+var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon', 'ellipse', 'pentagon'];
 var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 var _defaultDateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ");
@@ -32,20 +32,68 @@ var _networkSequentialColor = {
 
 var _networkPresetColorSchemes = {
   'trans_categ': {
-    'Other-Male': '#999999',
-    'Heterosexual Contact-Male': '#e31a1c',
-    'Other-Child': '#ff7f00',
-    'Perinatal': '#ff7f00',
-    'MSM': '#1f78b4',
-    'IDU-Male': '#33a02c',
-    'Other-Female': '#999999',
-    'IDU-Female': '#33a02c',
-    'MSM & IDU': '#33a02c',
-    'Missing': '#999999',
-    'Heterosexual Contact-Female': '#e31a1c'
+    'MSM-Male':'#1f78b4',
+    'MSM-Unknown sex':'#1f78b4',
+    'Heterosexual Contact-Male':'#e31a1c',
+    'Heterosexual Contact-Female':'#e31a1c',
+    'Heterosexual Contact-Unknown sex':'#e31a1c',
+    'IDU-Male':'#33a02c',
+    'MSM & IDU-Male':'#33a02c',
+    'IDU-Female':'#33a02c',
+    'IDU-Unknown sex':'#33a02c',
+    'Other/Unknown-Male':'#636363',
+    'Other/Unknown-Female':'#636363',
+    'Other-Male':'#636363',
+    'Other-Female':'#636363',
+    'Missing':'#636363',
+    '':'#636363',
+    'Other/Unknown-Unknown sex':'#636363',
+    'Perinatal':'#ff7f00',
+    'Other/Unknown-Child':'#ff7f00',
+    'Other-Child':'#ff7f00'
   }
 };
 
+
+/*
+
+current_gender
+{'Male':'square','Female':'ellipse','Transgender-Male to Female':'hexagon','Transgender-Female to Male':'pentagon','Additional Gender Identity':'diamond','Unknown':'diamond','Missing':'diamond','':'diamond'}
+
+race
+{'Asian':'hexagon','Black/African American':'square','Hispanic/Latino':'triangle','American Indian/Alaska Native':'pentagon','Native Hawaiian/Other Pacific Islander':'octagon','Unknown race':'diamond','White':'ellipse'}
+
+
+*/
+var _networkPresetShapeSchemes = {
+  'birth_sex' : {
+    'Male':'square',
+    'Female':'ellipse',
+    'Missing':'diamond',
+    'missing':'diamond',
+    'Unknown':'diamond'
+  },
+  'race' :
+    {'Asian':'hexagon',
+     'Black/African American':'square',
+     'Hispanic/Latino':'triangle',
+     'American Indian/Alaska Native':'pentagon',
+     'Native Hawaiian/Other Pacific Islander':'octagon',
+     'Multiple Races' : 'cross',
+     'Unknown race':'diamond',
+     'Missing' : 'diamond',
+     'missing':'diamond',
+     'White':'ellipse'},
+  'current_gender' : {
+    'Male':'square',
+    'Female':'ellipse',
+    'Transgender-Male to Female':'hexagon',
+    'Transgender-Female to Male':'pentagon',
+    'Additional Gender Identity':'diamond','Unknown':'diamond',
+    'Missing':'diamond',
+    'missing':'diamond'
+  }
+};
 
 var hivtrace_cluster_network_graph = function(json, network_container, network_status_string, network_warning_tag, button_bar_ui, attributes, filter_edges_toggle, clusters_table, nodes_table, parent_container, options) {
 
@@ -139,6 +187,26 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         return _networkMissing;
       }
     },
+
+    'age_dx': {
+      'depends': 'age',
+      'label': 'age_dx',
+      'enum': ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      'color_scale': function() {
+        return d3.scale.ordinal()
+        .domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60", _networkMissing])
+        .range(['#b10026','#e31a1c','#fc4e2a','#fd8d3c','#feb24c','#fed976','#ffffb2','#636363']);
+      },
+
+      'map': function(node) {
+        var vl_value = attribute_node_value_by_id(node, 'age');
+        if (vl_value == ">=60") {
+          return "≥60";
+        }
+        return vl_value;
+      }
+    },
+
     'hiv_aids_dx_dt_year': {
       'depends': 'hiv_aids_dx_dt',
       'label': 'hiv_aids_dx_dt_year',
@@ -1039,7 +1107,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         });
 
         var valid_shapes = _.filter(valid_cats, function(d) {
-          return d.dimension <= 5;
+          return d.dimension <= 7;
         });
 
 
@@ -1851,6 +1919,23 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   }
 
+  function check_for_predefined_shapes (cat_id) {
+    console.log (cat_id);
+
+    if (cat_id in _networkPresetShapeSchemes) {
+        var domain = graph_data[_networkGraphAttrbuteID][cat_id]['value_range'];
+
+        return {
+                'domain' : domain,
+                'range'  : _.map (domain, function (v) {return _networkPresetShapeSchemes[cat_id][v]; })
+                };
+
+    } else {
+        return {'domain' : _.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension),
+                'range'  : _networkShapeOrdering };
+    }
+  }
+
   function handle_shape_categorical(cat_id) {
     var set_attr = "None";
 
@@ -1867,7 +1952,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
 
     if (cat_id) {
-      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension)).range(_networkShapeOrdering);
+      var domain_range = check_for_predefined_shapes (cat_id);
+      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
       self.node_shaper['id'] = cat_id;
       self.node_shaper['shaper'] = function(d) {
         return shape_mapper(graph_data[_networkGraphAttrbuteID][cat_id]['value_map'](attribute_node_value_by_id(d, cat_id)));
@@ -1927,10 +2013,12 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed('hiv-trace-legend', true).append("text").text("Shape: " + self.node_shaper['id']).style("font-weight", "bold");
       offset += 18;
 
-      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][self.node_shaper['id']].dimension)).range(_networkShapeOrdering);
+      var domain_range = check_for_predefined_shapes (self.node_shaper['id']);
+      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
 
       _.each(self.node_shaper['category_map'](null, 'map'), function(value, key) {
         legend_svg.append("g").classed('hiv-trace-legend', true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
+
 
         legend_svg.append("g").classed('hiv-trace-legend', true).attr("transform", "translate(0," + offset + ")").append("path")
           .attr("transform", "translate(5,-5)")
