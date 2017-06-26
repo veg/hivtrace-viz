@@ -6,8 +6,6 @@
   <title>HIV-TRACE</title>
 
   <!-- Latest compiled and minified CSS -->
-  <link href="dist/css/bootstrap.css" rel="stylesheet">
-  <link href="dist/css/vendor.css" rel="stylesheet">
   <link href="dist/hivtrace.css" rel="stylesheet">
 
   <!-- Latest compiled and minified JavaScript -->
@@ -431,7 +429,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "./test/empty.json";
+  url = "./example.json";
 
   d3.json(url, function(results) {
     init(results);
