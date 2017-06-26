@@ -79,7 +79,7 @@ var _networkPresetShapeSchemes = {
      'Hispanic/Latino':'triangle',
      'American Indian/Alaska Native':'pentagon',
      'Native Hawaiian/Other Pacific Islander':'octagon',
-     'Multiple Races' : 'cross',
+     'Multiple Races' : 'diamond',
      'Unknown race':'diamond',
      'Missing' : 'diamond',
      'missing':'diamond',
