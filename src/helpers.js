@@ -1,3 +1,5 @@
+var download = require('downloadjs');
+
 var datamonkey_error_modal = function(msg) {
   $('#modal-error-msg').text(msg);
   $('#errorModal').modal();
@@ -18,7 +20,13 @@ function b64toBlob(b64, onsuccess, onerror) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(onsuccess);
+    if(canvas.msToBlob) {
+      var blob = canvas.msToBlob(onsuccess);
+      onsuccess(blob);
+      window.navigator.msSaveBlob(blob, 'image.png');
+    } else {
+      canvas.toBlob(onsuccess);
+    }
   };
 
   img.src = b64;
@@ -147,10 +155,11 @@ var datamonkey_save_image = function(type, container) {
   var to_download = [doctype + source];
   var image_string = 'data:image/svg+xml;base66,' + encodeURIComponent(to_download);
 
-  if (type == "png") {
+  if (navigator.msSaveBlob) { // IE10
+    download(image_string, "image.svg", "image/svg+xml");
+  } else if (type == "png") {
     b64toBlob(image_string,
       function(blob) {
-
         var url = window.URL.createObjectURL(blob);
         var pom = document.createElement('a');
         pom.setAttribute('download', 'image.png');
@@ -158,10 +167,9 @@ var datamonkey_save_image = function(type, container) {
         $("body").append(pom);
         pom.click();
         pom.remove();
-
       },
       function(error) {
-        // handle error
+        console.log(error);
       });
   } else {
     var pom = document.createElement('a');

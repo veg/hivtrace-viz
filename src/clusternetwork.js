@@ -10,7 +10,7 @@ var _networkMissing = 'missing';
 var _networkMissingOpacity = '0.1';
 var _networkMissingColor = '#999';
 var _networkContinuousColorStops = 9;
-var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon'];
+var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon', 'ellipse', 'pentagon'];
 var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 var _defaultDateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ");
@@ -32,20 +32,69 @@ var _networkSequentialColor = {
 
 var _networkPresetColorSchemes = {
   'trans_categ': {
-    'Other-Male': '#999999',
-    'Heterosexual Contact-Male': '#e31a1c',
-    'Other-Child': '#ff7f00',
-    'Perinatal': '#ff7f00',
-    'MSM': '#1f78b4',
-    'IDU-Male': '#33a02c',
-    'Other-Female': '#999999',
-    'IDU-Female': '#33a02c',
-    'MSM & IDU': '#33a02c',
-    'Missing': '#999999',
-    'Heterosexual Contact-Female': '#e31a1c'
-  }
+    'MSM-Male':'#1f78b4',
+    'MSM-Unknown sex':'#1f78b4',
+    'Heterosexual Contact-Male':'#e31a1c',
+    'Heterosexual Contact-Female':'#e31a1c',
+    'Heterosexual Contact-Unknown sex':'#e31a1c',
+    'IDU-Male':'#33a02c',
+    'MSM & IDU-Male':'#33a02c',
+    'IDU-Female':'#33a02c',
+    'IDU-Unknown sex':'#33a02c',
+    'Other/Unknown-Male':'#636363',
+    'Other/Unknown-Female':'#636363',
+    'Other-Male':'#636363',
+    'Other-Female':'#636363',
+    'Missing':'#636363',
+    '':'#636363',
+    'Other/Unknown-Unknown sex':'#636363',
+    'Perinatal':'#ff7f00',
+    'Other/Unknown-Child':'#ff7f00',
+    'Other-Child':'#ff7f00'
+  },
+  'race' :
+    {'Asian':'#1f77b4',
+     'Black/African American':'#bcbd22',
+     'Hispanic/Latino':'#9467bd',
+     'American Indian/Alaska Native':'#2ca02c',
+     'Native Hawaiian/Other Pacific Islander':'#17becf',
+     'Multiple Races' : '#e377c2',
+     'Unknown race':'#999',
+     'Missing' : '#999',
+     'missing':'#999',
+     'White':'#d62728'}
 };
 
+
+var _networkPresetShapeSchemes = {
+  'birth_sex' : {
+    'Male':'square',
+    'Female':'ellipse',
+    'Missing':'diamond',
+    'missing':'diamond',
+    'Unknown':'diamond'
+  },
+  'race' :
+    {'Asian':'hexagon',
+     'Black/African American':'square',
+     'Hispanic/Latino':'triangle',
+     'American Indian/Alaska Native':'pentagon',
+     'Native Hawaiian/Other Pacific Islander':'octagon',
+     'Multiple Races' : 'diamond',
+     'Unknown race':'diamond',
+     'Missing' : 'diamond',
+     'missing':'diamond',
+     'White':'ellipse'},
+  'current_gender' : {
+    'Male':'square',
+    'Female':'ellipse',
+    'Transgender-Male to Female':'hexagon',
+    'Transgender-Female to Male':'pentagon',
+    'Additional Gender Identity':'diamond','Unknown':'diamond',
+    'Missing':'diamond',
+    'missing':'diamond'
+  }
+};
 
 var hivtrace_cluster_network_graph = function(json, network_container, network_status_string, network_warning_tag, button_bar_ui, attributes, filter_edges_toggle, clusters_table, nodes_table, parent_container, options) {
 
@@ -74,6 +123,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   self.edges = [];
   self.clusters = [];
   self.cluster_sizes = [];
+  self.cluster_mapping = {};
+
   self.colorizer = {
     'selected': function(d) {
       return d == 'selected' ? d3.rgb(51, 122, 183) : '#FFF'
@@ -108,9 +159,23 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   /** this array contains fields that will be appended to node pop-overs in the network tab
       they will precede all the fields that are shown based on selected labeling */
 
-  if (self._is_CDC_) {
-    self._additional_node_pop_fields.push('hiv_aids_dx_dt');
+
+  if (options && "minimum size" in options) {
+    self.minimum_cluster_size = options["minimum size"];
+  } else {
+      if (self._is_CDC_) {
+        self._additional_node_pop_fields.push('hiv_aids_dx_dt');
+        self.minimum_cluster_size = 5;
+      } else {
+        self.minimum_cluster_size = 0;
+      }
   }
+  
+  self.filter_by_size = function (cluster) {
+    return cluster.children.length >= self.minimum_cluster_size;
+  };
+  
+  self.current_size_filter = self.filter_by_size;
 
   self._networkPredefinedAttributeTransforms = {
     /** runtime computed node attributes, e.g. transforms of existing attributes */
@@ -139,6 +204,25 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         return _networkMissing;
       }
     },
+
+    'age_dx': {
+      'depends': 'age',
+      'label': 'age_dx',
+      'enum': ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      'color_scale': function() {
+        return d3.scale.ordinal()
+        .domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60", _networkMissing])
+        .range(['#b10026','#e31a1c','#fc4e2a','#fd8d3c','#feb24c','#fed976','#ffffb2','#636363']);
+      },
+      'map': function(node) {
+        var vl_value = attribute_node_value_by_id(node, 'age');
+        if (vl_value == ">=60") {
+          return "≥60";
+        }
+        return vl_value;
+      }
+    },
+
     'hiv_aids_dx_dt_year': {
       'depends': 'hiv_aids_dx_dt',
       'label': 'hiv_aids_dx_dt_year',
@@ -169,69 +253,6 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     }
   };
 
-  var cluster_mapping = {},
-    l_scale = 5000, // link scale
-    graph_data = self.json, // the raw JSON network object
-    max_points_to_render = 1024,
-    warning_string = "",
-    singletons = 0,
-    open_cluster_queue = [],
-    currently_displayed_objects,
-    gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
-
-  /*------------ D3 globals and SVG elements ---------------*/
-
-  var network_layout = d3.layout.force()
-    .on("tick", tick)
-    .charge(function(d) {
-      if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
-      return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
-    })
-    .linkDistance(function(d) {
-      return Math.max(d.length, 0.005) * l_scale;
-    })
-    .linkStrength(function(d) {
-      if (d.support !== undefined) {
-        return 2 * (0.5 - d.support);
-      }
-      return 1;
-    })
-    .chargeDistance(l_scale * 0.25)
-    .gravity(gravity_scale(json.Nodes.length))
-    .friction(0.25);
-
-  d3.select(self.container).selectAll(".my_progress").remove();
-
-
-  d3.select(self.container).selectAll("svg").remove();
-  self.node_table.selectAll("*").remove();
-  self.cluster_table.selectAll("*").remove();
-
-  var network_svg = d3.select(self.container).append("svg:svg")
-    //.style ("border", "solid black 1px")
-    .attr("id", "network-svg")
-    .attr("width", self.width + self.margin.left + self.margin.right)
-    .attr("height", self.height + self.margin.top + self.margin.bottom);
-
-  //.append("g")
-  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
-
-  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
-
-  network_svg.append("defs").append("marker")
-    .attr("id", "arrowhead")
-    .attr("refX", 9) /* there must be a smarter way to calculate shift*/
-    .attr("refY", 2)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 4)
-    .attr("orient", "auto")
-    .attr("stroke", "#666666")
-    .attr("fill", "#AAAAAA")
-    .append("path")
-    .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
-
-
-  change_window_size();
 
 
   /*------------ Network layout code ---------------*/
@@ -343,13 +364,13 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   };
 
-  function get_initial_xy(nodes, cluster_count, exclude) {
+  function get_initial_xy(nodes, cluster_count) {
     var d_clusters = {
       'id': 'root',
       'children': []
     };
     for (var k = 0; k < cluster_count; k += 1) {
-      if (exclude !== undefined && exclude[k + 1] !== undefined) {
+      if (self.exclude_cluster_ids !== undefined && self.exclude_cluster_ids[k + 1] !== undefined) {
         continue;
       }
       d_clusters.children.push({
@@ -374,6 +395,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   }
 
   function prepare_data_to_graph() {
+  
 
     var graphMe = {};
     graphMe.all = [];
@@ -385,17 +407,19 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     var drawnNodes = [];
 
     self.clusters.forEach(function(x) {
-      // Check if hxb2_linked is in a child
-      var hxb2_exists = x.children.some(function(c) {
-        return c.hxb2_linked
-      }) && self.hide_hxb2;
-      if (!hxb2_exists) {
-        if (x.collapsed) {
-          graphMe.clusters.push(x);
-          graphMe.all.push(x);
-        } else {
-          expandedClusters[x.cluster_id] = true;
-        }
+      if (self.current_size_filter(x)) {      
+          // Check if hxb2_linked is in a child
+          var hxb2_exists = x.children.some(function(c) {
+            return c.hxb2_linked
+          }) && self.hide_hxb2;
+          if (!hxb2_exists) {
+            if (x.collapsed) {
+              graphMe.clusters.push(x);
+              graphMe.all.push(x);
+            } else {
+              expandedClusters[x.cluster_id] = true;
+            }
+          }
       }
     });
 
@@ -429,8 +453,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   }
 
-  function default_layout(clusters, nodes, exclude_cluster_ids) {
-    var init_layout = get_initial_xy(nodes, self.cluster_sizes.length, exclude_cluster_ids);
+  function default_layout(clusters, nodes) {
+    var init_layout = get_initial_xy(nodes, self.cluster_sizes.length);
     clusters = init_layout.filter(function(v, i, obj) {
       return !(typeof v.cluster_id === "undefined");
     });
@@ -495,7 +519,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       }
     }
   }
-
+  
   self.compute_adjacency_list = _.once(function() {
 
     self.nodes.forEach(function(n) {
@@ -651,7 +675,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   function initial_json_load() {
     var connected_links = [];
     var total = 0;
-    var exclude_cluster_ids = {};
+    self.exclude_cluster_ids = {};
     self.has_hxb2_links = false;
     self.cluster_sizes = [];
 
@@ -725,6 +749,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         hivtrace_cluster_network_graph(only_this_cluster, "#" + button_bar_ui + "_cluster_zoom_svg", null, null, null, null, null, null, null, "#" + button_bar_ui + "_cluster_zoom_body", {
           "expand": [1],
           "charge": 10,
+          "minimum size" : 0,
           "colorizer": self.colorizer,
           "node_shaper": self.node_shaper,
           "width": 600
@@ -943,6 +968,15 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         self.update(true);
       }, 250));
 
+      $("#" + button_bar_ui + "_show_small_clusters").on("change", _.throttle(function(e) {
+        if (self.current_size_filter == self.filter_by_size) {
+            self.current_size_filter = function () {return true;}
+        } else {
+            self.current_size_filter = self.filter_by_size;
+        }
+        self.update(false);
+      }, 250));
+
 
       $("#" + button_bar_ui + "_pairwise_table_pecentage").on("change", _.throttle(function(e) {
         self.show_percent_in_pairwise_table = !self.show_percent_in_pairwise_table;
@@ -1039,7 +1073,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         });
 
         var valid_shapes = _.filter(valid_cats, function(d) {
-          return d.dimension <= 5;
+          return d.dimension <= 7;
         });
 
 
@@ -1381,20 +1415,21 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       });
 
       for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
-        exclude_cluster_ids[sorted_array[k][1]] = 1;
+        self.exclude_cluster_ids[sorted_array[k][1]] = 1;
       }
+      
       warning_string = "Excluded " + (sorted_array.length -
           max_points_to_render) + " clusters (maximum size " +
         sorted_array[k - 1][0] + " nodes) because only " +
-        max_points_to_render + " points can be shown at once.";
+        max_points_to_render + " objects can be shown at once.";
     }
-
+    
     // Initialize class attributes
     singletons = graph_data.Nodes.filter(function(v, i) {
       return v.cluster === null;
     }).length;
     self.nodes = graph_data.Nodes.filter(function(v, i) {
-      if (v.cluster && typeof exclude_cluster_ids[v.cluster] === "undefined") {
+      if (v.cluster && typeof self.exclude_cluster_ids[v.cluster] === "undefined") {
         connected_links[i] = total++;
         return true;
       }
@@ -1412,11 +1447,12 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
     compute_node_degrees(self.nodes, self.edges);
 
-    var r = default_layout(self.clusters, self.nodes, exclude_cluster_ids);
+    var r = default_layout(self.clusters, self.nodes);
+
     self.clusters = r[0];
     self.nodes = r[1];
     self.clusters.forEach(function(d, i) {
-      cluster_mapping[d.cluster_id] = i;
+      self.cluster_mapping[d.cluster_id] = i;
       d.hxb2_linked = d.children.some(function(c) {
         return c.hxb2_linked
       });
@@ -1430,7 +1466,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
 
     self.edges.forEach(function(e, i) {
-      self.clusters[cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
+      self.clusters[self.cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
     });
 
     self.clusters.forEach(function(d, i) {
@@ -1586,7 +1622,10 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   function _node_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
-    var labels = [
+    
+    
+    var labels = [payload.length == 1 ? 
+      ["can't be shown", 1] :
       [payload[0] ? "hide" : "show", 0]
     ];
 
@@ -1650,7 +1689,16 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
             help: "Node ID"
           }, {
             "value": function() {
-              return [!self.clusters[n.cluster - 1].collapsed, n.cluster]
+              try {
+                  if (self.exclude_cluster_ids [n.cluster]) {
+                    // parent cluster can't be rendered
+                    // because of size restrictions
+                    return [n.cluster];
+                  }
+                  return [!self.clusters[self.cluster_mapping[n.cluster]].collapsed, n.cluster]
+              } catch (err) {
+                
+              }
             },
             "callback": _node_table_draw_buttons,
             "volatile": true
@@ -1725,9 +1773,9 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   /*------------ Update layout code ---------------*/
   function update_network_string(draw_me) {
     if (network_status_string) {
-      var clusters_shown = self.clusters.length - draw_me.clusters.length,
-        clusters_removed = self.cluster_sizes.length - self.clusters.length,
-        nodes_removed = graph_data.Nodes.length - singletons - self.nodes.length;
+      var clusters_shown = _.filter (self.clusters, function (c) {return !c.collapsed;}).length,
+          clusters_removed = self.cluster_sizes.length - self.clusters.length,
+          nodes_removed = graph_data.Nodes.length - singletons - self.nodes.length;
 
       /*var s = "Displaying a network on <strong>" + self.nodes.length + "</strong> nodes, <strong>" + self.clusters.length + "</strong> clusters"
               + (clusters_removed > 0 ? " (an additional " + clusters_removed + " clusters and " + nodes_removed + " nodes have been removed due to network size constraints)" : "") + ". <strong>"
@@ -1750,6 +1798,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     container = d3.select(container);
 
     var symbol_type = (node.hxb2_linked && !node.is_lanl) ? "cross" : (node.is_lanl ? "triangle-down" : self.node_shaper['shaper'](node));
+
+    node.rendered_size = Math.sqrt (node_size(node))/2 + 2;
 
     container.attr("d", misc.symbol(symbol_type).size(node_size(node)))
       .attr('class', 'node')
@@ -1825,6 +1875,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
 
     var arc_radius = cluster_box_size(the_cluster) * 0.5;
+    the_cluster.rendered_size = arc_radius + 2;
     var paths = container_group.selectAll("path").data(draw_from);
     paths.enter().append("path");
     paths.exit().remove();
@@ -1842,6 +1893,9 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       .style("fill", function(d, i) {
         return d.rim ? self.colorizer['selected'](d.name) : (the_cluster["gradient"] ? 'url(#' + the_cluster["gradient"] + ')' : cluster_color(the_cluster, d.name));
       })
+      .style ("stroke-linejoin", function (d,i) {
+        return draw_from.length > 1 ? "round" : "";
+      })
       .style('display', function(d) {
         if (the_cluster.is_hidden) return 'none';
         return null;
@@ -1849,6 +1903,23 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
 
 
+  }
+
+  function check_for_predefined_shapes (cat_id) {
+    console.log (cat_id);
+
+    if (cat_id in _networkPresetShapeSchemes) {
+        var domain = graph_data[_networkGraphAttrbuteID][cat_id]['value_range'];
+
+        return {
+                'domain' : domain,
+                'range'  : _.map (domain, function (v) {return _networkPresetShapeSchemes[cat_id][v]; })
+                };
+
+    } else {
+        return {'domain' : _.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension),
+                'range'  : _networkShapeOrdering };
+    }
   }
 
   function handle_shape_categorical(cat_id) {
@@ -1867,7 +1938,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
 
     if (cat_id) {
-      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension)).range(_networkShapeOrdering);
+      var domain_range = check_for_predefined_shapes (cat_id);
+      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
       self.node_shaper['id'] = cat_id;
       self.node_shaper['shaper'] = function(d) {
         return shape_mapper(graph_data[_networkGraphAttrbuteID][cat_id]['value_map'](attribute_node_value_by_id(d, cat_id)));
@@ -1927,10 +1999,12 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed('hiv-trace-legend', true).append("text").text("Shape: " + self.node_shaper['id']).style("font-weight", "bold");
       offset += 18;
 
-      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][self.node_shaper['id']].dimension)).range(_networkShapeOrdering);
+      var domain_range = check_for_predefined_shapes (self.node_shaper['id']);
+      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
 
       _.each(self.node_shaper['category_map'](null, 'map'), function(value, key) {
         legend_svg.append("g").classed('hiv-trace-legend', true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
+
 
         legend_svg.append("g").classed('hiv-trace-legend', true).attr("transform", "translate(0," + offset + ")").append("path")
           .attr("transform", "translate(5,-5)")
@@ -2391,7 +2465,6 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       return null;
     })
 
-
     if (!soft) {
       currently_displayed_objects = rendered_clusters[0].length + rendered_nodes[0].length;
 
@@ -2399,10 +2472,10 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         var sizes = network_layout.size();
 
         rendered_nodes.attr("transform", function(d) {
-          return "translate(" + (d.x = Math.max(10, Math.min(sizes[0] - 10, d.x))) + "," + (d.y = Math.max(10, Math.min(sizes[1] - 10, d.y))) + ")";
+          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
         });
         rendered_clusters.attr("transform", function(d) {
-          return "translate(" + (d.x = Math.max(10, Math.min(sizes[0] - 10, d.x))) + "," + (d.y = Math.max(10, Math.min(sizes[1] - 10, d.y))) + ")";
+          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
         });
 
         link.attr("x1", function(d) {
@@ -2861,10 +2934,8 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   }
 
   function cluster_info_string(id) {
-    var the_cluster = self.clusters[id - 1],
+    var the_cluster = self.clusters[self.cluster_mapping[id]],
       attr_info = the_cluster["binned_attributes"];
-
-
 
     var str;
 
@@ -2906,7 +2977,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         var leftover = new_nodes + currently_displayed_objects - max_points_to_render;
         if (leftover > 0) {
           for (k = 0; k < open_cluster_queue.length && leftover > 0; k++) {
-            var cluster = self.clusters[cluster_mapping[open_cluster_queue[k]]];
+            var cluster = self.clusters[self.cluster_mapping[open_cluster_queue[k]]];
             leftover -= cluster.children.length - 1;
             collapse_cluster(cluster, true);
           }
@@ -2928,12 +2999,13 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   }
 
   function collapse_cluster_handler(d, do_update) {
-    collapse_cluster(self.clusters[cluster_mapping[d.cluster]]);
+    collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
     if (do_update) {
       self.update(false, 0.4);
     }
 
   }
+
 
   function center_cluster_handler(d) {
     d.x = self.width / 2;
@@ -2948,7 +3020,9 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   self.expand_some_clusters = function(subset) {
     subset = subset || self.clusters;
     subset.forEach(function(x) {
-      expand_cluster_handler(x, false);
+      if (!x.is_hidden) {
+        expand_cluster_handler(x, false);
+      }
     });
     self.update();
   }
@@ -3032,7 +3106,76 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     }
   }
 
+  /*------------ Init code ---------------*/
+
+
+
+  var 
+    l_scale = 5000, // link scale
+    graph_data = self.json, // the raw JSON network object
+    max_points_to_render = 1024,
+    warning_string = "",
+    singletons = 0,
+    open_cluster_queue = [],
+    currently_displayed_objects,
+    gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
+
+  /*------------ D3 globals and SVG elements ---------------*/
+
+  var network_layout = d3.layout.force()
+    .on("tick", tick)
+    .charge(function(d) {
+      if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
+      return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
+    })
+    .linkDistance(function(d) {
+      return Math.max(d.length, 0.005) * l_scale;
+    })
+    .linkStrength(function(d) {
+      if (d.support !== undefined) {
+        return 2 * (0.5 - d.support);
+      }
+      return 1;
+    })
+    .chargeDistance(l_scale * 0.25)
+    .gravity(gravity_scale(json.Nodes.length))
+    .friction(0.25);
+
+  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+  d3.select(self.container).selectAll("svg").remove();
+  self.node_table.selectAll("*").remove();
+  self.cluster_table.selectAll("*").remove();
+
+  var network_svg = d3.select(self.container).append("svg:svg")
+    //.style ("border", "solid black 1px")
+    .attr("id", "network-svg")
+    .attr("width", self.width + self.margin.left + self.margin.right)
+    .attr("height", self.height + self.margin.top + self.margin.bottom);
+
+  //.append("g")
+  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
+
+  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
+
+  network_svg.append("defs").append("marker")
+    .attr("id", "arrowhead")
+    .attr("refX", 9) /* there must be a smarter way to calculate shift*/
+    .attr("refY", 2)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 4)
+    .attr("orient", "auto")
+    .attr("stroke", "#666666")
+    .attr("fill", "#AAAAAA")
+    .append("path")
+    .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+
+
+  change_window_size();
+
   initial_json_load();
+
+  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+
   if (options) {
     if (_.isNumber(options["charge"])) {
       self.charge_correction = options["charge"];
@@ -3077,7 +3220,9 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
       if (self._is_CDC_ && key == "Edges") {
         key = "Links";
       }
-      table_data.push([key, value]);
+      if (_.isNumber (value)) {
+        table_data.push([key, value]);
+      }
     });
   }
 
