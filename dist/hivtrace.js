@@ -52,9 +52,9 @@ webpackJsonp([0],{
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(46);
+	var _histogram = __webpack_require__(47);
 	
-	var _scatterplot = __webpack_require__(45);
+	var _scatterplot = __webpack_require__(46);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -87,7 +87,7 @@ webpackJsonp([0],{
 	    _ = __webpack_require__(42),
 	    misc = __webpack_require__(43),
 	    helpers = __webpack_require__(44),
-	    scatterPlot = __webpack_require__(45);
+	    scatterPlot = __webpack_require__(46);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -95,7 +95,7 @@ webpackJsonp([0],{
 	var _networkMissingOpacity = '0.1';
 	var _networkMissingColor = '#999';
 	var _networkContinuousColorStops = 9;
-	var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon'];
+	var _networkShapeOrdering = ['circle', 'square', 'hexagon', 'diamond', 'cross', 'octagon', 'ellipse', 'pentagon'];
 	var _defaultFloatFormat = d3.format(",.2r");
 	var _defaultPercentFormat = d3.format(",.3p");
 	var _defaultDateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ");
@@ -116,17 +116,64 @@ webpackJsonp([0],{
 	
 	var _networkPresetColorSchemes = {
 	  'trans_categ': {
-	    'Other-Male': '#999999',
+	    'MSM-Male': '#1f78b4',
+	    'MSM-Unknown sex': '#1f78b4',
 	    'Heterosexual Contact-Male': '#e31a1c',
-	    'Other-Child': '#ff7f00',
-	    'Perinatal': '#ff7f00',
-	    'MSM': '#1f78b4',
+	    'Heterosexual Contact-Female': '#e31a1c',
+	    'Heterosexual Contact-Unknown sex': '#e31a1c',
 	    'IDU-Male': '#33a02c',
-	    'Other-Female': '#999999',
+	    'MSM & IDU-Male': '#33a02c',
 	    'IDU-Female': '#33a02c',
-	    'MSM & IDU': '#33a02c',
-	    'Missing': '#999999',
-	    'Heterosexual Contact-Female': '#e31a1c'
+	    'IDU-Unknown sex': '#33a02c',
+	    'Other/Unknown-Male': '#636363',
+	    'Other/Unknown-Female': '#636363',
+	    'Other-Male': '#636363',
+	    'Other-Female': '#636363',
+	    'Missing': '#636363',
+	    '': '#636363',
+	    'Other/Unknown-Unknown sex': '#636363',
+	    'Perinatal': '#ff7f00',
+	    'Other/Unknown-Child': '#ff7f00',
+	    'Other-Child': '#ff7f00'
+	  },
+	  'race': { 'Asian': '#1f77b4',
+	    'Black/African American': '#bcbd22',
+	    'Hispanic/Latino': '#9467bd',
+	    'American Indian/Alaska Native': '#2ca02c',
+	    'Native Hawaiian/Other Pacific Islander': '#17becf',
+	    'Multiple Races': '#e377c2',
+	    'Unknown race': '#999',
+	    'Missing': '#999',
+	    'missing': '#999',
+	    'White': '#d62728' }
+	};
+	
+	var _networkPresetShapeSchemes = {
+	  'birth_sex': {
+	    'Male': 'square',
+	    'Female': 'ellipse',
+	    'Missing': 'diamond',
+	    'missing': 'diamond',
+	    'Unknown': 'diamond'
+	  },
+	  'race': { 'Asian': 'hexagon',
+	    'Black/African American': 'square',
+	    'Hispanic/Latino': 'triangle',
+	    'American Indian/Alaska Native': 'pentagon',
+	    'Native Hawaiian/Other Pacific Islander': 'octagon',
+	    'Multiple Races': 'diamond',
+	    'Unknown race': 'diamond',
+	    'Missing': 'diamond',
+	    'missing': 'diamond',
+	    'White': 'ellipse' },
+	  'current_gender': {
+	    'Male': 'square',
+	    'Female': 'ellipse',
+	    'Transgender-Male to Female': 'hexagon',
+	    'Transgender-Female to Male': 'pentagon',
+	    'Additional Gender Identity': 'diamond', 'Unknown': 'diamond',
+	    'Missing': 'diamond',
+	    'missing': 'diamond'
 	  }
 	};
 	
@@ -153,6 +200,8 @@ webpackJsonp([0],{
 	  self.edges = [];
 	  self.clusters = [];
 	  self.cluster_sizes = [];
+	  self.cluster_mapping = {};
+	
 	  self.colorizer = {
 	    'selected': function selected(d) {
 	      return d == 'selected' ? d3.rgb(51, 122, 183) : '#FFF';
@@ -175,9 +224,22 @@ webpackJsonp([0],{
 	  /** this array contains fields that will be appended to node pop-overs in the network tab
 	      they will precede all the fields that are shown based on selected labeling */
 	
-	  if (self._is_CDC_) {
-	    self._additional_node_pop_fields.push('hiv_aids_dx_dt');
+	  if (options && "minimum size" in options) {
+	    self.minimum_cluster_size = options["minimum size"];
+	  } else {
+	    if (self._is_CDC_) {
+	      self._additional_node_pop_fields.push('hiv_aids_dx_dt');
+	      self.minimum_cluster_size = 5;
+	    } else {
+	      self.minimum_cluster_size = 0;
+	    }
 	  }
+	
+	  self.filter_by_size = function (cluster) {
+	    return cluster.children.length >= self.minimum_cluster_size;
+	  };
+	
+	  self.current_size_filter = self.filter_by_size;
 	
 	  self._networkPredefinedAttributeTransforms = {
 	    /** runtime computed node attributes, e.g. transforms of existing attributes */
@@ -204,6 +266,23 @@ webpackJsonp([0],{
 	        return _networkMissing;
 	      }
 	    },
+	
+	    'age_dx': {
+	      'depends': 'age',
+	      'label': 'age_dx',
+	      'enum': ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+	      'color_scale': function color_scale() {
+	        return d3.scale.ordinal().domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60", _networkMissing]).range(['#b10026', '#e31a1c', '#fc4e2a', '#fd8d3c', '#feb24c', '#fed976', '#ffffb2', '#636363']);
+	      },
+	      'map': function map(node) {
+	        var vl_value = attribute_node_value_by_id(node, 'age');
+	        if (vl_value == ">=60") {
+	          return "≥60";
+	        }
+	        return vl_value;
+	      }
+	    },
+	
 	    'hiv_aids_dx_dt_year': {
 	      'depends': 'hiv_aids_dx_dt',
 	      'label': 'hiv_aids_dx_dt_year',
@@ -233,55 +312,6 @@ webpackJsonp([0],{
 	      }
 	    }
 	  };
-	
-	  var cluster_mapping = {},
-	      l_scale = 5000,
-	
-	  // link scale
-	  graph_data = self.json,
-	
-	  // the raw JSON network object
-	  max_points_to_render = 1024,
-	      warning_string = "",
-	      singletons = 0,
-	      open_cluster_queue = [],
-	      currently_displayed_objects,
-	      gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
-	
-	  /*------------ D3 globals and SVG elements ---------------*/
-	
-	  var network_layout = d3.layout.force().on("tick", tick).charge(function (d) {
-	    if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
-	    return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
-	  }).linkDistance(function (d) {
-	    return Math.max(d.length, 0.005) * l_scale;
-	  }).linkStrength(function (d) {
-	    if (d.support !== undefined) {
-	      return 2 * (0.5 - d.support);
-	    }
-	    return 1;
-	  }).chargeDistance(l_scale * 0.25).gravity(gravity_scale(json.Nodes.length)).friction(0.25);
-	
-	  d3.select(self.container).selectAll(".my_progress").remove();
-	
-	  d3.select(self.container).selectAll("svg").remove();
-	  self.node_table.selectAll("*").remove();
-	  self.cluster_table.selectAll("*").remove();
-	
-	  var network_svg = d3.select(self.container).append("svg:svg"
-	  //.style ("border", "solid black 1px")
-	  ).attr("id", "network-svg").attr("width", self.width + self.margin.left + self.margin.right).attr("height", self.height + self.margin.top + self.margin.bottom);
-	
-	  //.append("g")
-	  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
-	
-	  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
-	
-	  network_svg.append("defs").append("marker").attr("id", "arrowhead").attr("refX", 9 /* there must be a smarter way to calculate shift*/
-	  ).attr("refY", 2).attr("markerWidth", 6).attr("markerHeight", 4).attr("orient", "auto").attr("stroke", "#666666").attr("fill", "#AAAAAA").append("path").attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
-	
-	
-	  change_window_size();
 	
 	  /*------------ Network layout code ---------------*/
 	  var handle_cluster_click = function handle_cluster_click(cluster, release) {
@@ -363,13 +393,13 @@ webpackJsonp([0],{
 	    }, true);
 	  };
 	
-	  function get_initial_xy(nodes, cluster_count, exclude) {
+	  function get_initial_xy(nodes, cluster_count) {
 	    var d_clusters = {
 	      'id': 'root',
 	      'children': []
 	    };
 	    for (var k = 0; k < cluster_count; k += 1) {
-	      if (exclude !== undefined && exclude[k + 1] !== undefined) {
+	      if (self.exclude_cluster_ids !== undefined && self.exclude_cluster_ids[k + 1] !== undefined) {
 	        continue;
 	      }
 	      d_clusters.children.push({
@@ -380,9 +410,9 @@ webpackJsonp([0],{
 	      });
 	    }
 	
-	    var treemap = d3.layout.pack().size([self.width, self.height]
+	    var treemap = d3.layout.pack().size([self.width, self.height])
 	    //.sticky(true)
-	    ).children(function (d) {
+	    .children(function (d) {
 	      return d.children;
 	    }).value(function (d) {
 	      return 1;
@@ -403,16 +433,18 @@ webpackJsonp([0],{
 	    var drawnNodes = [];
 	
 	    self.clusters.forEach(function (x) {
-	      // Check if hxb2_linked is in a child
-	      var hxb2_exists = x.children.some(function (c) {
-	        return c.hxb2_linked;
-	      }) && self.hide_hxb2;
-	      if (!hxb2_exists) {
-	        if (x.collapsed) {
-	          graphMe.clusters.push(x);
-	          graphMe.all.push(x);
-	        } else {
-	          expandedClusters[x.cluster_id] = true;
+	      if (self.current_size_filter(x)) {
+	        // Check if hxb2_linked is in a child
+	        var hxb2_exists = x.children.some(function (c) {
+	          return c.hxb2_linked;
+	        }) && self.hide_hxb2;
+	        if (!hxb2_exists) {
+	          if (x.collapsed) {
+	            graphMe.clusters.push(x);
+	            graphMe.all.push(x);
+	          } else {
+	            expandedClusters[x.cluster_id] = true;
+	          }
 	        }
 	      }
 	    });
@@ -445,8 +477,8 @@ webpackJsonp([0],{
 	    return graphMe;
 	  }
 	
-	  function default_layout(clusters, nodes, exclude_cluster_ids) {
-	    var init_layout = get_initial_xy(nodes, self.cluster_sizes.length, exclude_cluster_ids);
+	  function default_layout(clusters, nodes) {
+	    var init_layout = get_initial_xy(nodes, self.cluster_sizes.length);
 	    clusters = init_layout.filter(function (v, i, obj) {
 	      return !(typeof v.cluster_id === "undefined");
 	    });
@@ -656,7 +688,7 @@ webpackJsonp([0],{
 	  function initial_json_load() {
 	    var connected_links = [];
 	    var total = 0;
-	    var exclude_cluster_ids = {};
+	    self.exclude_cluster_ids = {};
 	    self.has_hxb2_links = false;
 	    self.cluster_sizes = [];
 	
@@ -771,6 +803,7 @@ webpackJsonp([0],{
 	        hivtrace_cluster_network_graph(only_this_cluster, "#" + button_bar_ui + "_cluster_zoom_svg", null, null, null, null, null, null, null, "#" + button_bar_ui + "_cluster_zoom_body", {
 	          "expand": [1],
 	          "charge": 10,
+	          "minimum size": 0,
 	          "colorizer": self.colorizer,
 	          "node_shaper": self.node_shaper,
 	          "width": 600
@@ -910,6 +943,17 @@ webpackJsonp([0],{
 	        self.update(true);
 	      }, 250));
 	
+	      $("#" + button_bar_ui + "_show_small_clusters").on("change", _.throttle(function (e) {
+	        if (self.current_size_filter == self.filter_by_size) {
+	          self.current_size_filter = function () {
+	            return true;
+	          };
+	        } else {
+	          self.current_size_filter = self.filter_by_size;
+	        }
+	        self.update(false);
+	      }, 250));
+	
 	      $("#" + button_bar_ui + "_pairwise_table_pecentage").on("change", _.throttle(function (e) {
 	        self.show_percent_in_pairwise_table = !self.show_percent_in_pairwise_table;
 	        render_binned_table("#" + button_bar_ui + "_attribute_table", self.colorizer['category_map'], self.colorizer['category_pairwise']);
@@ -1002,7 +1046,7 @@ webpackJsonp([0],{
 	        });
 	
 	        var valid_shapes = _.filter(valid_cats, function (d) {
-	          return d.dimension <= 5;
+	          return d.dimension <= 7;
 	        });
 	
 	        // sort values alphabetically for consistent coloring
@@ -1267,9 +1311,10 @@ webpackJsonp([0],{
 	      });
 	
 	      for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
-	        exclude_cluster_ids[sorted_array[k][1]] = 1;
+	        self.exclude_cluster_ids[sorted_array[k][1]] = 1;
 	      }
-	      warning_string = "Excluded " + (sorted_array.length - max_points_to_render) + " clusters (maximum size " + sorted_array[k - 1][0] + " nodes) because only " + max_points_to_render + " points can be shown at once.";
+	
+	      warning_string = "Excluded " + (sorted_array.length - max_points_to_render) + " clusters (maximum size " + sorted_array[k - 1][0] + " nodes) because only " + max_points_to_render + " objects can be shown at once.";
 	    }
 	
 	    // Initialize class attributes
@@ -1277,7 +1322,7 @@ webpackJsonp([0],{
 	      return v.cluster === null;
 	    }).length;
 	    self.nodes = graph_data.Nodes.filter(function (v, i) {
-	      if (v.cluster && typeof exclude_cluster_ids[v.cluster] === "undefined") {
+	      if (v.cluster && typeof self.exclude_cluster_ids[v.cluster] === "undefined") {
 	        connected_links[i] = total++;
 	        return true;
 	      }
@@ -1295,11 +1340,12 @@ webpackJsonp([0],{
 	
 	    compute_node_degrees(self.nodes, self.edges);
 	
-	    var r = default_layout(self.clusters, self.nodes, exclude_cluster_ids);
+	    var r = default_layout(self.clusters, self.nodes);
+	
 	    self.clusters = r[0];
 	    self.nodes = r[1];
 	    self.clusters.forEach(function (d, i) {
-	      cluster_mapping[d.cluster_id] = i;
+	      self.cluster_mapping[d.cluster_id] = i;
 	      d.hxb2_linked = d.children.some(function (c) {
 	        return c.hxb2_linked;
 	      });
@@ -1312,7 +1358,7 @@ webpackJsonp([0],{
 	    });
 	
 	    self.edges.forEach(function (e, i) {
-	      self.clusters[cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
+	      self.clusters[self.cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
 	    });
 	
 	    self.clusters.forEach(function (d, i) {
@@ -1455,7 +1501,8 @@ webpackJsonp([0],{
 	
 	  function _node_table_draw_buttons(element, payload) {
 	    var this_cell = d3.select(element);
-	    var labels = [[payload[0] ? "hide" : "show", 0]];
+	
+	    var labels = [payload.length == 1 ? ["can't be shown", 1] : [payload[0] ? "hide" : "show", 0]];
 	
 	    var buttons = this_cell.selectAll("button").data(labels);
 	    buttons.enter().append("button");
@@ -1512,7 +1559,14 @@ webpackJsonp([0],{
 	          help: "Node ID"
 	        }, {
 	          "value": function value() {
-	            return [!self.clusters[n.cluster - 1].collapsed, n.cluster];
+	            try {
+	              if (self.exclude_cluster_ids[n.cluster]) {
+	                // parent cluster can't be rendered
+	                // because of size restrictions
+	                return [n.cluster];
+	              }
+	              return [!self.clusters[self.cluster_mapping[n.cluster]].collapsed, n.cluster];
+	            } catch (err) {}
 	          },
 	          "callback": _node_table_draw_buttons,
 	          "volatile": true
@@ -1581,7 +1635,9 @@ webpackJsonp([0],{
 	  /*------------ Update layout code ---------------*/
 	  function update_network_string(draw_me) {
 	    if (network_status_string) {
-	      var clusters_shown = self.clusters.length - draw_me.clusters.length,
+	      var clusters_shown = _.filter(self.clusters, function (c) {
+	        return !c.collapsed;
+	      }).length,
 	          clusters_removed = self.cluster_sizes.length - self.clusters.length,
 	          nodes_removed = graph_data.Nodes.length - singletons - self.nodes.length;
 	
@@ -1602,6 +1658,8 @@ webpackJsonp([0],{
 	    container = d3.select(container);
 	
 	    var symbol_type = node.hxb2_linked && !node.is_lanl ? "cross" : node.is_lanl ? "triangle-down" : self.node_shaper['shaper'](node);
+	
+	    node.rendered_size = Math.sqrt(node_size(node)) / 2 + 2;
 	
 	    container.attr("d", misc.symbol(symbol_type).size(node_size(node))).attr('class', 'node').classed('selected_object', function (d) {
 	      return d.match_filter;
@@ -1656,6 +1714,7 @@ webpackJsonp([0],{
 	    });
 	
 	    var arc_radius = cluster_box_size(the_cluster) * 0.5;
+	    the_cluster.rendered_size = arc_radius + 2;
 	    var paths = container_group.selectAll("path").data(draw_from);
 	    paths.enter().append("path");
 	    paths.exit().remove();
@@ -1668,10 +1727,30 @@ webpackJsonp([0],{
 	      return (d.rim ? d3.svg.arc().innerRadius(arc_radius + 2).outerRadius(arc_radius + 5) : d3.svg.arc().innerRadius(0).outerRadius(arc_radius))(d);
 	    }).style("fill", function (d, i) {
 	      return d.rim ? self.colorizer['selected'](d.name) : the_cluster["gradient"] ? 'url(#' + the_cluster["gradient"] + ')' : cluster_color(the_cluster, d.name);
+	    }).style("stroke-linejoin", function (d, i) {
+	      return draw_from.length > 1 ? "round" : "";
 	    }).style('display', function (d) {
 	      if (the_cluster.is_hidden) return 'none';
 	      return null;
 	    });
+	  }
+	
+	  function check_for_predefined_shapes(cat_id) {
+	    console.log(cat_id);
+	
+	    if (cat_id in _networkPresetShapeSchemes) {
+	      var domain = graph_data[_networkGraphAttrbuteID][cat_id]['value_range'];
+	
+	      return {
+	        'domain': domain,
+	        'range': _.map(domain, function (v) {
+	          return _networkPresetShapeSchemes[cat_id][v];
+	        })
+	      };
+	    } else {
+	      return { 'domain': _.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension),
+	        'range': _networkShapeOrdering };
+	    }
 	  }
 	
 	  function handle_shape_categorical(cat_id) {
@@ -1689,7 +1768,8 @@ webpackJsonp([0],{
 	    });
 	
 	    if (cat_id) {
-	      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][cat_id].dimension)).range(_networkShapeOrdering);
+	      var domain_range = check_for_predefined_shapes(cat_id);
+	      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
 	      self.node_shaper['id'] = cat_id;
 	      self.node_shaper['shaper'] = function (d) {
 	        return shape_mapper(graph_data[_networkGraphAttrbuteID][cat_id]['value_map'](attribute_node_value_by_id(d, cat_id)));
@@ -1747,7 +1827,8 @@ webpackJsonp([0],{
 	      legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed('hiv-trace-legend', true).append("text").text("Shape: " + self.node_shaper['id']).style("font-weight", "bold");
 	      offset += 18;
 	
-	      var shape_mapper = d3.scale.ordinal().domain(_.range(0, graph_data[_networkGraphAttrbuteID][self.node_shaper['id']].dimension)).range(_networkShapeOrdering);
+	      var domain_range = check_for_predefined_shapes(self.node_shaper['id']);
+	      var shape_mapper = d3.scale.ordinal().domain(domain_range['domain']).range(domain_range['range']);
 	
 	      _.each(self.node_shaper['category_map'](null, 'map'), function (value, key) {
 	        legend_svg.append("g").classed('hiv-trace-legend', true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
@@ -2169,10 +2250,10 @@ webpackJsonp([0],{
 	        var sizes = network_layout.size();
 	
 	        rendered_nodes.attr("transform", function (d) {
-	          return "translate(" + (d.x = Math.max(10, Math.min(sizes[0] - 10, d.x))) + "," + (d.y = Math.max(10, Math.min(sizes[1] - 10, d.y))) + ")";
+	          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
 	        });
 	        rendered_clusters.attr("transform", function (d) {
-	          return "translate(" + (d.x = Math.max(10, Math.min(sizes[0] - 10, d.x))) + "," + (d.y = Math.max(10, Math.min(sizes[1] - 10, d.y))) + ")";
+	          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
 	        });
 	
 	        link.attr("x1", function (d) {
@@ -2564,7 +2645,7 @@ webpackJsonp([0],{
 	  }
 	
 	  function cluster_info_string(id) {
-	    var the_cluster = self.clusters[id - 1],
+	    var the_cluster = self.clusters[self.cluster_mapping[id]],
 	        attr_info = the_cluster["binned_attributes"];
 	
 	    var str;
@@ -2602,7 +2683,7 @@ webpackJsonp([0],{
 	        var leftover = new_nodes + currently_displayed_objects - max_points_to_render;
 	        if (leftover > 0) {
 	          for (k = 0; k < open_cluster_queue.length && leftover > 0; k++) {
-	            var cluster = self.clusters[cluster_mapping[open_cluster_queue[k]]];
+	            var cluster = self.clusters[self.cluster_mapping[open_cluster_queue[k]]];
 	            leftover -= cluster.children.length - 1;
 	            collapse_cluster(cluster, true);
 	          }
@@ -2624,7 +2705,7 @@ webpackJsonp([0],{
 	  }
 	
 	  function collapse_cluster_handler(d, do_update) {
-	    collapse_cluster(self.clusters[cluster_mapping[d.cluster]]);
+	    collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
 	    if (do_update) {
 	      self.update(false, 0.4);
 	    }
@@ -2643,7 +2724,9 @@ webpackJsonp([0],{
 	  self.expand_some_clusters = function (subset) {
 	    subset = subset || self.clusters;
 	    subset.forEach(function (x) {
-	      expand_cluster_handler(x, false);
+	      if (!x.is_hidden) {
+	        expand_cluster_handler(x, false);
+	      }
 	    });
 	    self.update();
 	  };
@@ -2727,7 +2810,59 @@ webpackJsonp([0],{
 	    }
 	  }
 	
+	  /*------------ Init code ---------------*/
+	
+	  var l_scale = 5000,
+	
+	  // link scale
+	  graph_data = self.json,
+	
+	  // the raw JSON network object
+	  max_points_to_render = 1024,
+	      warning_string = "",
+	      singletons = 0,
+	      open_cluster_queue = [],
+	      currently_displayed_objects,
+	      gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
+	
+	  /*------------ D3 globals and SVG elements ---------------*/
+	
+	  var network_layout = d3.layout.force().on("tick", tick).charge(function (d) {
+	    if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
+	    return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
+	  }).linkDistance(function (d) {
+	    return Math.max(d.length, 0.005) * l_scale;
+	  }).linkStrength(function (d) {
+	    if (d.support !== undefined) {
+	      return 2 * (0.5 - d.support);
+	    }
+	    return 1;
+	  }).chargeDistance(l_scale * 0.25).gravity(gravity_scale(json.Nodes.length)).friction(0.25);
+	
+	  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+	  d3.select(self.container).selectAll("svg").remove();
+	  self.node_table.selectAll("*").remove();
+	  self.cluster_table.selectAll("*").remove();
+	
+	  var network_svg = d3.select(self.container).append("svg:svg")
+	  //.style ("border", "solid black 1px")
+	  .attr("id", "network-svg").attr("width", self.width + self.margin.left + self.margin.right).attr("height", self.height + self.margin.top + self.margin.bottom);
+	
+	  //.append("g")
+	  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
+	
+	  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
+	
+	  network_svg.append("defs").append("marker").attr("id", "arrowhead").attr("refX", 9) /* there must be a smarter way to calculate shift*/
+	  .attr("refY", 2).attr("markerWidth", 6).attr("markerHeight", 4).attr("orient", "auto").attr("stroke", "#666666").attr("fill", "#AAAAAA").append("path").attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+	
+	
+	  change_window_size();
+	
 	  initial_json_load();
+	
+	  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+	
 	  if (options) {
 	    if (_.isNumber(options["charge"])) {
 	      self.charge_correction = options["charge"];
@@ -2769,7 +2904,9 @@ webpackJsonp([0],{
 	      if (self._is_CDC_ && key == "Edges") {
 	        key = "Links";
 	      }
-	      table_data.push([key, value]);
+	      if (_.isNumber(value)) {
+	        table_data.push([key, value]);
+	      }
 	    });
 	  }
 	
@@ -2871,6 +3008,7 @@ webpackJsonp([0],{
 	});
 	
 	function hivtrace_generate_svg_symbol(type) {
+	
 	  switch (type) {
 	    case 'circle':
 	    case 'cross':
@@ -2879,6 +3017,8 @@ webpackJsonp([0],{
 	    case 'triangle-down':
 	    case 'triangle-up':
 	      return d3.svg.symbol().type(type);
+	    case 'triangle':
+	      return new hivtrace_generate_svg_polygon().sides(3);
 	    case 'pentagon':
 	      return new hivtrace_generate_svg_polygon().sides(5);
 	    case 'hexagon':
@@ -2887,9 +3027,42 @@ webpackJsonp([0],{
 	      return new hivtrace_generate_svg_polygon().sides(7);
 	    case 'octagon':
 	      return new hivtrace_generate_svg_polygon().sides(8);
+	    case 'ellipse':
+	      return new hivtrace_generate_svg_ellipse();
 	  }
-	  return node;
+	  //console.log (type);
+	  return d3.svg.symbol().type('circle');
 	}
+	
+	var hivtrace_generate_svg_ellipse = function hivtrace_generate_svg_ellipse() {
+	
+	  var self = this;
+	
+	  self.ellipse = function () {
+	
+	    var path = "M " + self.radius + " 0 A " + self.radius * 1 + " " + self.radius * 0.75 + " 0 1 0 " + self.radius + " 0.00001";
+	    return path;
+	  };
+	
+	  self.ellipse.type = function () {
+	    return self.ellipse;
+	  };
+	
+	  self.ellipse.size = function (attr) {
+	
+	    if (_.isNumber(attr)) {
+	      self.size = attr;
+	      self.radius = Math.sqrt(1.25 * attr / Math.PI);
+	      return self.ellipse;
+	    }
+	
+	    return self.size;
+	  };
+	
+	  self.ellipse.size(64);
+	
+	  return self.ellipse;
+	};
 	
 	var hivtrace_generate_svg_polygon = function hivtrace_generate_svg_polygon() {
 	
@@ -3437,6 +3610,8 @@ webpackJsonp([0],{
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {'use strict';
 	
+	var download = __webpack_require__(45);
+	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $('#modal-error-msg').text(msg);
 	  $('#errorModal').modal();
@@ -3457,7 +3632,13 @@ webpackJsonp([0],{
 	    ctx.fillRect(0, 0, canvas.width, canvas.height);
 	    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 	
-	    canvas.toBlob(onsuccess);
+	    if (canvas.msToBlob) {
+	      var blob = canvas.msToBlob(onsuccess);
+	      onsuccess(blob);
+	      window.navigator.msSaveBlob(blob, 'image.png');
+	    } else {
+	      canvas.toBlob(onsuccess);
+	    }
 	  };
 	
 	  img.src = b64;
@@ -3582,9 +3763,11 @@ webpackJsonp([0],{
 	  var to_download = [doctype + source];
 	  var image_string = 'data:image/svg+xml;base66,' + encodeURIComponent(to_download);
 	
-	  if (type == "png") {
+	  if (navigator.msSaveBlob) {
+	    // IE10
+	    download(image_string, "image.svg", "image/svg+xml");
+	  } else if (type == "png") {
 	    b64toBlob(image_string, function (blob) {
-	
 	      var url = window.URL.createObjectURL(blob);
 	      var pom = document.createElement('a');
 	      pom.setAttribute('download', 'image.png');
@@ -3593,7 +3776,7 @@ webpackJsonp([0],{
 	      pom.click();
 	      pom.remove();
 	    }, function (error) {
-	      // handle error
+	      console.log(error);
 	    });
 	  } else {
 	    var pom = document.createElement('a');
@@ -3944,6 +4127,180 @@ webpackJsonp([0],{
 /***/ 45:
 /***/ (function(module, exports, __webpack_require__) {
 
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
+	// v1 landed a FF+Chrome compat way of downloading strings to local un-named files, upgraded to use a hidden frame and optional mime
+	// v2 added named files via a[download], msSaveBlob, IE (10+) support, and window.URL support for larger+faster saves than dataURLs
+	// v3 added dataURL and Blob Input, bind-toggle arity, and legacy dataURL fallback was improved with force-download mime and base64 support. 3.1 improved safari handling.
+	// v4 adds AMD/UMD, commonJS, and plain browser support
+	// v4.1 adds url download capability via solo URL argument (same domain/CORS only)
+	// v4.2 adds semantic variable names, long (over 2MB) dataURL support, and hidden by default temp anchors
+	// https://github.com/rndme/download
+	
+	(function (root, factory) {
+		if (true) {
+			// AMD. Register as an anonymous module.
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+		} else if (typeof exports === 'object') {
+			// Node. Does not work with strict CommonJS, but
+			// only CommonJS-like environments that support module.exports,
+			// like Node.
+			module.exports = factory();
+		} else {
+			// Browser globals (root is window)
+			root.download = factory();
+	  }
+	}(this, function () {
+	
+		return function download(data, strFileName, strMimeType) {
+	
+			var self = window, // this script is only for browsers anyway...
+				defaultMime = "application/octet-stream", // this default mime also triggers iframe downloads
+				mimeType = strMimeType || defaultMime,
+				payload = data,
+				url = !strFileName && !strMimeType && payload,
+				anchor = document.createElement("a"),
+				toString = function(a){return String(a);},
+				myBlob = (self.Blob || self.MozBlob || self.WebKitBlob || toString),
+				fileName = strFileName || "download",
+				blob,
+				reader;
+				myBlob= myBlob.call ? myBlob.bind(self) : Blob ;
+		  
+			if(String(this)==="true"){ //reverse arguments, allowing download.bind(true, "text/xml", "export.xml") to act as a callback
+				payload=[payload, mimeType];
+				mimeType=payload[0];
+				payload=payload[1];
+			}
+	
+	
+			if(url && url.length< 2048){ // if no filename and no mime, assume a url was passed as the only argument
+				fileName = url.split("/").pop().split("?")[0];
+				anchor.href = url; // assign href prop to temp anchor
+			  	if(anchor.href.indexOf(url) !== -1){ // if the browser determines that it's a potentially valid url path:
+	        		var ajax=new XMLHttpRequest();
+	        		ajax.open( "GET", url, true);
+	        		ajax.responseType = 'blob';
+	        		ajax.onload= function(e){ 
+					  download(e.target.response, fileName, defaultMime);
+					};
+	        		setTimeout(function(){ ajax.send();}, 0); // allows setting custom ajax headers using the return:
+				    return ajax;
+				} // end if valid url?
+			} // end if url?
+	
+	
+			//go ahead and download dataURLs right away
+			if(/^data:([\w+-]+\/[\w+.-]+)?[,;]/.test(payload)){
+			
+				if(payload.length > (1024*1024*1.999) && myBlob !== toString ){
+					payload=dataUrlToBlob(payload);
+					mimeType=payload.type || defaultMime;
+				}else{			
+					return navigator.msSaveBlob ?  // IE10 can't do a[download], only Blobs:
+						navigator.msSaveBlob(dataUrlToBlob(payload), fileName) :
+						saver(payload) ; // everyone else can save dataURLs un-processed
+				}
+				
+			}else{//not data url, is it a string with special needs?
+				if(/([\x80-\xff])/.test(payload)){			  
+					var i=0, tempUiArr= new Uint8Array(payload.length), mx=tempUiArr.length;
+					for(i;i<mx;++i) tempUiArr[i]= payload.charCodeAt(i);
+				 	payload=new myBlob([tempUiArr], {type: mimeType});
+				}		  
+			}
+			blob = payload instanceof myBlob ?
+				payload :
+				new myBlob([payload], {type: mimeType}) ;
+	
+	
+			function dataUrlToBlob(strUrl) {
+				var parts= strUrl.split(/[:;,]/),
+				type= parts[1],
+				decoder= parts[2] == "base64" ? atob : decodeURIComponent,
+				binData= decoder( parts.pop() ),
+				mx= binData.length,
+				i= 0,
+				uiArr= new Uint8Array(mx);
+	
+				for(i;i<mx;++i) uiArr[i]= binData.charCodeAt(i);
+	
+				return new myBlob([uiArr], {type: type});
+			 }
+	
+			function saver(url, winMode){
+	
+				if ('download' in anchor) { //html5 A[download]
+					anchor.href = url;
+					anchor.setAttribute("download", fileName);
+					anchor.className = "download-js-link";
+					anchor.innerHTML = "downloading...";
+					anchor.style.display = "none";
+					document.body.appendChild(anchor);
+					setTimeout(function() {
+						anchor.click();
+						document.body.removeChild(anchor);
+						if(winMode===true){setTimeout(function(){ self.URL.revokeObjectURL(anchor.href);}, 250 );}
+					}, 66);
+					return true;
+				}
+	
+				// handle non-a[download] safari as best we can:
+				if(/(Version)\/(\d+)\.(\d+)(?:\.(\d+))?.*Safari\//.test(navigator.userAgent)) {
+					if(/^data:/.test(url))	url="data:"+url.replace(/^data:([\w\/\-\+]+)/, defaultMime);
+					if(!window.open(url)){ // popup blocked, offer direct download:
+						if(confirm("Displaying New Document\n\nUse Save As... to download, then click back to return to this page.")){ location.href=url; }
+					}
+					return true;
+				}
+	
+				//do iframe dataURL download (old ch+FF):
+				var f = document.createElement("iframe");
+				document.body.appendChild(f);
+	
+				if(!winMode && /^data:/.test(url)){ // force a mime that will download:
+					url="data:"+url.replace(/^data:([\w\/\-\+]+)/, defaultMime);
+				}
+				f.src=url;
+				setTimeout(function(){ document.body.removeChild(f); }, 333);
+	
+			}//end saver
+	
+	
+	
+	
+			if (navigator.msSaveBlob) { // IE10+ : (has Blob, but not a[download] or URL)
+				return navigator.msSaveBlob(blob, fileName);
+			}
+	
+			if(self.URL){ // simple fast and modern way using Blob and URL:
+				saver(self.URL.createObjectURL(blob), true);
+			}else{
+				// handle non-Blob()+non-URL browsers:
+				if(typeof blob === "string" || blob.constructor===toString ){
+					try{
+						return saver( "data:" +  mimeType   + ";base64,"  +  self.btoa(blob)  );
+					}catch(y){
+						return saver( "data:" +  mimeType   + "," + encodeURIComponent(blob)  );
+					}
+				}
+	
+				// Blob but not URL support:
+				reader=new FileReader();
+				reader.onload=function(e){
+					saver(this.result);
+				};
+				reader.readAsDataURL(blob);
+			}
+			return true;
+		}; /* end download() */
+	}));
+
+
+/***/ }),
+
+/***/ 46:
+/***/ (function(module, exports, __webpack_require__) {
+
 	'use strict';
 	
 	var d3 = __webpack_require__(39),
@@ -4013,7 +4370,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 46:
+/***/ 47:
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4060,9 +4417,9 @@ webpackJsonp([0],{
 	    top: 10,
 	    right: 30,
 	    bottom: 50,
-	    left: 30
+	    left: 10
 	  },
-	      width = w - margin.left - margin.right,
+	      width = w - margin.right,
 	      height = h - margin.top - margin.bottom;
 	
 	  var histogram_svg = d3.select(id).selectAll("svg");
@@ -4075,11 +4432,17 @@ webpackJsonp([0],{
 	
 	    var histogram_data = d3.layout.histogram()(data);
 	
-	    var x = d3.scale.linear().domain(d3.extent(data)).range([0, width]);
+	    var x = d3.scale.linear().domain(d3.extent(data));
 	
 	    var y = d3.scale.linear().domain([0, d3.max(_.map(histogram_data, function (b) {
 	      return b.y;
 	    }))]).range([height, 0]);
+	
+	    margin.left += 10 * Math.ceil(Math.log10(y.domain()[1]));
+	    width -= margin.left;
+	    x.range([0, width]);
+	
+	    console.log();
 	
 	    var xAxis = d3.svg.axis().scale(x).orient("bottom");
 	
@@ -4113,9 +4476,9 @@ webpackJsonp([0],{
 	
 	    x_axis.selectAll("text").attr("transform", "rotate(45)").attr("dx", "1em").attr("dy", "0.5em");
 	
-	    var y_axis = histogram_svg.append("g").attr("class", "y axis"
+	    var y_axis = histogram_svg.append("g").attr("class", "y axis")
 	    //.attr("transform", "translate(0," + height + ")")
-	    ).call(yAxis);
+	    .call(yAxis);
 	  }
 	}
 	
