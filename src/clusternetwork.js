@@ -66,22 +66,6 @@ var _networkPresetColorSchemes = {
 };
 
 
-/*
-var d3_category10 = [
-  0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd,
-  0x8c564b, 0xe377c2, 0x7f7f7f, 0xbcbd22, 0x17becf
-].map(d3_rgbString);
-*/
-/*
-
-current_gender
-{'Male':'square','Female':'ellipse','Transgender-Male to Female':'hexagon','Transgender-Female to Male':'pentagon','Additional Gender Identity':'diamond','Unknown':'diamond','Missing':'diamond','':'diamond'}
-
-race
-{'Asian':'hexagon','Black/African American':'square','Hispanic/Latino':'triangle','American Indian/Alaska Native':'pentagon','Native Hawaiian/Other Pacific Islander':'octagon','Unknown race':'diamond','White':'ellipse'}
-
-
-*/
 var _networkPresetShapeSchemes = {
   'birth_sex' : {
     'Male':'square',
@@ -173,8 +157,13 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   /** this array contains fields that will be appended to node pop-overs in the network tab
       they will precede all the fields that are shown based on selected labeling */
 
+  self.minimum_cluster_size = 0;
+
   if (self._is_CDC_) {
     self._additional_node_pop_fields.push('hiv_aids_dx_dt');
+    self.minimum_cluster_size = 5;
+  } else {
+    self.minimum_cluster_size = 0;
   }
 
   self._networkPredefinedAttributeTransforms = {
@@ -253,69 +242,6 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     }
   };
 
-  var cluster_mapping = {},
-    l_scale = 5000, // link scale
-    graph_data = self.json, // the raw JSON network object
-    max_points_to_render = 1024,
-    warning_string = "",
-    singletons = 0,
-    open_cluster_queue = [],
-    currently_displayed_objects,
-    gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
-
-  /*------------ D3 globals and SVG elements ---------------*/
-
-  var network_layout = d3.layout.force()
-    .on("tick", tick)
-    .charge(function(d) {
-      if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
-      return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
-    })
-    .linkDistance(function(d) {
-      return Math.max(d.length, 0.005) * l_scale;
-    })
-    .linkStrength(function(d) {
-      if (d.support !== undefined) {
-        return 2 * (0.5 - d.support);
-      }
-      return 1;
-    })
-    .chargeDistance(l_scale * 0.25)
-    .gravity(gravity_scale(json.Nodes.length))
-    .friction(0.25);
-
-  d3.select(self.container).selectAll(".my_progress").remove();
-
-
-  d3.select(self.container).selectAll("svg").remove();
-  self.node_table.selectAll("*").remove();
-  self.cluster_table.selectAll("*").remove();
-
-  var network_svg = d3.select(self.container).append("svg:svg")
-    //.style ("border", "solid black 1px")
-    .attr("id", "network-svg")
-    .attr("width", self.width + self.margin.left + self.margin.right)
-    .attr("height", self.height + self.margin.top + self.margin.bottom);
-
-  //.append("g")
-  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
-
-  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
-
-  network_svg.append("defs").append("marker")
-    .attr("id", "arrowhead")
-    .attr("refX", 9) /* there must be a smarter way to calculate shift*/
-    .attr("refY", 2)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 4)
-    .attr("orient", "auto")
-    .attr("stroke", "#666666")
-    .attr("fill", "#AAAAAA")
-    .append("path")
-    .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
-
-
-  change_window_size();
 
 
   /*------------ Network layout code ---------------*/
@@ -469,17 +395,19 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     var drawnNodes = [];
 
     self.clusters.forEach(function(x) {
-      // Check if hxb2_linked is in a child
-      var hxb2_exists = x.children.some(function(c) {
-        return c.hxb2_linked
-      }) && self.hide_hxb2;
-      if (!hxb2_exists) {
-        if (x.collapsed) {
-          graphMe.clusters.push(x);
-          graphMe.all.push(x);
-        } else {
-          expandedClusters[x.cluster_id] = true;
-        }
+      if (x.children.length >= self.minimum_cluster_size) {      
+          // Check if hxb2_linked is in a child
+          var hxb2_exists = x.children.some(function(c) {
+            return c.hxb2_linked
+          }) && self.hide_hxb2;
+          if (!hxb2_exists) {
+            if (x.collapsed) {
+              graphMe.clusters.push(x);
+              graphMe.all.push(x);
+            } else {
+              expandedClusters[x.cluster_id] = true;
+            }
+          }
       }
     });
 
@@ -579,7 +507,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       }
     }
   }
-
+  
   self.compute_adjacency_list = _.once(function() {
 
     self.nodes.forEach(function(n) {
@@ -1027,6 +955,11 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         self.update(true);
       }, 250));
 
+      $("#" + button_bar_ui + "_show_small_clusters").on("change", _.throttle(function(e) {
+        self.minimum_cluster_size = 5 - self.minimum_cluster_size;
+        self.update(false);
+      }, 250));
+
 
       $("#" + button_bar_ui + "_pairwise_table_pecentage").on("change", _.throttle(function(e) {
         self.show_percent_in_pairwise_table = !self.show_percent_in_pairwise_table;
@@ -1467,10 +1400,11 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
         exclude_cluster_ids[sorted_array[k][1]] = 1;
       }
+      
       warning_string = "Excluded " + (sorted_array.length -
           max_points_to_render) + " clusters (maximum size " +
         sorted_array[k - 1][0] + " nodes) because only " +
-        max_points_to_render + " points can be shown at once.";
+        max_points_to_render + " objects can be shown at once.";
     }
 
     // Initialize class attributes
@@ -3055,7 +2989,9 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   self.expand_some_clusters = function(subset) {
     subset = subset || self.clusters;
     subset.forEach(function(x) {
-      expand_cluster_handler(x, false);
+      if (!x.is_hidden) {
+        expand_cluster_handler(x, false);
+      }
     });
     self.update();
   }
@@ -3139,7 +3075,74 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
     }
   }
 
+  /*------------ Init code ---------------*/
+
+  var cluster_mapping = {},
+    l_scale = 5000, // link scale
+    graph_data = self.json, // the raw JSON network object
+    max_points_to_render = 1024,
+    warning_string = "",
+    singletons = 0,
+    open_cluster_queue = [],
+    currently_displayed_objects,
+    gravity_scale = d3.scale.pow().exponent(0.5).domain([1, 100000]).range([0.1, 0.15]);
+
+  /*------------ D3 globals and SVG elements ---------------*/
+
+  var network_layout = d3.layout.force()
+    .on("tick", tick)
+    .charge(function(d) {
+      if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
+      return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
+    })
+    .linkDistance(function(d) {
+      return Math.max(d.length, 0.005) * l_scale;
+    })
+    .linkStrength(function(d) {
+      if (d.support !== undefined) {
+        return 2 * (0.5 - d.support);
+      }
+      return 1;
+    })
+    .chargeDistance(l_scale * 0.25)
+    .gravity(gravity_scale(json.Nodes.length))
+    .friction(0.25);
+
+  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+  d3.select(self.container).selectAll("svg").remove();
+  self.node_table.selectAll("*").remove();
+  self.cluster_table.selectAll("*").remove();
+
+  var network_svg = d3.select(self.container).append("svg:svg")
+    //.style ("border", "solid black 1px")
+    .attr("id", "network-svg")
+    .attr("width", self.width + self.margin.left + self.margin.right)
+    .attr("height", self.height + self.margin.top + self.margin.bottom);
+
+  //.append("g")
+  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
+
+  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
+
+  network_svg.append("defs").append("marker")
+    .attr("id", "arrowhead")
+    .attr("refX", 9) /* there must be a smarter way to calculate shift*/
+    .attr("refY", 2)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 4)
+    .attr("orient", "auto")
+    .attr("stroke", "#666666")
+    .attr("fill", "#AAAAAA")
+    .append("path")
+    .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+
+
+  change_window_size();
+
   initial_json_load();
+  
+  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+
   if (options) {
     if (_.isNumber(options["charge"])) {
       self.charge_correction = options["charge"];
