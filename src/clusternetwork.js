@@ -51,10 +51,27 @@ var _networkPresetColorSchemes = {
     'Perinatal':'#ff7f00',
     'Other/Unknown-Child':'#ff7f00',
     'Other-Child':'#ff7f00'
-  }
+  },
+  'race' :
+    {'Asian':'#1f77b4',
+     'Black/African American':'#bcbd22',
+     'Hispanic/Latino':'#9467bd',
+     'American Indian/Alaska Native':'#2ca02c',
+     'Native Hawaiian/Other Pacific Islander':'#17becf',
+     'Multiple Races' : '#e377c2',
+     'Unknown race':'#999',
+     'Missing' : '#999',
+     'missing':'#999',
+     'White':'#d62728'}
 };
 
 
+/*
+var d3_category10 = [
+  0x1f77b4, 0xff7f0e, 0x2ca02c, 0xd62728, 0x9467bd,
+  0x8c564b, 0xe377c2, 0x7f7f7f, 0xbcbd22, 0x17becf
+].map(d3_rgbString);
+*/
 /*
 
 current_gender
@@ -197,7 +214,6 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
         .domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60", _networkMissing])
         .range(['#b10026','#e31a1c','#fc4e2a','#fd8d3c','#feb24c','#fed976','#ffffb2','#636363']);
       },
-
       'map': function(node) {
         var vl_value = attribute_node_value_by_id(node, 'age');
         if (vl_value == ">=60") {
@@ -1909,6 +1925,9 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       })
       .style("fill", function(d, i) {
         return d.rim ? self.colorizer['selected'](d.name) : (the_cluster["gradient"] ? 'url(#' + the_cluster["gradient"] + ')' : cluster_color(the_cluster, d.name));
+      })
+      .style ("stroke-linejoin", function (d,i) {
+        return draw_from.length > 1 ? "round" : "";
       })
       .style('display', function(d) {
         if (the_cluster.is_hidden) return 'none';
