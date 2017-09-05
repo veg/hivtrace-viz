@@ -49,9 +49,9 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       top: 10,
       right: 30,
       bottom: 50,
-      left: 30
+      left: 10
     },
-    width = w - margin.left - margin.right,
+    width = w - margin.right,
     height = h - margin.top - margin.bottom;
 
   var histogram_svg = d3.select(id).selectAll("svg");
@@ -63,19 +63,20 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
   if (data.length > 0) {
 
       var histogram_data = d3.layout.histogram()(data);
-
-
-
+    
       var x = d3.scale.linear()
-        .domain(d3.extent(data))
-        .range([0, width]);
+        .domain(d3.extent(data));
 
       var y = d3.scale.linear()
         .domain([0, d3.max(_.map(histogram_data, function(b) {
           return b.y
-        }))])
-        .range([height, 0]);
+        }))]).range([height, 0]);
+      
+      margin.left += 10*Math.ceil(Math.log10 (y.domain()[1]));
+      width -= margin.left;
+      x.range([0, width]);
 
+      console.log ();
 
       var xAxis = d3.svg.axis()
         .scale(x)

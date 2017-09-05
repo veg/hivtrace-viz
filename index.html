@@ -80,7 +80,8 @@
         <!-- Warning bar -->
         <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
           <div class="col-lg-12">
-            <div class="alert alert-info" id='main-warning' style='display:none;'></div>
+            <div class="alert alert-warning" id='main-warning' style='display:none;'>
+            </div>
           </div>
         </div>
 
@@ -128,14 +129,17 @@
                         </span>
                         <input type="text" class="form-control" placeholder="Text in attributes" id='network_ui_bar_filter' />
                         <span class="input-group-addon">
-                            <i class = "fa fa-question" id = "network_ui_search_help"></i>
-                        </span>
-                        <span class="input-group-addon">
                            Hide others <input type = 'checkbox' id = 'network_ui_bar_hide_filter'> </input>
                         </span>
+                        <span class="input-group-addon">
+                           Show small clusters <input type = 'checkbox' id = 'network_ui_bar_show_small_clusters'> </input>
+                        </span>
+                        <span class="input-group-addon">
+                            <a data-toggle="collapse" href="#network_ui_bar_legend" aria-expanded="false" aria-controls="network_ui_bar_legend">
+                            <i class = "fa fa-question"></i>
+                            </a>
+                       </span>
                     </div>
-
-
                   </div>
                 </div>
 
@@ -153,9 +157,8 @@
             </div>
 
             <!-- Legend SVG -->
-            <div class = "row" id= "network_ui_bar_legend" style = "margin-top : 0.25em">
-                <div class="alert alert-info alert-dismissible" role="alert"">
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <div class = "row collapse" id= "network_ui_bar_legend" style = "margin-top : 0.1em">
+                <div class="well">
                     <span class="label label-primary">Clusters</span> are shown as circles with thick rims
                         <svg width = "20" height = "20" style = "vertical-align: bottom; display: inline">
                             <circle cx = "10" cy = "10" r = "7" class = 'cluster'> </circle>
@@ -166,6 +169,27 @@
                      rendering options), with thin rims <svg width = "20" height = "20" style = "vertical-align: bottom; display: inline">
                             <circle cx = "10" cy = "10" r = "7" class = 'node'> </circle>
                         </svg>, and <em>area</em> scaling with the number of links.
+
+                        <p/>
+                        Type in text to search for clusters and nodes whose <em>attributes contain the term</em>. <br/>
+                        For example, typing in <code>MSM</code> will highlight nodes and/or clusters that 
+                        have 'MSM' in any of the data fields. <br/>
+                        Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <br/>
+                        Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <br/>
+                        Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <br/>
+                         <p/>
+                        Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><br/>
+                        Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
+                        <path d = 'M 2 14 A 12 12 0 0 1 14 2'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
+                        </svg><br/> 
+                        Cluster where 75% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
+                        <path d = 'M 2 14 A 12 12 0 1 1 14 26'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
+                        </svg>
+                        <p/>
+        
+                        Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms
+                        <br/>
+                        Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity
                </div>
             </div>
 
@@ -174,8 +198,8 @@
             <div id='network_tag'>
               <div class="my_progress">
                 <div class="progress-bar progress-bar-striped disabled" role="progressbar" aria-valuenow="100"
-                aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                  Please load a network
+                aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 50px">
+                  Loading the network
                 </div>
               </div>
             </div>
@@ -517,6 +541,8 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         <path d = 'M 2 14 A 12 12 0 1 1 14 26'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>\
         </svg><p/> \
         Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms\
+        <p/>\
+        Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity\
         </div>\
      "
     }
@@ -526,6 +552,10 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
 
   // *** HANDLERS ***
   $("#json_file").on ("change", function (e) {
+  
+    d3.selectAll(".my_progress").style("display", "block");
+
+  
     var files = e.target.files; // FileList object
 
     if (files.length == 1) {
