@@ -2318,11 +2318,15 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
           self.nodes[e.target].length_filter = true;
         }
       });
+    } else {
+      self.nodes.forEach(function(n) {
+        n.length_filter = false;
+      });    
     }
 
 
     self.clusters.forEach(function(c) {
-      c.match_filter = 0;
+       c.match_filter = 0;
     });
 
     self.nodes.forEach(function(n) {
@@ -2334,7 +2338,7 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       });
 
       did_match = did_match || n.length_filter;
-
+      
       if (did_match != n.match_filter) {
         n.match_filter = did_match;
         anything_changed = true;
