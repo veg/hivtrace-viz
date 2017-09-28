@@ -1622,9 +1622,14 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   function _node_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
+<<<<<<< Updated upstream
     
     
     var labels = [payload.length == 1 ? 
+=======
+
+    var labels = [payload.length == 1 ?
+>>>>>>> Stashed changes
       ["can't be shown", 1] :
       [payload[0] ? "hide" : "show", 0]
     ];
