@@ -2320,8 +2320,11 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
           self.nodes[e.target].length_filter = true;
         }
       });
+    } else {
+        self.nodes.forEach(function(n) {
+            n.length_filter = false;
+        });
     }
-
 
     self.clusters.forEach(function(c) {
       c.match_filter = 0;
