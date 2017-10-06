@@ -365,22 +365,26 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   };
 
-  function get_initial_xy(nodes, cluster_count) {
+  function get_initial_xy(nodes) {
+
+    // create clusters from nodes
+    var mapped_clusters = get_all_clusters(self.nodes);
+
     var d_clusters = {
       'id': 'root',
       'children': []
     };
-    for (var k = 0; k < cluster_count; k += 1) {
-      if (self.exclude_cluster_ids !== undefined && self.exclude_cluster_ids[k + 1] !== undefined) {
-        continue;
-      }
-      d_clusters.children.push({
-        'cluster_id': k + 1,
-        'children': nodes.filter(function(v) {
-          return v.cluster == k + 1;
-        })
-      });
+
+    // filter out clusters that are to be excluded
+    if(self.exclude_cluster_ids) {
+      mapped_clusters = _.omit(mapped_clusters, self.exclude_cluster_ids);
     }
+
+    d_clusters.children = _.map(mapped_clusters, (value, key) => { 
+      return { 'cluster_id' : key, 
+               'children': value
+              };
+    });
 
     var treemap = d3.layout.pack()
       .size([self.width, self.height])
@@ -393,10 +397,10 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
       });
 
     return treemap.nodes(d_clusters);
+
   }
 
   function prepare_data_to_graph() {
-
 
     var graphMe = {};
     graphMe.all = [];
@@ -455,7 +459,10 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
   }
 
   function default_layout(clusters, nodes) {
-    var init_layout = get_initial_xy(nodes, self.cluster_sizes.length);
+
+    // let's create an array of clusters from the json
+    var init_layout = get_initial_xy(nodes, clusters);
+
     clusters = init_layout.filter(function(v, i, obj) {
       return !(typeof v.cluster_id === "undefined");
     });
@@ -2679,17 +2686,28 @@ var hivtrace_cluster_network_graph = function(json, network_container, network_s
 
   /*------------ Cluster Methods ---------------*/
 
+  /* Creates a new object that groups nodes by cluster
+   * @param nodes
+   * @returns clusters
+   */
+  function get_all_clusters(nodes) {
+    var by_cluster = _.groupBy(nodes, "cluster")
+    return by_cluster;
+  }
+
   function compute_cluster_centroids(clusters) {
     for (var c in clusters) {
       var cls = clusters[c];
       cls.x = 0.;
       cls.y = 0.;
-      cls.children.forEach(function(x) {
-        cls.x += x.x;
-        cls.y += x.y;
-      });
-      cls.x /= cls.children.length;
-      cls.y /= cls.children.length;
+      if(_.has(cls, "children")) {
+        cls.children.forEach(function(x) {
+          cls.x += x.x;
+          cls.y += x.y;
+        });
+        cls.x /= cls.children.length;
+        cls.y /= cls.children.length;
+      }
     }
   }
 
