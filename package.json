@@ -34,7 +34,7 @@
     "style-loader": "^0.13.1",
     "uglify-js": "2.4.x",
     "url-loader": "^0.5.7",
-    "webpack": "^1.13.2"
+    "webpack": "^1.15.0"
   },
   "license": "ISC"
 }
