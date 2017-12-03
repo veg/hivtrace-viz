@@ -397,7 +397,7 @@ var init = function(data) {
   var graph = "trace_results" in data ? data.trace_results : data;
   var attributes = null;
 
-  var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container);
+  var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container, {"no_cdc" : true});
 
   if (user_graph.is_empty()) {
       $('#main-tab').tab('show');
