@@ -1,6 +1,7 @@
 {
   "name": "hivtrace-viz",
-  "version": "0.0.13",
+
+  "version": "0.0.14",
   "description": "Visualization for the popular HIV-TRACE package",
   "main": "dist/hivtrace.js",
   "dependencies": {
@@ -32,7 +33,7 @@
     "react-lazy-render": "0.3.0",
     "react-test-renderer": "^15.5.4",
     "style-loader": "^0.13.1",
-    "uglify-js": "2.4.x",
+    "uglify-js": "2.6.x",
     "url-loader": "^0.5.7",
     "webpack": "^1.15.0"
   },

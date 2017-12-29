@@ -1460,7 +1460,7 @@ var hivtrace_cluster_network_graph = function(
             if (d.type == "Number") {
               var values = _.filter(
                 _.map(graph_data.Nodes, function(nd) {
-                  return attribute_node_value_by_id(nd, k);
+                  return attribute_node_value_by_id(nd, k, true);
                 }),
                 function(v) {
                   return v == _networkMissing ? null : v;
@@ -1993,12 +1993,11 @@ var hivtrace_cluster_network_graph = function(
 
   function _node_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
-
-    var labels = [
+	var labels = [
       payload.length == 1
         ? ["can't be shown", 1]
         : [payload[0] ? "hide" : "show", 0]
-    ];
+	];
 
     var buttons = this_cell.selectAll("button").data(labels);
     buttons.enter().append("button");
@@ -3001,7 +3000,7 @@ var hivtrace_cluster_network_graph = function(
     }
 
     self.clusters.forEach(function(c) {
-      c.match_filter = 0;
+       c.match_filter = 0;
     });
 
     self.nodes.forEach(function(n) {
@@ -3015,7 +3014,7 @@ var hivtrace_cluster_network_graph = function(
       });
 
       did_match = did_match || n.length_filter;
-
+      
       if (did_match != n.match_filter) {
         n.match_filter = did_match;
         anything_changed = true;
@@ -3255,13 +3254,19 @@ var hivtrace_cluster_network_graph = function(
     }
   }
 
-  function attribute_node_value_by_id(d, id) {
+  function attribute_node_value_by_id(d, id, number) {
     if (_networkNodeAttributeID in d && id) {
       if (id in d[_networkNodeAttributeID]) {
         var v = d[_networkNodeAttributeID][id];
 
-        if (_.isString(v) && v.length == 0) {
-          return _networkMissing;
+        if (_.isString(v) ) {
+          if (v.length == 0) {
+            return _networkMissing;
+          } else {
+            if (number) {
+                return +v;
+            }
+          }
         }
         return v;
       }
@@ -3768,7 +3773,8 @@ var hivtrace_cluster_network_graph = function(
         var leftover =
           new_nodes + currently_displayed_objects - max_points_to_render;
         if (leftover > 0) {
-          for (k = 0; k < open_cluster_queue.length && leftover > 0; k++) {
+          var k = 0;
+          for (; k < open_cluster_queue.length && leftover > 0; k++) {
             var cluster =
               self.clusters[self.cluster_mapping[open_cluster_queue[k]]];
             leftover -= cluster.children.length - 1;
