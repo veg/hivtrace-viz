@@ -3107,10 +3107,10 @@ var hivtrace_cluster_network_graph = function(
     }
     if (network_warning_tag) {
       if (warning_string.length) {
-        d3
-          .select(network_warning_tag)
-          .text(warning_string)
-          .style("display", "block");
+        var warning_box = d3.select(network_warning_tag);
+          warning_box.selectAll ("div").remove();
+          warning_box.append ("div").text(warning_string)
+          warning_box.style("display", "block");
         warning_string = "";
       } else {
         d3.select(network_warning_tag).style("display", "none");
