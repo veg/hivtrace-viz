@@ -90,12 +90,19 @@ path.cluster, circle.cluster {
   stroke-width: 1.5px;
 }
 
+.core-link {
+  stroke: #d9534f !important;
+  stroke-width: 3px !important;
+}
+
 .unsupported, .line {
   fill: none;
   stroke: red;
   stroke-width: 1.5px;
   stroke-dasharray: 2,2;
 }
+
+
 
 .chord path {
   fill-opacity: .67;
