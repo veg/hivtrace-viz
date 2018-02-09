@@ -313,7 +313,8 @@ var hivtrace_cluster_network_graph = function(
                           });
                       },
                 'value' : function () {
-                    return [node.recent_core ? "Recent" : null, node.priority_flag ? "Rapid" : null];
+                    return [node.recent_core ? "Recent (" + node.parent.cluster_id + "_" + node.recent_core_subcluster + ")" : null, 
+                            node.priority_flag ? " Rapid" : null];
                 }
             }
           }
@@ -438,7 +439,18 @@ var hivtrace_cluster_network_graph = function(
       }         
     },
 
-    
+    recent_rapid_subcluster : {
+       depends: "hiv_aids_dx_dt",
+       label: "Recent/Rapid subcluster",
+       type : "String",
+
+       map: function(node) {
+         if (node.recent_core) {
+            return node.recent_core_subcluster;
+         } 
+         return "None";
+      }         
+    },   
     age_dx: {
       depends: "age",
       label: "age_dx",
@@ -959,54 +971,75 @@ var hivtrace_cluster_network_graph = function(
   
   function annotate_priority_clusters (date_field, span_months, recent_months) {
   
-    var filter_by_date = function (cutoff, n) {
-        var node_dx = attribute_node_value_by_id (n, date_field);
-        if (node_dx instanceof Date) {
-            return node_dx >= cutoff;
-        } else {
-            node_dx = self._parse_dates(attribute_node_value_by_id(n, date_field));
+    try {
+        var filter_by_date = function (cutoff, n) {
+            var node_dx = attribute_node_value_by_id (n, date_field);
             if (node_dx instanceof Date) {
                 return node_dx >= cutoff;
-            } 
-        }
-        return false;
-    };
+            } else {
+                node_dx = self._parse_dates(attribute_node_value_by_id(n, date_field));
+                if (node_dx instanceof Date) {
+                    return node_dx >= cutoff;
+                } 
+            }
+            return false;
+        };
   
-    var cutoff_long = new Date();
-    cutoff_long.setTime (cutoff_long.getTime () - span_months * 30 * 24 * 3600000);
-    var cutoff_short = new Date();
-    cutoff_short.setTime (cutoff_short.getTime () - recent_months * 30 * 24 * 3600000);
+        var cutoff_long = new Date();
+        cutoff_long.setTime (cutoff_long.getTime () - span_months * 30 * 24 * 3600000);
+        var cutoff_short = new Date();
+        cutoff_short.setTime (cutoff_short.getTime () - recent_months * 30 * 24 * 3600000);
+        
+        var compare_nodes = function (n1,n2) {
+                        var node1_dx = attribute_node_value_by_id (n1, date_field);
+                        var node2_dx = attribute_node_value_by_id (n2, date_field);
+                        
+                        if (node1_dx == node2_dx) {
+                            return n1.id < n2.id ? -1 : 1;
+                        } else {
+                            return node1_dx < node2_dx ? -1 : 1;
+                        }
+                        return 0;
+                    };
   
-    _.each (self.clusters, function (cluster) {   
+        _.each (self.clusters, function (cluster) {   
     
-        var cluster_json = _extract_single_cluster (_.filter (cluster.children, _.partial (filter_by_date, cutoff_long)), null, true);
+    
+            var cluster_json = _extract_single_cluster (_.filter (cluster.children, _.partial (filter_by_date, cutoff_long)), null, true);
                                                     
-          var priority_cluster = _hivtrace_cluster_depthwise_traversal (
-            cluster_json.Nodes, 
-            _.filter (cluster_json.Edges, function (e) {return e.length <= 0.005;
-            }));
-      
-          cluster.priority_cluster_count = d3.sum (_.map (priority_cluster, function (c) {
-            if (c.length > 1) {
+              var priority_cluster = _.filter (_hivtrace_cluster_depthwise_traversal (
+                cluster_json.Nodes, 
+                _.filter (cluster_json.Edges, function (e) {return e.length <= 0.005;
+                })), function (cc) {return cc.length > 1;});
+                
+                
+              _.each (priority_cluster, function (c) {
+                    c.sort (compare_nodes);
+              });
+              
+              priority_cluster.sort (function (c1, c2) {
+                return compare_nodes (c1[0], c2[0])
+              });
+ 
+              cluster.priority_cluster_count = d3.sum (_.map (priority_cluster, function (c, i) {
                 _.each (c, function (n) {
                     n.recent_core = true;
+                    n.recent_core_subcluster = i + 1;
                 });
                 return c.length;
-            }
-            return 0;
-          }));
+              }));
           
-          cluster.priority_cluster_count_growth = d3.sum (_.map (priority_cluster, function (c) {
-            if (c.length > 1) {
-                var priority = _.filter (c,  _.partial (filter_by_date, cutoff_short));
-               _.each (priority, function (n) {
-                    n.priority_flag = true;
-                });                
-                return priority.length;
-            }
-            return 0;
-          }));
-    });
+              cluster.priority_cluster_count_growth = d3.sum (_.map (priority_cluster, function (c) {
+                    var priority = _.filter (c,  _.partial (filter_by_date, cutoff_short));
+                   _.each (priority, function (n) {
+                        n.priority_flag = true;
+                    });                
+                    return priority.length;
+               }));
+        });
+    } catch (err) {
+        return;
+    }
   }
 
   function default_layout(packed) {
