@@ -118,6 +118,11 @@
                       <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='opacity_invert'>Invert</button>
                     </div>
 
+                   <div class="input-group-btn" style = 'display: none' data-hivtrace-ui-role='extra_operations_enclosure'>
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                      data-hivtrace-ui-role="extra_label">Action <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='extra_operations_container'></ul>
+                    </div>
 
                     <div class="input-group input-group-sm">
                         <span class="input-group-addon">
@@ -433,7 +438,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "./test/SF.json";
+  //url = "./test/SF.json";
+  url = "./example.json"
 
   d3.json(url, function(results) {
     init(results);
