@@ -66,7 +66,7 @@
    </div>
   <div class="tabbable">
     <ul class="nav nav-tabs" id="top_level_tab_container">
-      <li class="active" id="main-tab"><a href="#trace-results" data-toggle="tab">Network</a></li>
+      <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
       <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
       <li class='disabled' id="graph-tab"><a href="#trace-graph" data-toggle="tab">Statistics</a></li>
       <li class='disabled' id="clusters-tab"><a href="#trace-clusters" data-toggle="tab">Clusters</a></li>
@@ -75,64 +75,65 @@
       <li class='disabled'><a href="#trace-settings" data-toggle="tab">Settings</a></li>
     </ul>
 
-    <div class="tab-content">
+    <div class="tab-content" id = "top_level_tab_content">
       <div id="trace-results" class="tab-pane active">
         <!-- Warning bar -->
         <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
           <div class="col-lg-12">
-            <div class="alert alert-warning" id='main-warning' style='display:none;'>
+            <div class="alert alert-warning alert-dismissible" id='main-warning' style='display:none;'>
+             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
           </div>
         </div>
 
-        <div class="row">
+        <div class="row" data-hivtrace = "cluster-clone">
           <div class='col-lg-12'>
             <div class="nav-trace">
-              <div class="input-group input-group-sm" id='network_ui_bar'>
+              <div class="input-group input-group-sm">
 
                 <!-- UI Bar -->
                 <div class="nav-trace">
-                  <div class="input-group input-group-sm" id='network_ui_bar'>
-                    <div class="input-group-btn" id='network_ui_bar_button_group'></div>
+                  <div class="input-group input-group-sm" id = 'network_ui_bar' data-hivtrace-button-bar = 'yes'>
+                    <div class="input-group-btn" data-hivtrace-ui-role = 'button_group'></div>
                     <span class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id = "network_ui_bar_cluster_operations_button">Clusters <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" id='network_ui_bar_cluster_operations_container'></ul>
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role = "cluster_operations_button">Clusters <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='cluster_operations_container'></ul>
                     </span>
                     <div class="input-group-btn">
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      id="network_ui_bar_attributes_label">Color <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" id='network_ui_bar_attributes'></ul>
-                      <button type="button" class="btn btn-default" style = 'display:none' id='network_ui_bar_attributes_invert'>Invert</button>
+                      data-hivtrace-ui-role = "attributes_label">Color <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='attributes'></ul>
+                      <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='attributes_invert'>Invert</button>
                     </div>
                     <div class="input-group-btn">
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      id="network_ui_bar_shapes_label">Shape <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" id='network_ui_bar_shapes'></ul>
+                      data-hivtrace-ui-role="shapes_label">Shape <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='shapes'></ul>
                     </div>
 
                     <div class="input-group-btn">
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      id="network_ui_bar_opacity_label">Opacity <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" id='network_ui_bar_opacity'></ul>
-                      <button type="button" class="btn btn-default" style = 'display:none' id='network_ui_bar_opacity_invert'>Invert</button>
+                      data-hivtrace-ui-role="opacity_label">Opacity <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='opacity'></ul>
+                      <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='opacity_invert'>Invert</button>
                     </div>
 
-                    <!--<div class="input-group-btn">
+                   <div class="input-group-btn" style = 'display: none' data-hivtrace-ui-role='extra_operations_enclosure'>
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      id="network_ui_bar_times_label">Time <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" id='network_ui_bar_times'></ul>
-                    </div>-->
+                      data-hivtrace-ui-role="extra_label">Action <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='extra_operations_container'></ul>
+                    </div>
 
                     <div class="input-group input-group-sm">
                         <span class="input-group-addon">
                             <i class = "fa fa-search" ></i>
                         </span>
-                        <input type="text" class="form-control" placeholder="Text in attributes" id='network_ui_bar_filter' />
+                        <input type="text" class="form-control" placeholder="Text in attributes" data-hivtrace-ui-role='filter' />
                         <span class="input-group-addon">
-                           Hide others <input type = 'checkbox' id = 'network_ui_bar_hide_filter'> </input>
+                           Hide others <input type = 'checkbox' data-hivtrace-ui-role = 'hide_filter'> </input>
                         </span>
                         <span class="input-group-addon">
-                           Show small clusters <input type = 'checkbox' id = 'network_ui_bar_show_small_clusters'> </input>
+                           Show small clusters <input type = 'checkbox' data-hivtrace-ui-role = 'show_small_clusters'> </input>
                         </span>
                         <span class="input-group-addon">
                             <a data-toggle="collapse" href="#network_ui_bar_legend" aria-expanded="false" aria-controls="network_ui_bar_legend">
@@ -157,7 +158,7 @@
             </div>
 
             <!-- Legend SVG -->
-            <div class = "row collapse" id= "network_ui_bar_legend" style = "margin-top : 0.1em">
+            <div class = "row collapse" id= "network_ui_bar_legend" style = "margin-top : 0.1em" data-hivtrace = "cluster-clone">
                 <div class="well">
                     <span class="label label-primary">Clusters</span> are shown as circles with thick rims
                         <svg width = "20" height = "20" style = "vertical-align: bottom; display: inline">
@@ -270,32 +271,16 @@
     <div id="trace-clusters" class="tab-pane">
       <div class='row'>
         <div class='col-lg-12'>
-            <div class="modal fade" id="network_ui_bar_cluster_zoom" tabindex="-1" role="dialog">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content" id = "network_ui_bar_cluster_zoom_body">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Viewing cluster X</h4>
-                  </div>
-                  <div class="modal-body" id = "network_ui_bar_cluster_zoom_svg">
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <div class="modal fade" id="network_ui_bar_cluster_list" tabindex="-1" role="dialog">
+            <div class="modal fade" data-hivtrace-ui-role="cluster_list" tabindex="-1" role="dialog">
               <div class="modal-dialog" role="document">
-                <div class="modal-content" id = "network_ui_bar_cluster_list_body">
+                <div class="modal-content" data-hivtrace-ui-role = "cluster_list_body">
                   <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <h4 class="modal-title">Listing nodes in cluster X</h4>
-                     <button type="button" id = "network_ui_bar_cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'id'>Group by attribute</button>
+                     <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'id'>Group by attribute</button>
                  </div>
-				  <ul id = 'network_ui_bar_cluster_list_payload' class = 'list-unstyled'>
+				  <ul data-hivtrace-ui-role = 'cluster_list_payload' class = 'list-unstyled'>
 				  </ul>
                   <div class="modal-footer">
                     <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
@@ -327,23 +312,23 @@
     <div id="trace-attributes" class="tab-pane">
       <div class='row'>
         <div class="nav-trace">
-          <div class="input-group input-group-sm" id='network_ui_bar_attributes_container'>
+          <div class="input-group input-group-sm" data-hivtrace-ui-role ='attributes_container'>
             <span class="input-group-btn">
                           Categorical
-                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id = "network_ui_bar_attributes_cat_label">Attributes <span class="caret"></span></button>
-            <ul class="dropdown-menu" role="menu" id='network_ui_bar_attributes_cat'></ul>
+                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role = "attributes_cat_label">Attributes <span class="caret"></span></button>
+            <ul class="dropdown-menu" role="menu"  data-hivtrace-ui-role='attributes_cat'></ul>
             </span>
           </div>
         </div>
-        <div class='col-lg-6' id = "network_ui_bar_aux_svg_holder_enclosed" style = 'display: none'>
+        <div class='col-lg-6'  data-hivtrace-ui-role = "aux_svg_holder_enclosed" style = 'display: none'>
             <div class = "row">
 				<button type="button" class="btn btn-info" id = "network_pairwise_chord_legend"><i class = "fa fa-question"></i></button>
             </div>
 
-              <div id='network_ui_bar_aux_svg_holder' class='row style = margin-left: 5px'>
-                  </div>
-              </div>
-        <div class='col-lg-6 ' id = 'network_ui_bar_attribute_table_enclosed' style = 'display: none'>
+              <div  data-hivtrace-ui-role ='aux_svg_holder' class='row style = margin-left: 5px'>
+             </div>
+        </div>
+        <div class='col-lg-6 '  data-hivtrace-ui-role = 'attribute_table_enclosed' style = 'display: none'>
             <div class = "row">
             	 <div class = "col-lg-2">
             	 <div class="input-group input-group-sm" >
@@ -351,13 +336,13 @@
 						<i class = "fa fa-question"></i></button>
 					</span>
 						<span class="input-group-addon">
-                           Show as % <input type = 'checkbox' id = 'network_ui_bar_pairwise_table_pecentage'> </input>
+                           Show as % <input type = 'checkbox'  data-hivtrace-ui-role = 'pairwise_table_pecentage'> </input>
                         </span>
     				 </div>
     			  </div>
             </div>
             <div class = "row">
-                   <table class = "table table-striped table-condensed table-hover" id = "network_ui_bar_attribute_table">
+                   <table class = "table table-striped table-condensed table-hover" data-hivtrace-ui-role = "attribute_table">
                    </table>
               </div>
           </div>
@@ -397,7 +382,7 @@ var init = function(data) {
   var graph = "trace_results" in data ? data.trace_results : data;
   var attributes = null;
 
-  var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container, {"no_cdc" : true});
+  var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container, {"no_cdc" : false});
 
   if (user_graph.is_empty()) {
       $('#main-tab').tab('show');
@@ -445,7 +430,7 @@ var init = function(data) {
         d3.select ("#lanl-trace-results").classed ("disabled", false);
 
         var lanl_graph = data.lanl_trace_results;
-        var lanl_graph_rendered = new hivtrace.cluster_network_graph(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
+        var lanl_graph_rendered = new hivtrace.clusterNetwork(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
       }
    }
 }
@@ -453,7 +438,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "./example.json";
+  //url = "./test/SF.json";
+  url = "./example.json"
 
   d3.json(url, function(results) {
     init(results);
@@ -555,7 +541,6 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
   
     d3.selectAll(".my_progress").style("display", "block");
 
-  
     var files = e.target.files; // FileList object
 
     if (files.length == 1) {
