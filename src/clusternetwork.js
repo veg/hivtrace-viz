@@ -239,6 +239,7 @@ var hivtrace_cluster_network_graph = function(
   self.cluster_sizes = [];
   self.cluster_mapping = {};
   self.percent_format = _defaultPercentFormat;
+  self.missing = _networkMissing;
   
   self.dom_prefix = options && options ['prefix'] ? options ['prefix'] : "hiv-trace";
   self.extra_cluster_table_columns = options && options ['cluster-table-columns'] ? options ['cluster-table-columns'] :
@@ -534,7 +535,11 @@ var hivtrace_cluster_network_graph = function(
       }
     }
   };
-  
+ 
+  if (options && options ["computed-attributes"]) {
+    _.extend (self._networkPredefinedAttributeTransforms, options ["computed-attributes"]);
+  }
+ 
   self._parse_dates = function (value) {
   
     if (value instanceof Date) {
@@ -1860,7 +1865,7 @@ var hivtrace_cluster_network_graph = function(
           _.extend(graph_data[_networkGraphAttrbuteID], extension);
           inject_attribute_description (key, computed);
           _.each(graph_data.Nodes, function(node) {
-            inject_attribute_node_value_by_id(node, key, computed["map"](node));
+            inject_attribute_node_value_by_id(node, key, computed["map"](node, self));
           });
         }
       });
@@ -1899,6 +1904,7 @@ var hivtrace_cluster_network_graph = function(
             );
           }
         );
+        
 
         var valid_shapes = _.filter(valid_cats, function(d) {
           return (
@@ -3507,7 +3513,7 @@ var hivtrace_cluster_network_graph = function(
         if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
           self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
             cat_id
-          ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id]);
+          ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
         } else {
           self.colorizer["category"] = d3.scale
             .ordinal()
@@ -3909,13 +3915,10 @@ var hivtrace_cluster_network_graph = function(
 
 
   function inject_attribute_description(key,d) {
-    //console.log ("Injecting " + id + " with value " + value);
     if (_networkGraphAttrbuteID in self.json) {
-        _.extend (self.json[_networkGraphAttrbuteID], {
-            key : d
-        });
-        
-        self.json[_networkGraphAttrbuteID], d;
+        var new_attr = {};
+        new_attr[key] = d;    
+        _.extend (self.json[_networkGraphAttrbuteID], new_attr);
     }
   }
     function node_size(d) {
