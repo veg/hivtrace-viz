@@ -25,7 +25,8 @@ var _defaultPercentFormat = d3.format(",.3p");
 var _defaultDateFormats = [d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"), d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")];
 var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
 var _defaultDateViewFormatShort = d3.time.format("%B %Y");
-var _networkCategorical = [
+
+var _networkCategoricalBase = [
   "#a6cee3",
   "#1f78b4",
   "#b2df8a",
@@ -39,6 +40,15 @@ var _networkCategorical = [
   "#ffff99",
   "#b15928"
 ];
+
+var _networkCategorical = [];
+
+_.each ([0,-0.5,0.5], function (k) {
+    _.each (_networkCategoricalBase, function (s) {
+        _networkCategorical.push (d3.rgb(s).darker (k).toString());
+    });
+});
+
 var _maximumValuesInCategories = _networkCategorical.length;
 
 var _networkSequentialColor = {
@@ -239,6 +249,7 @@ var hivtrace_cluster_network_graph = function(
   self.cluster_sizes = [];
   self.cluster_mapping = {};
   self.percent_format = _defaultPercentFormat;
+  self.missing = _networkMissing;
   
   self.dom_prefix = options && options ['prefix'] ? options ['prefix'] : "hiv-trace";
   self.extra_cluster_table_columns = options && options ['cluster-table-columns'] ? options ['cluster-table-columns'] :
@@ -372,6 +383,13 @@ var hivtrace_cluster_network_graph = function(
   } else {
     self.core_link_length  = -1.;   
   }
+  
+  if (options && "edge-styler" in options) {
+    self.additional_edge_styler = options["edge-styler"];
+  } else {
+    self.additional_edge_styler = null;
+  }
+  
   
   self.filter_by_size = function(cluster) {
     return cluster.children.length >= self.minimum_cluster_size;
@@ -534,7 +552,11 @@ var hivtrace_cluster_network_graph = function(
       }
     }
   };
-  
+ 
+  if (options && options ["computed-attributes"]) {
+    _.extend (self._networkPredefinedAttributeTransforms, options ["computed-attributes"]);
+  }
+ 
   self._parse_dates = function (value) {
   
     if (value instanceof Date) {
@@ -728,7 +750,11 @@ var hivtrace_cluster_network_graph = function(
     // show the new tab
     $(new_link).tab('show');
     
-    var cluster_options = {"no_cdc" : options && options["no_cdc"], "minimum size" : 0, "secondary": true, "prefix" : random_prefix, "extra_menu" : options && options ["extra_menu"]};
+    var cluster_options = {"no_cdc" : options && options["no_cdc"], "minimum size" : 0, "secondary": true, "prefix" : random_prefix, 
+        "extra_menu" : (options && "extra_menu" in options) ? options ["extra_menu"] : null , 
+        "edge-styler" : (options && "edge-styler" in options) ? options ["edge-styler"] : null };
+        
+            
     if (option_extras) {
         _.extend (cluster_options, option_extras);
     }
@@ -803,6 +829,17 @@ var hivtrace_cluster_network_graph = function(
         .on("click", function(d) {
           node.fixed = 0;
           collapse_cluster_handler(node, true);
+          menu_object.style("display", "none");
+        });
+        
+      menu_object
+        .append("li")
+        .append("a")
+        .attr("tabindex", "-1")
+        .text("Show sequences used to make cluster")
+        .on("click", function(d) {
+          node.fixed = 0;
+          show_sequences_in_cluster (node, true);
           menu_object.style("display", "none");
         });
 
@@ -1860,7 +1897,7 @@ var hivtrace_cluster_network_graph = function(
           _.extend(graph_data[_networkGraphAttrbuteID], extension);
           inject_attribute_description (key, computed);
           _.each(graph_data.Nodes, function(node) {
-            inject_attribute_node_value_by_id(node, key, computed["map"](node));
+            inject_attribute_node_value_by_id(node, key, computed["map"](node, self));
           });
         }
       });
@@ -1899,6 +1936,7 @@ var hivtrace_cluster_network_graph = function(
             );
           }
         );
+        
 
         var valid_shapes = _.filter(valid_cats, function(d) {
           return (
@@ -3507,7 +3545,7 @@ var hivtrace_cluster_network_graph = function(
         if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
           self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
             cat_id
-          ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id]);
+          ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
         } else {
           self.colorizer["category"] = d3.scale
             .ordinal()
@@ -3700,8 +3738,15 @@ var hivtrace_cluster_network_graph = function(
           //console.log (d["length"] <= self.core_link_length);
           return d["length"] <= self.core_link_length ;
           //return false;
-        })
-       .on("mouseover", edge_pop_on)
+        });
+        
+      if (self.additional_edge_styler) {
+        link.each (function (d) {
+            self.additional_edge_styler (this, d, self);
+        });
+      }  
+        
+      link.on("mouseover", edge_pop_on)
         .on("mouseout", edge_pop_off)
         .filter(function(d) {
           return d.directed;
@@ -3881,6 +3926,7 @@ var hivtrace_cluster_network_graph = function(
 
   self.attribute_node_value_by_id = function (d, id, number) {
     if (_networkNodeAttributeID in d && id) {
+    
       if (id in d[_networkNodeAttributeID]) {
         var v = d[_networkNodeAttributeID][id];
 
@@ -3909,13 +3955,10 @@ var hivtrace_cluster_network_graph = function(
 
 
   function inject_attribute_description(key,d) {
-    //console.log ("Injecting " + id + " with value " + value);
     if (_networkGraphAttrbuteID in self.json) {
-        _.extend (self.json[_networkGraphAttrbuteID], {
-            key : d
-        });
-        
-        self.json[_networkGraphAttrbuteID], d;
+        var new_attr = {};
+        new_attr[key] = d;    
+        _.extend (self.json[_networkGraphAttrbuteID], new_attr);
     }
   }
     function node_size(d) {
@@ -4447,6 +4490,20 @@ var hivtrace_cluster_network_graph = function(
     }
     return "";
   }
+
+  function show_sequences_in_cluster(d) {
+    var sequences = new Object();
+    _.each (_extract_single_cluster(self.clusters[self.cluster_mapping[d.cluster]].children, null, true).Edges, function (e) {
+        _.each (e.sequences, function (s) {
+            if (!(s in sequences)){
+                sequences[s] = 1;
+            }
+        });
+    });
+    console.log (_.keys(sequences));
+    
+  }
+
 
   function collapse_cluster_handler(d, do_update) {
     collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
