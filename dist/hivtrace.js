@@ -101,7 +101,17 @@ webpackJsonp([0],{
 	var _defaultDateFormats = [d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"), d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")];
 	var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
 	var _defaultDateViewFormatShort = d3.time.format("%B %Y");
-	var _networkCategorical = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928"];
+	
+	var _networkCategoricalBase = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928"];
+	
+	var _networkCategorical = [];
+	
+	_.each([0, -0.5, 0.5], function (k) {
+	  _.each(_networkCategoricalBase, function (s) {
+	    _networkCategorical.push(d3.rgb(s).darker(k).toString());
+	  });
+	});
+	
 	var _maximumValuesInCategories = _networkCategorical.length;
 	
 	var _networkSequentialColor = {
@@ -188,7 +198,7 @@ webpackJsonp([0],{
 	  }
 	};
 	
-	var _hivtrace_cluster_depthwise_traversal = function _hivtrace_cluster_depthwise_traversal(nodes, edges, edge_filter) {
+	var hivtrace_cluster_depthwise_traversal = function hivtrace_cluster_depthwise_traversal(nodes, edges, edge_filter) {
 	
 	  var clusters = [],
 	      adjacency = {},
@@ -257,6 +267,8 @@ webpackJsonp([0],{
 	  self.clusters = [];
 	  self.cluster_sizes = [];
 	  self.cluster_mapping = {};
+	  self.percent_format = _defaultPercentFormat;
+	  self.missing = _networkMissing;
 	
 	  self.dom_prefix = options && options['prefix'] ? options['prefix'] : "hiv-trace";
 	  self.extra_cluster_table_columns = options && options['cluster-table-columns'] ? options['cluster-table-columns'] : self._is_CDC_ ? [{ 'description': {
@@ -372,6 +384,12 @@ webpackJsonp([0],{
 	    self.core_link_length = -1.;
 	  }
 	
+	  if (options && "edge-styler" in options) {
+	    self.additional_edge_styler = options["edge-styler"];
+	  } else {
+	    self.additional_edge_styler = null;
+	  }
+	
 	  self.filter_by_size = function (cluster) {
 	    return cluster.children.length >= self.minimum_cluster_size;
 	  };
@@ -399,7 +417,7 @@ webpackJsonp([0],{
 	      },
 	
 	      map: function map(node) {
-	        var vl_value = attribute_node_value_by_id(node, "vl_recent_value", true);
+	        var vl_value = self.attribute_node_value_by_id(node, "vl_recent_value", true);
 	        if (vl_value != _networkMissing) {
 	          if (vl_value <= 200) {
 	            return "≤200";
@@ -454,7 +472,7 @@ webpackJsonp([0],{
 	        return d3.scale.ordinal().domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60", _networkMissing]).range(["#b10026", "#e31a1c", "#fc4e2a", "#fd8d3c", "#feb24c", "#fed976", "#ffffb2", "#636363"]);
 	      },
 	      map: function map(node) {
-	        var vl_value = attribute_node_value_by_id(node, "age");
+	        var vl_value = self.attribute_node_value_by_id(node, "age");
 	        if (vl_value == ">=60") {
 	          return "≥60";
 	        }
@@ -468,7 +486,7 @@ webpackJsonp([0],{
 	      type: "Number",
 	      map: function map(node) {
 	        try {
-	          var value = self._parse_dates(attribute_node_value_by_id(node, "hiv_aids_dx_dt"));
+	          var value = self._parse_dates(self.attribute_node_value_by_id(node, "hiv_aids_dx_dt"));
 	          if (value) {
 	            value = "" + value.getFullYear();
 	          } else {
@@ -491,6 +509,10 @@ webpackJsonp([0],{
 	      }
 	    }
 	  };
+	
+	  if (options && options["computed-attributes"]) {
+	    _.extend(self._networkPredefinedAttributeTransforms, options["computed-attributes"]);
+	  }
 	
 	  self._parse_dates = function (value) {
 	
@@ -648,7 +670,10 @@ webpackJsonp([0],{
 	    // show the new tab
 	    $(new_link).tab('show');
 	
-	    var cluster_options = { "no_cdc": options["no_cdc"], "minimum size": 0, "secondary": true, "prefix": random_prefix };
+	    var cluster_options = { "no_cdc": options && options["no_cdc"], "minimum size": 0, "secondary": true, "prefix": random_prefix,
+	      "extra_menu": options && "extra_menu" in options ? options["extra_menu"] : null,
+	      "edge-styler": options && "edge-styler" in options ? options["edge-styler"] : null };
+	
 	    if (option_extras) {
 	      _.extend(cluster_options, option_extras);
 	    }
@@ -684,7 +709,7 @@ webpackJsonp([0],{
 	    /*self.cluster_filtering_functions ['cluster_id'] = function (c) {return c.cluster_id == cluster.cluster_id;};
 	    cluster.exclusive = 1;
 	    self.has_exclusive_view = cluster.cluster_id;
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    self.update(false);*/
 	  };
 	
@@ -711,6 +736,12 @@ webpackJsonp([0],{
 	      menu_object.append("li").append("a").attr("tabindex", "-1").text("Collapse cluster").on("click", function (d) {
 	        node.fixed = 0;
 	        collapse_cluster_handler(node, true);
+	        menu_object.style("display", "none");
+	      });
+	
+	      menu_object.append("li").append("a").attr("tabindex", "-1").text("Show sequences used to make cluster").on("click", function (d) {
+	        node.fixed = 0;
+	        show_sequences_in_cluster(node, true);
 	        menu_object.style("display", "none");
 	      });
 	
@@ -851,11 +882,11 @@ webpackJsonp([0],{
 	
 	    try {
 	      var filter_by_date = function filter_by_date(cutoff, n) {
-	        var node_dx = attribute_node_value_by_id(n, date_field);
+	        var node_dx = self.attribute_node_value_by_id(n, date_field);
 	        if (node_dx instanceof Date) {
 	          return node_dx >= cutoff;
 	        } else {
-	          node_dx = self._parse_dates(attribute_node_value_by_id(n, date_field));
+	          node_dx = self._parse_dates(self.attribute_node_value_by_id(n, date_field));
 	          if (node_dx instanceof Date) {
 	            return node_dx >= cutoff;
 	          }
@@ -869,8 +900,8 @@ webpackJsonp([0],{
 	      cutoff_short.setTime(cutoff_short.getTime() - recent_months * 30 * 24 * 3600000);
 	
 	      var compare_nodes = function compare_nodes(n1, n2) {
-	        var node1_dx = attribute_node_value_by_id(n1, date_field);
-	        var node2_dx = attribute_node_value_by_id(n2, date_field);
+	        var node1_dx = self.attribute_node_value_by_id(n1, date_field);
+	        var node2_dx = self.attribute_node_value_by_id(n2, date_field);
 	
 	        if (node1_dx == node2_dx) {
 	          return n1.id < n2.id ? -1 : 1;
@@ -884,7 +915,7 @@ webpackJsonp([0],{
 	
 	        var cluster_json = _extract_single_cluster(_.filter(cluster.children, _.partial(filter_by_date, cutoff_long)), null, true);
 	
-	        var priority_cluster = _.filter(_hivtrace_cluster_depthwise_traversal(cluster_json.Nodes, _.filter(cluster_json.Edges, function (e) {
+	        var priority_cluster = _.filter(hivtrace_cluster_depthwise_traversal(cluster_json.Nodes, _.filter(cluster_json.Edges, function (e) {
 	          return e.length <= 0.005;
 	        })), function (cc) {
 	          return cc.length > 1;
@@ -992,7 +1023,7 @@ webpackJsonp([0],{
 	    self.height = Math.min(Math.max(self.height, 200), 4000);
 	
 	    network_layout.size([self.width, self.height]);
-	    network_svg.attr("width", self.width).attr("height", self.height);
+	    self.network_svg.attr("width", self.width).attr("height", self.height);
 	
 	    if (trigger) {
 	      network_layout.start();
@@ -1187,7 +1218,7 @@ webpackJsonp([0],{
 	        if (group_by_attribute) {
 	          _.each(column_ids, function (column) {
 	            var binned = _.groupBy(cluster_nodes, function (n) {
-	              return attribute_node_value_by_id(n, column.raw_attribute_key);
+	              return self.attribute_node_value_by_id(n, column.raw_attribute_key);
 	            });
 	            var sorted_keys = _.keys(binned).sort();
 	            var attribute_record = the_list.append("li");
@@ -1209,7 +1240,7 @@ webpackJsonp([0],{
 	            var patient_list = patient_record.append("dl").classed("dl-horizontal", true);
 	            _.each(column_ids, function (column) {
 	              patient_list.append("dt").text(column.raw_attribute_key);
-	              patient_list.append("dd").text(attribute_node_value_by_id(node, column.raw_attribute_key));
+	              patient_list.append("dd").text(self.attribute_node_value_by_id(node, column.raw_attribute_key));
 	            });
 	          });
 	        }
@@ -1310,6 +1341,26 @@ webpackJsonp([0],{
 	          });
 	        }
 	      }, cluster_ui_container);
+	
+	      try {
+	        if (options && options["extra_menu"]) {
+	          var extra_ui_container = d3.select(self.get_ui_element_selector_by_role("extra_operations_container"));
+	
+	          extra_ui_container.selectAll("li").remove();
+	
+	          options["extra_menu"]["items"].forEach(function (item, index) {
+	            var handler_callback = item[1];
+	            this.append("li").append("a").text(item[0]).attr("href", "#").on("click", function (e) {
+	              handler_callback(self);
+	              d3.event.preventDefault();
+	            });
+	          }, extra_ui_container);
+	
+	          d3.select(self.get_ui_element_selector_by_role("extra_operations_enclosure")).style("display", null);
+	        }
+	      } catch (err) {
+	        console.log(err);
+	      }
 	
 	      var button_group = d3.select(self.get_ui_element_selector_by_role("button_group"));
 	
@@ -1490,7 +1541,7 @@ webpackJsonp([0],{
 	          _.extend(graph_data[_networkGraphAttrbuteID], extension);
 	          inject_attribute_description(key, computed);
 	          _.each(graph_data.Nodes, function (node) {
-	            inject_attribute_node_value_by_id(node, key, computed["map"](node));
+	            inject_attribute_node_value_by_id(node, key, computed["map"](node, self));
 	          });
 	        }
 	      });
@@ -1505,7 +1556,7 @@ webpackJsonp([0],{
 	          if (d["type"] == "String") {
 	            d.discrete = true;
 	            d["value_range"] = _.keys(_.countBy(graph_data.Nodes, function (nd) {
-	              return attribute_node_value_by_id(nd, k);
+	              return self.attribute_node_value_by_id(nd, k);
 	            }));
 	            d["dimension"] = d["value_range"].length;
 	          } else {
@@ -1630,7 +1681,7 @@ webpackJsonp([0],{
 	          d["raw_attribute_key"] = k;
 	          if (d.type == "Number") {
 	            var values = _.filter(_.map(graph_data.Nodes, function (nd) {
-	              return attribute_node_value_by_id(nd, k, true);
+	              return self.attribute_node_value_by_id(nd, k, true);
 	            }), function (v) {
 	              return v != _networkMissing;
 	            });
@@ -1640,13 +1691,13 @@ webpackJsonp([0],{
 	            if (d.type == "Date") {
 	              var values = _.filter(_.map(graph_data.Nodes, function (nd) {
 	                try {
-	                  var a_date = attribute_node_value_by_id(nd, k);
+	                  var a_date = self.attribute_node_value_by_id(nd, k);
 	                  //console.log (k, a_date);
 	                  inject_attribute_node_value_by_id(nd, k, self._parse_dates(a_date));
 	                } catch (err) {
 	                  inject_attribute_node_value_by_id(nd, k, _networkMissing);
 	                }
-	                return attribute_node_value_by_id(nd, k);
+	                return self.attribute_node_value_by_id(nd, k);
 	              }), function (v) {
 	                return v == _networkMissing ? null : v;
 	              });
@@ -1740,7 +1791,7 @@ webpackJsonp([0],{
 	          if (self.colorizer["opacity_scale"]) {
 	            self.colorizer["opacity_scale"].range(self.colorizer["opacity_scale"].range().reverse());
 	            self.update(true);
-	            draw_attribute_labels();
+	            self.draw_attribute_labels();
 	          }
 	          $(this).toggleClass("btn-active btn-default");
 	        });
@@ -1752,7 +1803,7 @@ webpackJsonp([0],{
 	              the_cluster["gradient"] = compute_cluster_gradient(the_cluster, self.colorizer["category_id"]);
 	            });
 	            self.update(true);
-	            draw_attribute_labels();
+	            self.draw_attribute_labels();
 	          }
 	          $(this).toggleClass("btn-active btn-default");
 	        });
@@ -2050,7 +2101,7 @@ webpackJsonp([0],{
 	
 	        if (extra_columns) {
 	          _.each(extra_columns, function (ed) {
-	            this_row.push(ed.generator(n));
+	            this_row.push(ed.generator(n, self));
 	          });
 	        }
 	        return this_row;
@@ -2118,7 +2169,7 @@ webpackJsonp([0],{
 	
 	        if (extra_columns) {
 	          _.each(extra_columns, function (ed) {
-	            this_row.push(ed.generator(d));
+	            this_row.push(ed.generator(d, self));
 	          });
 	        }
 	
@@ -2279,7 +2330,7 @@ webpackJsonp([0],{
 	      var shape_mapper = d3.scale.ordinal().domain(domain_range["domain"]).range(domain_range["range"]);
 	      self.node_shaper["id"] = cat_id;
 	      self.node_shaper["shaper"] = function (d) {
-	        return shape_mapper(graph_data[_networkGraphAttrbuteID][cat_id]["value_map"](attribute_node_value_by_id(d, cat_id)));
+	        return shape_mapper(graph_data[_networkGraphAttrbuteID][cat_id]["value_map"](self.attribute_node_value_by_id(d, cat_id)));
 	      };
 	      self.node_shaper["category_map"] = graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
 	    } else {
@@ -2290,18 +2341,23 @@ webpackJsonp([0],{
 	      self.node_shaper["category_map"] = null;
 	    }
 	    //console.log (graph_data [_networkGraphAttrbuteID][cat_id]['value_map'], self.node_shaper.domain(), self.node_shaper.range());
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    self.update(true);
 	    d3.event.preventDefault();
 	  };
 	
-	  function draw_attribute_labels() {
-	    legend_svg.selectAll("g.hiv-trace-legend").remove();
+	  self.draw_attribute_labels = function () {
+	    self.legend_svg.selectAll("g.hiv-trace-legend").remove();
 	
 	    var offset = 10;
 	
+	    if (self.legend_caption) {
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text(self.legend_caption).style("font-weight", "bold");
+	      offset += 18;
+	    }
+	
 	    if (self.colorizer["category_id"]) {
-	      legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Color: " + self.colorizer["category_id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Color: " + self.colorizer["category_id"]).style("font-weight", "bold");
 	      offset += 18;
 	
 	      if (self.colorizer["continuous"]) {
@@ -2310,20 +2366,20 @@ webpackJsonp([0],{
 	
 	        _.each(_.range(_networkContinuousColorStops), function (value) {
 	          var x = scale.invert(value);
-	          legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(anchor_format(x));
-	          legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", self.colorizer["category"](x));
+	          self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(anchor_format(x));
+	          self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", self.colorizer["category"](x));
 	
 	          offset += 18;
 	        });
 	
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text("missing");
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", _networkMissingColor);
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text("missing");
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", _networkMissingColor);
 	
 	        offset += 18;
 	      } else {
 	        _.each(self.colorizer["category_map"](null, "map"), function (value, key) {
-	          legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
-	          legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", self.colorizer["category"](key));
+	          self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
+	          self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", self.colorizer["category"](key));
 	
 	          offset += 18;
 	        });
@@ -2331,23 +2387,23 @@ webpackJsonp([0],{
 	    }
 	
 	    if (self.node_shaper["id"]) {
-	      legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Shape: " + self.node_shaper["id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Shape: " + self.node_shaper["id"]).style("font-weight", "bold");
 	      offset += 18;
 	
 	      var domain_range = check_for_predefined_shapes(self.node_shaper["id"]);
 	      var shape_mapper = d3.scale.ordinal().domain(domain_range["domain"]).range(domain_range["range"]);
 	
 	      _.each(self.node_shaper["category_map"](null, "map"), function (value, key) {
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
 	
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("path").attr("transform", "translate(5,-5)").attr("d", misc.symbol(shape_mapper(value)).size(128)).classed("legend", true).style("fill", "none");
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("path").attr("transform", "translate(5,-5)").attr("d", misc.symbol(shape_mapper(value)).size(128)).classed("legend", true).style("fill", "none");
 	
 	        offset += 18;
 	      });
 	    }
 	
 	    if (self.colorizer["opacity_id"]) {
-	      legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Opacity: " + self.colorizer["opacity_id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Opacity: " + self.colorizer["opacity_id"]).style("font-weight", "bold");
 	      offset += 18;
 	
 	      var anchor_format = graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]["type"] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
@@ -2355,25 +2411,25 @@ webpackJsonp([0],{
 	
 	      _.each(_.range(_networkContinuousColorStops), function (value) {
 	        var x = scale.invert(value);
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(anchor_format(x));
-	        legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", "black").style("opacity", self.colorizer["opacity"](x));
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(anchor_format(x));
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", "black").style("opacity", self.colorizer["opacity"](x));
 	
 	        offset += 18;
 	      });
 	
-	      legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text("missing");
-	      legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", "black").style("opacity", _networkMissingOpacity);
+	      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text("missing");
+	      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("circle").attr("cx", "8").attr("cy", "-4").attr("r", "8").classed("legend", true).style("fill", "black").style("opacity", _networkMissingOpacity);
 	
 	      offset += 18;
 	    }
-	  }
+	  };
 	
 	  function compute_cluster_gradient(cluster, cat_id) {
 	    if (cat_id) {
 	      var id = self.dom_prefix + "-cluster-gradient-" + self.gradient_id++;
-	      var gradient = network_svg.selectAll("defs").append("radialGradient").attr("id", id);
+	      var gradient = self.network_svg.selectAll("defs").append("radialGradient").attr("id", id);
 	      var values = _.map(cluster.children, function (node) {
-	        var value = attribute_node_value_by_id(node, cat_id);
+	        var value = self.attribute_node_value_by_id(node, cat_id);
 	        return value == _networkMissing ? Infinity : value;
 	      }).sort(function (a, b) {
 	        return 0 + a - (0 + b);
@@ -2429,7 +2485,7 @@ webpackJsonp([0],{
 	      self.colorizer["opacity_scale"] = null;
 	    }
 	
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    self.update(true);
 	    d3.event.preventDefault();
 	  };
@@ -2441,7 +2497,7 @@ webpackJsonp([0],{
 	    render_chord_diagram("aux_svg_holder", null, null);
 	    render_binned_table("attribute_table", null, null);
 	
-	    network_svg.selectAll("radialGradient").remove();
+	    self.network_svg.selectAll("radialGradient").remove();
 	
 	    self.clusters.forEach(function (the_cluster) {
 	      delete the_cluster["binned_attributes"];
@@ -2479,8 +2535,8 @@ webpackJsonp([0],{
 	      var points = [];
 	
 	      _.each(self.edges, function (e) {
-	        var src = attribute_node_value_by_id(self.nodes[e.source], cat_id, true),
-	            tgt = attribute_node_value_by_id(self.nodes[e.target], cat_id, true);
+	        var src = self.attribute_node_value_by_id(self.nodes[e.source], cat_id, true),
+	            tgt = self.attribute_node_value_by_id(self.nodes[e.target], cat_id, true);
 	
 	        if (src != _networkMissing && tgt != _networkMissing) {
 	          points.push({
@@ -2504,7 +2560,7 @@ webpackJsonp([0],{
 	      self.colorizer["category_map"] = null;
 	    }
 	
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    self.update(true);
 	    d3.event.preventDefault();
 	  };
@@ -2514,7 +2570,7 @@ webpackJsonp([0],{
 	    var set_attr = "None";
 	    d3.select(self.get_ui_element_selector_by_role("attributes_invert")).style("display", "none");
 	
-	    network_svg.selectAll("radialGradient").remove();
+	    self.network_svg.selectAll("radialGradient").remove();
 	
 	    [["attributes", false], ["attributes_cat", true]].forEach(function (lbl) {
 	
@@ -2546,7 +2602,7 @@ webpackJsonp([0],{
 	        self.colorizer["category"] = d3.scale.ordinal().domain(domain).range(range);
 	      } else {
 	        if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
-	          self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id]);
+	          self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
 	        } else {
 	          self.colorizer["category"] = d3.scale.ordinal().range(_networkCategorical);
 	          var extended_range = _.clone(self.colorizer["category"].range());
@@ -2582,7 +2638,7 @@ webpackJsonp([0],{
 	      render_binned_table("attribute_table", null, null);
 	    }
 	
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    self.update(true);
 	    d3.event.preventDefault();
 	  };
@@ -2691,7 +2747,7 @@ webpackJsonp([0],{
 	
 	      update_network_string(draw_me.nodes.length, draw_me.edges.length);
 	
-	      link = network_svg.selectAll(".link").data(draw_me.edges, function (d) {
+	      link = self.network_svg.selectAll(".link").data(draw_me.edges, function (d) {
 	        return d.id;
 	      });
 	
@@ -2706,17 +2762,25 @@ webpackJsonp([0],{
 	        //console.log (d["length"] <= self.core_link_length);
 	        return d["length"] <= self.core_link_length;
 	        //return false;
-	      }).on("mouseover", edge_pop_on).on("mouseout", edge_pop_off).filter(function (d) {
-	        return d.directed;
-	      }).attr("marker-end", "url(#arrowhead)");
+	      });
 	
-	      rendered_nodes = network_svg.selectAll(".node").data(draw_me.nodes, function (d) {
+	      if (self.additional_edge_styler) {
+	        link.each(function (d) {
+	          self.additional_edge_styler(this, d, self);
+	        });
+	      }
+	
+	      link.on("mouseover", edge_pop_on).on("mouseout", edge_pop_off).filter(function (d) {
+	        return d.directed;
+	      }).attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
+	
+	      rendered_nodes = self.network_svg.selectAll(".node").data(draw_me.nodes, function (d) {
 	        return d.id;
 	      });
 	      rendered_nodes.exit().remove();
 	      rendered_nodes.enter().append("path");
 	
-	      rendered_clusters = network_svg.selectAll(".cluster-group").data(draw_me.clusters.map(function (d) {
+	      rendered_clusters = self.network_svg.selectAll(".cluster-group").data(draw_me.clusters.map(function (d) {
 	        return d;
 	      }), function (d) {
 	        return d.cluster_id;
@@ -2730,9 +2794,9 @@ webpackJsonp([0],{
 	      draw_cluster_table(self.extra_cluster_table_columns);
 	      draw_node_table(self.extra_node_table_columns);
 	    } else {
-	      rendered_nodes = network_svg.selectAll(".node");
-	      rendered_clusters = network_svg.selectAll(".cluster-group");
-	      link = network_svg.selectAll(".link");
+	      rendered_nodes = self.network_svg.selectAll(".node");
+	      rendered_clusters = self.network_svg.selectAll(".cluster-group");
+	      link = self.network_svg.selectAll(".link");
 	      update_network_string(rendered_nodes.size(), link.size());
 	    }
 	
@@ -2825,8 +2889,9 @@ webpackJsonp([0],{
 	    }
 	  }
 	
-	  function attribute_node_value_by_id(d, id, number) {
+	  self.attribute_node_value_by_id = function (d, id, number) {
 	    if (_networkNodeAttributeID in d && id) {
+	
 	      if (id in d[_networkNodeAttributeID]) {
 	        var v = d[_networkNodeAttributeID][id];
 	
@@ -2844,7 +2909,7 @@ webpackJsonp([0],{
 	      }
 	    }
 	    return _networkMissing;
-	  }
+	  };
 	
 	  function inject_attribute_node_value_by_id(d, id, value) {
 	    //console.log ("Injecting " + id + " with value " + value);
@@ -2854,13 +2919,10 @@ webpackJsonp([0],{
 	  }
 	
 	  function inject_attribute_description(key, d) {
-	    //console.log ("Injecting " + id + " with value " + value);
 	    if (_networkGraphAttrbuteID in self.json) {
-	      _.extend(self.json[_networkGraphAttrbuteID], {
-	        key: d
-	      });
-	
-	      self.json[_networkGraphAttrbuteID], d;
+	      var new_attr = {};
+	      new_attr[key] = d;
+	      _.extend(self.json[_networkGraphAttrbuteID], new_attr);
 	    }
 	  }
 	  function node_size(d) {
@@ -2874,7 +2936,7 @@ webpackJsonp([0],{
 	    }*/
 	
 	    if (self.colorizer["category_id"]) {
-	      var v = attribute_node_value_by_id(d, self.colorizer["category_id"]);
+	      var v = self.attribute_node_value_by_id(d, self.colorizer["category_id"]);
 	      if (self.colorizer["continuous"]) {
 	        if (v == _networkMissing) {
 	          return _networkMissingColor;
@@ -2888,7 +2950,7 @@ webpackJsonp([0],{
 	
 	  function node_opacity(d) {
 	    if (self.colorizer["opacity"]) {
-	      return self.colorizer["opacity"](attribute_node_value_by_id(d, self.colorizer["opacity_id"], true));
+	      return self.colorizer["opacity"](self.attribute_node_value_by_id(d, self.colorizer["opacity_id"], true));
 	    }
 	    return 1;
 	  }
@@ -2916,7 +2978,7 @@ webpackJsonp([0],{
 	    _.each(_.union(self._additional_node_pop_fields, [self.colorizer["category_id"], self.node_shaper["id"], self.colorizer["opacity_id"]]), function (key) {
 	      if (key) {
 	        if (key in graph_data[_networkGraphAttrbuteID]) {
-	          var attribute = attribute_node_value_by_id(n, key);
+	          var attribute = self.attribute_node_value_by_id(n, key);
 	
 	          if (graph_data[_networkGraphAttrbuteID][key]["type"] == "Date") {
 	            try {
@@ -2939,7 +3001,7 @@ webpackJsonp([0],{
 	      str += "<br>Worst triangle-based support (p): <em>" + _defaultFloatFormat(n.support) + "</em>";
 	    }
 	
-	    var attribute = attribute_node_value_by_id(n, self.colorizer["category_id"]);
+	    var attribute = self.attribute_node_value_by_id(n, self.colorizer["category_id"]);
 	
 	    return str;
 	  }
@@ -3148,8 +3210,8 @@ webpackJsonp([0],{
 	    }
 	
 	    _.each(scan_from, function (edge) {
-	      //console.log (attribute_node_value_by_id(self.nodes[edge.source], id), attribute_node_value_by_id(self.nodes[edge.target], id));
-	      the_matrix[the_map(attribute_node_value_by_id(self.nodes[edge.source], id))][the_map(attribute_node_value_by_id(self.nodes[edge.target], id))] += 1;
+	      //console.log (self.attribute_node_value_by_id(self.nodes[edge.source], id), self.attribute_node_value_by_id(self.nodes[edge.target], id));
+	      the_matrix[the_map(self.attribute_node_value_by_id(self.nodes[edge.source], id))][the_map(self.attribute_node_value_by_id(self.nodes[edge.target], id))] += 1;
 	    });
 	    // check if there are null values
 	
@@ -3186,7 +3248,7 @@ webpackJsonp([0],{
 	  function attribute_cluster_distribution(the_cluster, attribute_id) {
 	    if (attribute_id && the_cluster) {
 	      return the_cluster.children.map(function (d) {
-	        return attribute_node_value_by_id(d, attribute_id);
+	        return self.attribute_node_value_by_id(d, attribute_id);
 	      });
 	    }
 	    return null;
@@ -3252,6 +3314,18 @@ webpackJsonp([0],{
 	    }
 	    return "";
 	  };
+	
+	  function show_sequences_in_cluster(d) {
+	    var sequences = new Object();
+	    _.each(_extract_single_cluster(self.clusters[self.cluster_mapping[d.cluster]].children, null, true).Edges, function (e) {
+	      _.each(e.sequences, function (s) {
+	        if (!(s in sequences)) {
+	          sequences[s] = 1;
+	        }
+	      });
+	    });
+	    console.log(_.keys(sequences));
+	  }
 	
 	  function collapse_cluster_handler(d, do_update) {
 	    collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
@@ -3386,16 +3460,16 @@ webpackJsonp([0],{
 	  self.node_table.selectAll("*").remove();
 	  self.cluster_table.selectAll("*").remove();
 	
-	  var network_svg = d3.select(self.container).append("svg:svg")
+	  self.network_svg = d3.select(self.container).append("svg:svg")
 	  //.style ("border", "solid black 1px")
 	  .attr("id", self.dom_prefix + "-network-svg").attr("width", self.width + self.margin.left + self.margin.right).attr("height", self.height + self.margin.top + self.margin.bottom);
 	
 	  //.append("g")
 	  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
 	
-	  var legend_svg = network_svg.append("g").attr("transform", "translate(5,5)");
+	  self.legend_svg = self.network_svg.append("g").attr("transform", "translate(5,5)");
 	
-	  network_svg.append("defs").append("marker").attr("id", "arrowhead").attr("refX", 9) /* there must be a smarter way to calculate shift*/
+	  self.network_svg.append("defs").append("marker").attr("id", self.dom_prefix + "_arrowhead").attr("refX", 9) /* there must be a smarter way to calculate shift*/
 	  .attr("refY", 2).attr("markerWidth", 6).attr("markerHeight", 4).attr("orient", "auto").attr("stroke", "#666666").attr("fill", "#AAAAAA").append("path").attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
 	
 	  change_window_size();
@@ -3421,7 +3495,7 @@ webpackJsonp([0],{
 	      options["callbacks"](self);
 	    }
 	
-	    draw_attribute_labels();
+	    self.draw_attribute_labels();
 	    network_layout.start();
 	
 	    if (_.isArray(options["expand"])) {
@@ -3498,6 +3572,7 @@ webpackJsonp([0],{
 	  });
 	};
 	
+	module.exports.computeCluster = hivtrace_cluster_depthwise_traversal;
 	module.exports.clusterNetwork = hivtrace_cluster_network_graph;
 	module.exports.graphSummary = hivtrace_cluster_graph_summary;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(2)))
