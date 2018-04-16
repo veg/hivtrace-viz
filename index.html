@@ -278,7 +278,8 @@
                   <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                     <h4 class="modal-title">Listing nodes in cluster X</h4>
-                     <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'id'>Group by attribute</button>
+                     <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'attribute'>Group by ID</button>
+                     <button type="button"  class = 'btn btn-default btn-small'><i class="fa fa-download" data-hivtrace-ui-role = "cluster_list_data_export"></i></button>
                  </div>
 				  <ul data-hivtrace-ui-role = 'cluster_list_payload' class = 'list-unstyled'>
 				  </ul>
@@ -438,7 +439,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  //url = "./test/SF.json";
+  //url = "./test/LA.json";
   url = "./example.json"
 
   d3.json(url, function(results) {

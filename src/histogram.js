@@ -76,8 +76,6 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       width -= margin.left;
       x.range([0, width]);
 
-      console.log ();
-
       var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
