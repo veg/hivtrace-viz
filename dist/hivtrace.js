@@ -212,8 +212,13 @@ webpackJsonp([0],{
 	  }
 	
 	  _.each(edges, function (e) {
-	    adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-	    adjacency[nodes[e.target].id].push([nodes[e.source], e]);
+	    try {
+	      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
+	      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
+	    } catch (err) {
+	      console.log("Edge does not map to an existing node " + e.source + " to " + e.target);
+	      throw "Edge does not map to an existing node " + e.source + " to " + e.target;
+	    }
 	  });
 	
 	  var traverse = function traverse(node) {
@@ -275,18 +280,38 @@ webpackJsonp([0],{
 	  self.percent_format = _defaultPercentFormat;
 	  self.missing = _networkMissing;
 	
+	  if (options && _.isFunction(options["init_code"])) {
+	    options["init_code"].call(null, self, options);
+	  }
 	  self.dom_prefix = options && options['prefix'] ? options['prefix'] : "hiv-trace";
-	  self.extra_cluster_table_columns = options && options['cluster-table-columns'] ? options['cluster-table-columns'] : self._is_CDC_ ? [{ 'description': {
-	      value: "Priority Score",
-	      sort: "value",
-	      help: "Nodes in 0.5% subclusters, dx within the last 12 months"
-	    },
-	    'generator': function generator(cluster) {
-	      return {
-	        'value': cluster.priority_score
-	      };
+	  self.extra_cluster_table_columns = options && options['cluster-table-columns'] ? options['cluster-table-columns'] : null;
+	  self.subcluster_table = null;
+	
+	  if (self._is_CDC_) {
+	    self.subcluster_table = options && options['subcluster-table'] ? d3.select(options['subcluster-table']) : null;
+	    self.extra_subcluster_table_columns = null;
+	    var cdc_extra = [{ 'description': {
+	        value: "Priority Score",
+	        sort: "value",
+	        help: "Nodes in 0.5% subclusters, dx within the last 12 months"
+	      },
+	      'generator': function generator(cluster) {
+	        return {
+	          'value': cluster.priority_score
+	        };
+	      }
+	    }];
+	
+	    if (self.subcluster_table) {
+	      self.extra_subcluster_table_columns = cdc_extra;
+	    } else {
+	      if (self.extra_cluster_table_columns) {
+	        self.extra_cluster_table_columns = self.extra_cluster_table_columns.concat(cdc_extra);
+	      } else {
+	        self.extra_cluster_table_columns = cdc_extra;
+	      }
 	    }
-	  }] : null;
+	  }
 	
 	  self.extra_node_table_columns = options && options['node-table-columns'] ? options['node-table-columns'] : self._is_CDC_ ? [{ 'description': {
 	      value: "Recent and Rapid",
@@ -385,7 +410,7 @@ webpackJsonp([0],{
 	
 	  self.recent_rapid_definition = function (network, date) {
 	    date = date || self.today;
-	    var subcluster_enum = ["Subcluster", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", "Other"];
+	    var subcluster_enum = ["Subcluster", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", "Not in a subcluster"];
 	
 	    return {
 	      depends: _networkCDCDateField,
@@ -394,7 +419,7 @@ webpackJsonp([0],{
 	      type: "String",
 	      volatile: true,
 	      color_scale: function color_scale() {
-	        return d3.scale.ordinal().domain(subcluster_enum.concat([_networkMissing])).range(_.union(["#CCCCCC", "red", "blue", "#9A4EAE", "#FFFFFF"], [_networkMissingColor]));
+	        return d3.scale.ordinal().domain(subcluster_enum.concat([_networkMissing])).range(_.union(["#CCCCCC", "red", "blue", "#9A4EAE", "yellow", "#FFFFFF"], [_networkMissingColor]));
 	      },
 	
 	      map: function map(node) {
@@ -404,7 +429,7 @@ webpackJsonp([0],{
 	          }
 	          return subcluster_enum[0];
 	        }
-	        return subcluster_enum[4];
+	        return subcluster_enum[5];
 	      }
 	    };
 	  };
@@ -587,7 +612,7 @@ webpackJsonp([0],{
 	    $('#' + tab_content).remove();
 	  };
 	
-	  self.open_exclusive_tab_view = function (cluster_id) {
+	  self.open_exclusive_tab_view = function (cluster_id, custom_filter, custom_name, additional_options) {
 	    var cluster = _.find(self.clusters, function (c) {
 	      return c.cluster_id == cluster_id;
 	    });
@@ -596,14 +621,28 @@ webpackJsonp([0],{
 	      return;
 	    }
 	
-	    var filtered_json = _extract_single_cluster(cluster.children);
+	    additional_options = additional_options || {};
+	
+	    var filtered_json = _extract_single_cluster(custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children);
 	
 	    if (_networkGraphAttrbuteID in json) {
 	      filtered_json[_networkGraphAttrbuteID] = {};
 	      jQuery.extend(true, filtered_json[_networkGraphAttrbuteID], json[_networkGraphAttrbuteID]);
 	    }
 	
-	    return self.open_exclusive_tab_view_aux(filtered_json, "Cluster " + cluster_id);
+	    var export_item = ["Export cluster to .CSV", function (network) {
+	      helpers.export_csv_button(self._extract_attributes_for_nodes(self._extract_nodes_by_id(cluster_id), self._extract_exportable_attributes()));
+	    }];
+	
+	    if ("extra_menu" in additional_options) {
+	      additional_options["extra_menu"]["items"].push(export_item);
+	    } else {
+	      _.extend(additional_options, { "extra_menu": { "title": "Action",
+	          "items": [export_item]
+	        } });
+	    }
+	
+	    return self.open_exclusive_tab_view_aux(filtered_json, custom_name ? custom_name(cluster_id) : "Cluster " + cluster_id, additional_options);
 	  };
 	
 	  self.open_exclusive_tab_view_aux = function (filtered_json, title, option_extras) {
@@ -666,6 +705,7 @@ webpackJsonp([0],{
 	
 	    var cluster_view = hivtrace.clusterNetwork(filtered_json, '#' + random_content_id, null, null, random_button_bar, attributes, null, null, null, parent_container, cluster_options);
 	
+	    //console.log (cluster_view.clusters[0]);
 	    cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
 	    if (self.colorizer["category_id"]) {
 	      if (self.colorizer["continuous"]) {
@@ -905,23 +945,41 @@ webpackJsonp([0],{
 	
 	    try {
 	
+	      start_date = start_date || self.today;
+	
 	      var filter_by_date = function filter_by_date(cutoff, node) {
 	        var node_dx = self.attribute_node_value_by_id(node, date_field);
 	        if (node_dx instanceof Date) {
-	          return node_dx >= cutoff;
+	          return node_dx >= cutoff && node_dx <= start_date;
 	        } else {
 	          node_dx = self._parse_dates(self.attribute_node_value_by_id(node, date_field));
 	          if (node_dx instanceof Date) {
-	            return node_dx >= cutoff;
+	            return node_dx >= cutoff && node_dx <= start_date;
 	          }
 	        }
 	        return false;
 	      };
 	
-	      start_date = start_date || self.today;
-	
 	      var cutoff_long = _n_months_ago(start_date, span_months);
 	      var cutoff_short = _n_months_ago(start_date, recent_months);
+	
+	      var node_iterator;
+	
+	      if (start_date == self.today) {
+	        node_iterator = self.nodes;
+	      } else {
+	        var beginning_of_time = new Date();
+	        beginning_of_time.setYear(1900);
+	        node_iterator = [];
+	        _.each(self.nodes, function (node) {
+	          if (filter_by_date(beginning_of_time, node)) {
+	            node.priority_flag = 4;
+	            node_iterator.push(node);
+	          } else {
+	            node.priority_flag = 3;
+	          }
+	        });
+	      }
 	
 	      var oldest_nodes_first = function oldest_nodes_first(n1, n2) {
 	        // consistent node sorting, older nodes first
@@ -941,7 +999,10 @@ webpackJsonp([0],{
 	      var split_clusters = {};
 	      var node_id_to_local_cluster = {};
 	
-	      _.each(self.nodes, function (node) {
+	      // reset all annotations 
+	
+	
+	      _.each(node_iterator, function (node) {
 	        if (node.cluster) {
 	          if (!(node.cluster in split_clusters)) {
 	            split_clusters[node.cluster] = { 'Nodes': [], 'Edges': [] };
@@ -954,10 +1015,18 @@ webpackJsonp([0],{
 	      _.each(self.edges, function (edge) {
 	        if (edge.length <= self.subcluster_threshold) {
 	          var edge_cluster = json.Nodes[edge.source].cluster;
-	          var copied_edge = _.clone(edge);
-	          copied_edge.source = node_id_to_local_cluster[json.Nodes[edge.source].id];
-	          copied_edge.target = node_id_to_local_cluster[json.Nodes[edge.target].id];
-	          split_clusters[edge_cluster]["Edges"].push(copied_edge);
+	
+	          var source_id = json.Nodes[edge.source].id,
+	              target_id = json.Nodes[edge.target].id;
+	
+	          if (source_id in node_id_to_local_cluster && target_id in node_id_to_local_cluster) {
+	            var copied_edge = _.clone(edge);
+	
+	            copied_edge.source = node_id_to_local_cluster[source_id];
+	            copied_edge.target = node_id_to_local_cluster[target_id];
+	
+	            split_clusters[edge_cluster]["Edges"].push(copied_edge);
+	          }
 	        }
 	      });
 	
@@ -1058,7 +1127,7 @@ webpackJsonp([0],{
 	        });
 	      });
 	    } catch (err) {
-	      console.log(self.clusters, err);
+	      console.log(err);
 	      return;
 	    }
 	  };
@@ -1614,6 +1683,8 @@ webpackJsonp([0],{
 	      if (options && options["extra_menu"]) {
 	        var extra_ui_container = d3.select(self.get_ui_element_selector_by_role("extra_operations_container"));
 	
+	        d3.select(self.get_ui_element_selector_by_role("extra_operations_enclosure")).selectAll("button").text(options["extra_menu"]["title"]).append("span").classed("caret", "true");
+	        //extra_ui_container
 	        extra_ui_container.selectAll("li").remove();
 	
 	        options["extra_menu"]["items"].forEach(function (item, index) {
@@ -1623,7 +1694,7 @@ webpackJsonp([0],{
 	            item[0](self, this.append("li"));
 	          } else {
 	            this.append("li").append("a").text(item[0]).attr("href", "#").on("click", function (e) {
-	              handler_callback(self);
+	              handler_callback(self, e);
 	              d3.event.preventDefault();
 	            });
 	          }
@@ -1635,69 +1706,20 @@ webpackJsonp([0],{
 	      console.log(err);
 	    }
 	
-	    if (attributes) {
-	      /*
-	         map attributes into nodes and into the graph object itself using
-	         _networkGraphAttrbuteID as the key
-	      */
-	
-	      if ("attribute_map" in attributes) {
-	        var attribute_map = attributes["attribute_map"];
-	
-	        if ("map" in attribute_map && attribute_map["map"].length > 0) {
-	          graph_data[_networkGraphAttrbuteID] = attribute_map["map"].map(function (a, i) {
-	            return {
-	              label: a,
-	              type: null,
-	              values: {},
-	              index: i,
-	              range: 0
-	            };
-	          });
-	
-	          graph_data.Nodes.forEach(function (n) {
-	            n[_networkGraphAttrbuteID] = n.id.split(attribute_map["delimiter"]);
-	            n[_networkGraphAttrbuteID].forEach(function (v, i) {
-	              if (i < graph_data[_networkGraphAttrbuteID].length) {
-	                if (!(v in graph_data[_networkGraphAttrbuteID][i]["values"])) {
-	                  graph_data[_networkGraphAttrbuteID][i]["values"][v] = graph_data[_networkGraphAttrbuteID][i]["range"];
-	                  graph_data[_networkGraphAttrbuteID][i]["range"] += 1;
-	                }
-	              }
-	              //graph_data [_networkGraphAttrbuteID][i]["values"][v] = 1 + (graph_data [_networkGraphAttrbuteID][i]["values"][v] ? graph_data [_networkGraphAttrbuteID][i]["values"][v] : 0);
-	            });
-	          });
-	
-	          graph_data[_networkGraphAttrbuteID].forEach(function (d) {
-	            if (d["range"] < graph_data.Nodes.length && d["range"] > 1 && d["range"] <= 20) {
-	              d["type"] = "category";
-	            }
-	          });
-	        }
-	      }
-	
-	      _.each(self._networkPredefinedAttributeTransforms, function (computed, key) {
-	
-	        if (_.isFunction(computed)) {
-	          computed = computed(self);
-	        }
-	
-	        if (!computed["depends"] || _.has(graph_data[_networkGraphAttrbuteID], computed["depends"])) {
-	          var extension = {};
-	          extension[key] = computed;
-	          _.extend(graph_data[_networkGraphAttrbuteID], extension);
-	          self.inject_attribute_description(key, computed);
-	          _.each(graph_data.Nodes, function (node) {
-	            inject_attribute_node_value_by_id(node, key, computed["map"](node, self));
-	          });
-	        }
-	      });
-	
-	      // populate the UI elements
+	    self._aux_populate_category_menus = function () {
 	      if (button_bar_ui) {
+	        var _menu_label_gen = function _menu_label_gen(d) {
+	          return (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
+	        };
+	
+	        //console.log (valid_scales);
+	        //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
+	
 	        // decide if the variable can be considered categorical by examining its range
 	
+	        //console.log ("self._aux_populate_category_menus");
 	        var valid_cats = _.filter(_.map(graph_data[_networkGraphAttrbuteID], self._aux_populate_category_fields), function (d) {
+	          //console.log (d);
 	          return d.discrete && "value_range" in d && d["value_range"].length <= _maximumValuesInCategories;
 	        });
 	
@@ -1775,9 +1797,6 @@ webpackJsonp([0],{
 	          return d.type == "Number" || d.type == "Date";
 	        });
 	
-	        //console.log (valid_scales);
-	        //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
-	
 	        [d3.select(self.get_ui_element_selector_by_role("attributes")), d3.select(self.get_ui_element_selector_by_role("attributes_cat", true))].forEach(function (m) {
 	
 	          //console.log (m);  
@@ -1788,12 +1807,12 @@ webpackJsonp([0],{
 	          m.selectAll("li").remove();
 	
 	          var menu_items = [[["None", null, _.partial(self.handle_attribute_categorical, null)]], [["Categorical", "heading", null]]].concat(valid_cats.map(function (d, i) {
-	            return [[d["label"], d["raw_attribute_key"], _.partial(self.handle_attribute_categorical, d["raw_attribute_key"])]];
+	            return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_categorical, d["raw_attribute_key"])]];
 	          }));
 	
 	          if (valid_scales.length) {
 	            menu_items = menu_items.concat([[["Continuous", "heading", null]]]).concat(valid_scales.map(function (d, i) {
-	              return [[d["label"], d["raw_attribute_key"], _.partial(self.handle_attribute_continuous, d["raw_attribute_key"])]];
+	              return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_continuous, d["raw_attribute_key"])]];
 	            }));
 	          }
 	
@@ -1825,7 +1844,7 @@ webpackJsonp([0],{
 	        [d3.select(self.get_ui_element_selector_by_role("shapes"))].forEach(function (m) {
 	          m.selectAll("li").remove();
 	          var cat_menu = m.selectAll("li").data([[["None", null, _.partial(self.handle_shape_categorical, null)]]].concat(valid_shapes.map(function (d, i) {
-	            return [[d["label"], d["raw_attribute_key"], _.partial(self.handle_shape_categorical, d["raw_attribute_key"])]];
+	            return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_shape_categorical, d["raw_attribute_key"])]];
 	          })));
 	
 	          cat_menu.enter().append("li").style("font-variant", function (d) {
@@ -1894,6 +1913,69 @@ webpackJsonp([0],{
 	          });
 	        });
 	      }
+	    };
+	
+	    if (attributes) {
+	      /*
+	         map attributes into nodes and into the graph object itself using
+	         _networkGraphAttrbuteID as the key
+	      */
+	
+	      if ("attribute_map" in attributes) {
+	        var attribute_map = attributes["attribute_map"];
+	
+	        if ("map" in attribute_map && attribute_map["map"].length > 0) {
+	          graph_data[_networkGraphAttrbuteID] = attribute_map["map"].map(function (a, i) {
+	            return {
+	              label: a,
+	              type: null,
+	              values: {},
+	              index: i,
+	              range: 0
+	            };
+	          });
+	
+	          graph_data.Nodes.forEach(function (n) {
+	            n[_networkGraphAttrbuteID] = n.id.split(attribute_map["delimiter"]);
+	            n[_networkGraphAttrbuteID].forEach(function (v, i) {
+	              if (i < graph_data[_networkGraphAttrbuteID].length) {
+	                if (!(v in graph_data[_networkGraphAttrbuteID][i]["values"])) {
+	                  graph_data[_networkGraphAttrbuteID][i]["values"][v] = graph_data[_networkGraphAttrbuteID][i]["range"];
+	                  graph_data[_networkGraphAttrbuteID][i]["range"] += 1;
+	                }
+	              }
+	              //graph_data [_networkGraphAttrbuteID][i]["values"][v] = 1 + (graph_data [_networkGraphAttrbuteID][i]["values"][v] ? graph_data [_networkGraphAttrbuteID][i]["values"][v] : 0);
+	            });
+	          });
+	
+	          graph_data[_networkGraphAttrbuteID].forEach(function (d) {
+	            if (d["range"] < graph_data.Nodes.length && d["range"] > 1 && d["range"] <= 20) {
+	              d["type"] = "category";
+	            }
+	          });
+	        }
+	      }
+	
+	      _.each(self._networkPredefinedAttributeTransforms, function (computed, key) {
+	
+	        if (_.isFunction(computed)) {
+	          computed = computed(self);
+	        }
+	
+	        if (!computed["depends"] || _.has(graph_data[_networkGraphAttrbuteID], computed["depends"])) {
+	          var extension = {};
+	          extension[key] = computed;
+	          _.extend(graph_data[_networkGraphAttrbuteID], extension);
+	          self.inject_attribute_description(key, computed);
+	          _.each(graph_data.Nodes, function (node) {
+	            inject_attribute_node_value_by_id(node, key, computed["map"](node, self));
+	          });
+	        }
+	      });
+	
+	      self._aux_populate_category_menus();
+	
+	      // populate the UI elements
 	    }
 	
 	    if (self.cluster_sizes.length > max_points_to_render) {
@@ -1998,9 +2080,10 @@ webpackJsonp([0],{
 	    }
 	  }
 	
-	  function add_a_sortable_table(container, headers, content) {
+	  function add_a_sortable_table(container, headers, content, overwrite) {
 	    var thead = container.selectAll("thead");
-	    if (thead.empty()) {
+	    if (thead.empty() || overwrite) {
+	      thead.remove();
 	      thead = container.append("thead");
 	      thead.selectAll("tr").data(headers).enter().append("tr").selectAll("th").data(function (d) {
 	        return d;
@@ -2012,7 +2095,8 @@ webpackJsonp([0],{
 	    }
 	
 	    var tbody = container.selectAll("tbody");
-	    if (tbody.empty()) {
+	    if (tbody.empty() || overwrite) {
+	      tbody.remove();
 	      tbody = container.append("tbody");
 	      tbody.selectAll("tr").data(content).enter().append("tr").selectAll("td").data(function (d) {
 	        return d;
@@ -2032,7 +2116,8 @@ webpackJsonp([0],{
 	    var cluster_id = payload[0];
 	
 	    if (_is_subcluster) {
-	      this_cell.append("i").classed("fa fa-angle-right", true).style("padding-right", "0.25em");
+	      //this_cell.append("i")
+	      //      .classed("fa fa-arrow-circle-o-right", true).style("padding-right", "0.25em");  
 	
 	      if (payload[2].rr_count) {
 	        this_cell.append("i").classed("fa fa-exclamation-triangle", true).attr("title", "Subcluster has recent/rapid nodes");
@@ -2075,6 +2160,9 @@ webpackJsonp([0],{
 	          collapse_cluster(self.clusters[payload[payload.length - 1] - 1]);
 	        }
 	        self.update_volatile_elements(self.cluster_table);
+	        if (self.subcluster_table) {
+	          self.update_volatile_elements(self.subcluster_table);
+	        }
 	      }
 	    });
 	  }
@@ -2125,24 +2213,41 @@ webpackJsonp([0],{
 	
 	  function _node_table_draw_buttons(element, payload) {
 	    var this_cell = d3.select(element);
-	    var labels = [payload.length == 1 ? ["can't be shown", 1] : [payload[0] ? "hide" : "show", 0]];
+	    var labels = [payload.length == 1 ? _.isString(payload[0]) ? [payload[0], 1, "btn-warning"] : ["can't be shown", 1] : [payload[0] ? "hide" : "show", 0]];
+	
+	    if (payload.length == 2 && payload[1] >= 1) {
+	      labels.push(["View cluster", function () {
+	        self.open_exclusive_tab_view(payload[1]);
+	      }]);
+	    }
 	
 	    var buttons = this_cell.selectAll("button").data(labels);
 	    buttons.enter().append("button");
 	    buttons.exit().remove();
-	    buttons.classed("btn btn-primary btn-xs btn-node-property", true).text(function (d) {
+	    buttons.classed("btn btn-xs btn-node-property", true).classed("btn-primary", true)
+	    //.classed(function (d) {return d.length >=3 ? d[2] : "";}, function (d) {return d.length >= 3;})
+	    .text(function (d) {
 	      return d[0];
 	    }).attr("disabled", function (d) {
-	      return d[1] ? "disabled" : null;
+	      return d[1] && !_.isFunction(d[1]) ? "disabled" : null;
 	    }).on("click", function (d) {
-	      if (d[1] == 0) {
-	        if (payload[0]) {
-	          collapse_cluster(self.clusters[payload[payload.length - 1] - 1], true);
-	        } else {
-	          expand_cluster(self.clusters[payload[payload.length - 1] - 1]);
+	      if (_.isFunction(d[1])) {
+	        d[1].call(d);
+	      } else {
+	        if (d[1] == 0) {
+	          if (payload[0]) {
+	            collapse_cluster(self.clusters[payload[payload.length - 1] - 1], true);
+	          } else {
+	            expand_cluster(self.clusters[payload[payload.length - 1] - 1]);
+	          }
+	          //format_a_cell(d3.select(element).datum(), null, element);
+	          self.update_volatile_elements(self.node_table);
 	        }
-	        //format_a_cell(d3.select(element).datum(), null, element);
-	        self.update_volatile_elements(self.node_table);
+	      }
+	    });
+	    buttons.each(function (d, e) {
+	      if (d.length >= 3) {
+	        d3.select(this).classed("btn-primary", false).classed(d[2], true);
 	      }
 	    });
 	  }
@@ -2155,8 +2260,10 @@ webpackJsonp([0],{
 	    });
 	  };
 	
-	  function draw_node_table(extra_columns) {
+	  self.draw_node_table = function (extra_columns, node_list) {
 	    if (self.node_table) {
+	
+	      node_list = node_list || self.nodes;
 	
 	      var headers = [[{
 	        value: "ID",
@@ -2181,28 +2288,34 @@ webpackJsonp([0],{
 	        });
 	      }
 	
-	      var rows = self.nodes.map(function (n, i) {
+	      var rows = node_list.map(function (n, i) {
 	        var this_row = [{
 	          value: n.id,
 	          help: "Node ID"
 	        }, {
 	          value: function value() {
-	            try {
-	              if (self.exclude_cluster_ids[n.cluster]) {
-	                // parent cluster can't be rendered
-	                // because of size restrictions
-	                return [n.cluster];
+	            if (n.node_class != "injected") {
+	              try {
+	                if (self.exclude_cluster_ids[n.cluster]) {
+	                  // parent cluster can't be rendered
+	                  // because of size restrictions
+	                  return [n.cluster];
+	                }
+	                return [!self.clusters[self.cluster_mapping[n.cluster]].collapsed, n.cluster];
+	              } catch (err) {
+	                return [-1];
 	              }
-	              return [!self.clusters[self.cluster_mapping[n.cluster]].collapsed, n.cluster];
-	            } catch (err) {}
+	            } else {
+	              return [n.node_annotation];
+	            }
 	          },
 	          callback: _node_table_draw_buttons,
 	          volatile: true
 	        }, {
-	          value: n.degree,
+	          value: "degree" in n ? n.degree : "Not defined",
 	          help: "Node degree"
 	        }, {
-	          value: n.cluster,
+	          value: "cluster" in n ? n.cluster : "Not defined",
 	          help: "Which cluster does the node belong to"
 	        }];
 	
@@ -2214,14 +2327,15 @@ webpackJsonp([0],{
 	        return this_row;
 	      });
 	
-	      add_a_sortable_table(self.node_table, headers, rows
+	      add_a_sortable_table(self.node_table, headers, rows, true
 	      // rows
 	      );
 	    }
-	  }
+	  };
 	
-	  function draw_cluster_table(extra_columns) {
-	    if (self.cluster_table) {
+	  self.draw_cluster_table = function (extra_columns, element, skip_clusters, skip_subclusters) {
+	    element = element || self.cluster_table;
+	    if (element) {
 	
 	      var headers = [[{
 	        value: "Cluster ID",
@@ -2239,14 +2353,20 @@ webpackJsonp([0],{
 	        value: "Size",
 	        sort: "value",
 	        help: "Number of nodes in the cluster"
-	      }, {
-	        value: "# links/node<br>Mean [Median, IQR]",
-	        html: true
-	      }, {
-	        value: "Genetic distance<br>Mean [Median, IQR]",
-	        help: "Genetic distance among nodes in the cluster",
-	        html: true
 	      }]];
+	
+	      if (!self._is_CDC) {
+	        headers.push({
+	          value: "# links/node<br>Mean [Median, IQR]",
+	          html: true
+	        });
+	
+	        headers.push({
+	          value: "Genetic distance<br>Mean [Median, IQR]",
+	          help: "Genetic distance among nodes in the cluster",
+	          html: true
+	        });
+	      }
 	
 	      if (extra_columns) {
 	        _.each(extra_columns, function (d) {
@@ -2271,26 +2391,30 @@ webpackJsonp([0],{
 	            volatile: true
 	          }, {
 	            value: d.children.length
-	          }, {
-	            value: d.degrees,
-	            format: function format(d) {
-	              try {
-	                return _defaultFloatFormat(d["mean"]) + " [" + _defaultFloatFormat(d["median"]) + ", " + _defaultFloatFormat(d["Q1"]) + " - " + _defaultFloatFormat(d["Q3"]) + "]";
-	              } catch (e) {
-	                return "";
-	              }
-	            }
-	          }, {
-	            value: d.distances,
-	            format: function format(d) {
-	              try {
-	                return _defaultFloatFormat(d["mean"]) + " [" + _defaultFloatFormat(d["median"]) + ", " + _defaultFloatFormat(d["Q1"]) + " - " + _defaultFloatFormat(d["Q3"]) + "]";
-	              } catch (e) {
-	                return "";
-	              }
-	            }
 	          }];
 	
+	          if (!self._is_CDC_) {
+	            this_row.push({
+	              value: d.degrees,
+	              format: function format(d) {
+	                try {
+	                  return _defaultFloatFormat(d["mean"]) + " [" + _defaultFloatFormat(d["median"]) + ", " + _defaultFloatFormat(d["Q1"]) + " - " + _defaultFloatFormat(d["Q3"]) + "]";
+	                } catch (e) {
+	                  return "";
+	                }
+	              }
+	            });
+	            this_row.push({
+	              value: d.distances,
+	              format: function format(d) {
+	                try {
+	                  return _defaultFloatFormat(d["mean"]) + " [" + _defaultFloatFormat(d["median"]) + ", " + _defaultFloatFormat(d["Q1"]) + " - " + _defaultFloatFormat(d["Q3"]) + "]";
+	                } catch (e) {
+	                  return "";
+	                }
+	              }
+	            });
+	          }
 	          if (extra_columns) {
 	            _.each(extra_columns, function (ed) {
 	              this_row.push(ed.generator(d, self));
@@ -2300,16 +2424,20 @@ webpackJsonp([0],{
 	          return this_row;
 	        };
 	
-	        rows.push(make_row(cluster, false));
+	        if (!skip_clusters) {
+	          rows.push(make_row(cluster, false));
+	        }
 	
-	        _.each(cluster.subclusters, function (sub_cluster) {
-	          rows.push(make_row(sub_cluster, true));
-	        });
+	        if (!skip_subclusters) {
+	          _.each(cluster.subclusters, function (sub_cluster) {
+	            rows.push(make_row(sub_cluster, true));
+	          });
+	        }
 	      });
 	
-	      add_a_sortable_table(self.cluster_table, headers, rows);
+	      add_a_sortable_table(element, headers, rows, true);
 	    }
-	  }
+	  };
 	
 	  /*------------ Update layout code ---------------*/
 	  function update_network_string(node_count, edge_count) {
@@ -2350,6 +2478,8 @@ webpackJsonp([0],{
 	
 	    container.attr("d", misc.symbol(symbol_type).size(node_size(node))).attr("class", "node").classed("selected_object", function (d) {
 	      return d.match_filter;
+	    }).classed("injected_object", function (d) {
+	      return d.node_class == "injected";
 	    }).attr("transform", function (d) {
 	      return "translate(" + d.x + "," + d.y + ")";
 	    }).style("fill", function (d) {
@@ -2486,6 +2616,19 @@ webpackJsonp([0],{
 	    if (self.legend_caption) {
 	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text(self.legend_caption).style("font-weight", "bold");
 	      offset += 18;
+	    }
+	
+	    if (self.edge_legend) {
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text(self.edge_legend["caption"]).style("font-weight", "bold");
+	      offset += 18;
+	
+	      _.each(self.edge_legend["types"], function (value, key) {
+	        self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + offset + ")").append("text").text(key);
+	
+	        value.call(self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(0," + offset + ")").append("line").attr("x1", "0").attr("y1", "-4").attr("x2", "12").attr("y2", "-4").classed("legend", true));
+	
+	        offset += 18;
+	      });
 	    }
 	
 	    if (self.colorizer["category_id"]) {
@@ -2865,31 +3008,38 @@ webpackJsonp([0],{
 	    return self.cluster_sizes.length == 0;
 	  };
 	
-	  self.update = function (soft, friction) {
-	    self.needs_an_update = false;
-	
-	    if (friction) {
-	      network_layout.friction(friction);
-	    }
+	  self.display_warning = function (warning_string, is_html) {
 	    if (network_warning_tag) {
 	      if (warning_string.length) {
 	        var warning_box = d3.select(network_warning_tag);
 	        warning_box.selectAll("div").remove();
-	        warning_box.append("div").text(warning_string);
+	        if (is_html) {
+	          warning_box.append("div").html(warning_string);
+	        } else {
+	          warning_box.append("div").text(warning_string);
+	        }
 	        warning_box.style("display", "block");
 	        warning_string = "";
 	      } else {
 	        d3.select(network_warning_tag).style("display", "none");
 	      }
 	    }
+	  };
+	
+	  self.update = function (soft, friction) {
+	    self.needs_an_update = false;
+	
+	    if (friction) {
+	      network_layout.friction(friction);
+	    }
+	    self.display_warning(warning_string);
 	
 	    var rendered_nodes, rendered_clusters, link;
 	
 	    if (!soft) {
 	      var draw_me = prepare_data_to_graph();
 	
-	      network_layout.nodes(draw_me.all).links(draw_me.edges).start();
-	
+	      network_layout.nodes(draw_me.all).links(draw_me.edges);
 	      update_network_string(draw_me.nodes.length, draw_me.edges.length);
 	
 	      link = self.network_svg.selectAll(".link").data(draw_me.edges, function (d) {
@@ -2909,12 +3059,6 @@ webpackJsonp([0],{
 	        //return false;
 	      });
 	
-	      if (self.additional_edge_styler) {
-	        link.each(function (d) {
-	          self.additional_edge_styler(this, d, self);
-	        });
-	      }
-	
 	      link.on("mouseover", edge_pop_on).on("mouseout", edge_pop_off).filter(function (d) {
 	        return d.directed;
 	      }).attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
@@ -2922,6 +3066,7 @@ webpackJsonp([0],{
 	      rendered_nodes = self.network_svg.selectAll(".node").data(draw_me.nodes, function (d) {
 	        return d.id;
 	      });
+	
 	      rendered_nodes.exit().remove();
 	      rendered_nodes.enter().append("path");
 	
@@ -2936,8 +3081,16 @@ webpackJsonp([0],{
 	        return "translate(" + d.x + "," + d.y + ")";
 	      }).on("click", handle_cluster_click).on("mouseover", cluster_pop_on).on("mouseout", cluster_pop_off).call(network_layout.drag().on("dragstart", cluster_pop_off));
 	
-	      draw_cluster_table(self.extra_cluster_table_columns);
-	      draw_node_table(self.extra_node_table_columns);
+	      self.draw_cluster_table(self.extra_cluster_table_columns, self.cluster_table, false, self.subcluster_table);
+	
+	      if (self._is_CDC_ && !(options && options["no-subclusters"])) {
+	        self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
+	      }
+	
+	      if (self.subcluster_table) {
+	        self.draw_cluster_table(self.extra_subcluster_table_columns, self.subcluster_table, true, false);
+	      }
+	      self.draw_node_table(self.extra_node_table_columns);
 	    } else {
 	      rendered_nodes = self.network_svg.selectAll(".node");
 	      rendered_clusters = self.network_svg.selectAll(".cluster-group");
@@ -2956,8 +3109,16 @@ webpackJsonp([0],{
 	    link.style("opacity", function (d) {
 	      return Math.max(node_opacity(d.target), node_opacity(d.source));
 	    });
+	
+	    if (self.additional_edge_styler) {
+	      link.each(function (d) {
+	        self.additional_edge_styler(this, d, self);
+	      });
+	    }
+	
 	    link.style("display", function (d) {
-	      if (d.target.is_hidden || d.source.is_hidden) {
+	
+	      if (d.target.is_hidden || d.source.is_hidden || d.is_hidden) {
 	        return "none";
 	      }
 	      return null;
@@ -2970,6 +3131,7 @@ webpackJsonp([0],{
 	        var sizes = network_layout.size();
 	
 	        rendered_nodes.attr("transform", function (d) {
+	
 	          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
 	        });
 	        rendered_clusters.attr("transform", function (d) {
@@ -2986,6 +3148,8 @@ webpackJsonp([0],{
 	          return d.target.y;
 	        });
 	      });
+	
+	      network_layout.start();
 	    } else {
 	
 	      link.each(function (d) {
@@ -3035,30 +3199,34 @@ webpackJsonp([0],{
 	  }
 	
 	  self.attribute_node_value_by_id = function (d, id, number) {
-	    if (_networkNodeAttributeID in d && id) {
+	    try {
+	      if (_networkNodeAttributeID in d && id) {
 	
-	      if (id in d[_networkNodeAttributeID]) {
+	        if (id in d[_networkNodeAttributeID]) {
 	
-	        var v;
+	          var v;
 	
-	        if (self.json[_networkGraphAttrbuteID][id].volatile) {
-	          v = self.json[_networkGraphAttrbuteID][id].map(d, self);
-	        } else {
-	          v = d[_networkNodeAttributeID][id];
-	        }
-	
-	        if (_.isString(v)) {
-	          if (v.length == 0) {
-	            return _networkMissing;
+	          if (self.json[_networkGraphAttrbuteID][id].volatile) {
+	            v = self.json[_networkGraphAttrbuteID][id].map(d, self);
 	          } else {
-	            if (number) {
-	              v = +v;
-	              return _.isNaN(v) ? _networkMissing : v;
+	            v = d[_networkNodeAttributeID][id];
+	          }
+	
+	          if (_.isString(v)) {
+	            if (v.length == 0) {
+	              return _networkMissing;
+	            } else {
+	              if (number) {
+	                v = +v;
+	                return _.isNaN(v) ? _networkMissing : v;
+	              }
 	            }
 	          }
+	          return v;
 	        }
-	        return v;
 	      }
+	    } catch (e) {
+	      console.log("self.attribute_node_value_by_id", e, d, id, number);
 	    }
 	    return _networkMissing;
 	  };
@@ -3217,10 +3385,12 @@ webpackJsonp([0],{
 	  }
 	
 	  function expand_cluster(x, copy_coord) {
+	
 	    self.needs_an_update = true;
 	    x.collapsed = false;
 	    currently_displayed_objects += self.cluster_sizes[x.cluster_id - 1] - 1;
 	    open_cluster_queue.push(x.cluster_id);
+	
 	    if (copy_coord) {
 	      x.children.forEach(function (n) {
 	        n.x = x.x + (Math.random() - 0.5) * x.children.length;
@@ -3652,6 +3822,323 @@ webpackJsonp([0],{
 	    return array;
 	  }
 	
+	  /*------------ Node injection (social network) ---------------*/
+	
+	  self.load_nodes_edges = function (nodes_and_attributes, index_id, edges_and_attributes, annotation) {
+	    annotation = annotation || "Social";
+	    /** 
+	       1. Scan the list of nodes for 
+	           a. Nodes not present in the existing network
+	           b. Attribute names
+	           c. Attribute values
+	       
+	       2. Scan the list of edges for 
+	           a. Edges not present in the existing network 
+	           b. Attribute names
+	           c. Attribute values
+	    */
+	
+	    var new_nodes = [];
+	    var edge_types_dict = {};
+	    var existing_nodes = 0;
+	    try {
+	      if (nodes_and_attributes && nodes_and_attributes.length) {
+	
+	        var injected_nodes = {};
+	        var node_attributes = {};
+	
+	        if (!(index_id in nodes_and_attributes[0])) {
+	          throw index_id + " is not one of the attributes in the imported node records";
+	        }
+	
+	        _.each(nodes_and_attributes[0], function (r, i) {
+	          if (i != index_id) {
+	            var attribute_definition = {
+	              label: i,
+	              type: "String",
+	              annotation: annotation
+	            };
+	            self.inject_attribute_description(i, attribute_definition);
+	          }
+	        });
+	
+	        var existing_network_nodes = {},
+	            node_name_2_id = {};
+	
+	        _.each(self.json.Nodes, function (n, i) {
+	          existing_network_nodes[n.id] = n;
+	          node_name_2_id[n.id] = i;
+	        });
+	
+	        _.each(nodes_and_attributes, function (n) {
+	          function handle_node_attributes(target) {
+	            _.each(n, function (attribute_value, attribute_key) {
+	              if (attribute_key != index_id) {
+	                inject_attribute_node_value_by_id(target, attribute_key, attribute_value);
+	              }
+	            });
+	          }
+	
+	          if (n[index_id] in existing_network_nodes) {
+	            handle_node_attributes(existing_network_nodes[n[index_id]]);
+	            existing_nodes++;
+	          } else {
+	            var new_node = { _networkNodeAttributeID: {}, node_class: "injected", node_annotation: annotation, attributes: [], degree: 0 };
+	            new_node.id = n[index_id];
+	            handle_node_attributes(new_node);
+	            node_name_2_id[new_node.id] = self.json.Nodes.length;
+	            self.json.Nodes.push(new_node);
+	            new_nodes.push(new_node);
+	          }
+	        });
+	
+	        _.each(edges_and_attributes, function (e) {
+	          try {
+	            if ("Index" in e && "Partner" in e && "Contact" in e) {
+	              if (!e["Index"] in node_name_2_id) {
+	                throw "Invalid index node";
+	              }
+	              if (!e["Partner"] in node_name_2_id) {
+	                throw "Invalid partner node";
+	              }
+	
+	              edge_types_dict[e["Contact"]] = (edge_types_dict[e["Contact"]] ? edge_types_dict[e["Contact"]] : 0) + 1;
+	
+	              var new_edge = { 'source': node_name_2_id[e["Index"]],
+	                'target': node_name_2_id[e["Partner"]],
+	                'edge_type': e["Contact"],
+	                'length': 0.005,
+	                'directed': true };
+	
+	              self.json.Edges.push(new_edge);
+	            } else {
+	              throw "Missing required attribute";
+	            }
+	          } catch (err) {
+	            throw "Invalid edge specification ( " + err + ") " + JSON.stringify(e);
+	          }
+	        });
+	
+	        self._aux_populate_category_menus();
+	        self.update_clusters_with_injected_nodes(null, null, annotation);
+	        self.draw_node_table(self.extra_node_table_columns, self.json.Nodes);
+	        if (!self.extra_cluster_table_columns) {
+	          self.extra_cluster_table_columns = [];
+	        }
+	        if (!self.extra_subcluster_table_columns) {
+	          self.extra_subcluster_table_columns = [];
+	        }
+	
+	        var edge_types_by_cluster = {};
+	        _.each(self.json.Edges, function (e) {
+	          var edge_clusters = _.union(_.keys(self.json.Nodes[e.source].extended_cluster), _.keys(self.json.Nodes[e.target].extended_cluster));
+	          _.each(edge_clusters, function (c) {
+	            if (!(c in edge_types_by_cluster)) {
+	              edge_types_by_cluster[c] = {};
+	            }
+	            if (e.edge_type) {
+	              edge_types_by_cluster[c][e.edge_type] = 1;
+	            }
+	          });
+	        });
+	
+	        var edge_types_by_cluster_sorted = {};
+	        _.each(edge_types_by_cluster, function (v, c) {
+	          var my_keys = _.keys(v);
+	          my_keys.sort();
+	          edge_types_by_cluster_sorted[c] = my_keys;
+	        });
+	
+	        var edge_types = _.keys(edge_types_dict);
+	        edge_types.sort();
+	        var _edge_colorizer = d3.scale.ordinal().range(_networkCategoricalBase).domain(edge_types);
+	
+	        var injected_column = [{ 'description': {
+	            value: annotation + " network",
+	            sort: function sort(c) {
+	              return c.value[0];
+	            },
+	            help: "Nodes added and clusters merged through " + annotation
+	          },
+	          'generator': function generator(cluster) {
+	
+	            return {
+	              value: [cluster.injected[annotation], cluster.linked_clusters, cluster.cluster_id],
+	
+	              callback: function callback(element, payload) {
+	
+	                var this_cell = d3.select(element);
+	                this_cell.text(+payload[0] + " " + annotation + " nodes. ");
+	                var other_clusters = [];
+	                if (payload[1]) {
+	                  other_clusters = _.without(_.keys(payload[1]), payload[2]);
+	                  if (other_clusters.length) {
+	                    other_clusters.sort();
+	                    this_cell.append("span").classed("label label-info", true).text("Bridges to " + other_clusters.length + " clusters").attr("title", other_clusters.join(", "));
+	                  }
+	                }
+	
+	                var labeled_links = _.clone(edge_types_by_cluster_sorted[payload[2]]);
+	
+	                if (payload[0] > 0 || other_clusters.length || edge_types_by_cluster_sorted[payload[2]] && labeled_links.length) {
+	
+	                  labeled_links.push("");
+	
+	                  var shown_types = {};
+	                  _.each(labeled_links, function (t) {
+	                    shown_types[t] = 1;
+	                  });
+	
+	                  this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("View " + annotation).on("click", function (e) {
+	                    self.open_exclusive_tab_view(payload[2], function (n) {
+	                      return n.extended_cluster && payload[2] in n.extended_cluster;
+	                    }, function (id) {
+	                      return "Cluster " + id + " with " + annotation;
+	                    }, {
+	                      "edge-styler": function edgeStyler(element, d, network) {
+	                        if (_.has(d, "edge_type")) {
+	                          d3.select(element).style("stroke", network._edge_colorizer(d["edge_type"]));
+	                          d.is_hidden = !network.shown_types[d["edge_type"]];
+	                        } else {
+	                          d.is_hidden = !network.shown_types[""];
+	                        }
+	                      },
+	
+	                      "init_code": function init_code(network) {
+	                        function style_edge(type) {
+	
+	                          this.style("stroke-width", "5px");
+	                          if (type.length) {
+	                            this.style("stroke", network._edge_colorizer(type));
+	                          } else {
+	                            this.classed("link", true);
+	                            var def_color = this.style("stroke");
+	                            this.classed("link", null);
+	                            this.style("stroke", def_color);
+	                          }
+	                        };
+	                        network._edge_colorizer = _edge_colorizer;
+	                        network.shown_types = _.clone(shown_types);
+	                        network.edge_legend = { "caption": "Network links",
+	                          "types": {} };
+	
+	                        _.each(network.shown_types, function (ignore, t) {
+	                          if (t.length) {
+	                            network.edge_legend.types[t] = _.partial(style_edge, t);
+	                          } else {
+	                            network.edge_legend.types["Molecular links"] = _.partial(style_edge, t);
+	                          }
+	                        });
+	                      },
+	
+	                      "extra_menu": {
+	                        "title": "Additional options",
+	                        "items": _.map(labeled_links, function (edge_class) {
+	                          return [function (network, element) {
+	                            function toggle_element() {
+	                              network.shown_types[edge_class] = !network.shown_types[edge_class];
+	                              checkbox.attr("checked", network.shown_types[edge_class] ? "" : null);
+	                              network.update(true);
+	                            }
+	
+	                            var link;
+	
+	                            if (edge_class.length) {
+	                              link = element.append("a").text(edge_class + " links").style("color", network._edge_colorizer(edge_class)).on("click", toggle_element);
+	                            } else {
+	                              link = element.append("a").text("Molecular links").on("click", toggle_element);
+	                            }
+	                            var checkbox = link.append("input").attr("type", "checkbox").attr("checked", "");
+	                          }];
+	                        })
+	                      }
+	                    });
+	                  });
+	                }
+	              }
+	            };
+	          }
+	        }];
+	
+	        self.extra_cluster_table_columns = self.extra_cluster_table_columns.concat(injected_column);
+	        self.draw_cluster_table(self.extra_cluster_table_columns, self.cluster_table, false, self.subcluster_table);
+	      }
+	    } catch (e) {
+	      throw e;
+	    }
+	
+	    return { 'nodes': new_nodes, 'existing_nodes': existing_nodes, 'edges': edge_types_dict };
+	  };
+	
+	  self.update_clusters_with_injected_nodes = function (node_filter, edge_filter, annotation) {
+	
+	    var cluster_report = {};
+	
+	    try {
+	
+	      node_filter = node_filter || function () {
+	        return true;
+	      };
+	      edge_filter = edge_filter || function () {
+	        return true;
+	      };
+	
+	      var split_clusters = {};
+	      var node_id_to_local_cluster = {};
+	
+	      var recomputed_clusters = hivtrace_cluster_depthwise_traversal(_.filter(self.json.Nodes, node_filter), self.json.Edges, null, false);
+	
+	      _.each(recomputed_clusters, function (c) {
+	        var cluster_ids = {};
+	        var injected_count = 0;
+	
+	        _.each(c, function (n) {
+	          cluster_ids[n.cluster] = 1;
+	          injected_count += n.cluster ? 0 : 1;
+	        });
+	
+	        //var cluster_ids = _.keys (cluster_ids);
+	
+	        //console.log (cluster_ids.length);
+	
+	        // count how many "injected" nodes are there in the new cluster
+	
+	
+	        if (injected_count) {
+	          delete cluster_ids[undefined];
+	        }
+	
+	        var cluster_count = _.keys(cluster_ids).length;
+	
+	        _.each(c, function (n) {
+	          if ('extended_cluster' in n) {
+	            _.extend(n['extended_cluster'], cluster_ids);
+	          } else {
+	            n['extended_cluster'] = cluster_ids;
+	          }
+	        });
+	
+	        _.each(cluster_ids, function (c, k) {
+	          //console.log (k);
+	          var existing_cluster = self.clusters[k - 1];
+	          if (!existing_cluster.injected) {
+	            existing_cluster.injected = {};
+	          }
+	          existing_cluster.injected[annotation] = injected_count;
+	          if ('linked_clusters' in existing_cluster) {
+	            _.extend(existing_cluster['linked_clusters'], cluster_ids);
+	          } else {
+	            existing_cluster['linked_clusters'] = cluster_ids;
+	          }
+	        });
+	      });
+	    } catch (err) {
+	      console.log(err);
+	      throw err;
+	    }
+	
+	    return recomputed_clusters;
+	  };
 	  /*------------ Event Functions ---------------*/
 	  function toggle_tooltip(element, turn_on, title, tag, container) {
 	    //if (d3.event.defaultPrevented) return;

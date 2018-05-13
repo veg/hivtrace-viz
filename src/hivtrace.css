@@ -150,3 +150,9 @@ path.selected_object, circle.selected_object {
   stroke: #000;
 }
 
+path.injected_object, circle.injected_object {
+  stroke-width : 2px !important;
+  stroke: #d9534f !important;
+  /*stroke-dasharray: 10 1;*/
+}
+

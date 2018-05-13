@@ -41,9 +41,12 @@
 
       <ul class="nav navbar-nav">
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Load file<b class="caret"></b></a>
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">File<b class="caret"></b></a>
           <ul class="dropdown-menu">
-            <li><input type="file" id="json_file"></li>
+            <li> <label>Load network JSON</label> <input type="file" id="json_file"></id></li>
+            <li>
+                <a href = "#" data-toggle = "modal" data-target = "#csv_loader_modal"><span class = "fa fa-database"></span> Load .CSV data </a>
+            </li>
           </ul>
         </li>
       </ul>
@@ -58,18 +61,95 @@
 </nav>
 
 
+<div class="modal fade" id = "csv_loader_modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+         <h4 class="modal-title">Load external network information</h4>
+      </div>
+      <div class="modal-body">      
+        <form id = "csv_enclosing_form">
+          <div class="form-group">
+            <label for="csv_import_text">Data type label</label>
+            <input type="text" id="csv_import_text" value="Social"/>
+             <p class="help-block">Descriptive name for the type of data being loaded.</p>
+          </div>
+
+          <div class="form-group">
+            <label for = "csv_node_progress">Node attribute file</label> 
+            <button id = "csv_node_file_help" type="button" class="btn btn-xs btn-info">
+                <span class = "fa fa-question"></span>
+            </button>
+            <input type="file" id="csv_node_file"/>
+            <div id = "csv_node_progress" style = "display:none">Loading...<span class = "fa fa-spinner fa-spin"></span></div>
+            <p class="help-block">A CSV file with node attributes.</p>
+          </div>
+
+
+
+            
+          <div class="input-group">
+            <label for = "csv_edge_progress">Link attribute file</label> 
+            <button id = "csv_edge_file_help" type="button" class="btn btn-xs btn-info">
+                <span class = "fa fa-question"></span>
+            </button>
+            <input type="file" id="csv_edge_file"/>
+            <div id = "csv_node_progress" style = "display:none">Loading...<span class = "fa fa-spinner fa-spin"></span></div>
+            <p class="help-block">A CSV file with links and their attribute.</p>
+          </div>
+          
+          <div class="alert" role="alert" style = "display:none" id = "csv_import_status">
+                
+          </div>
+          
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+      
+        <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
+        <button type="button" class="btn btn-primary" disabled id = "csv_proceed_button">Proceed</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
 <div class="container">
    <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
      <div class="col-lg-12">
          <div class="alert alert-danger alert-lg" id='app-error' style='display:none;'></div>
     </div>
    </div>
+   
+    <div class="modal fade" data-hivtrace-ui-role="cluster_list" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content" data-hivtrace-ui-role = "cluster_list_body">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Listing nodes in cluster X</h4>
+             <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'attribute'>Group by ID</button>
+             <button type="button"  class = 'btn btn-default btn-small'><i class="fa fa-download" data-hivtrace-ui-role = "cluster_list_data_export"></i></button>
+         </div>
+          <ul data-hivtrace-ui-role = 'cluster_list_payload' class = 'list-unstyled'>
+          </ul>
+          <div class="modal-footer">
+            <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
+            <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
   <div class="tabbable">
     <ul class="nav nav-tabs" id="top_level_tab_container">
       <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
       <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
       <li class='disabled' id="graph-tab"><a href="#trace-graph" data-toggle="tab">Statistics</a></li>
       <li class='disabled' id="clusters-tab"><a href="#trace-clusters" data-toggle="tab">Clusters</a></li>
+      <li class='disabled' id="subclusters-tab"><a href="#trace-subclusters" data-toggle="tab">Subclusters</a></li>
       <li class='disabled' id="nodes-tab"><a href="#trace-nodes" data-toggle="tab">Nodes</a></li>
       <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
       <li class='disabled'><a href="#trace-settings" data-toggle="tab">Settings</a></li>
@@ -271,29 +351,20 @@
     <div id="trace-clusters" class="tab-pane">
       <div class='row'>
         <div class='col-lg-12'>
-
-            <div class="modal fade" data-hivtrace-ui-role="cluster_list" tabindex="-1" role="dialog">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content" data-hivtrace-ui-role = "cluster_list_body">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Listing nodes in cluster X</h4>
-                     <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'attribute'>Group by ID</button>
-                     <button type="button"  class = 'btn btn-default btn-small'><i class="fa fa-download" data-hivtrace-ui-role = "cluster_list_data_export"></i></button>
-                 </div>
-				  <ul data-hivtrace-ui-role = 'cluster_list_payload' class = 'list-unstyled'>
-				  </ul>
-                  <div class="modal-footer">
-                    <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           <span class="pull-right" id="cluster-table-export"> </span>
           <p class="lead"> Clusters </p>
           <table class="table table-striped table-condensed table-hover" id="cluster_table">
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="trace-subclusters" class="tab-pane">
+      <div class='row'>
+        <div class='col-lg-12'>
+          <span class="pull-right" id="cluster-table-export"> </span>
+          <p class="lead"> Subclusters </p>
+          <table class="table table-striped table-condensed table-hover" id="subcluster_table">
           </table>
         </div>
       </div>
@@ -372,19 +443,32 @@ var network_container     = '#network_tag',
     filter_edges_toggle   = '#network_ui_bar_toggle_filter_edges',
     graph_summary_tag     = '#graph_summary_table',
     cluster_table         = '#cluster_table',
+    subcluster_table      = '#subcluster_table',
     parent_container      = '#top_level_tab_container',
-    node_table            = '#node_table';
+    node_table            = '#node_table',
+    user_graph;
 
 
 var init = function(data) {
 
-
-
   var graph = "trace_results" in data ? data.trace_results : data;
   var attributes = null;
 
-  var user_graph = new hivtrace.clusterNetwork(graph, network_container, network_status_string, network_warning, button_bar_prefix, attributes, filter_edges_toggle, cluster_table, node_table, parent_container, {"no_cdc" : false});
-
+  user_graph = new hivtrace.clusterNetwork(graph, 
+                                              network_container, 
+                                              network_status_string, 
+                                              network_warning, 
+                                              button_bar_prefix, 
+                                              attributes, 
+                                              filter_edges_toggle, 
+                                              cluster_table, 
+                                              node_table, 
+                                              parent_container, 
+                                              {
+                                                "no_cdc" : false,
+                                                "subcluster-table" : subcluster_table
+                                              });
+                                              
   if (user_graph.is_empty()) {
       $('#main-tab').tab('show');
       d3.select ("#app-error").text ("This network contains no clusters and cannot be displayed").style ('display', null);
@@ -396,7 +480,7 @@ var init = function(data) {
       hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
       hivtrace.graphSummary(graph, graph_summary_tag);
 
-      ["#main-tab","#graph-tab","#clusters-tab","#nodes-tab","#attributes-tab"].forEach (function (tab) {
+      ["#main-tab","#graph-tab","#clusters-tab","#subclusters-tab", "#nodes-tab","#attributes-tab"].forEach (function (tab) {
         d3.select (tab).classed ("disabled",false);
       });
       d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', null)});
@@ -439,8 +523,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  //url = "./test/LA.json";
-  url = "./example.json"
+  url = "./test/SF.json";//SocialNetwork-fixed.trace.json";
+  //url = "./example.json"
 
   d3.json(url, function(results) {
     init(results);
@@ -504,6 +588,41 @@ $("#network_pairwise_chart_legend").popover(
     }
 );
 
+$("#csv_node_file_help").popover(
+{
+     'html' : true,
+     'trigger' : "click",
+     'placement' : "right",
+     'content' : "<div style = 'width : 250px'>\
+		Example content<br>\
+		<code>Index,Heroin_Use,Internet_Dating</code><br>\
+ <code>SocialID669,No,Yes</code><br>\
+ <code>SocialID563,Yes,Yes</code><br>\
+		</code><br>\
+		Must have 'Index' column that will be mapped to existing network node IDs.\
+        </div>\
+     "
+    }
+);
+
+$("#csv_edge_file_help").popover(
+{
+     'html' : true,
+     'trigger' : "click",
+     'placement' : "right",
+     'content' : "<div style = 'width : 250px'>\
+		Example content<br>\
+		<code>Index,Partner,Contact</code><br>\
+ <code>SocialID39,SocialID542,IDU</code><br>\
+ <code>SocialID38,SocialID139,MSM</code><br>\
+		</code><br>\
+		All three listed columns must be present. Index and Partner ID must either be in the molecular network or the node attribute file\
+        </div>\
+     "
+    }
+);
+
+
 $("#network_pairwise_table_legend").on ("click", function (e) {
 	e.preventDefault();
 });
@@ -535,8 +654,71 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
     }
   );
 
-  initialize_cluster_network_graphs();
+    initialize_cluster_network_graphs();
+  
+    var _loaded_network_data = {"nodes" : [], "edges" : []};
+    
+    
+    
+    $("#csv_proceed_button").on ("click", function (e) {
+        try {
+            var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
+            
+            var imported_edges = [];
+            for (k in import_result.edges) {
+                imported_edges.push ("" + import_result.edges[k] + " <i>" + k + "</i> links");
+            }
+            if (imported_edges.length == 0) {
+                imported_edges = ["no link data"];
+            }
+            
+            user_graph.display_warning (
+            "Loaded data on <em>" + import_result.existing_nodes + "</em> existing and <em>" + import_result.nodes.length + "</em> new nodes. <br>" +
+            "Loaded  " + imported_edges.join (", ")
+            ,true);
+            $("#csv_loader_modal").modal ('hide');
+        } 
+        catch (e) {
+            d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-danger").text (e);
+            $ ("#csv_proceed_button").prop ("disabled", true);
+            console.log (e);
+        }
+    });
+    
+    [["#csv_node_file", "#csv_node_progress", "nodes"], 
+     ["#csv_edge_file", "#csv_edge_progress", "edges"]].forEach (function (d) {
 
+        $(d[0]).on ("change", function (e) {
+  
+            $ ("#csv_proceed_button").prop ("disabled");
+            d3.select(d[1]).style("display", "block");
+            var files = e.target.files; // FileList object
+
+            if (files.length == 1) {
+              var f = files[0];
+              var reader = new FileReader();
+
+              reader.onload = (function(theFile) {
+                return function(e) {
+                    _loaded_network_data[d[2]] = d3.csv.parse (e.target.result);
+                    d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-info").text ("Loaded " + _loaded_network_data[d[2]].length + " CSV records ");
+                    d3.select(d[1]).style("display", "none");
+                    if ( _loaded_network_data["nodes"].length ) {
+                        $ ("#csv_proceed_button").prop ("disabled", null);
+                    }
+                };
+              })(f);
+              reader.readAsText(f);
+        }
+        });
+    });
+    
+    $("#csv_loader_modal").on ("show.bs.modal", function (e) {
+        d3.select ("#csv_import_status").style ('display', "none");
+        $("#csv_enclosing_form").get (0).reset();
+        $ ("#csv_proceed_button").prop ("disabled", true);
+    });
+  
   // *** HANDLERS ***
   $("#json_file").on ("change", function (e) {
   
@@ -550,7 +732,6 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
 
       reader.onload = (function(theFile) {
         return function(e) {
-            var container_id = '#tree_container';
             analysis_data = JSON.parse (e.target.result);
             init(analysis_data);
         };

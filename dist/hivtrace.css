@@ -2487,6 +2487,12 @@ path.selected_object, circle.selected_object {
   stroke: #000;
 }
 
+path.injected_object, circle.injected_object {
+  stroke-width : 2px !important;
+  stroke: #d9534f !important;
+  /*stroke-dasharray: 10 1;*/
+}
+
 /*!
  * Bootstrap v3.3.7 (http://getbootstrap.com)
  * Copyright 2011-2016 Twitter, Inc.
