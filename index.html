@@ -531,8 +531,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "example.json";
-  //url = "./example.json"
+ // url = "example.json";
+  url = "test/SF.json"
 
   d3.json(url, function(error, results) {
     if (error) {
@@ -689,6 +689,8 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
             "Loaded  " + imported_edges.join (", ")
             ,true);
             $("#csv_loader_modal").modal ('hide');
+            
+            
         } 
         catch (e) {
             d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-danger").text (e);

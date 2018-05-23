@@ -760,7 +760,7 @@
                 "attributes": [
                     "BULK"
                 ],
-                "directed": false,
+                "directed": true,
                 "length": 0.0100069,
                 "removed": false,
                 "sequences": [
@@ -770,6 +770,21 @@
                 "source": 69,
                 "support": 0,
                 "target": 70
+            },
+            {
+                "attributes": [
+                    "BULK"
+                ],
+                "directed": true,
+                "length": 0.015,
+                "removed": false,
+                "sequences": [
+                    "GA00HHARS008131*",
+                    "GA00HHARS008182*"
+                ],
+                "source": 70,
+                "support": 0,
+                "target": 69
             },
             {
                 "attributes": [

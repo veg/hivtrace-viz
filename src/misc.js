@@ -655,6 +655,349 @@ function hivtrace_format_value(value, formatter) {
 
 }
 
+function hivtrace_plot_cluster_dynamics (time_series, container, x_title, y_title, y_scale, bin_by, options) {
+        
+    options = options || {
+        base_line : 20,
+        top: 40,
+        right: 30,
+        bottom: 3 * 20,
+        left: 5 * 20,
+        font_size : 18,
+        rect_size : 22,
+        width : 1024,
+        height : 600
+    };
+
+    var skip_cumulative = options && options["skip_cumulative"];
+    
+    var width =  options.width - options.left - options.right;
+    var height =  options.height - options.top - options.bottom;
+
+    bin_by = bin_by || function (date) {
+        var year = date.getFullYear (),
+            nearest_quarter = new Date(),
+            mid_point = new Date ();
+            
+        nearest_quarter.setDate (1);
+        nearest_quarter.setFullYear (year);
+        mid_point.setFullYear (year);
+       
+        
+        var quarter = Math.floor (date.getMonth() / 3) + 1;
+        nearest_quarter.setMonth ((quarter) * 3);
+        nearest_quarter.setHours (0,0,0);
+        mid_point.setHours (0,0,0);
+        
+        nearest_quarter.setFullYear (year + (quarter == 4 ? 1 : 0));
+        mid_point.setMonth ((quarter) * 3 + 1);
+        mid_point.setDate (15);
+                        
+        return ["Q" + quarter + " " + year, nearest_quarter, mid_point];
+        
+    };
+
+    /** plot_data is an array with entries like 
+        {
+            "time": DATE,
+            "sex_trans":"IDU-Male"
+        }
+        
+        "time" is required, everything else are optional attributes
+        
+        1. First, we bin everything into ranges (like years or quarters, this is returned by the mapper callback)
+        2. Second, we compute growth dynamics of total counts and individual attributes
+        3. Third, if additional attributes are present, one that's tagged for display is stratified by values and 
+           converted into time series
+        
+    */
+            
+    var x = d3.time.scale()
+        .range([0, width]);
+
+    var y = y_scale ? y_scale : d3.scale.linear();
+    
+    y.range([height, 0]);
+                        
+   
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .ticks (8).tickFormat(d3.time.format ("%m/%Y"));
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left").ticks (8, "f");
+    
+    
+    var binned              = {};
+    var values_by_attribute = {};
+    var total_id            = "total";
+    var total_color         = "#555555";
+    var prefix              = options && options ["prefix"]  ? options ["prefix"] : null;
+    var max_bin             = 0;
+    
+    _.each (time_series, function (point, index) {
+        var bin_tag = bin_by (point["time"]);
+        if (! (bin_tag [0] in binned)) {
+            binned [bin_tag[0]] = {"time" : bin_tag[1], "x" : bin_tag[2]};
+            binned [bin_tag[0]][total_id] = 0;
+            _.each (point, function (v, k) {
+                if (k != "time") {
+                    binned [bin_tag[0]][k] = {};
+                }
+            });
+        }
+        
+        binned [bin_tag[0]][total_id] += 1;
+        max_bin = Math.max (max_bin, binned [bin_tag[0]][total_id]);
+        
+        var y = {};
+        y [total_id] = index + 1;
+        _.each (point, function (v, k) {
+                if (k != "time") {
+                   binned [bin_tag[0]][k][v] = binned [bin_tag[0]][k][v] ? binned [bin_tag[0]][k][v] + 1 : 1;
+                    if (! (k in values_by_attribute)) {
+                        values_by_attribute [k] = {};
+                    }
+                    if (v in values_by_attribute [k]) {
+                        values_by_attribute [k][v] ++;
+                    } else {
+                        values_by_attribute [k][v] = 1;
+                    }
+                    max_bin = Math.max (max_bin, binned [bin_tag[0]][k][v]);
+                    y [k] = _.clone (values_by_attribute[k]);
+                }
+            });
+            
+        point ["y"] = y;    
+        point ["_bin"] = bin_tag[1];
+    }); 
+    
+    
+    var binned_array = [];
+    _.each (binned, function (v,k) {
+        v["id"] = k;
+        binned_array.push (v);
+        
+    });
+        
+    binned_array.sort (function (a,b) {
+        return b['time'] > a['time'] ? 1 : (b['time'] == a['time'] ? 0 : -1);
+    });
+    
+        
+    var min_x = d3.min (time_series, function(d) {
+        return d["time"] < d["_bin"] ? d["time"] : d["_bin"];
+    });
+    var max_x = d3.max (time_series, function(d) {
+        return d["time"] > d["_bin"] ? d["time"] : d["_bin"];
+    });
+              
+    x.domain([min_x,max_x]).clamp (true);
+    y.domain ([0.0, Math.round (skip_cumulative ? max_bin + 1 : time_series.length * 1.2)]).clamp (true);
+    
+    
+    /* step-plot generator*/
+
+    /*var svg = container.append("svg")//.style("display", "table-cell")
+        .attr("width", width + options.left + options.right)
+        .attr("height", height + options.top + options.bottom);*/
+        
+        
+    container.selectAll("*").remove(); // clean up previous plots
+        
+    var legend_area = container.append("g").attr("transform", "translate(" + (options.left + options.font_size * 2.5) + "," + (options.top + options.font_size) + ")")
+
+    var svg = container.append("g")
+        .attr("transform", "translate(" + options.left + "," + options.top + ")");
+
+
+    /* set the domain for the codons */
+        
+    var y_key = _.keys (values_by_attribute)[0];
+    
+    
+    var color_scale = (("colorizer" in options) && options["colorizer"] && (y_key in options["colorizer"])) ? options["colorizer"][y_key]: d3.scale.category10();
+    
+    color_scale = _.wrap (color_scale, function(func, arg) {
+          if (arg == total_id) return total_color;
+          return func(
+            arg
+          );
+        });
+    
+    var plot_types = _.keys (values_by_attribute[y_key]);
+    plot_types.push (total_id);
+    plot_types.sort();
+    
+    if (options && options ["drag"]) {
+        var drag = d3.behavior.drag();
+        drag.on ("drag", function () {
+            options ["drag"].x += d3.event.dx;
+            options ["drag"].y += d3.event.dy;
+            d3.select (this).attr ("transform", "translate(" + options ["drag"].x + ',' + options ["drag"].y + ")");
+        }); 
+        container.call(drag);
+    }
+    
+    
+    
+    var legend_lines = legend_area.selectAll("g").data(plot_types);
+    
+    legend_lines.enter().append("g").attr("class", "annotation-text");
+
+    function opacity_toggle (tag, on_off) {
+        d3.select ('[data-plotid="' + tag + '"]').style ("fill-opacity", on_off ? 0.5 : 0.1);
+        d3.select ('[data-curveid="' + tag + '"]').style ("stroke-width", on_off ? 3 : 1);
+    }
+
+    legend_lines.selectAll("text").data(function(d) {
+            return [d];
+        }).enter().append("text")
+        .attr("transform", function(d, i, j) {
+            return "translate(" + options.rect_size + "," + (options.rect_size * (plot_types.length - 1 - j) - (options.rect_size - options.font_size)) + ")";
+        })
+        .attr("dx", "0.2em")
+        .style ("font-size", options.font_size)
+        .text(function(d) {
+            return d;
+        }).on ("mouseover", function (d) {
+            opacity_toggle (prefix + d, true);
+        }).on ("mouseout", function (d) {
+            opacity_toggle (prefix + d, false);
+        });
+
+
+
+    legend_lines.selectAll("rect").data(function(d) {
+            return [d];
+        }).enter().append("rect")
+        .attr("x", 0)
+        .attr("y", function(d, i, j) {
+            return options.rect_size * (plot_types.length - 2 - j);
+        })
+        .attr("width", options.rect_size)
+        .attr("height", options.rect_size)
+        .attr("class", "area")
+        .style("fill", function(d, i, j) {
+            return color_scale (d);
+        }).on ("mouseover", function (d) {
+            opacity_toggle (prefix + d, true);
+        }).on ("mouseout", function (d) {
+            opacity_toggle (prefix + d, false);
+        });
+
+
+      var last = _.clone (time_series[time_series.length - 1]);
+      last ['time'] = x.domain ()[1];
+      time_series.push (last);
+
+     _.each (plot_types, function (plot_key, idx) {
+    
+        var plot_color = color_scale (plot_key);
+        var y_accessor = function (d) {
+            //console.log ((plot_key in d['y']) ? d['y'][plot_key] : 0);
+            if (plot_key in d['y']) {
+                return d['y'][plot_key];
+            }
+            if (y_key in d['y']) {
+                if (plot_key in d['y'][y_key]) {
+                    return d['y'][y_key][plot_key];
+                }
+            }
+            return 0.0;
+        };
+        
+       var bin_accessor = function (d) {
+            if (y_key && plot_key in d[y_key]) {
+                return d[y_key][plot_key];
+            } else {
+                if (plot_key in d) {
+                    return d[plot_key];
+                }
+            }
+            return 0.0;
+        };
+       
+
+        if (!skip_cumulative) {
+            var curve = d3.svg.area()
+                .x(function(d)  { return x(d['time']); })
+                .y1(function(d) { return y(y_accessor(d)); })
+                .y0(function(d) { return y(0); })
+                .interpolate ("step");
+        
+               svg.append("path")
+                  .datum(time_series)
+                  .classed ("trend", true)
+                  .style ("fill", plot_color)
+                  .style ("stroke", plot_color)
+                  .attr("d", curve)
+                  .attr ("data-plotid", prefix + plot_key);
+        }
+              
+        binned_array.forEach (function (d) {
+            svg.append ("circle").attr ("cx", x(d['time'])).attr ("cy", y(bin_accessor (d))).attr ("r", "5")
+            .classed ("node", true)
+            .style ("fill", plot_color)
+            .style ("stroke", plot_color)
+            .attr ("title", plot_key + " : " + bin_accessor (d));
+        });            
+
+        var curve_year = d3.svg.line()
+            .x(function(d)  { return x(d['time']); })
+            .y(function(d) { return y(bin_accessor(d)); })
+            .interpolate ("cardinal");
+        
+           svg.append("path")
+              .datum(binned_array)
+              .classed ("tracer", true)
+              .style ("stroke", plot_color)
+              .attr("d", curve_year)
+              .attr ("data-curveid", prefix + plot_key);
+
+
+    }
+    );
+
+     /* x-axis */
+    var x_axis = svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .style ("font-size", options.font_size)
+        .call(xAxis);
+        
+    x_axis.selectAll ("text").attr("transform", "rotate(45)")
+                        .attr("dy", "1em")
+                        .attr("dx", "1em");
+
+    
+    x_axis.append("text")
+        .attr("x", width)
+        .attr("dy", "-.5em")
+        .style("text-anchor", "end")
+        .style ("font-size", options.font_size)
+        .text(x_title);
+        
+    
+
+   /* y-axis*/
+    svg.append("g")
+        .attr("class", "y axis")
+        .style ("font-size", options.font_size)
+        .call(yAxis)
+        .append("text")
+        .style ("font-size", options.font_size)
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text(y_title); // beta - alpha
+
+}
+
 module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
 module.exports.export_csv_button = hivtrace_export_csv_button;
 module.exports.convert_to_csv = hivtrace_convert_to_csv;
@@ -671,3 +1014,4 @@ module.exports.processing = {};
 module.exports.format_value = hivtrace_format_value;
 module.exports.polygon = hivtrace_generate_svg_polygon;
 module.exports.symbol = hivtrace_generate_svg_symbol;
+module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
