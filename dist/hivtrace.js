@@ -291,13 +291,30 @@ webpackJsonp([0],{
 	    self.subcluster_table = options && options['subcluster-table'] ? d3.select(options['subcluster-table']) : null;
 	    self.extra_subcluster_table_columns = null;
 	    var cdc_extra = [{ 'description': {
-	        value: "Priority Score",
+	        value: "Recent",
 	        sort: "value",
-	        help: "Nodes in 0.5% subclusters, dx within the last 12 months"
+	        help: "Number of linked cases diagnosed in the past 36 months"
 	      },
 	      'generator': function generator(cluster) {
 	        return {
-	          'value': cluster.priority_score
+	          'value': cluster.recent_nodes
+	        };
+	      }
+	    }, { 'description': {
+	        value: "Rapid",
+	        sort: "value",
+	        help: "Number of cluster members diagnosed in past 12 months"
+	      },
+	      'generator': function generator(cluster) {
+	        return {
+	          'html': true,
+	          'value': cluster.priority_score,
+	          'format': function format(v) {
+	            if (v >= 3) {
+	              return "<span style='color:red'>" + v + " <span class = 'fa fa-exclamation-circle'></span></span>";
+	            }
+	            return v;
+	          }
 	        };
 	      }
 	    }];
@@ -1166,9 +1183,11 @@ webpackJsonp([0],{
 	
 	          sub.rr_count = rr_cluster.length;
 	          sub.priority_score = 0;
+	          sub.recent_nodes = 0;
 	
 	          _.each(rr_cluster, function (recent_cluster) {
 	            var priority_nodes = _.groupBy(recent_cluster, _.partial(filter_by_date, cutoff_short));
+	            sub.recent_nodes += recent_cluster.length;
 	            if (true in priority_nodes) {
 	              sub.priority_score += priority_nodes[true].length;
 	              _.each(priority_nodes[true], function (n) {
