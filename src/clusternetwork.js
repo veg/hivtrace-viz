@@ -374,10 +374,9 @@ var hivtrace_cluster_network_graph = function(
                                                                                  "Subcluster " + node.subcluster)} : null, 
                              ], 
                              
-                            [node.priority_flag == 2,"btn-warning"], 
-                            
+                            [node.priority_flag == 3,"btn-warning"], 
                             [node.priority_flag == 1,"btn-danger"],
-                            [node.priority_flag == 1 && node.in_rr, "btn-danger"]
+                            [node.priority_flag == 2,"btn-danger"]
                            ];
                 }
             }
@@ -468,6 +467,7 @@ var hivtrace_cluster_network_graph = function(
        date = date || self.today;
        var subcluster_enum = ["Subcluster", 
                               "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date,12)) + ")", 
+                              "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date,12)) + ") and R&R subcluster", 
                               "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date,36)) + ")", 
                               "Future node (after " + _defaultDateViewFormat (date) + ")", 
                               "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")",
@@ -483,7 +483,7 @@ var hivtrace_cluster_network_graph = function(
             return d3.scale
               .ordinal()
               .domain(subcluster_enum.concat ([_networkMissing]))
-              .range(_.union(["#CCCCCC","red","blue","#9A4EAE","yellow","#FFFFFF"], [_networkMissingColor]));
+              .range(_.union(["#CCCCCC","pink","red", "blue","#9A4EAE","yellow","#FFFFFF"], [_networkMissingColor]));
            },
 
 
@@ -494,7 +494,7 @@ var hivtrace_cluster_network_graph = function(
                 } 
                 return subcluster_enum[0];
              } 
-             return subcluster_enum[5];
+             return subcluster_enum[6];
           }         
     };};
   
@@ -1256,10 +1256,10 @@ var hivtrace_cluster_network_graph = function(
             node_iterator = [];
             _.each (self.nodes, function (node) {
                  if (filter_by_date (beginning_of_time, node)) {
-                    node.priority_flag = 4;
+                    node.priority_flag = 5;
                     node_iterator.push (node);
                 } else {
-                    node.priority_flag = 3;
+                    node.priority_flag = 4;
                 }
             });
        }
@@ -1407,12 +1407,17 @@ var hivtrace_cluster_network_graph = function(
                     if (true in priority_nodes) {
                         sub.priority_score.push (priority_nodes[true].length);
                         _.each (priority_nodes[true], function (n) { 
-                            n.priority_flag = filter_by_date (start_date, n) ? 3 : 1;
-                            n.in_rr = priority_nodes[true].length >= 3;
+                            n.priority_flag = filter_by_date (start_date, n) ? 4 : 1;
+                            if (priority_nodes[true].length >= 3) {
+                                n.in_rr = true;
+                                if (n.priority_flag == 1) {
+                                    n.priority_flag = 2;
+                                }
+                            }
                         });
                     } 
                     if (false in priority_nodes) {
-                        _.each (priority_nodes[false], function (n) { n.priority_flag = 2;});                    
+                        _.each (priority_nodes[false], function (n) { n.priority_flag = 3;});                    
                     }
                  });
                  
