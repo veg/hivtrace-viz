@@ -483,7 +483,7 @@ var hivtrace_cluster_network_graph = function(
             return d3.scale
               .ordinal()
               .domain(subcluster_enum.concat ([_networkMissing]))
-              .range(_.union(["#CCCCCC","red","pink", "blue","#9A4EAE","yellow","#FFFFFF"], [_networkMissingColor]));
+              .range(_.union(["#CCCCCC","pink","red", "blue","#9A4EAE","yellow","#FFFFFF"], [_networkMissingColor]));
            },
 
 
