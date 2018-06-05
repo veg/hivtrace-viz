@@ -291,29 +291,43 @@ webpackJsonp([0],{
 	    self.subcluster_table = options && options['subcluster-table'] ? d3.select(options['subcluster-table']) : null;
 	    self.extra_subcluster_table_columns = null;
 	    var cdc_extra = [{ 'description': {
-	        value: "Recent",
-	        sort: "value",
-	        help: "Number of linked cases diagnosed in the past 36 months"
+	        value: "Cases dx within 36 months",
+	        sort: function sort(c) {
+	          return c.value.length ? c.value[0] : 0;
+	        },
+	        help: "Number of linked (0.5%) cases diagnosed in the past 36 months"
 	      },
 	      'generator': function generator(cluster) {
 	        return {
-	          'value': cluster.recent_nodes
+	          'html': true,
+	          'value': cluster.recent_nodes,
+	          'format': function format(v) {
+	            if (v.length) {
+	              return v.join(", ");
+	            } else {
+	              return "";
+	            }
+	          }
 	        };
 	      }
 	    }, { 'description': {
-	        value: "Rapid",
+	        value: "Cases dx within 12 months",
 	        sort: "value",
-	        help: "Number of cluster members diagnosed in past 12 months"
+	        help: "Number of linked (0.5%, only through recent nodes) cases diagnosed in past 12 months"
 	      },
 	      'generator': function generator(cluster) {
 	        return {
 	          'html': true,
 	          'value': cluster.priority_score,
 	          'format': function format(v) {
-	            if (v >= 3) {
-	              return "<span style='color:red'>" + v + " <span class = 'fa fa-exclamation-circle'></span></span>";
+	            if (v.length) {
+	              var str = v.join(", ");
+	              if (v[0] >= 3) {
+	                return "<span style='color:red'>" + str + " <span class = 'fa fa-exclamation-circle'></span></span>";
+	              }
+	              return str;
 	            }
-	            return v;
+	            return "";
 	          }
 	        };
 	      }
@@ -341,19 +355,30 @@ webpackJsonp([0],{
 	          //payload = _.filter (payload, function (d) {return d});
 	          var this_cell = d3.select(element);
 	
-	          var data_to_use = [[payload[0][0], payload[0][1]], [payload[1][0] ? "36 months" : "", payload[1][1]], [payload[2][0] ? "12 months" : "", payload[2][1]]];
+	          var data_to_use = [[payload[0][0], payload[0][1], payload[0][2]], [payload[1][0] ? "36 months" : "", payload[1][1]], [payload[2][0] ? "12 months" : "", payload[2][1]], [payload.length > 3 && payload[3][0] ? "Recent cluster ≥ 3" : "", payload.length > 3 ? payload[3][1] : null]];
 	
 	          var buttons = this_cell.selectAll("span").remove();
 	
 	          _.each(data_to_use, function (button_text) {
 	
+	            //self.open_exclusive_tab_view (cluster_id)
 	            if (button_text[0].length) {
-	              this_cell.append("span").classed("btn btn-xs btn-node-property", true).classed(button_text[1], true).attr("disabled", true).text(button_text[0]);
+	              var button_obj = this_cell.append("span").classed("btn btn-xs btn-node-property", true).classed(button_text[1], true).text(button_text[0]);
+	
+	              if (_.isFunction(button_text[2])) {
+	                button_obj.on("click", button_text[2]);
+	              } else {
+	                button_obj.attr("disabled", true);
+	              }
 	            }
 	          });
 	        },
 	        'value': function value() {
-	          return [[node.subcluster ? "Subcluster " + node.subcluster : "", "btn-primary"], [node.priority_flag == 1, "btn-warning"], [node.priority_flag == 2, "btn-danger"]];
+	          return [[node.subcluster ? "Subcluster " + node.subcluster : "", "btn-primary", node.subcluster ? function () {
+	            self.view_subcluster(node.subcluster, function (n) {
+	              return n.subcluster == node.subcluster;
+	            }, "Subcluster " + node.subcluster);
+	          } : null], [node.priority_flag == 3, "btn-warning"], [node.priority_flag == 1, "btn-danger"], [node.priority_flag == 2, "btn-danger"]];
 	        }
 	      };
 	    }
@@ -432,7 +457,7 @@ webpackJsonp([0],{
 	
 	  self.recent_rapid_definition = function (network, date) {
 	    date = date || self.today;
-	    var subcluster_enum = ["Subcluster", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", "Not in a subcluster"];
+	    var subcluster_enum = ["Subcluster", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ") and R&R subcluster", "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", "Not in a subcluster"];
 	
 	    return {
 	      depends: _networkCDCDateField,
@@ -441,7 +466,7 @@ webpackJsonp([0],{
 	      type: "String",
 	      volatile: true,
 	      color_scale: function color_scale() {
-	        return d3.scale.ordinal().domain(subcluster_enum.concat([_networkMissing])).range(_.union(["#CCCCCC", "red", "blue", "#9A4EAE", "yellow", "#FFFFFF"], [_networkMissingColor]));
+	        return d3.scale.ordinal().domain(subcluster_enum.concat([_networkMissing])).range(_.union(["#CCCCCC", "red", "pink", "blue", "#9A4EAE", "yellow", "#FFFFFF"], [_networkMissingColor]));
 	      },
 	
 	      map: function map(node) {
@@ -451,7 +476,7 @@ webpackJsonp([0],{
 	          }
 	          return subcluster_enum[0];
 	        }
-	        return subcluster_enum[5];
+	        return subcluster_enum[6];
 	      }
 	    };
 	  };
@@ -952,9 +977,9 @@ webpackJsonp([0],{
 	    return graphMe;
 	  }
 	
-	  self.view_subcluster = function (cluster) {
+	  self.view_subcluster = function (cluster, custom_filter, custom_name) {
 	
-	    var filtered_json = _extract_single_cluster(cluster.children, function (e) {
+	    var filtered_json = _extract_single_cluster(custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children, function (e) {
 	      return e.length < self.subcluster_threshold;
 	    });
 	
@@ -991,7 +1016,7 @@ webpackJsonp([0],{
 	    }]];
 	
 	    self._check_for_time_series(extra_menu_items);
-	    self.open_exclusive_tab_view_aux(filtered_json, "Subcluster " + cluster.cluster_id, { //"core-link" : self.subcluster_threshold,
+	    self.open_exclusive_tab_view_aux(filtered_json, custom_name || "Subcluster " + cluster.cluster_id, { //"core-link" : self.subcluster_threshold,
 	      "extra_menu": { "title": "Action",
 	        "items": extra_menu_items
 	      }
@@ -1049,10 +1074,10 @@ webpackJsonp([0],{
 	        node_iterator = [];
 	        _.each(self.nodes, function (node) {
 	          if (filter_by_date(beginning_of_time, node)) {
-	            node.priority_flag = 4;
+	            node.priority_flag = 5;
 	            node_iterator.push(node);
 	          } else {
-	            node.priority_flag = 3;
+	            node.priority_flag = 4;
 	          }
 	        });
 	      }
@@ -1144,6 +1169,7 @@ webpackJsonp([0],{
 	          _.each(c, function (n) {
 	            n.subcluster = label;
 	            n.priority_flag = 0;
+	            n.in_rr = 0;
 	          });
 	
 	          return {
@@ -1182,26 +1208,39 @@ webpackJsonp([0],{
 	          });
 	
 	          sub.rr_count = rr_cluster.length;
-	          sub.priority_score = 0;
-	          sub.recent_nodes = 0;
+	
+	          rr_cluster.sort(function (a, b) {
+	            return b.length - a.length;
+	          });
+	
+	          sub.priority_score = [];
+	          sub.recent_nodes = [];
 	
 	          _.each(rr_cluster, function (recent_cluster) {
 	            var priority_nodes = _.groupBy(recent_cluster, _.partial(filter_by_date, cutoff_short));
-	            sub.recent_nodes += recent_cluster.length;
+	            sub.recent_nodes.push(recent_cluster.length);
 	            if (true in priority_nodes) {
-	              sub.priority_score += priority_nodes[true].length;
+	              sub.priority_score.push(priority_nodes[true].length);
 	              _.each(priority_nodes[true], function (n) {
-	                n.priority_flag = filter_by_date(start_date, n) ? 3 : 1;
+	                n.priority_flag = filter_by_date(start_date, n) ? 4 : 1;
+	                if (priority_nodes[true].length >= 3) {
+	                  n.in_rr = true;
+	                  if (n.priority_flag == 1) {
+	                    n.priority_flag = 2;
+	                  }
+	                }
 	              });
 	            }
 	            if (false in priority_nodes) {
 	              _.each(priority_nodes[false], function (n) {
-	                n.priority_flag = 2;
+	                n.priority_flag = 3;
 	              });
 	            }
 	          });
 	
-	          self.clusters[array_index].priority_score += sub.priority_score;
+	          //console.log (sub.recent_nodes);
+	
+	          self.clusters[array_index].priority_score = sub.priority_score;
 	        });
 	      });
 	    } catch (err) {
@@ -1754,9 +1793,6 @@ webpackJsonp([0],{
 	      d.distances = [];
 	    });
 	
-	    if (self._is_CDC_ && !(options && options["no-subclusters"])) {
-	      self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
-	    }
 	    try {
 	      if (options && options["extra_menu"]) {
 	        var extra_ui_container = d3.select(self.get_ui_element_selector_by_role("extra_operations_container"));
