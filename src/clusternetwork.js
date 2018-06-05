@@ -2,8 +2,7 @@ var d3 = require("d3"),
   _ = require("underscore"),
   misc = require("misc"),
   helpers = require("helpers"),
-  scatterPlot = require("scatterplot"),
-  prevalence = require ("prevalence");
+  scatterPlot = require("scatterplot");
 
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
@@ -990,16 +989,18 @@ var hivtrace_cluster_network_graph = function(
           menu_object.style("display", "none");
         });
         
-      menu_object
-        .append("li")
-        .append("a")
-        .attr("tabindex", "-1")
-        .text("Show sequences used to make cluster")
-        .on("click", function(d) {
-          node.fixed = 0;
-          show_sequences_in_cluster (node, true);
-          menu_object.style("display", "none");
-        });
+      // SW20180605 : To be implemented
+      
+      //menu_object
+      //  .append("li")
+      //  .append("a")
+      //  .attr("tabindex", "-1")
+      //  .text("Show sequences used to make cluster")
+      //  .on("click", function(d) {
+      //    node.fixed = 0;
+      //    show_sequences_in_cluster (node, true);
+      //    menu_object.style("display", "none");
+      //  });
 
       menu_object
         .style("position", "absolute")
