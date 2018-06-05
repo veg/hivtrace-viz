@@ -861,11 +861,18 @@ webpackJsonp([0],{
 	        menu_object.style("display", "none");
 	      });
 	
-	      menu_object.append("li").append("a").attr("tabindex", "-1").text("Show sequences used to make cluster").on("click", function (d) {
-	        node.fixed = 0;
-	        show_sequences_in_cluster(node, true);
-	        menu_object.style("display", "none");
-	      });
+	      // SW20180605 : To be implemented
+	
+	      //menu_object
+	      //  .append("li")
+	      //  .append("a")
+	      //  .attr("tabindex", "-1")
+	      //  .text("Show sequences used to make cluster")
+	      //  .on("click", function(d) {
+	      //    node.fixed = 0;
+	      //    show_sequences_in_cluster (node, true);
+	      //    menu_object.style("display", "none");
+	      //  });
 	
 	      menu_object.style("position", "absolute").style("left", "" + d3.event.offsetX + "px").style("top", "" + d3.event.offsetY + "px").style("display", "block");
 	    } else {
