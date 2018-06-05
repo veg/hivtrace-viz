@@ -2,8 +2,7 @@ var d3 = require("d3"),
   _ = require("underscore"),
   misc = require("misc"),
   helpers = require("helpers"),
-  scatterPlot = require("scatterplot"),
-  prevalence = require ("prevalence");
+  scatterPlot = require("scatterplot");
 
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
