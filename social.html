@@ -677,14 +677,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
   
     _loaded_network_data = {"nodes" : [], "edges" : []};
 
-    d3.csv("/workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
-      d3.csv("/workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
-        _loaded_network_data["nodes"] = nodes;
-        _loaded_network_data["edges"] = edges;
-        $("#csv_proceed_button").trigger("click");
-      });
-    });
-    
+   
     $("#csv_proceed_button").on ("click", function (e) {
         try {
             var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
@@ -711,6 +704,15 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
             console.log (e);
         }
     });
+
+    d3.csv("/workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
+      d3.csv("/workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
+        _loaded_network_data["nodes"] = nodes;
+        _loaded_network_data["edges"] = edges;
+        setTimeout(function() { $("#csv_proceed_button").trigger("click")}, 100);
+      });
+    });
+ 
     
     [["#csv_node_file", "#csv_node_progress", "nodes"], 
      ["#csv_edge_file", "#csv_edge_progress", "edges"]].forEach (function (d) {
