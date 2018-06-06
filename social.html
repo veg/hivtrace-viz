@@ -538,7 +538,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetwork.json";
+  url = "workshop/SocialDemoFiles/SocialNetwork.trace.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
@@ -675,9 +675,15 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
 
     initialize_cluster_network_graphs();
   
-    var _loaded_network_data = {"nodes" : [], "edges" : []};
-    
-    
+    _loaded_network_data = {"nodes" : [], "edges" : []};
+
+    d3.csv("/workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
+      d3.csv("/workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
+        _loaded_network_data["nodes"] = nodes;
+        _loaded_network_data["edges"] = edges;
+        $("#csv_proceed_button").trigger("click");
+      });
+    });
     
     $("#csv_proceed_button").on ("click", function (e) {
         try {
@@ -739,6 +745,8 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         $("#csv_enclosing_form").get (0).reset();
         $ ("#csv_proceed_button").prop ("disabled", true);
     });
+
+
   
   // *** HANDLERS ***
   $("#json_file").on ("change", function (e) {

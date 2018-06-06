@@ -52,14 +52,14 @@ webpackJsonp([0],{
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(47);
+	var _histogram = __webpack_require__(48);
 	
-	var _scatterplot = __webpack_require__(46);
+	var _scatterplot = __webpack_require__(47);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var misc = __webpack_require__(43);
-	var helpers = __webpack_require__(44);
+	var misc = __webpack_require__(44);
+	var helpers = __webpack_require__(45);
 	
 	module.exports.clusterNetwork = _clusternetwork.clusterNetwork;
 	module.exports.graphSummary = _clusternetwork.graphSummary;
@@ -85,9 +85,9 @@ webpackJsonp([0],{
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    misc = __webpack_require__(43),
-	    helpers = __webpack_require__(44),
-	    scatterPlot = __webpack_require__(46);
+	    misc = __webpack_require__(44),
+	    helpers = __webpack_require__(45),
+	    scatterPlot = __webpack_require__(47);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -4524,14 +4524,14 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 43:
+/***/ 44:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($) {'use strict';
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    helpers = __webpack_require__(44);
+	    helpers = __webpack_require__(45);
 	
 	function hivtrace_cluster_adjacency_list(obj) {
 	
@@ -5436,12 +5436,12 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 44:
+/***/ 45:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {'use strict';
 	
-	var download = __webpack_require__(45);
+	var download = __webpack_require__(46);
 	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $('#modal-error-msg').text(msg);
@@ -5955,7 +5955,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 45:
+/***/ 46:
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
@@ -6129,7 +6129,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 46:
+/***/ 47:
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -6201,7 +6201,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 47:
+/***/ 48:
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
