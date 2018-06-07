@@ -705,8 +705,8 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         }
     });
 
-    d3.csv("/workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
-      d3.csv("/workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
+    d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
+      d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
         _loaded_network_data["nodes"] = nodes;
         _loaded_network_data["edges"] = edges;
         setTimeout(function() { $("#csv_proceed_button").trigger("click")}, 100);
