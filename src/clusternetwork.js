@@ -895,7 +895,12 @@ var hivtrace_cluster_network_graph = function(
     new_link.appendTo (new_tab_header);
     $("#" + tab_container).append (new_tab_header);
 
-    var new_tab_content   = $("<div></div>").addClass ("tab-pane").attr ("id", random_content_id);
+    var new_tab_content   = $("<div></div>").addClass ("tab-pane").attr ("id", random_content_id).data("cluster", option_extras.cluster_id);
+
+    if(option_extras.type=="subcluster") {
+      new_tab_content.addClass("subcluster-view").addClass("subcluster-" + option_extras.cluster_id.replace('.','_'));
+    }
+
     //     <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
     var new_button_bar = $('[data-hivtrace="cluster-clone"]').clone().attr('data-hivtrace', null);
     new_button_bar.find("[data-hivtrace-button-bar='yes']").attr("id", random_button_bar).addClass("cloned-cluster-tab").attr('data-hivtrace-button-bar', null);
@@ -915,11 +920,12 @@ var hivtrace_cluster_network_graph = function(
     if (option_extras) {
         _.extend (cluster_options, option_extras);
     }
-    
+
+
     var cluster_view = hivtrace.clusterNetwork(filtered_json, '#' + random_content_id, null, null, random_button_bar, attributes, null, null, null, parent_container, cluster_options);
         
-    //console.log (cluster_view.clusters[0]);
     cluster_view.expand_cluster_handler (cluster_view.clusters[0], true);
+
     if (self.colorizer["category_id"]) {
         if (self.colorizer["continuous"]) {
             cluster_view.handle_attribute_continuous (self.colorizer["category_id"]);
@@ -1197,12 +1203,22 @@ var hivtrace_cluster_network_graph = function(
     self._check_for_time_series (extra_menu_items);
     self.open_exclusive_tab_view_aux (filtered_json, custom_name || ("Subcluster " + cluster.cluster_id), 
             { //"core-link" : self.subcluster_threshold,
+              "type" : "subcluster",
+              "cluster_id" : cluster.cluster_id,
               "extra_menu" : 
                 {"title" : "Action",
                      "items" : extra_menu_items
                     }
             }
     ).handle_attribute_categorical ("recent_rapid");
+
+    var selector = ".subcluster-" + cluster.cluster_id.replace(".","_") + " .show-small-clusters-button";
+    var item = $('<span class="input-group-addon btn view-parent-btn">View Parent</span>').data("cluster_id", cluster.parent_cluster.cluster_id).insertAfter(selector);
+
+    item.on("click", function (e) {
+      self.open_exclusive_tab_view ($(this).data('cluster_id'));
+    });
+
   }
   
   function _n_months_ago (reference_date, months) {
@@ -2842,7 +2858,6 @@ var hivtrace_cluster_network_graph = function(
         }  
         this_cell.append("span").text(cluster_id).style("padding-right", "0.5em");
         
-          
         this_cell
           .append("button")
           .classed("btn btn-primary btn-xs pull-right", true)
