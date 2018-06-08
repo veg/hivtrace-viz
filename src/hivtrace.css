@@ -192,4 +192,9 @@ path.injected_object, circle.injected_object {
   display: none;
 }
 
+#hiv-trace-dynamics-svg { 
+  cursor: move;
+}
+
+
 
