@@ -783,7 +783,7 @@ webpackJsonp([0],{
 	    var new_tab_content = $("<div></div>").addClass("tab-pane").attr("id", random_content_id);
 	    //     <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
 	    var new_button_bar = $('[data-hivtrace="cluster-clone"]').clone().attr('data-hivtrace', null);
-	    new_button_bar.find("[data-hivtrace-button-bar='yes']").attr("id", random_button_bar).attr('data-hivtrace-button-bar', null);
+	    new_button_bar.find("[data-hivtrace-button-bar='yes']").attr("id", random_button_bar).addClass("cloned-cluster-tab").attr('data-hivtrace-button-bar', null);
 	
 	    new_button_bar.appendTo(new_tab_content);
 	    new_tab_content.appendTo("#" + content_container);
