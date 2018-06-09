@@ -847,6 +847,9 @@ webpackJsonp([0],{
 	    return (not_nested ? "" : "#" + self.ui_container_selector) + " [data-hivtrace-ui-role='" + role + "']";
 	  };
 	
+	  // ensure all checkboxes are unchecked at initialization
+	  $('input[type="checkbox"]').prop('checked', false);
+	
 	  var handle_node_click = function handle_node_click(node) {
 	    var container = d3.select(self.container);
 	    var id = "d3_context_menu_id";

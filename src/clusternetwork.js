@@ -967,6 +967,9 @@ var hivtrace_cluster_network_graph = function(
     return (not_nested ? "" : "#" + self.ui_container_selector) + " [data-hivtrace-ui-role='" + role +"']";
   }
 
+  // ensure all checkboxes are unchecked at initialization
+  $('input[type="checkbox"]').prop('checked', false);
+
   var handle_node_click = function(node) {
     var container = d3.select(self.container);
     var id = "d3_context_menu_id";
