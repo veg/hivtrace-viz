@@ -2525,6 +2525,14 @@ path.injected_object, circle.injected_object {
     fill: #000;
 }
 
+.cloned-cluster-tab .show-small-clusters-button {
+  display: none;
+}
+
+#hiv-trace-dynamics-svg { 
+  cursor: move;
+}
+
 /*!
  * Bootstrap v3.3.7 (http://getbootstrap.com)
  * Copyright 2011-2016 Twitter, Inc.

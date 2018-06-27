@@ -780,10 +780,15 @@ webpackJsonp([0],{
 	    new_link.appendTo(new_tab_header);
 	    $("#" + tab_container).append(new_tab_header);
 	
-	    var new_tab_content = $("<div></div>").addClass("tab-pane").attr("id", random_content_id);
+	    var new_tab_content = $("<div></div>").addClass("tab-pane").attr("id", random_content_id).data("cluster", option_extras.cluster_id);
+	
+	    if (option_extras.type == "subcluster") {
+	      new_tab_content.addClass("subcluster-view").addClass("subcluster-" + option_extras.cluster_id.replace('.', '_'));
+	    }
+	
 	    //     <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
 	    var new_button_bar = $('[data-hivtrace="cluster-clone"]').clone().attr('data-hivtrace', null);
-	    new_button_bar.find("[data-hivtrace-button-bar='yes']").attr("id", random_button_bar).attr('data-hivtrace-button-bar', null);
+	    new_button_bar.find("[data-hivtrace-button-bar='yes']").attr("id", random_button_bar).addClass("cloned-cluster-tab").attr('data-hivtrace-button-bar', null);
 	
 	    new_button_bar.appendTo(new_tab_content);
 	    new_tab_content.appendTo("#" + content_container);
@@ -802,8 +807,8 @@ webpackJsonp([0],{
 	
 	    var cluster_view = hivtrace.clusterNetwork(filtered_json, '#' + random_content_id, null, null, random_button_bar, attributes, null, null, null, parent_container, cluster_options);
 	
-	    //console.log (cluster_view.clusters[0]);
 	    cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
+	
 	    if (self.colorizer["category_id"]) {
 	      if (self.colorizer["continuous"]) {
 	        cluster_view.handle_attribute_continuous(self.colorizer["category_id"]);
@@ -841,6 +846,9 @@ webpackJsonp([0],{
 	    }
 	    return (not_nested ? "" : "#" + self.ui_container_selector) + " [data-hivtrace-ui-role='" + role + "']";
 	  };
+	
+	  // ensure all checkboxes are unchecked at initialization
+	  $('input[type="checkbox"]').prop('checked', false);
 	
 	  var handle_node_click = function handle_node_click(node) {
 	    var container = d3.select(self.container);
@@ -1023,10 +1031,19 @@ webpackJsonp([0],{
 	
 	    self._check_for_time_series(extra_menu_items);
 	    self.open_exclusive_tab_view_aux(filtered_json, custom_name || "Subcluster " + cluster.cluster_id, { //"core-link" : self.subcluster_threshold,
+	      "type": "subcluster",
+	      "cluster_id": cluster.cluster_id,
 	      "extra_menu": { "title": "Action",
 	        "items": extra_menu_items
 	      }
 	    }).handle_attribute_categorical("recent_rapid");
+	
+	    var selector = ".subcluster-" + cluster.cluster_id.replace(".", "_") + " .show-small-clusters-button";
+	    var item = $('<span class="input-group-addon btn view-parent-btn">View Parent</span>').data("cluster_id", cluster.parent_cluster.cluster_id).insertAfter(selector);
+	
+	    item.on("click", function (e) {
+	      self.open_exclusive_tab_view($(this).data('cluster_id'));
+	    });
 	  };
 	
 	  function _n_months_ago(reference_date, months) {
