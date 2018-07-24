@@ -538,7 +538,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/SocialDemoFiles/SocialNetwork.trace.json";
+  url = "workshop/DummyNetwork.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
@@ -675,12 +675,12 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
 
     initialize_cluster_network_graphs();
   
-    _loaded_network_data = {"nodes" : [], "edges" : []};
-
-   
+    var _loaded_network_data = {"nodes" : [], "edges" : []};
+    
+    
+    
     $("#csv_proceed_button").on ("click", function (e) {
         try {
-
             var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
             
             var imported_edges = [];
@@ -705,15 +705,6 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
             console.log (e);
         }
     });
-
-    d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
-      d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
-        _loaded_network_data["nodes"] = nodes;
-        _loaded_network_data["edges"] = edges;
-        setTimeout(function() { $("#csv_proceed_button").trigger("click")}, 100);
-      });
-    });
- 
     
     [["#csv_node_file", "#csv_node_progress", "nodes"], 
      ["#csv_edge_file", "#csv_edge_progress", "edges"]].forEach (function (d) {
@@ -748,8 +739,6 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         $("#csv_enclosing_form").get (0).reset();
         $ ("#csv_proceed_button").prop ("disabled", true);
     });
-
-
   
   // *** HANDLERS ***
   $("#json_file").on ("change", function (e) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>CDC HIV-TRACE Workshop</title>
+  <title>HIV-TRACE</title>
 
   <!-- Latest compiled and minified CSS -->
   <link href="dist/hivtrace.css" rel="stylesheet">
@@ -33,21 +33,13 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">CDC HIV-TRACE Workshop</a>
+      <a class="navbar-brand" href="#">HIV-TRACE</a>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id = "navbar-collapse-1">
 
       <ul class="nav navbar-nav">
-
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Datasets<b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href=""><label>Item One</label></a></li>
-          </ul>
-        </li>
-
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">File<b class="caret"></b></a>
           <ul class="dropdown-menu">
@@ -57,7 +49,6 @@
             </li>
           </ul>
         </li>
-
       </ul>
 
       <form class="navbar-form navbar-right">
@@ -95,6 +86,9 @@
             <p class="help-block">A CSV file with node attributes.</p>
           </div>
 
+
+
+            
           <div class="input-group">
             <label for = "csv_edge_progress">Link attribute file</label> 
             <button id = "csv_edge_file_help" type="button" class="btn btn-xs btn-info">
@@ -150,6 +144,7 @@
 
 
   <div class="tabbable">
+
     <ul class="nav nav-tabs" id="top_level_tab_container">
       <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
       <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
@@ -172,7 +167,7 @@
           </div>
         </div>
 
-        <div class="row" data-hivtrace = "cluster-clone">
+        <div class="row" data-hivtrace="cluster-clone">
           <div class='col-lg-12'>
             <div class="nav-trace">
               <div class="input-group input-group-sm">
@@ -180,9 +175,9 @@
                 <!-- UI Bar -->
                 <div class="nav-trace">
                   <div class="input-group input-group-sm" id = 'network_ui_bar' data-hivtrace-button-bar = 'yes'>
-                    <div class="input-group-btn" data-hivtrace-ui-role = 'button_group'></div>
+                    <div class="input-group-btn" data-hivtrace-ui-role='button_group'></div>
                     <span class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role = "cluster_operations_button">Clusters <span class="caret"></span></button>
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role="cluster_operations_button">Clusters <span class="caret"></span></button>
                       <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='cluster_operations_container'></ul>
                     </span>
                     <div class="input-group-btn">
@@ -218,7 +213,7 @@
                         <span class="input-group-addon">
                            Hide others <input type = 'checkbox' data-hivtrace-ui-role = 'hide_filter'> </input>
                         </span>
-                        <span class="input-group-addon">
+                        <span class="input-group-addon show-small-clusters-button">
                            Show small clusters <input type = 'checkbox' data-hivtrace-ui-role = 'show_small_clusters'> </input>
                         </span>
                         <span class="input-group-addon">
@@ -538,7 +533,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetwork.json";
+  url = "example.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
