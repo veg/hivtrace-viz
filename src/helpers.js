@@ -1,8 +1,8 @@
-var download = require('downloadjs');
+var download = require("downloadjs");
 
 var datamonkey_error_modal = function(msg) {
-  $('#modal-error-msg').text(msg);
-  $('#errorModal').modal();
+  $("#modal-error-msg").text(msg);
+  $("#errorModal").modal();
 };
 
 function b64toBlob(b64, onsuccess, onerror) {
@@ -15,15 +15,15 @@ function b64toBlob(b64, onsuccess, onerror) {
     canvas.width = img.width;
     canvas.height = img.height;
 
-    var ctx = canvas.getContext('2d');
+    var ctx = canvas.getContext("2d");
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    if(canvas.msToBlob) {
+    if (canvas.msToBlob) {
       var blob = canvas.msToBlob(onsuccess);
       onsuccess(blob);
-      window.navigator.msSaveBlob(blob, 'image.png');
+      window.navigator.msSaveBlob(blob, "image.png");
     } else {
       canvas.toBlob(onsuccess);
     }
@@ -35,11 +35,15 @@ function b64toBlob(b64, onsuccess, onerror) {
 var datamonkey_export_csv_button = function(data) {
   data = d3.csv.format(data);
   if (data !== null) {
-    var pom = document.createElement('a');
-    pom.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(data));
-    pom.setAttribute('download', 'export.csv');
-    pom.className = 'btn btn-default btn-sm';
-    pom.innerHTML = '<span class="glyphicon glyphicon-floppy-save"></span> Download CSV';
+    var pom = document.createElement("a");
+    pom.setAttribute(
+      "href",
+      "data:text/csv;charset=utf-8," + encodeURIComponent(data)
+    );
+    pom.setAttribute("download", "export.csv");
+    pom.className = "btn btn-default btn-sm";
+    pom.innerHTML =
+      '<span class="glyphicon glyphicon-floppy-save"></span> Download CSV';
     $("body").append(pom);
     pom.click();
     pom.remove();
@@ -47,7 +51,6 @@ var datamonkey_export_csv_button = function(data) {
 };
 
 var datamonkey_save_image = function(type, container) {
-
   var prefix = {
     xmlns: "http://www.w3.org/2000/xmlns/",
     xlink: "http://www.w3.org/1999/xlink",
@@ -55,7 +58,6 @@ var datamonkey_save_image = function(type, container) {
   };
 
   function get_styles(doc) {
-
     function process_stylesheet(ss) {
       try {
         if (ss.cssRules) {
@@ -75,7 +77,7 @@ var datamonkey_save_image = function(type, container) {
           }
         }
       } catch (e) {
-        console.log('Could not process stylesheet : ' + ss);
+        console.log("Could not process stylesheet : " + ss);
       }
     }
 
@@ -89,15 +91,12 @@ var datamonkey_save_image = function(type, container) {
     }
 
     return styles;
-
   }
 
   var convert_svg_to_png = function(image_string) {
-
     var image = document.getElementById("hyphy-chart-image");
 
     image.onload = function() {
-
       var canvas = document.getElementById("hyphy-chart-canvas");
       canvas.width = image.width;
       canvas.height = image.height;
@@ -106,17 +105,15 @@ var datamonkey_save_image = function(type, container) {
       context.fillRect(0, 0, image.width, image.height);
       context.drawImage(image, 0, 0);
       var img = canvas.toDataURL("image/png");
-      var pom = document.createElement('a');
-      pom.setAttribute('download', 'image.png');
+      var pom = document.createElement("a");
+      pom.setAttribute("download", "image.png");
       pom.href = canvas.toDataURL("image/png");
       $("body").append(pom);
       pom.click();
       pom.remove();
-
     };
 
     image.src = image_string;
-
   };
 
   var svg = $(container).find("svg")[0];
@@ -135,7 +132,6 @@ var datamonkey_save_image = function(type, container) {
   defsEl.appendChild(styleEl);
   styleEl.setAttribute("type", "text/css");
 
-
   // removing attributes so they aren't doubled up
   svg.removeAttribute("xmlns");
   svg.removeAttribute("xlink");
@@ -149,68 +145,70 @@ var datamonkey_save_image = function(type, container) {
     svg.setAttributeNS(prefix.xmlns, "xmlns:xlink", prefix.xlink);
   }
 
-  var source = (new XMLSerializer()).serializeToString(svg).replace('</style>', '<![CDATA[' + styles + ']]></style>');
+  var source = new XMLSerializer()
+    .serializeToString(svg)
+    .replace("</style>", "<![CDATA[" + styles + "]]></style>");
   var rect = svg.getBoundingClientRect();
-  var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
+  var doctype =
+    '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
   var to_download = [doctype + source];
-  var image_string = 'data:image/svg+xml;base66,' + encodeURIComponent(to_download);
+  var image_string =
+    "data:image/svg+xml;base66," + encodeURIComponent(to_download);
 
-  if (navigator.msSaveBlob) { // IE10
+  if (navigator.msSaveBlob) {
+    // IE10
     download(image_string, "image.svg", "image/svg+xml");
   } else if (type == "png") {
-    b64toBlob(image_string,
+    b64toBlob(
+      image_string,
       function(blob) {
         var url = window.URL.createObjectURL(blob);
-        var pom = document.createElement('a');
-        pom.setAttribute('download', 'image.png');
-        pom.setAttribute('href', url);
+        var pom = document.createElement("a");
+        pom.setAttribute("download", "image.png");
+        pom.setAttribute("href", url);
         $("body").append(pom);
         pom.click();
         pom.remove();
       },
       function(error) {
         console.log(error);
-      });
+      }
+    );
   } else {
-    var pom = document.createElement('a');
-    pom.setAttribute('download', 'image.svg');
-    pom.setAttribute('href', image_string);
+    var pom = document.createElement("a");
+    pom.setAttribute("download", "image.svg");
+    pom.setAttribute("href", image_string);
     $("body").append(pom);
     pom.click();
     pom.remove();
   }
-
 };
 
 var datamonkey_validate_date = function() {
-
   // Check that it is not empty
   if ($(this).val().length === 0) {
-    $(this).next('.help-block').remove();
-    $(this).parent().removeClass('has-success');
-    $(this).parent().addClass('has-error');
+    $(this).next(".help-block").remove();
+    $(this).parent().removeClass("has-success");
+    $(this).parent().addClass("has-error");
 
-    jQuery('<span/>', {
-      class: 'help-block',
-      text: 'Field is empty'
+    jQuery("<span/>", {
+      class: "help-block",
+      text: "Field is empty"
     }).insertAfter($(this));
-
   } else if (isNaN(Date.parse($(this).val()))) {
-    $(this).next('.help-block').remove();
-    $(this).parent().removeClass('has-success');
-    $(this).parent().addClass('has-error');
+    $(this).next(".help-block").remove();
+    $(this).parent().removeClass("has-success");
+    $(this).parent().addClass("has-error");
 
-    jQuery('<span/>', {
-      class: 'help-block',
-      text: 'Date format should be in the format YYYY-mm-dd'
+    jQuery("<span/>", {
+      class: "help-block",
+      text: "Date format should be in the format YYYY-mm-dd"
     }).insertAfter($(this));
-
   } else {
-    $(this).parent().removeClass('has-error');
-    $(this).parent().addClass('has-success');
-    $(this).next('.help-block').remove();
+    $(this).parent().removeClass("has-error");
+    $(this).parent().addClass("has-success");
+    $(this).next(".help-block").remove();
   }
-
 };
 
 function datamonkey_get_styles(doc) {
@@ -247,9 +245,12 @@ function datamonkey_get_styles(doc) {
 function datamonkey_save_newick_to_file() {
   var top_modal_container = "#neighbor-tree-modal";
   var nwk = $(top_modal_container).data("tree");
-  var pom = document.createElement('a');
-  pom.setAttribute('href', 'data:text/octet-stream;charset=utf-8,' + encodeURIComponent(nwk));
-  pom.setAttribute('download', 'nwk.txt');
+  var pom = document.createElement("a");
+  pom.setAttribute(
+    "href",
+    "data:text/octet-stream;charset=utf-8," + encodeURIComponent(nwk)
+  );
+  pom.setAttribute("download", "nwk.txt");
   $("body").append(pom);
   pom.click();
   pom.remove();
@@ -269,22 +270,21 @@ function datamonkey_convert_svg_to_png(image_string) {
     context.drawImage(image, 0, 0);
     var img = canvas.toDataURL("image/png");
 
-    var pom = document.createElement('a');
-    pom.setAttribute('download', 'phylotree.png');
+    var pom = document.createElement("a");
+    pom.setAttribute("download", "phylotree.png");
     pom.href = canvas.toDataURL("image/png");
     $("body").append(pom);
     pom.click();
     pom.remove();
-  }
+  };
 }
 
 function datamonkey_save_newick_tree(type) {
-
   var prefix = {
     xmlns: "http://www.w3.org/2000/xmlns/",
     xlink: "http://www.w3.org/1999/xlink",
     svg: "http://www.w3.org/2000/svg"
-  }
+  };
 
   var tree_container = "#tree_container";
   var svg = $("#tree_container").find("svg")[0];
@@ -299,7 +299,6 @@ function datamonkey_save_newick_tree(type) {
   defsEl.appendChild(styleEl);
   styleEl.setAttribute("type", "text/css");
 
-
   // removing attributes so they aren't doubled up
   svg.removeAttribute("xmlns");
   svg.removeAttribute("xlink");
@@ -313,23 +312,26 @@ function datamonkey_save_newick_tree(type) {
     svg.setAttributeNS(prefix.xmlns, "xmlns:xlink", prefix.xlink);
   }
 
-  var source = (new XMLSerializer()).serializeToString(svg).replace('</style>', '<![CDATA[' + styles + ']]></style>');
+  var source = new XMLSerializer()
+    .serializeToString(svg)
+    .replace("</style>", "<![CDATA[" + styles + "]]></style>");
   var rect = svg.getBoundingClientRect();
-  var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
-  var to_download = [doctype + source]
-  var image_string = 'data:image/svg+xml;base66,' + encodeURIComponent(to_download);
+  var doctype =
+    '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
+  var to_download = [doctype + source];
+  var image_string =
+    "data:image/svg+xml;base66," + encodeURIComponent(to_download);
 
   if (type == "png") {
-    datamonkey_convert_svg_to_png(image_string)
+    datamonkey_convert_svg_to_png(image_string);
   } else {
-    var pom = document.createElement('a');
-    pom.setAttribute('download', 'phylotree.svg');
-    pom.setAttribute('href', image_string);
+    var pom = document.createElement("a");
+    pom.setAttribute("download", "phylotree.svg");
+    pom.setAttribute("href", image_string);
     $("body").append(pom);
     pom.click();
     pom.remove();
   }
-
 }
 
 function datamonkey_validate_email(email) {
@@ -337,58 +339,70 @@ function datamonkey_validate_email(email) {
     var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
     if (regex.test($(this).find("input[name='mail']").val())) {
       // Give them green. They like that.
-      $(this).removeClass('has-error');
-      $(this).addClass('has-success');
-      $(this).next('.help-block').remove();
+      $(this).removeClass("has-error");
+      $(this).addClass("has-success");
+      $(this).next(".help-block").remove();
     } else {
-      $(this).next('.help-block').remove();
-      $(this).removeClass('has-error');
-      $(this).removeClass('has-success');
-      $(this).addClass('has-error');
-      var span = jQuery('<span/>', {
-        class: 'help-block col-lg-9 pull-right',
-        text: 'Invalid Email'
+      $(this).next(".help-block").remove();
+      $(this).removeClass("has-error");
+      $(this).removeClass("has-success");
+      $(this).addClass("has-error");
+      var span = jQuery("<span/>", {
+        class: "help-block col-lg-9 pull-right",
+        text: "Invalid Email"
       }).insertAfter($(this));
     }
   } else {
-    $(this).removeClass('has-error');
-    $(this).removeClass('has-success');
-    $(this).next('.help-block').remove();
+    $(this).removeClass("has-error");
+    $(this).removeClass("has-success");
+    $(this).next(".help-block").remove();
   }
-
 }
 
 function datamonkey_describe_vector(vector, as_list) {
-
   var d = {};
 
   if (vector.length) {
+    vector.sort(d3.ascending);
 
-      vector.sort(d3.ascending);
-
-      var d = {
-        'min': d3.min(vector),
-        'max': d3.max(vector),
-        'median': d3.median(vector),
-        'Q1': d3.quantile(vector, 0.25),
-        'Q3': d3.quantile(vector, 0.75),
-        'mean': d3.mean(vector)
-      };
-   } else {
-      var d = {
-        'min': null,
-        'max': null,
-        'median': null,
-        'Q1': null,
-        'Q3': null,
-        'mean': null
-      };
-
-   }
+    var d = {
+      min: d3.min(vector),
+      max: d3.max(vector),
+      median: d3.median(vector),
+      Q1: d3.quantile(vector, 0.25),
+      Q3: d3.quantile(vector, 0.75),
+      mean: d3.mean(vector)
+    };
+  } else {
+    var d = {
+      min: null,
+      max: null,
+      median: null,
+      Q1: null,
+      Q3: null,
+      mean: null
+    };
+  }
 
   if (as_list) {
-
-    d = "<pre>Range  :" + d['min'] + "-" + d['max'] + "\n" + "IQR    :" + d['Q1'] + "-" + d['Q3'] + "\n" + "Mean   :" + d['mean'] + "\n" + "Median :" + d['median'] + "\n" + "</pre>";
+    d =
+      "<pre>Range  :" +
+      d["min"] +
+      "-" +
+      d["max"] +
+      "\n" +
+      "IQR    :" +
+      d["Q1"] +
+      "-" +
+      d["Q3"] +
+      "\n" +
+      "Mean   :" +
+      d["mean"] +
+      "\n" +
+      "Median :" +
+      d["median"] +
+      "\n" +
+      "</pre>";
 
     /*d =
     "<dl class = 'dl-horizontal'>" +
@@ -399,11 +413,9 @@ function datamonkey_describe_vector(vector, as_list) {
   }
 
   return d;
-
 }
 
 function datamonkey_export_handler(data, filename, mimeType) {
-
   function msieversion() {
     var ua = window.navigator.userAgent;
     var msie = ua.indexOf("MSIE ");
@@ -417,36 +429,46 @@ function datamonkey_export_handler(data, filename, mimeType) {
     var IEwindow = window.open();
     IEwindow.document.write(data);
     IEwindow.document.close();
-    IEwindow.document.execCommand('SaveAs', true, filename + ".csv");
+    IEwindow.document.execCommand("SaveAs", true, filename + ".csv");
     IEwindow.close();
   } else {
-    var pom = document.createElement('a');
-    pom.setAttribute('href', 'data:' + (mimeType || 'text/plain') + ';charset=utf-8,' + encodeURIComponent(data));
-    pom.setAttribute('download', filename || "download.tsv");
+    var pom = document.createElement("a");
+    pom.setAttribute(
+      "href",
+      "data:" +
+        (mimeType || "text/plain") +
+        ";charset=utf-8," +
+        encodeURIComponent(data)
+    );
+    pom.setAttribute("download", filename || "download.tsv");
     pom.click();
     pom.remove();
   }
-
 }
 
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
   d3.select(table_id + " thead").selectAll("th").each(function() {
-    header_row.push(d3.select(this).text())
+    header_row.push(d3.select(this).text());
   });
   var data_rows = [];
   d3.select(table_id + " tbody").selectAll("tr").each(function(d, i) {
     data_rows.push([]);
     d3.select(this).selectAll("td").each(function() {
-      data_rows[i].push(d3.select(this).text())
-    })
+      data_rows[i].push(d3.select(this).text());
+    });
   });
 
-  return header_row.join(sep) + "\n" +
-    data_rows.map(function(d) {
-      return d.join(sep);
-    }).join("\n");
+  return (
+    header_row.join(sep) +
+    "\n" +
+    data_rows
+      .map(function(d) {
+        return d.join(sep);
+      })
+      .join("\n")
+  );
 }
 
 function datamonkey_capitalize(s) {
@@ -467,12 +489,18 @@ function datamonkey_count_partitions(json) {
 }
 
 function datamonkey_sum(object, accessor) {
-  accessor = accessor || function(value) {
-    return value;
-  };
-  return _.reduce(object, function(sum, value, index) {
-    return sum + accessor(value, index);
-  }, 0);
+  accessor =
+    accessor ||
+    function(value) {
+      return value;
+    };
+  return _.reduce(
+    object,
+    function(sum, value, index) {
+      return sum + accessor(value, index);
+    },
+    0
+  );
 }
 
 function datamonkey_count_sites_from_partitions(json) {
@@ -489,20 +517,26 @@ function datamonkey_count_sites_from_partitions(json) {
 function datamonkey_filter_list(list, predicate, context) {
   var result = {};
   predicate = _.bind(predicate, context);
-  _.each(list, _.bind(function(value, key) {
-    if (predicate(value, key)) {
-      result[key] = value;
-    }
-  }, context));
+  _.each(
+    list,
+    _.bind(function(value, key) {
+      if (predicate(value, key)) {
+        result[key] = value;
+      }
+    }, context)
+  );
   return result;
 }
 
 function datamonkey_map_list(list, transform, context) {
   var result = {};
   transform = _.bind(transform, context);
-  _.each(list, _.bind(function(value, key) {
-    result[key] = transform(value, key);
-  }, context));
+  _.each(
+    list,
+    _.bind(function(value, key) {
+      result[key] = transform(value, key);
+    }, context)
+  );
   return result;
 }
 
