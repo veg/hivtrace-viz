@@ -244,7 +244,12 @@ var hivtrace_cluster_network_graph = function(
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
   var self = {};
-  
+
+  // if schema is not set, set to empty dictionary
+  if(!json[_networkGraphAttrbuteID]) {
+    json[_networkGraphAttrbuteID] = {};
+  }
+ 
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self.ww =
@@ -259,6 +264,7 @@ var hivtrace_cluster_network_graph = function(
   self.cluster_mapping = {};
   self.percent_format = _defaultPercentFormat;
   self.missing = _networkMissing;
+
   
   if (options && _.isFunction (options["init_code"])) {
     options["init_code"].call (null, self, options);
@@ -2227,6 +2233,10 @@ var hivtrace_cluster_network_graph = function(
         // decide if the variable can be considered categorical by examining its range
 
         //console.log ("self._aux_populate_category_menus");
+         
+        console.log(graph_data[_networkGraphAttrbuteID]);
+        console.log(self._aux_populate_category_fields);
+
         var valid_cats = _.filter(
           _.map(graph_data[_networkGraphAttrbuteID], self._aux_populate_category_fields),
           function(d) {
