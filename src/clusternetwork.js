@@ -243,6 +243,12 @@ var hivtrace_cluster_network_graph = function(
   // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
+
+  // if schema is not set, set to empty dictionary
+  if(!json[_networkGraphAttrbuteID]) {
+    json[_networkGraphAttrbuteID] = {};
+  }
+
   var self = {};
   
 
@@ -259,6 +265,7 @@ var hivtrace_cluster_network_graph = function(
   self.cluster_mapping = {};
   self.percent_format = _defaultPercentFormat;
   self.missing = _networkMissing;
+
   
   if (options && _.isFunction (options["init_code"])) {
     options["init_code"].call (null, self, options);
