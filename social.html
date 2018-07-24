@@ -680,6 +680,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
    
     $("#csv_proceed_button").on ("click", function (e) {
         try {
+
             var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
             
             var imported_edges = [];
