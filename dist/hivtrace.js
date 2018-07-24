@@ -1843,10 +1843,6 @@ webpackJsonp([0],{
 	        // decide if the variable can be considered categorical by examining its range
 	
 	        //console.log ("self._aux_populate_category_menus");
-	
-	        console.log(graph_data[_networkGraphAttrbuteID]);
-	        console.log(self._aux_populate_category_fields);
-	
 	        var valid_cats = _.filter(_.map(graph_data[_networkGraphAttrbuteID], self._aux_populate_category_fields), function (d) {
 	          //console.log (d);
 	          return d.discrete && "value_range" in d && d["value_range"].length <= _maximumValuesInCategories;
