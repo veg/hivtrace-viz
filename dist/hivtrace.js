@@ -270,6 +270,13 @@ webpackJsonp([0],{
 	    json[_networkGraphAttrbuteID] = {};
 	  }
 	
+	  // annotate each node with patient_attributes if does not exist
+	  json.Nodes.forEach(function (n) {
+	    if (!n[_networkNodeAttributeID]) {
+	      n[_networkNodeAttributeID] = [];
+	    }
+	  });
+	
 	  var self = {};
 	
 	  self._is_CDC_ = options && options["no_cdc"] ? false : true;
@@ -3385,7 +3392,9 @@ webpackJsonp([0],{
 	
 	  self.attribute_node_value_by_id = function (d, id, number) {
 	    try {
+	
 	      if (_networkNodeAttributeID in d && id) {
+	
 	        if (id in d[_networkNodeAttributeID]) {
 	          var v;
 	
