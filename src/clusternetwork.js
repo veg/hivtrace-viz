@@ -1628,11 +1628,11 @@ var hivtrace_cluster_network_graph = function(
 
         /** now, for each subcluster, extract the recent and rapid part */
 
-        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months 
+        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months
                 and at least two cases dx’d in the previous 12 months; there is a path between all nodes in an R&R Cluster
-                
-                20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters 
-                per subclusters; for now we will add up all the cases for prioritization, and 
+
+                20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters
+                per subclusters; for now we will add up all the cases for prioritization, and
                 display the largest R&R cluster if there is more than one
             */
 
@@ -3225,14 +3225,14 @@ var hivtrace_cluster_network_graph = function(
   }
 
   function _extract_single_cluster(nodes, filter, no_clone, given_json) {
-    /** 
-        Extract the nodes and edges between them into a separate objects 
+    /**
+        Extract the nodes and edges between them into a separate objects
         @param nodes [array]  the list of nodes to extract
         @param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
         @param no_clone [bool] if set to T, node objects are not shallow cloned in the return object
-        
+
         @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
-        
+
     */
 
     var cluster_json = {};
@@ -5325,6 +5325,9 @@ var hivtrace_cluster_network_graph = function(
 
   self._aux_populate_category_fields = function(d, k) {
     d["raw_attribute_key"] = k;
+    if (!("label" in d)) {
+        d["label"] = k;
+    }
     d.discrete = false;
     if (d["type"] == "String") {
       d.discrete = true;
@@ -5655,14 +5658,14 @@ var hivtrace_cluster_network_graph = function(
     annotation
   ) {
     annotation = annotation || "Social";
-    /** 
-        1. Scan the list of nodes for 
+    /**
+        1. Scan the list of nodes for
             a. Nodes not present in the existing network
             b. Attribute names
             c. Attribute values
-        
-        2. Scan the list of edges for 
-            a. Edges not present in the existing network 
+
+        2. Scan the list of edges for
+            a. Edges not present in the existing network
             b. Attribute names
             c. Attribute values
      */

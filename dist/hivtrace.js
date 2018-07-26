@@ -52,14 +52,14 @@ webpackJsonp([0],{
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(48);
+	var _histogram = __webpack_require__(47);
 	
-	var _scatterplot = __webpack_require__(47);
+	var _scatterplot = __webpack_require__(46);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var misc = __webpack_require__(44);
-	var helpers = __webpack_require__(45);
+	var misc = __webpack_require__(43);
+	var helpers = __webpack_require__(44);
 	
 	module.exports.clusterNetwork = _clusternetwork.clusterNetwork;
 	module.exports.graphSummary = _clusternetwork.graphSummary;
@@ -85,9 +85,9 @@ webpackJsonp([0],{
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    misc = __webpack_require__(44),
-	    helpers = __webpack_require__(45),
-	    scatterPlot = __webpack_require__(47);
+	    misc = __webpack_require__(43),
+	    helpers = __webpack_require__(44),
+	    scatterPlot = __webpack_require__(46);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -1229,11 +1229,10 @@ webpackJsonp([0],{
 	
 	        /** now, for each subcluster, extract the recent and rapid part */
 	
-	        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months 
+	        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months
 	                and at least two cases dx’d in the previous 12 months; there is a path between all nodes in an R&R Cluster
-	                
-	                20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters 
-	                per subclusters; for now we will add up all the cases for prioritization, and 
+	                 20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters
+	                per subclusters; for now we will add up all the cases for prioritization, and
 	                display the largest R&R cluster if there is more than one
 	            */
 	
@@ -2316,15 +2315,13 @@ webpackJsonp([0],{
 	  }
 	
 	  function _extract_single_cluster(nodes, filter, no_clone, given_json) {
-	    /** 
-	        Extract the nodes and edges between them into a separate objects 
+	    /**
+	        Extract the nodes and edges between them into a separate objects
 	        @param nodes [array]  the list of nodes to extract
 	        @param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
 	        @param no_clone [bool] if set to T, node objects are not shallow cloned in the return object
-	        
-	        @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
-	        
-	    */
+	         @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
+	     */
 	
 	    var cluster_json = {};
 	    var map_to_id = {};
@@ -3759,6 +3756,9 @@ webpackJsonp([0],{
 	
 	  self._aux_populate_category_fields = function (d, k) {
 	    d["raw_attribute_key"] = k;
+	    if (!("label" in d)) {
+	      d["label"] = k;
+	    }
 	    d.discrete = false;
 	    if (d["type"] == "String") {
 	      d.discrete = true;
@@ -4038,14 +4038,13 @@ webpackJsonp([0],{
 	
 	  self.load_nodes_edges = function (nodes_and_attributes, index_id, edges_and_attributes, annotation) {
 	    annotation = annotation || "Social";
-	    /** 
-	        1. Scan the list of nodes for 
+	    /**
+	        1. Scan the list of nodes for
 	            a. Nodes not present in the existing network
 	            b. Attribute names
 	            c. Attribute values
-	        
-	        2. Scan the list of edges for 
-	            a. Edges not present in the existing network 
+	         2. Scan the list of edges for
+	            a. Edges not present in the existing network
 	            b. Attribute names
 	            c. Attribute values
 	     */
@@ -4542,14 +4541,14 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 44:
+/***/ 43:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($) {"use strict";
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    helpers = __webpack_require__(45);
+	    helpers = __webpack_require__(44);
 	
 	function hivtrace_cluster_adjacency_list(obj) {
 	  var nodes = obj.Nodes,
@@ -5423,12 +5422,12 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 45:
+/***/ 44:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {"use strict";
 	
-	var download = __webpack_require__(46);
+	var download = __webpack_require__(45);
 	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $("#modal-error-msg").text(msg);
@@ -5932,7 +5931,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 46:
+/***/ 45:
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
@@ -6106,7 +6105,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 47:
+/***/ 46:
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -6178,7 +6177,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 48:
+/***/ 47:
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";

@@ -77,7 +77,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
          <h4 class="modal-title">Load external network information</h4>
       </div>
-      <div class="modal-body">      
+      <div class="modal-body">
         <form id = "csv_enclosing_form">
           <div class="form-group">
             <label for="csv_import_text">Data type label</label>
@@ -86,7 +86,7 @@
           </div>
 
           <div class="form-group">
-            <label for = "csv_node_progress">Node attribute file</label> 
+            <label for = "csv_node_progress">Node attribute file</label>
             <button id = "csv_node_file_help" type="button" class="btn btn-xs btn-info">
                 <span class = "fa fa-question"></span>
             </button>
@@ -96,7 +96,7 @@
           </div>
 
           <div class="input-group">
-            <label for = "csv_edge_progress">Link attribute file</label> 
+            <label for = "csv_edge_progress">Link attribute file</label>
             <button id = "csv_edge_file_help" type="button" class="btn btn-xs btn-info">
                 <span class = "fa fa-question"></span>
             </button>
@@ -104,16 +104,16 @@
             <div id = "csv_node_progress" style = "display:none">Loading...<span class = "fa fa-spinner fa-spin"></span></div>
             <p class="help-block">A CSV file with links and their attribute.</p>
           </div>
-          
+
           <div class="alert" role="alert" style = "display:none" id = "csv_import_status">
-                
+
           </div>
-          
+
         </form>
       </div>
-      
+
       <div class="modal-footer">
-      
+
         <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
         <button type="button" class="btn btn-primary" disabled id = "csv_proceed_button">Proceed</button>
         <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
@@ -121,14 +121,14 @@
     </div>
   </div>
 </div>
-    
+
 <div class="container">
    <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
      <div class="col-lg-12">
          <div class="alert alert-danger alert-lg" id='app-error' style='display:none;'></div>
     </div>
    </div>
-   
+
     <div class="modal fade" data-hivtrace-ui-role="cluster_list" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content" data-hivtrace-ui-role = "cluster_list_body">
@@ -259,7 +259,7 @@
 
                         <p/>
                         Type in text to search for clusters and nodes whose <em>attributes contain the term</em>. <br/>
-                        For example, typing in <code>MSM</code> will highlight nodes and/or clusters that 
+                        For example, typing in <code>MSM</code> will highlight nodes and/or clusters that
                         have 'MSM' in any of the data fields. <br/>
                         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <br/>
                         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <br/>
@@ -268,12 +268,12 @@
                         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><br/>
                         Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
                         <path d = 'M 2 14 A 12 12 0 0 1 14 2'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
-                        </svg><br/> 
+                        </svg><br/>
                         Cluster where 75% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
                         <path d = 'M 2 14 A 12 12 0 1 1 14 26'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
                         </svg>
                         <p/>
-        
+
                         Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms
                         <br/>
                         Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity
@@ -467,22 +467,22 @@ var init = function(data) {
     var graph = "trace_results" in data ? data.trace_results : data;
     var attributes = null;
 
-      user_graph = new hivtrace.clusterNetwork(graph, 
-                                                  network_container, 
-                                                  network_status_string, 
-                                                  network_warning, 
-                                                  button_bar_prefix, 
-                                                  attributes, 
-                                                  filter_edges_toggle, 
-                                                  cluster_table, 
-                                                  node_table, 
-                                                  parent_container, 
+      user_graph = new hivtrace.clusterNetwork(graph,
+                                                  network_container,
+                                                  network_status_string,
+                                                  network_warning,
+                                                  button_bar_prefix,
+                                                  attributes,
+                                                  filter_edges_toggle,
+                                                  cluster_table,
+                                                  node_table,
+                                                  parent_container,
                                                   {
                                                     "no_cdc" : false,
                                                     "subcluster-table" : subcluster_table
                                                   });
-                                              
-      if (user_graph.is_empty()) { 
+
+      if (user_graph.is_empty()) {
           HandleAppError ("This network contains no clusters and cannot be displayed");
       } else {
 
@@ -529,16 +529,16 @@ var init = function(data) {
             var lanl_graph_rendered = new hivtrace.clusterNetwork(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
           }
        }
-   } 
+   }
    catch (e) {
-     HandleAppError ("Network loading failed with the following error " + e);   
+     HandleAppError ("Network loading failed with the following error " + e);
    }
 }
 
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetwork.json";
+  url = "workshop/DummyNetworkAttributes.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
@@ -674,15 +674,15 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
   );
 
     initialize_cluster_network_graphs();
-  
+
     var _loaded_network_data = {"nodes" : [], "edges" : []};
-    
-    
-    
+
+
+
     $("#csv_proceed_button").on ("click", function (e) {
         try {
             var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
-            
+
             var imported_edges = [];
             for (k in import_result.edges) {
                 imported_edges.push ("" + import_result.edges[k] + " <i>" + k + "</i> links");
@@ -690,27 +690,27 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
             if (imported_edges.length == 0) {
                 imported_edges = ["no link data"];
             }
-            
+
             user_graph.display_warning (
             "Loaded data on <em>" + import_result.existing_nodes + "</em> existing and <em>" + import_result.nodes.length + "</em> new nodes. <br>" +
             "Loaded  " + imported_edges.join (", ")
             ,true);
             $("#csv_loader_modal").modal ('hide');
-            
-            
-        } 
+
+
+        }
         catch (e) {
             d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-danger").text (e);
             $ ("#csv_proceed_button").prop ("disabled", true);
             console.log (e);
         }
     });
-    
-    [["#csv_node_file", "#csv_node_progress", "nodes"], 
+
+    [["#csv_node_file", "#csv_node_progress", "nodes"],
      ["#csv_edge_file", "#csv_edge_progress", "edges"]].forEach (function (d) {
 
         $(d[0]).on ("change", function (e) {
-  
+
             $ ("#csv_proceed_button").prop ("disabled");
             d3.select(d[1]).style("display", "block");
             var files = e.target.files; // FileList object
@@ -733,16 +733,16 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         }
         });
     });
-    
+
     $("#csv_loader_modal").on ("show.bs.modal", function (e) {
         d3.select ("#csv_import_status").style ('display', "none");
         $("#csv_enclosing_form").get (0).reset();
         $ ("#csv_proceed_button").prop ("disabled", true);
     });
-  
+
   // *** HANDLERS ***
   $("#json_file").on ("change", function (e) {
-  
+
     d3.selectAll(".my_progress").style("display", "block");
 
     var files = e.target.files; // FileList object
