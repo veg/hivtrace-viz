@@ -195,6 +195,24 @@ webpackJsonp([0],{
 	  }
 	};
 	
+	// Constants for the map.
+	var mapWidth = 1200;
+	var mapHeight = 600;
+	var mapProjection = d3.geo.mercator().translate([mapWidth / 2, mapHeight / 2]).scale(200);
+	
+	// TODO: convert and save this data rather than do it each time.
+	var countryCentersArray = [];
+	var countryCentersObject = {};
+	d3.csv("./../country_centers.csv", function (data) {
+	  for (var i = 0; i < data.length; i++) {
+	    var countryCode = data[i]["Alpha-2 code"];
+	    var countryLat = data[i]["Latitude (average)"];
+	    var countryLong = data[i]["Longitude (average)"];
+	    var countryXY = mapProjection([countryLong, countryLat]);
+	    countryCentersObject[countryCode] = { 'x': countryXY[0], 'y': countryXY[1] };
+	  }
+	});
+	
 	var hivtrace_cluster_depthwise_traversal = function hivtrace_cluster_depthwise_traversal(nodes, edges, edge_filter, save_edges) {
 	  var clusters = [],
 	      adjacency = {},
@@ -282,6 +300,7 @@ webpackJsonp([0],{
 	  self.cluster_mapping = {};
 	  self.percent_format = _defaultPercentFormat;
 	  self.missing = _networkMissing;
+	  self.showing_on_map = options.showing_on_map || false;
 	
 	  if (options && _.isFunction(options["init_code"])) {
 	    options["init_code"].call(null, self, options);
@@ -641,6 +660,12 @@ webpackJsonp([0],{
 	        menu_object.style("display", "none");
 	      });
 	
+	      menu_object.append("li").append("a").attr("tabindex", "-1").text("Show on map").on("click", function (d) {
+	        self.open_exclusive_tab_view(cluster.cluster_id, null, function (cluster_id) {
+	          return "Map of cluster: " + cluster_id;
+	        }, { 'showing_on_map': true });
+	      });
+	
 	      cluster.fixed = 1;
 	
 	      menu_object.style("position", "absolute").style("left", "" + d3.event.offsetX + "px").style("top", "" + d3.event.offsetY + "px").style("display", "block");
@@ -814,13 +839,15 @@ webpackJsonp([0],{
 	      "no-subclusters": true
 	    };
 	
+	    if (option_extras.showing_on_map) {
+	      cluster_options["showing_on_map"] = true;
+	    }
+	
 	    if (option_extras) {
 	      _.extend(cluster_options, option_extras);
 	    }
 	
 	    var cluster_view = hivtrace.clusterNetwork(filtered_json, "#" + random_content_id, null, null, random_button_bar, attributes, null, null, null, parent_container, cluster_options);
-	
-	    cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
 	
 	    if (self.colorizer["category_id"]) {
 	      if (self.colorizer["continuous"]) {
@@ -838,7 +865,22 @@ webpackJsonp([0],{
 	      cluster_view.handle_attribute_opacity(self.colorizer["opacity_id"]);
 	    }
 	
-	    return cluster_view;
+	    if (option_extras.showing_on_map) {
+	      // Add a world map to the svg.
+	      d3.json("https://unpkg.com/world-atlas@1/world/110m.json", function (error, data) {
+	        if (error) throw error;
+	        var countries = topojson.feature(data, data.objects.countries).features;
+	        var mapsvg = d3.select("#" + random_prefix + "-network-svg");
+	        var path = d3.geo.path().projection(mapProjection);
+	        mapsvg.selectAll(".country").data(countries).enter().append("path").attr("class", "country").attr("d", path).attr("fill", "bisque").attr("stroke", "azure");
+	
+	        cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
+	
+	        return cluster_view;
+	      });
+	    } else {
+	      return cluster_view;
+	    }
 	
 	    // copy all the divs other than the one matching the network tab ID
 	    /*var cloned_empty_tab  = $('#trace-results').clone();
@@ -3336,7 +3378,26 @@ webpackJsonp([0],{
 	        var sizes = network_layout.size();
 	
 	        rendered_nodes.attr("transform", function (d) {
-	          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
+	
+	          // Defalut values (just to keep nodes in the svg container rectangle).
+	          var xBoundLower = 10;
+	          var xBoundUpper = sizes[0] - 10;
+	          var yBoundLower = 10;
+	          var yBoundUpper = sizes[1] - 10;
+	
+	          if (self.showing_on_map) {
+	            var allowed_offset_from_center_of_country = 15;
+	            // If the country is in the list that we have, override the default values for the bounds.
+	            if (d.patient_attributes.country in countryCentersObject) {
+	              var center = countryCentersObject[d.patient_attributes.country];
+	              xBoundLower = center.x - allowed_offset_from_center_of_country;
+	              xBoundUpper = center.x + allowed_offset_from_center_of_country;
+	              yBoundLower = center.y - allowed_offset_from_center_of_country;
+	              yBoundUpper = center.y + allowed_offset_from_center_of_country;
+	            }
+	          }
+	
+	          return "translate(" + (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) + "," + (d.y = Math.max(yBoundLower, Math.min(yBoundUpper, d.y))) + ")";
 	        });
 	        rendered_clusters.attr("transform", function (d) {
 	          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
@@ -3430,6 +3491,9 @@ webpackJsonp([0],{
 	    }
 	  };
 	  function node_size(d) {
+	    if (self.showing_on_map) {
+	      return 50;
+	    }
 	    var r = 5 + Math.sqrt(d.degree); //return (d.match_filter ? 10 : 4)*r*r;
 	    return 4 * r * r;
 	  }
@@ -4396,16 +4460,22 @@ webpackJsonp([0],{
 	  /*------------ D3 globals and SVG elements ---------------*/
 	
 	  var network_layout = d3.layout.force().on("tick", tick).charge(function (d) {
+	    if (self.showing_on_map) {
+	      return -60;
+	    }
 	    if (d.cluster_id) return self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7));
 	    return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
 	  }).linkDistance(function (d) {
 	    return Math.max(d.length, 0.005) * l_scale;
 	  }).linkStrength(function (d) {
+	    if (self.showing_on_map) {
+	      return 0.01;
+	    }
 	    if (d.support !== undefined) {
 	      return 2 * (0.5 - d.support);
 	    }
 	    return 1;
-	  }).chargeDistance(l_scale * 0.25).gravity(gravity_scale(json.Nodes.length)).friction(0.25);
+	  }).chargeDistance(l_scale * 0.25).gravity(self.showing_on_map ? 0 : gravity_scale(json.Nodes.length)).friction(0.25);
 	
 	  d3.select(self.container).selectAll(".my_progress").style("display", "none");
 	  d3.select(self.container).selectAll("svg").remove();
@@ -4421,7 +4491,9 @@ webpackJsonp([0],{
 	  //.append("g")
 	  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
 	
-	  self.legend_svg = self.network_svg.append("g").attr("transform", "translate(5,5)");
+	  var legend_vertical_offset;
+	  self.showing_on_map ? legend_vertical_offset = 100 : legend_vertical_offset = 5;
+	  self.legend_svg = self.network_svg.append("g").attr("transform", "translate(5," + legend_vertical_offset + ")");
 	
 	  self.network_svg.append("defs").append("marker").attr("id", self.dom_prefix + "_arrowhead").attr("refX", 9) /* there must be a smarter way to calculate shift*/
 	  .attr("refY", 2).attr("markerWidth", 6).attr("markerHeight", 4).attr("orient", "auto").attr("stroke", "#666666").attr("fill", "#AAAAAA").append("path").attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
