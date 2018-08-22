@@ -150,7 +150,7 @@ webpackJsonp([0],{
 	    "Other-Child": "#ff7f00"
 	  },
 	  race: {
-	    Asian: "#1f77b4",
+	    "Asian": "#1f77b4",
 	    "Black/African American": "#bcbd22",
 	    "Hispanic/Latino": "#9467bd",
 	    "American Indian/Alaska Native": "#2ca02c",
@@ -553,6 +553,7 @@ webpackJsonp([0],{
 	      depends: _networkCDCDateField,
 	      label: "hiv_aids_dx_dt_year",
 	      type: "Number",
+	      label_format: d3.format(".0f"),
 	      map: function map(node) {
 	        try {
 	          var value = self._parse_dates(self.attribute_node_value_by_id(node, _networkCDCDateField));
@@ -2753,6 +2754,17 @@ webpackJsonp([0],{
 	  };
 	
 	  self.draw_attribute_labels = function () {
+	
+	    var determine_label_format_cont = function determine_label_format_cont(field_data) {
+	      if ("label_format" in field_data) {
+	        return field_data["label_format"];
+	      }
+	      if (field_data["type"] == "Date") {
+	        return _defaultDateViewFormatShort;
+	      }
+	      return d3.format(",.4r");
+	    };
+	
 	    self.legend_svg.selectAll("g.hiv-trace-legend").remove();
 	
 	    var offset = 10;
@@ -2783,7 +2795,8 @@ webpackJsonp([0],{
 	      offset += 18;
 	
 	      if (self.colorizer["continuous"]) {
-	        var anchor_format = graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]["type"] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
+	        var anchor_format = determine_label_format_cont(graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]);
+	
 	        var scale = graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]["scale"];
 	
 	        _.each(_.range(_networkContinuousColorStops), function (value) {
@@ -2828,7 +2841,8 @@ webpackJsonp([0],{
 	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Opacity: " + self.colorizer["opacity_id"]).style("font-weight", "bold");
 	      offset += 18;
 	
-	      var anchor_format = graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]["type"] == "Date" ? _defaultDateViewFormatShort : d3.format(",.4r");
+	      var anchor_format = determine_label_format_cont(graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]);
+	
 	      var scale = graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]["scale"];
 	
 	      _.each(_.range(_networkContinuousColorStops), function (value) {
@@ -3048,6 +3062,7 @@ webpackJsonp([0],{
 	      //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
 	
 	      //try {
+	      //console.log (self.colorizer["category_map"]);
 	      self.colorizer["category_pairwise"] = attribute_pairwise_distribution(cat_id, graph_data[_networkGraphAttrbuteID][cat_id].dimension, self.colorizer["category_map"]);
 	      //} catch (err) {
 	      // TODO: there are still lingering issues with this "category_map"
@@ -3295,6 +3310,12 @@ webpackJsonp([0],{
 	
 	      if (self._is_CDC_ && !(options && options["no-subclusters"])) {
 	        self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
+	
+	        try {
+	          graph_data[_networkGraphAttrbuteID]["recent_rapid"] = self._aux_process_category_values(self._aux_populate_category_fields(graph_data[_networkGraphAttrbuteID]["recent_rapid"], "recent_rapid"));
+	        } catch (err) {
+	          console.log(err);
+	        }
 	      }
 	
 	      if (self.subcluster_table) {

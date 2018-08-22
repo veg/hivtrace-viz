@@ -117,7 +117,7 @@ var _networkPresetColorSchemes = {
     "Other-Child": "#ff7f00"
   },
   race: {
-    Asian: "#1f77b4",
+    "Asian": "#1f77b4",
     "Black/African American": "#bcbd22",
     "Hispanic/Latino": "#9467bd",
     "American Indian/Alaska Native": "#2ca02c",
@@ -668,6 +668,7 @@ var hivtrace_cluster_network_graph = function(
       depends: _networkCDCDateField,
       label: "hiv_aids_dx_dt_year",
       type: "Number",
+      label_format : d3.format (".0f"),
       map: function(node) {
         try {
           var value = self._parse_dates(
@@ -3834,6 +3835,18 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.draw_attribute_labels = function() {
+  
+    var determine_label_format_cont =   function (field_data) {
+        if ("label_format" in field_data) {
+            return field_data["label_format"];
+        } 
+        if (field_data["type"] == "Date") {
+            return _defaultDateViewFormatShort;
+        }
+        return d3.format(",.4r");
+    };
+
+  
     self.legend_svg.selectAll("g.hiv-trace-legend").remove();
 
     var offset = 10;
@@ -3898,13 +3911,9 @@ var hivtrace_cluster_network_graph = function(
       offset += 18;
 
       if (self.colorizer["continuous"]) {
-        var anchor_format =
-          graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-            "type"
-          ] == "Date"
-            ? _defaultDateViewFormatShort
-            : d3.format(",.4r");
-        var scale =
+        var anchor_format = determine_label_format_cont (graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]);
+                
+         var scale =
           graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
             "scale"
           ];
@@ -4027,12 +4036,9 @@ var hivtrace_cluster_network_graph = function(
         .style("font-weight", "bold");
       offset += 18;
 
-      var anchor_format =
-        graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]][
-          "type"
-        ] == "Date"
-          ? _defaultDateViewFormatShort
-          : d3.format(",.4r");
+      var anchor_format = determine_label_format_cont (graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]);
+       
+      
       var scale =
         graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]][
           "scale"
@@ -4395,6 +4401,7 @@ var hivtrace_cluster_network_graph = function(
       //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
 
       //try {
+      //console.log (self.colorizer["category_map"]);
       self.colorizer["category_pairwise"] = attribute_pairwise_distribution(
         cat_id,
         graph_data[_networkGraphAttrbuteID][cat_id].dimension,
@@ -4713,6 +4720,13 @@ var hivtrace_cluster_network_graph = function(
 
       if (self._is_CDC_ && !(options && options["no-subclusters"])) {
         self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
+
+        try {
+            graph_data[_networkGraphAttrbuteID]["recent_rapid"] = 
+                self._aux_process_category_values(self._aux_populate_category_fields (graph_data[_networkGraphAttrbuteID]["recent_rapid"],"recent_rapid"));
+        } catch (err) {
+            console.log (err);
+        }
       }
 
       if (self.subcluster_table) {
