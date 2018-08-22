@@ -163,7 +163,7 @@ var _networkPresetShapeSchemes = {
 };
 
 // Constants for the map.
-const mapWidth = 1200
+const mapWidth = 1100
 const mapHeight = 600
 const mapProjection = d3.geo.mercator()
   .translate([mapWidth/2, mapHeight/2])
@@ -175,10 +175,13 @@ var countryCentersObject = {};
  d3.csv("./../country_centers.csv", function(data) {
   for (var i=0; i < data.length; i++) {
     let countryCode = data[i]["Alpha-2 code"];
+    let countryCodeNumeric = data[i]["Numeric code"];
+    countryCodeNumeric.length == 2 ? countryCodeNumeric = "0" + countryCodeNumeric : null;
+    let countryName = data[i]["Country"];
     let countryLat = data[i]["Latitude (average)"];
     let countryLong = data[i]["Longitude (average)"];
     let countryXY = mapProjection([countryLong, countryLat])
-    countryCentersObject[countryCode] = {'x': countryXY[0], 'y': countryXY[1]}
+    countryCentersObject[countryCode] = {'x': countryXY[0], 'y': countryXY[1], 'countryCodeNumeric': countryCodeNumeric, 'countryName': countryName}
   }
 })
 
@@ -295,6 +298,7 @@ var hivtrace_cluster_network_graph = function(
   self.percent_format = _defaultPercentFormat;
   self.missing = _networkMissing;
   self.showing_on_map = options.showing_on_map || false;
+  self.countries_in_cluster = [];
 
   if (options && _.isFunction(options["init_code"])) {
     options["init_code"].call(null, self, options);
@@ -822,19 +826,34 @@ var hivtrace_cluster_network_graph = function(
           menu_object.style("display", "none");
         });
 
-      menu_object
-        .append("li")
-        .append("a")
-        .attr("tabindex", "-1")
-        .text("Show on map")
-        .on("click", function(d) {
-          self.open_exclusive_tab_view(
-            cluster.cluster_id,
-            null,
-            (cluster_id) => { return "Map of cluster: " + cluster_id },
-            {'showing_on_map': true}
-          )
-        });
+      // Only show the "Show on map" option for clusters with valid country info (for now just 2 letter codes) for each node.
+      var show_on_map_enabled = true;
+      _.each(cluster.children, function(node) {
+        if ("country" in node.patient_attributes) {
+          if (node.patient_attributes.country.length != 2) {
+            show_on_map_enabled = false
+          }
+        } else {
+          show_on_map_enabled = false
+        }
+      })
+
+      if (show_on_map_enabled) {
+        menu_object
+          .append("li")
+          .append("a")
+          .attr("tabindex", "-1")
+          .text("Show on map")
+          .on("click", function(d) {
+            console.log(cluster)
+            self.open_exclusive_tab_view(
+              cluster.cluster_id,
+              null,
+              (cluster_id) => { return "Map of cluster: " + cluster_id },
+              {'showing_on_map': true}
+            )
+          });
+      }
 
       cluster.fixed = 1;
 
@@ -1105,6 +1124,19 @@ var hivtrace_cluster_network_graph = function(
 
     if (option_extras.showing_on_map) {
       cluster_options["showing_on_map"] = true;
+
+      // Create an array of the countries in the selected cluster for use in styling the map.
+      var nodes_in_cluster = _.values(filtered_json.Nodes)
+      self.countries_in_cluster = [];
+      _.each(nodes_in_cluster, function(node) {
+        //var countryCode = node.patient_attributes.country;
+        var countryCodeAlpha2 = node.patient_attributes.country;
+        var countryCodeNumeric = countryCentersObject[countryCodeAlpha2].countryCodeNumeric
+        if (self.countries_in_cluster.indexOf(countryCodeNumeric) === -1) {
+          self.countries_in_cluster.push(countryCodeNumeric)
+        }
+      });
+
     }
 
     if (option_extras) {
@@ -1147,17 +1179,31 @@ var hivtrace_cluster_network_graph = function(
       // Add a world map to the svg.
       d3.json("https://unpkg.com/world-atlas@1/world/110m.json", function(error, data) {
         if (error) throw error;
-         var countries = topojson.feature(data, data.objects.countries).features;
+        var countries = topojson.feature(data, data.objects.countries).features;
         var mapsvg = d3.select("#" + random_prefix + "-network-svg")
         var path = d3.geo.path().projection(mapProjection)
-         mapsvg.selectAll(".country")
+        mapsvg.selectAll(".country")
           .data(countries)
           .enter()
           .append("path")
           .attr("class", "country")
           .attr("d", path)
-          .attr("fill", "bisque")
-          .attr("stroke", "azure");
+          .attr("stroke", "saddlebrown")
+          .attr("fill", function(d) {
+            if (self.countries_in_cluster.includes(d.id)) {
+              return "navajowhite"
+            } else {
+              return "bisque"
+            }
+          })
+          .attr("stroke-width", function(d) {
+            if (self.countries_in_cluster.includes(d.id)) {
+              return 1.5
+            } else {
+              return 0.5
+            }
+          });
+
 
         cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
 
