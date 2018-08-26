@@ -834,20 +834,22 @@ var hivtrace_cluster_network_graph = function(
     );
   };
 
-  self._check_for_time_series = function(export_items) {
-    if (self.cluster_time_scale) {
-      export_items.push([
-        "Show time-course plots",
-        function(network, e) {
-          e = d3.select(e);
+  /*self._handle_inline_charts = function (e) {
 
+  }*/
+
+  self._check_for_time_series = function(export_items) {
+    var event_handler = function (network, e) {
+          if (e) {
+            e = d3.select(e);
+          }
           if (!network.network_cluster_dynamics) {
             network.network_cluster_dynamics = network.network_svg
               .append("g")
               .attr("id", self.dom_prefix + "-dynamics-svg")
               .attr("transform", "translate (" + network.width * 0.45 + ",0)");
 
-            network.handle_inline_charts = function() {
+            network.handle_inline_charts = function(plot_filter) {
               var attr = null;
               var color = null;
               if (
@@ -867,11 +869,11 @@ var hivtrace_cluster_network_graph = function(
               misc.cluster_dynamics(
                 network.extract_network_time_series(
                   self.cluster_time_scale,
-                  attr
+                  attr,
+                  plot_filter
                 ),
                 network.network_cluster_dynamics,
-                "Time",
-                "Cluster Members",
+                "Quarter of Diagnosis", "Number of Cases",
                 null,
                 null,
                 {
@@ -886,6 +888,7 @@ var hivtrace_cluster_network_graph = function(
                   height: network.height / 2,
                   colorizer: color,
                   prefix: network.dom_prefix,
+                  barchart: true,
                   drag: {
                     x: network.width * 0.45,
                     y: 0
@@ -894,15 +897,28 @@ var hivtrace_cluster_network_graph = function(
               );
             };
             network.handle_inline_charts();
-            e.text("Hide time-course plots");
+            if (e) {
+                e.text("Hide time-course plots");
+            }
           } else {
-            e.text("Show time-course plots");
+            if (e) {
+                e.text("Show time-course plots");
+            }
             network.network_cluster_dynamics.remove();
             network.network_cluster_dynamics = null;
             network.handle_inline_charts = null;
           }
-        }
-      ]);
+        };
+
+    if (self.cluster_time_scale) {
+      if (export_items) {
+          export_items.push([
+            "Show time-course plots",
+            event_handler
+          ]);
+       } else {
+          event_handler (self);
+       }
     }
   };
 
@@ -961,7 +977,7 @@ var hivtrace_cluster_network_graph = function(
       ]
     ];
 
-    self._check_for_time_series(export_items);
+    //self._check_for_time_series(export_items);
 
     if ("extra_menu" in additional_options) {
       _.each(export_items, function(item) {
@@ -1417,7 +1433,7 @@ var hivtrace_cluster_network_graph = function(
     ];
 
 
-    self._check_for_time_series(extra_menu_items);
+    //self._check_for_time_series(extra_menu_items);
     self
       .open_exclusive_tab_view_aux(
         filtered_json,
@@ -2350,6 +2366,17 @@ var hivtrace_cluster_network_graph = function(
             })
             .append("i")
             .classed("fa fa-calculator", true);
+        } else {
+           button_group
+            .append("button")
+            .classed("btn btn-default btn-sm", true)
+            .attr("title", "Toggle epi-curve")
+            .attr("id", "hivtrace-toggle-epi-curve")
+            .on("click", function(d) {
+              self._check_for_time_series();
+            })
+            .append("i")
+            .classed("fa fa-line-chart", true);
         }
 
         button_group
@@ -4645,6 +4672,10 @@ var hivtrace_cluster_network_graph = function(
         n.parent.match_filter += 1;
       }
     });
+
+    if (anything_changed && self.handle_inline_charts) {
+        self.handle_inline_charts (function (n) {return n.match_filter;});
+    }
 
     if (anything_changed && !skip_update) {
       if (self.hide_unselected) {
