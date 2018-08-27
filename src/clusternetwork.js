@@ -47,6 +47,15 @@ var _networkCategoricalBase = [
   "#b15928"
 ];
 
+/*
+var _networkCategoricalDashPatterns = [
+  "1 0",
+  "4 2",
+  "2 4",
+  "1 1"
+];
+*/
+
 var _networkCategorical = [];
 
 _.each([0, -0.5, 0.5], function(k) {
@@ -167,11 +176,14 @@ var hivtrace_cluster_depthwise_traversal = function(
   nodes,
   edges,
   edge_filter,
-  save_edges
+  save_edges,
+  seed_nodes
 ) {
   var clusters = [],
     adjacency = {},
     by_node = {};
+
+  seed_nodes = seed_nodes || nodes;
 
   _.each(nodes, function(n) {
     n.visited = false;
@@ -219,7 +231,7 @@ var hivtrace_cluster_depthwise_traversal = function(
     });
   };
 
-  _.each(nodes, function(n) {
+  _.each(seed_nodes, function(n) {
     if (!n.visited) {
       traverse(n);
     }
@@ -1061,6 +1073,7 @@ var hivtrace_cluster_network_graph = function(
       .data("cluster", option_extras.cluster_id);
 
     if (option_extras.type == "subcluster") {
+
       new_tab_content
         .addClass("subcluster-view")
         .addClass("subcluster-" + option_extras.cluster_id.replace(".", "_"));
@@ -1338,6 +1351,8 @@ var hivtrace_cluster_network_graph = function(
   }
 
   self.view_subcluster = function(cluster, custom_filter, custom_name) {
+
+
     var filtered_json = _extract_single_cluster(
       custom_filter
         ? _.filter(self.json.Nodes, custom_filter)
@@ -1437,11 +1452,11 @@ var hivtrace_cluster_network_graph = function(
     self
       .open_exclusive_tab_view_aux(
         filtered_json,
-        custom_name || "Subcluster " + cluster,
+        custom_name || "Subcluster " + cluster.cluster_id,
         {
           //"core-link" : self.subcluster_threshold,
           type: "subcluster",
-          cluster_id: cluster,
+          cluster_id: cluster.cluster_id,
           extra_menu: {
             title: "Action",
             items: extra_menu_items
@@ -1450,12 +1465,12 @@ var hivtrace_cluster_network_graph = function(
       )
       .handle_attribute_categorical("recent_rapid");
 
-    var selector =
+    /*var selector =
       ".subcluster-" +
-      cluster.replace(".", "_") +
+      cluster.id.replace(".", "_") +
       " .show-small-clusters-button";
 
-    /*var item = $(
+    var item = $(
       '<span class="input-group-addon btn view-parent-btn">View Parent</span>'
     )
       .data("cluster_id", cluster.parent_cluster.cluster_id)
@@ -3206,6 +3221,8 @@ var hivtrace_cluster_network_graph = function(
     var cluster_id = payload[0];
 
     if (_is_subcluster) {
+        //console.log (payload);
+
       //this_cell.append("i")
       //      .classed("fa fa-arrow-circle-o-right", true).style("padding-right", "0.25em");
 
@@ -3229,6 +3246,7 @@ var hivtrace_cluster_network_graph = function(
       this_cell
         .append("button")
         .classed("btn btn-primary btn-xs pull-right", true)
+        .style("margin-right", "0.25em")
         .text("view")
         .on("click", function(e) {
           self.open_exclusive_tab_view(cluster_id);
@@ -3236,7 +3254,8 @@ var hivtrace_cluster_network_graph = function(
     }
     this_cell
       .append("button")
-      .classed("btn btn-xs pull-right", true)
+      .classed("btn btn-default btn-xs pull-right", true)
+      .style("margin-right", "0.25em")
       .text("list")
       .attr("data-toggle", "modal")
       .attr(
@@ -3259,10 +3278,11 @@ var hivtrace_cluster_network_graph = function(
     buttons.enter().append("button");
     buttons.exit().remove();
     buttons
-      .classed("btn btn-primary btn-xs", true)
+      .classed("btn btn-default btn-xs", true)
       .text(function(d) {
         return d[0];
       })
+      .style("margin-right", "0.25em")
       .attr("disabled", function(d) {
         return d[1] ? "disabled" : null;
       })
@@ -4882,8 +4902,7 @@ var hivtrace_cluster_network_graph = function(
 
       self.draw_cluster_table(
         self.extra_cluster_table_columns,
-        self.cluster_table,
-        {"subclusters" : self.subcluster_table ? true : false}
+        self.cluster_table
       );
 
       if (self._is_CDC_ && !(options && options["no-subclusters"])) {
@@ -6006,6 +6025,156 @@ var hivtrace_cluster_network_graph = function(
           .range(_networkCategoricalBase)
           .domain(edge_types);
 
+        /*var _edge_dasher = d3.scale
+          .ordinal()
+          .range(_networkCategoricalDashPatterns)
+          .domain(edge_types);
+        */
+
+        var _social_view_handler = function(id, node_filter, labeled_links, shown_types, title, e) {
+
+            self.open_exclusive_tab_view(
+              id,
+              node_filter,
+              title,
+              {
+                "edge-styler": function(element, d, network) {
+                  if (_.has(d, "edge_type")) {
+                    d3
+                      .select(element)
+                      .style(
+                        "stroke",
+                        network._edge_colorizer(d["edge_type"])
+                      );//.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
+
+                    d.is_hidden = !network.shown_types[
+                      d["edge_type"]
+                    ];
+                  } else {
+                    d.is_hidden = !network.shown_types[""];
+                  }
+                  d3.select(element).style ("stroke-width", "5px");
+                },
+
+                init_code: function(network) {
+                  function style_edge(type) {
+                    this.style("stroke-width", "5px");
+                    if (type.length) {
+                      this.style(
+                        "stroke",
+                        network._edge_colorizer(type)
+                      );//.style ("stroke-dasharray", network._edge_dasher (type));
+                    } else {
+                      this.classed("link", true);
+                      var def_color = this.style("stroke");
+                      this.classed("link", null);
+                      this.style("stroke", def_color);
+                    }
+                  }
+                  network._edge_colorizer = _edge_colorizer;
+                  //network._edge_dasher   = _edge_dasher;
+                  network.shown_types = _.clone(shown_types);
+                  network.edge_legend = {
+                    caption: "Network links",
+                    types: {}
+                  };
+
+                  _.each(network.shown_types, function(ignore, t) {
+                    if (t.length) {
+                      network.edge_legend.types[t] = _.partial(
+                        style_edge,
+                        t
+                      );
+                    } else {
+                      network.edge_legend.types[
+                        "Molecular links"
+                      ] = _.partial(style_edge, t);
+                    }
+                  });
+                },
+
+                extra_menu: {
+                  title: "Additional options",
+                  items: _.map(labeled_links, function(edge_class) {
+                    return [
+                      function(network, element) {
+                        function toggle_element() {
+                          network.shown_types[edge_class] = !network
+                            .shown_types[edge_class];
+                          checkbox.attr(
+                            "checked",
+                            network.shown_types[edge_class]
+                              ? ""
+                              : null
+                          );
+                          network.update(true);
+                        }
+
+                        var link;
+
+                        if (edge_class.length) {
+                          link = element
+                            .append("a")
+                            .text(edge_class + " links")
+                            .style(
+                              "color",
+                              network._edge_colorizer(edge_class)
+                            )
+                            .on("click", toggle_element);
+                        } else {
+                          link = element
+                            .append("a")
+                            .text("Molecular links")
+                            .on("click", toggle_element);
+                        }
+                        var checkbox = link
+                          .append("input")
+                          .attr("type", "checkbox")
+                          .attr("checked", "");
+                      }
+                    ];
+                  })
+                }
+              }
+            );
+          };
+
+
+        var injected_column_subcluster = [
+          {
+            description: {
+              value: annotation + " network",
+              sort: function(c) {
+                return c.value[0];
+              },
+              help: "View subclusters with " + annotation + " data"
+            },
+
+            generator: function(cluster) {
+                return {
+                    value : [cluster.cluster_id, cluster.children],
+                    callback: function(element, payload) {
+                        //console.log (payload)
+                        var this_cell = d3.select(element);
+                        this_cell
+                          .append("button")
+                          .classed("btn btn-primary btn-xs pull-right", true)
+                          .text("Complete " + annotation)
+                          .on("click", _.partial (_social_view_handler, payload[2], function(n) {
+                            return (
+                              n.extended_cluster &&
+                              payload[2] in n.extended_cluster
+                            );
+                          }, labeled_links, shown_types, function(id) {
+                                 return "Subcluster " + id + " + all  " + annotation;
+                        }));
+                    }
+                };
+            }
+
+        }];
+
+
         var injected_column = [
           {
             description: {
@@ -6016,6 +6185,7 @@ var hivtrace_cluster_network_graph = function(
               help: "Nodes added and clusters merged through " + annotation
             },
             generator: function(cluster) {
+
               return {
                 value: [
                   cluster.injected[annotation],
@@ -6058,120 +6228,52 @@ var hivtrace_cluster_network_graph = function(
                       shown_types[t] = 1;
                     });
 
+
                     this_cell
                       .append("button")
                       .classed("btn btn-primary btn-xs pull-right", true)
-                      .text("View " + annotation)
-                      .on("click", function(e) {
-                        self.open_exclusive_tab_view(
-                          payload[2],
-                          function(n) {
-                            return (
-                              n.extended_cluster &&
-                              payload[2] in n.extended_cluster
+                      .text("Directly linked " + annotation)
+                      .style("margin-left", "1em")
+                      .on("click", function (e) {
+                            var directly_linked_ids = {};
+
+                            var direct_links_only = hivtrace_cluster_depthwise_traversal (
+                                self.json.Nodes,
+                                self.json.Edges,
+                                function (edge) {
+                                     return self.json.Nodes[edge.target].node_class != "injected" || self.json.Nodes[edge.source].node_class != "injected";
+                                },
+                                false,
+                                cluster.children
                             );
-                          },
-                          function(id) {
-                            return "Cluster " + id + " with " + annotation;
-                          },
-                          {
-                            "edge-styler": function(element, d, network) {
-                              if (_.has(d, "edge_type")) {
-                                d3
-                                  .select(element)
-                                  .style(
-                                    "stroke",
-                                    network._edge_colorizer(d["edge_type"])
-                                  );
-                                d.is_hidden = !network.shown_types[
-                                  d["edge_type"]
-                                ];
-                              } else {
-                                d.is_hidden = !network.shown_types[""];
-                              }
-                            },
 
-                            init_code: function(network) {
-                              function style_edge(type) {
-                                this.style("stroke-width", "5px");
-                                if (type.length) {
-                                  this.style(
-                                    "stroke",
-                                    network._edge_colorizer(type)
-                                  );
-                                } else {
-                                  this.classed("link", true);
-                                  var def_color = this.style("stroke");
-                                  this.classed("link", null);
-                                  this.style("stroke", def_color);
-                                }
-                              }
-                              network._edge_colorizer = _edge_colorizer;
-                              network.shown_types = _.clone(shown_types);
-                              network.edge_legend = {
-                                caption: "Network links",
-                                types: {}
-                              };
+                            _.each (direct_links_only[0], function (n) {
+                                directly_linked_ids[n.id] = true;
+                            });
 
-                              _.each(network.shown_types, function(ignore, t) {
-                                if (t.length) {
-                                  network.edge_legend.types[t] = _.partial(
-                                    style_edge,
-                                    t
-                                  );
-                                } else {
-                                  network.edge_legend.types[
-                                    "Molecular links"
-                                  ] = _.partial(style_edge, t);
-                                }
-                              });
-                            },
+                            //console.log (directly_linked_ids);
 
-                            extra_menu: {
-                              title: "Additional options",
-                              items: _.map(labeled_links, function(edge_class) {
-                                return [
-                                  function(network, element) {
-                                    function toggle_element() {
-                                      network.shown_types[edge_class] = !network
-                                        .shown_types[edge_class];
-                                      checkbox.attr(
-                                        "checked",
-                                        network.shown_types[edge_class]
-                                          ? ""
-                                          : null
-                                      );
-                                      network.update(true);
-                                    }
 
-                                    var link;
+                            _social_view_handler (payload[2], function(n) {
+                                    return n.id in directly_linked_ids;
+                                }, labeled_links, shown_types, function(id) {
+                                    return "Cluster " + id + " + direct " + annotation;
+                                  }, e);
+                       });
 
-                                    if (edge_class.length) {
-                                      link = element
-                                        .append("a")
-                                        .text(edge_class + " links")
-                                        .style(
-                                          "color",
-                                          network._edge_colorizer(edge_class)
-                                        )
-                                        .on("click", toggle_element);
-                                    } else {
-                                      link = element
-                                        .append("a")
-                                        .text("Molecular links")
-                                        .on("click", toggle_element);
-                                    }
-                                    var checkbox = link
-                                      .append("input")
-                                      .attr("type", "checkbox")
-                                      .attr("checked", "");
-                                  }
-                                ];
-                              })
-                            }
-                          }
+                    this_cell
+                      .append("button")
+                      .classed("btn btn-primary btn-xs pull-right", true)
+                      .text("Complete " + annotation)
+                      .on("click", _.partial (_social_view_handler, payload[2], function(n) {
+                        return (
+                          n.extended_cluster &&
+                          payload[2] in n.extended_cluster
                         );
-                      });
+                      }, labeled_links, shown_types, function(id) {
+                             return "Cluster " + id + " + all  " + annotation;
+                        }));
+
                   }
                 }
               };
@@ -6179,15 +6281,33 @@ var hivtrace_cluster_network_graph = function(
           }
         ];
 
-        self.extra_cluster_table_columns = self.extra_cluster_table_columns.concat(
-          injected_column
-        );
+        if (self.extra_cluster_table_columns) {
+            self.extra_cluster_table_columns = self.extra_cluster_table_columns.concat(
+              injected_column
+            );
+        } else {
+            self.extra_cluster_table_columns = injected_column;
+        }
+
         self.draw_cluster_table(
           self.extra_cluster_table_columns,
-          self.cluster_table,
-          false,
-          self.subcluster_table
+          self.cluster_table
         );
+
+        if (self.subcluster_table) {
+            if (self.extra_subcluster_table_columns) {
+                self.extra_subcluster_table_columns = self.extra_subcluster_table_columns.concat(
+                    injected_column_subcluster
+                );
+            } else {
+                self.extra_subcluster_table_columns = injected_column_subcluster;
+            }
+            self.draw_cluster_table(
+                  self.extra_subcluster_table_columns,
+                  self.subcluster_table,
+                  {"subclusters" : true, "no-clusters" : true}
+            );
+        }
       }
     } catch (e) {
       throw e;
@@ -6370,19 +6490,37 @@ var hivtrace_cluster_network_graph = function(
     .append("g")
     .attr("transform", "translate(5,5)");
 
-  self.network_svg
+/*
+    self.network_svg
     .append("defs")
     .append("marker")
     .attr("id", self.dom_prefix + "_arrowhead")
-    .attr("refX", 9) /* there must be a smarter way to calculate shift*/
+    .attr("refX", 9)
     .attr("refY", 2)
     .attr("markerWidth", 6)
     .attr("markerHeight", 4)
     .attr("orient", "auto")
     .attr("stroke", "#666666")
+    //.attr("markerUnits", "userSpaceOnUse")
     .attr("fill", "#AAAAAA")
     .append("path")
     .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+
+*/
+    self.network_svg
+    .append("defs")
+    .append("marker")
+    .attr("id", self.dom_prefix + "_arrowhead")
+    .attr("refX", 18)
+    .attr("refY", 6)
+    .attr("markerWidth", 20)
+    .attr("markerHeight", 16)
+    .attr("orient", "auto")
+    .attr("stroke", "#666666")
+    .attr("markerUnits", "userSpaceOnUse")
+    .attr("fill", "#AAAAAA")
+    .append("path")
+    .attr("d", "M 0,0 L 2,6 L 0,12 L14,6 Z"); //this is actual shape for arrowhead
 
   change_window_size();
 
