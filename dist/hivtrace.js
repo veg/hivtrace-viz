@@ -52,14 +52,14 @@ webpackJsonp([0],{
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(47);
+	var _histogram = __webpack_require__(48);
 	
-	var _scatterplot = __webpack_require__(46);
+	var _scatterplot = __webpack_require__(47);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var misc = __webpack_require__(43);
-	var helpers = __webpack_require__(44);
+	var misc = __webpack_require__(44);
+	var helpers = __webpack_require__(45);
 	
 	module.exports.clusterNetwork = _clusternetwork.clusterNetwork;
 	module.exports.graphSummary = _clusternetwork.graphSummary;
@@ -85,9 +85,9 @@ webpackJsonp([0],{
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    misc = __webpack_require__(43),
-	    helpers = __webpack_require__(44),
-	    scatterPlot = __webpack_require__(46);
+	    misc = __webpack_require__(44),
+	    helpers = __webpack_require__(45),
+	    scatterPlot = __webpack_require__(47);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -484,7 +484,13 @@ webpackJsonp([0],{
 	
 	  self.recent_rapid_definition = function (network, date) {
 	    date = date || self.today;
-	    var subcluster_enum = ["Subcluster", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "12 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 12)) + ") and R&R subcluster", "36 months (on ar after " + _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", "Not in a subcluster"];
+	    var subcluster_enum = ["Subcluster", // 0
+	    "12 months (on ar after " + // 1
+	    _defaultDateViewFormat(_n_months_ago(date, 12)) + ")", "12 months (on ar after " + // 2
+	    _defaultDateViewFormat(_n_months_ago(date, 12)) + ") and R&R subcluster", "36 months (on ar after " + // 3
+	    _defaultDateViewFormat(_n_months_ago(date, 36)) + ")", "Future node (after " + _defaultDateViewFormat(date) + ")", // 4
+	    "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", // 5
+	    "Not in a subcluster"];
 	
 	    return {
 	      depends: _networkCDCDateField,
@@ -749,7 +755,7 @@ webpackJsonp([0],{
 	    $("#" + tab_content).remove();
 	  };
 	
-	  self.open_exclusive_tab_view = function (cluster_id, custom_filter, custom_name, additional_options) {
+	  self.open_exclusive_tab_view = function (cluster_id, custom_filter, custom_name, additional_options, include_injected_edges) {
 	    var cluster = _.find(self.clusters, function (c) {
 	      return c.cluster_id == cluster_id;
 	    });
@@ -760,7 +766,7 @@ webpackJsonp([0],{
 	
 	    additional_options = additional_options || {};
 	
-	    var filtered_json = _extract_single_cluster(custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children);
+	    var filtered_json = _extract_single_cluster(custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children, null, null, null, include_injected_edges);
 	
 	    if (_networkGraphAttrbuteID in json) {
 	      filtered_json[_networkGraphAttrbuteID] = {};
@@ -1043,11 +1049,20 @@ webpackJsonp([0],{
 	    return graphMe;
 	  }
 	
-	  self.view_subcluster = function (cluster, custom_filter, custom_name) {
+	  self._refresh_subcluster_view = function (set_date) {
 	
-	    var filtered_json = _extract_single_cluster(custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children, function (e) {
-	      return e.length < self.subcluster_threshold;
-	    });
+	    self.annotate_priority_clusters(_networkCDCDateField, 36, 12, set_date);
+	    var field_def = self.recent_rapid_definition(self, set_date);
+	    self.inject_attribute_description("recent_rapid", field_def);
+	    self._aux_process_category_values(self._aux_populate_category_fields(field_def, "recent_rapid"));
+	    self.handle_attribute_categorical("recent_rapid");
+	  };
+	
+	  self.view_subcluster = function (cluster, custom_filter, custom_name, options, custom_edge_filter, include_injected_edges) {
+	
+	    var filtered_json = _extract_single_cluster(custom_filter ? _.isArray(custom_filter) ? custom_filter : _.filter(self.json.Nodes, custom_filter) : cluster.children, custom_edge_filter || function (e) {
+	      return e.length <= self.subcluster_threshold;
+	    }, false, null, include_injected_edges);
 	
 	    _.each(filtered_json.Nodes, function (n) {
 	      n.subcluster = "1.1";
@@ -1058,6 +1073,8 @@ webpackJsonp([0],{
 	      jQuery.extend(true, filtered_json[_networkGraphAttrbuteID], json[_networkGraphAttrbuteID]);
 	    }
 	
+	    options = options || new Object();
+	
 	    var extra_menu_items = [[function (network, item) {
 	      var enclosure = item.append("div").classed("form-group", true);
 	      var label = enclosure.append("label").text("Recalculate R&R from ").classed("control-label", true);
@@ -1067,11 +1084,8 @@ webpackJsonp([0],{
 	        //d3.event.preventDefault();
 	        var set_date = _defaultDateViewFormatSlider.parse(this.value);
 	        if (this.value) {
-	          network.annotate_priority_clusters(_networkCDCDateField, 36, 12, set_date);
-	          var field_def = network.recent_rapid_definition(network, set_date);
-	          network.inject_attribute_description("recent_rapid", field_def);
-	          network._aux_process_category_values(network._aux_populate_category_fields(field_def, "recent_rapid"));
-	          network.handle_attribute_categorical("recent_rapid");
+	          network._refresh_subcluster_view(set_date);
+	
 	          enclosure.classed("has-success", true).classed("has-error", false);
 	        } else {
 	          enclosure.classed("has-success", false).classed("has-error", true);
@@ -1081,16 +1095,21 @@ webpackJsonp([0],{
 	      helpers.export_csv_button(network._extract_attributes_for_nodes(network._extract_nodes_by_id("1.1"), network._extract_exportable_attributes()));
 	    }]];
 	
-	    //self._check_for_time_series(extra_menu_items);
-	    self.open_exclusive_tab_view_aux(filtered_json, custom_name || "Subcluster " + cluster.cluster_id, {
-	      //"core-link" : self.subcluster_threshold,
-	      type: "subcluster",
-	      cluster_id: cluster.cluster_id,
-	      extra_menu: {
+	    options["type"] = "subcluster";
+	    options["cluster_id"] = cluster.cluster_id;
+	    if ("extra_menu" in options) {
+	      options["extra_menu"]["items"] = options["extra_menu"]["items"].concat(extra_menu_items);
+	    } else {
+	      options["extra_menu"] = {
 	        title: "Action",
 	        items: extra_menu_items
-	      }
-	    }).handle_attribute_categorical("recent_rapid");
+	      };
+	    }
+	
+	    //self._check_for_time_series(extra_menu_items);
+	    var cluster_view = self.open_exclusive_tab_view_aux(filtered_json, custom_name || "Subcluster " + cluster.cluster_id, options);
+	    cluster_view.handle_attribute_categorical("recent_rapid");
+	    return cluster_view;
 	
 	    /*var selector =
 	      ".subcluster-" +
@@ -1133,9 +1152,13 @@ webpackJsonp([0],{
 	        if (node_dx instanceof Date) {
 	          return node_dx >= cutoff && node_dx <= start_date;
 	        } else {
-	          node_dx = self._parse_dates(self.attribute_node_value_by_id(node, date_field));
-	          if (node_dx instanceof Date) {
-	            return node_dx >= cutoff && node_dx <= start_date;
+	          try {
+	            node_dx = self._parse_dates(self.attribute_node_value_by_id(node, date_field));
+	            if (node_dx instanceof Date) {
+	              return node_dx >= cutoff && node_dx <= start_date;
+	            }
+	          } catch (err) {
+	            return undefined;
 	          }
 	        }
 	        return false;
@@ -1153,11 +1176,16 @@ webpackJsonp([0],{
 	        beginning_of_time.setYear(1900);
 	        node_iterator = [];
 	        _.each(self.nodes, function (node) {
-	          if (filter_by_date(beginning_of_time, node)) {
-	            node.priority_flag = 5;
-	            node_iterator.push(node);
+	          var filter_result = filter_by_date(beginning_of_time, node);
+	          if (_.isUndefined(filter_result)) {
+	            node.priority_flag = 6;
 	          } else {
-	            node.priority_flag = 4;
+	            if (filter_result) {
+	              node.priority_flag = 5;
+	              node_iterator.push(node);
+	            } else {
+	              node.priority_flag = 4;
+	            }
 	          }
 	        });
 	      }
@@ -2391,7 +2419,7 @@ webpackJsonp([0],{
 	    });
 	  }
 	
-	  function _extract_single_cluster(nodes, filter, no_clone, given_json) {
+	  function _extract_single_cluster(nodes, filter, no_clone, given_json, include_extra_edges) {
 	    /**
 	        Extract the nodes and edges between them into a separate objects
 	        @param nodes [array]  the list of nodes to extract
@@ -2416,7 +2444,7 @@ webpackJsonp([0],{
 	    given_json = given_json || json;
 	
 	    cluster_json.Edges = _.filter(given_json.Edges, function (e) {
-	      return given_json.Nodes[e.source].id in map_to_id && given_json.Nodes[e.target].id in map_to_id;
+	      return given_json.Nodes[e.source].id in map_to_id && given_json.Nodes[e.target].id in map_to_id && (include_extra_edges || !self.is_edge_injected(e));
 	    });
 	
 	    if (filter) {
@@ -4243,6 +4271,11 @@ webpackJsonp([0],{
 	    return array;
 	  }
 	
+	  self.is_edge_injected = function (e) {
+	    //console.log (e, "edge_type" in e);
+	    return "edge_type" in e;
+	  };
+	
 	  /*------------ Node injection (social network) ---------------*/
 	
 	  self.load_nodes_edges = function (nodes_and_attributes, index_id, edges_and_attributes, annotation) {
@@ -4390,9 +4423,8 @@ webpackJsonp([0],{
 	          .domain(edge_types);
 	        */
 	
-	        var _social_view_handler = function _social_view_handler(id, node_filter, labeled_links, shown_types, title, e) {
-	
-	          self.open_exclusive_tab_view(id, node_filter, title, {
+	        var _social_view_options = function _social_view_options(labeled_links, shown_types) {
+	          return {
 	            "edge-styler": function edgeStyler(element, d, network) {
 	              if (_.has(d, "edge_type")) {
 	                d3.select(element).style("stroke", network._edge_colorizer(d["edge_type"])); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
@@ -4454,33 +4486,79 @@ webpackJsonp([0],{
 	                }];
 	              })
 	            }
+	          };
+	        };
+	
+	        var _social_view_handler = function _social_view_handler(id, node_filter, labeled_links, shown_types, title, e) {
+	
+	          self.open_exclusive_tab_view(id, node_filter, title, _social_view_options(labeled_links, shown_types), true);
+	        };
+	
+	        var _injected_column_subcluster_button_handler = function _injected_column_subcluster_button_handler(payload, edge_filter, title, e) {
+	
+	          function edge_filter_for_subclusters(edge) {
+	            return self.is_edge_injected(edge) || edge.length <= self.subcluster_threshold;
+	          }
+	
+	          var subcluster_edges = [];
+	
+	          var direct_links_only = hivtrace_cluster_depthwise_traversal(self.json.Nodes, self.json.Edges, edge_filter || edge_filter_for_subclusters,
+	          //null,
+	          subcluster_edges, payload.children);
+	
+	          var labeled_links = {},
+	              shown_types = {};
+	          _.each(subcluster_edges[0], function (e) {
+	            if (e.edge_type) {
+	              labeled_links[e.edge_type] = 1;
+	              shown_types[e.edge_type] = 1;
+	            }
 	          });
+	
+	          labeled_links = _.keys(labeled_links);
+	          labeled_links.sort();
+	          labeled_links.push("");
+	          shown_types[""] = 1;
+	
+	          title = title || function (id) {
+	            return "Subcluster " + payload.cluster_id + "[+ " + annotation + "]";
+	          };
+	
+	          //self.annotate_priority_clusters(_networkCDCDateField, 36, 12)
+	
+	          var cv = self.view_subcluster(payload, direct_links_only[0], title(payload.cluster_id), _social_view_options(labeled_links, shown_types), edge_filter_for_subclusters, true);
+	          //cv.annotate_priority_clusters(_networkCDCDateField, 36, 12);
+	          //cv.handle_attribute_categorical("recent_rapid");
+	          cv._refresh_subcluster_view(new Date());
 	        };
 	
 	        var injected_column_subcluster = [{
 	          description: {
 	            value: annotation + " network",
-	            sort: function sort(c) {
-	              return c.value[0];
-	            },
 	            help: "View subclusters with " + annotation + " data"
 	          },
 	
 	          generator: function generator(cluster) {
 	            return {
-	              value: [cluster.cluster_id, cluster.children],
+	              value: cluster,
 	              callback: function callback(element, payload) {
-	                //console.log (payload)
 	                var this_cell = d3.select(element);
-	                this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Complete " + annotation).on("click", _.partial(_social_view_handler, payload[2], function (n) {
-	                  return n.extended_cluster && payload[2] in n.extended_cluster;
-	                }, labeled_links, shown_types, function (id) {
-	                  return "Subcluster " + id + " + all  " + annotation;
+	                this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).style("margin-left", "1em").text("Complete " + annotation).on("click", _.partial(_injected_column_subcluster_button_handler, payload, null, null));
+	
+	                var node_ids = {};
+	
+	                _.each(payload.children, function (n) {
+	                  node_ids[n.id] = 1;
+	                });
+	
+	                this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Directly linked " + annotation).on("click", _.partial(_injected_column_subcluster_button_handler, payload, function (edge) {
+	                  return self.json.Nodes[edge.target].id in node_ids || self.json.Nodes[edge.source].id in node_ids;
+	                }, function (id) {
+	                  return "Subcluster " + payload.cluster_id + "[+ direct  " + annotation + "]";
 	                }));
 	              }
 	            };
 	          }
-	
 	        }];
 	
 	        var injected_column = [{
@@ -4520,9 +4598,14 @@ webpackJsonp([0],{
 	
 	                  this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Directly linked " + annotation).style("margin-left", "1em").on("click", function (e) {
 	                    var directly_linked_ids = {};
+	                    var node_ids = {};
+	
+	                    _.each(cluster.children, function (n) {
+	                      node_ids[n.id] = 1;
+	                    });
 	
 	                    var direct_links_only = hivtrace_cluster_depthwise_traversal(self.json.Nodes, self.json.Edges, function (edge) {
-	                      return self.json.Nodes[edge.target].node_class != "injected" || self.json.Nodes[edge.source].node_class != "injected";
+	                      return self.json.Nodes[edge.target].id in node_ids || self.json.Nodes[edge.source].id in node_ids;
 	                    }, false, cluster.children);
 	
 	                    _.each(direct_links_only[0], function (n) {
@@ -4535,14 +4618,14 @@ webpackJsonp([0],{
 	                    _social_view_handler(payload[2], function (n) {
 	                      return n.id in directly_linked_ids;
 	                    }, labeled_links, shown_types, function (id) {
-	                      return "Cluster " + id + " + direct " + annotation;
+	                      return "Cluster " + id + "[+ direct " + annotation + "]";
 	                    }, e);
 	                  });
 	
 	                  this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Complete " + annotation).on("click", _.partial(_social_view_handler, payload[2], function (n) {
 	                    return n.extended_cluster && payload[2] in n.extended_cluster;
 	                  }, labeled_links, shown_types, function (id) {
-	                    return "Cluster " + id + " + all  " + annotation;
+	                    return "Cluster " + id + "[+ " + annotation + "]";
 	                  }));
 	                }
 	              }
@@ -4844,14 +4927,14 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 43:
+/***/ 44:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($) {"use strict";
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    helpers = __webpack_require__(44);
+	    helpers = __webpack_require__(45);
 	
 	function hivtrace_cluster_adjacency_list(obj) {
 	  var nodes = obj.Nodes,
@@ -5823,12 +5906,12 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 44:
+/***/ 45:
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {"use strict";
 	
-	var download = __webpack_require__(45);
+	var download = __webpack_require__(46);
 	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $("#modal-error-msg").text(msg);
@@ -6341,7 +6424,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 45:
+/***/ 46:
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
@@ -6515,7 +6598,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 46:
+/***/ 47:
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -6587,7 +6670,7 @@ webpackJsonp([0],{
 
 /***/ }),
 
-/***/ 47:
+/***/ 48:
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
