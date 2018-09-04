@@ -11,7 +11,8 @@
     "font-awesome-webpack": "0.0.4",
     "hyphy-vision": "^1.1.7",
     "jquery": "^3.3.1",
-    "underscore": "1.x"
+    "underscore": "1.x",
+    "topojson" : "3.x"
   },
   "devDependencies": {
     "babel-core": "^6.17.0",
