@@ -434,7 +434,8 @@ var network_container     = '#network_tag',
     parent_container      = '#top_level_tab_container',
     node_table            = '#node_table',
     user_graph,
-    countryCentersObject  = null;
+    countryCentersObject  = null,
+    countryOutlines       = null;
 
 function HandleAppError (err_string) {
     $('#main-tab').tab('show');
@@ -462,7 +463,8 @@ var init = function(data) {
                                                   {
                                                     "no_cdc" : true,
                                                     "minimum size" : 5,
-                                                    "country-centers" : countryCentersObject
+                                                    "country-centers" : countryCentersObject,
+                                                    "country-outlines" : countryOutlines
                                                   });
 
       if (user_graph.is_empty()) {
@@ -539,20 +541,23 @@ function in_progress() {
 
 $(document).ready(function(){
 
- d3.csv("./country_centers.csv", function(data) {
-  countryCentersObject = {};
+ d3.json("./assets/mapping/outlines.json", function (error, outlines) {
+     countryOutlines = outlines;
+     d3.csv("./assets/mapping/country_centers.csv", function(data) {
+      countryCentersObject = {};
 
-  for (var i=0; i < data.length; i++) {
-    let countryCode = data[i]["Alpha-2 code"];
-    let countryCodeNumeric = data[i]["Numeric code"];
-    countryCodeNumeric.length == 2 ? countryCodeNumeric = "0" + countryCodeNumeric : null;
-    let countryName = data[i]["Country"];
-    let countryLat = data[i]["Latitude (average)"];
-    let countryLong = data[i]["Longitude (average)"];
-    //let countryXY = mapProjection([countryLong, countryLat])
-    //let countryLL = [countryLong, countryLat];
-    countryCentersObject[countryCode] = {'longt': countryLong, 'lat': countryLat, 'countryCodeNumeric': countryCodeNumeric, 'countryName': countryName}
-  }
+      for (var i=0; i < data.length; i++) {
+        let countryCode = data[i]["Alpha-2 code"];
+        let countryCodeNumeric = data[i]["Numeric code"];
+        countryCodeNumeric.length == 2 ? countryCodeNumeric = "0" + countryCodeNumeric : null;
+        let countryName = data[i]["Country"];
+        let countryLat = data[i]["Latitude (average)"];
+        let countryLong = data[i]["Longitude (average)"];
+        //let countryXY = mapProjection([countryLong, countryLat])
+        //let countryLL = [countryLong, countryLat];
+        countryCentersObject[countryCode] = {'longt': countryLong, 'lat': countryLat, 'countryCodeNumeric': countryCodeNumeric, 'countryName': countryName}
+      }
+  });
 });
 
 

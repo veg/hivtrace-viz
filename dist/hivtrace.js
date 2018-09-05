@@ -73,14 +73,14 @@ webpackJsonp([0],[
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(39);
+	var _histogram = __webpack_require__(51);
 	
-	var _scatterplot = __webpack_require__(44);
+	var _scatterplot = __webpack_require__(46);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var misc = __webpack_require__(45);
-	var helpers = __webpack_require__(46);
+	var misc = __webpack_require__(43);
+	var helpers = __webpack_require__(44);
 	
 	module.exports.clusterNetwork = _clusternetwork.clusterNetwork;
 	module.exports.graphSummary = _clusternetwork.graphSummary;
@@ -108,12 +108,12 @@ webpackJsonp([0],[
 
 	/* WEBPACK VAR INJECTION */(function($, jQuery) {"use strict";
 	
-	var d3 = __webpack_require__(40),
-	    _ = __webpack_require__(43),
-	    misc = __webpack_require__(45),
-	    helpers = __webpack_require__(46),
-	    scatterPlot = __webpack_require__(44),
-	    topojson = __webpack_require__(48);
+	var d3 = __webpack_require__(39),
+	    _ = __webpack_require__(42),
+	    misc = __webpack_require__(43),
+	    helpers = __webpack_require__(44),
+	    scatterPlot = __webpack_require__(46),
+	    topojson = __webpack_require__(47);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -468,17 +468,17 @@ webpackJsonp([0],[
 	
 	  self._calc_country_nodes = function (options) {
 	    if (options && "country-centers" in options) {
-	      self.mapProjection = d3.geo.mercator().translate([self.width / 2, self.height / 2]).scale(200);
+	      self.mapProjection = d3.geo.mercator().translate([self.margin.left + self.width / 2, self.margin.top + self.height / 2]).scale(150 * self.width / 960);
 	      _.each(self.countryCentersObject, function (value) {
 	        value.countryXY = self.mapProjection([value.longt, value.lat]);
 	      });
 	    }
 	  };
 	
-	  if (options && "country-centers" in options) {
+	  if (options && "country-centers" in options && "country-outlines" in options) {
 	    self.countryCentersObject = options["country-centers"];
+	    self.countryOutlines = options["country-outlines"];
 	    self._calc_country_nodes(options);
-	    self.countries_in_cluster = [];
 	    //console.log (self.countryCentersObject);
 	    self.showing_on_map = options.showing_on_map;
 	    //console.log (self.showing_on_map);
@@ -765,10 +765,9 @@ webpackJsonp([0],[
 	  /*self._handle_inline_charts = function (e) {
 	   }*/
 	
-	  self._draw_topomap = function () {
-	    d3.json("https://unpkg.com/world-atlas@1/world/110m.json", function (error, data) {
-	      if (error) throw error;
-	      var countries = topojson.feature(data, data.objects.countries).features;
+	  self._draw_topomap = function (no_redraw) {
+	    if (options && "showing_on_map" in options) {
+	      var countries = topojson.feature(countryOutlines, countryOutlines.objects.countries).features;
 	      var mapsvg = d3.select("#" + self.dom_prefix + "-network-svg");
 	      var path = d3.geo.path().projection(self.mapProjection);
 	      var countries = mapsvg.selectAll(".country").data(countries);
@@ -776,20 +775,31 @@ webpackJsonp([0],[
 	      countries.enter().append("path");
 	      countries.exit().remove();
 	
+	      self.countries_in_cluster = {};
+	
+	      _.each(self.nodes, function (node) {
+	        var countryCodeAlpha2 = node.patient_attributes.country;
+	        var countryCodeNumeric = self.countryCentersObject[countryCodeAlpha2].countryCodeNumeric;
+	        if (!(countryCodeNumeric in self.countries_in_cluster)) {
+	          self.countries_in_cluster[countryCodeNumeric] = true;
+	        }
+	      });
+	
 	      countries.attr("class", "country").attr("d", path).attr("stroke", "saddlebrown").attr("fill", function (d) {
-	        if (self.countries_in_cluster.includes(d.id)) {
+	        if (d.id in self.countries_in_cluster) {
 	          return "navajowhite";
 	        } else {
 	          return "bisque";
 	        }
 	      }).attr("stroke-width", function (d) {
-	        if (self.countries_in_cluster.includes(d.id)) {
+	        if (d.id in self.countries_in_cluster) {
 	          return 1.5;
 	        } else {
 	          return 0.5;
 	        }
 	      });
-	    });
+	    }
+	    return self;
 	  };
 	
 	  self._check_for_time_series = function (export_items) {
@@ -963,38 +973,28 @@ webpackJsonp([0],[
 	      "no-subclusters": true
 	    };
 	
-	    if (option_extras.showing_on_map && self.countryCentersObject) {
-	      cluster_options["showing_on_map"] = true;
-	      cluster_options["country-centers"] = self.countryCentersObject;
-	
-	      // Create an array of the countries in the selected cluster for use in styling the map.
-	      var nodes_in_cluster = _.values(filtered_json.Nodes);
-	      self.countries_in_cluster = [];
-	      _.each(nodes_in_cluster, function (node) {
-	        //var countryCode = node.patient_attributes.country;
-	        var countryCodeAlpha2 = node.patient_attributes.country;
-	        var countryCodeNumeric = self.countryCentersObject[countryCodeAlpha2].countryCodeNumeric;
-	        if (self.countries_in_cluster.indexOf(countryCodeNumeric) === -1) {
-	          self.countries_in_cluster.push(countryCodeNumeric);
-	        }
-	      });
-	    }
-	
 	    if (option_extras) {
 	      _.extend(cluster_options, option_extras);
 	    }
 	
-	    if ("ready" in cluster_options) {
-	      var draw_map = function draw_map(other_code, network) {
-	        other_code(network);
-	        network._draw_topomap();
-	      };
+	    if (option_extras.showing_on_map && self.countryCentersObject && self.countryOutlines) {
+	      cluster_options["showing_on_map"] = true;
+	      cluster_options["country-centers"] = self.countryCentersObject;
+	      cluster_options["country-outlines"] = self.countryOutlines;
 	
-	      cluster_options["ready"] = _.wrap(draw_map, cluster_options["ready"]);
-	    } else {
-	      cluster_options["ready"] = function (network) {
-	        network._draw_topomap();
-	      };
+	      // Create an array of the countries in the selected cluster for use in styling the map.
+	      if ("extra-graphics" in cluster_options) {
+	        var draw_map = function draw_map(other_code, network) {
+	          other_code(network);
+	          return network._draw_topomap();
+	        };
+	
+	        cluster_options["extra-graphics"] = _.wrap(draw_map, cluster_options["extra-graphics"]);
+	      } else {
+	        cluster_options["extra-graphics"] = function (network) {
+	          return network._draw_topomap();
+	        };
+	      }
 	    }
 	
 	    var cluster_view = hivtrace.clusterNetwork(filtered_json, "#" + random_content_id, null, null, random_button_bar, attributes, null, null, null, parent_container, cluster_options);
@@ -1564,7 +1564,7 @@ webpackJsonp([0],[
 	    network_layout.size([self.width, self.height]);
 	    self.network_svg.attr("width", self.width).attr("height", self.height);
 	    self._calc_country_nodes(options);
-	
+	    self._draw_topomap(true);
 	    if (trigger) {
 	      network_layout.start();
 	    } else {
@@ -3565,6 +3565,10 @@ webpackJsonp([0],[
 	  self.update = function (soft, friction) {
 	    self.needs_an_update = false;
 	
+	    if (options && options["extra-graphics"]) {
+	      options["extra-graphics"].call(null, self, options);
+	    }
+	
 	    if (friction) {
 	      network_layout.friction(friction);
 	    }
@@ -3719,7 +3723,7 @@ webpackJsonp([0],[
 	          var yBoundUpper = sizes[1] - 10;
 	
 	          if (self.showing_on_map) {
-	            var allowed_offset_from_center_of_country = 25;
+	            var allowed_offset_from_center_of_country = 15;
 	            // If the country is in the list that we have, override the default values for the bounds.
 	            if (d.patient_attributes.country in self.countryCentersObject) {
 	              var center = self.countryCentersObject[d.patient_attributes.country].countryXY;
@@ -4989,8 +4993,6 @@ webpackJsonp([0],[
 	
 	  initial_json_load();
 	
-	  d3.select(self.container).selectAll(".my_progress").style("display", "none");
-	
 	  if (options) {
 	    if (_.isNumber(options["charge"])) {
 	      self.charge_correction = options["charge"];
@@ -5008,19 +5010,17 @@ webpackJsonp([0],[
 	      options["callbacks"](self);
 	    }
 	
-	    if (options && _.isFunction(options["ready"])) {
-	      options["ready"].call(null, self, options);
-	    }
-	
-	    self.draw_attribute_labels();
-	    network_layout.start();
-	
 	    if (_.isArray(options["expand"])) {
 	      self.expand_some_clusters(_.filter(self.clusters, function (c) {
 	        return options["expand"].indexOf(c.cluster_id) >= 0;
 	      }));
 	    }
 	  }
+	
+	  self.draw_attribute_labels();
+	  d3.select(self.container).selectAll(".my_progress").style("display", "none");
+	  network_layout.start();
+	
 	  return self;
 	};
 	
@@ -5095,271 +5095,18 @@ webpackJsonp([0],[
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(2)))
 
 /***/ }),
-/* 39 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	var d3 = __webpack_require__(40),
-	    _ = __webpack_require__(43);
-	
-	function hivtrace_histogram(graph, histogram_tag, histogram_label) {
-	  var defaultFloatFormat = d3.format(",.2f");
-	  var histogram_w = 300,
-	      histogram_h = 300;
-	
-	  hivtrace_render_histogram(graph["Degrees"]["Distribution"], graph["Degrees"]["fitted"], histogram_w, histogram_h, histogram_tag);
-	
-	  var label = "Network degree distribution is best described by the <strong>" + graph["Degrees"]["Model"] + "</strong> model, with &rho; of " + defaultFloatFormat(graph["Degrees"]["rho"]);
-	
-	  if (graph["Degrees"]["rho CI"] != undefined) {
-	    label += " (95% CI " + defaultFloatFormat(graph["Degrees"]["rho CI"][0]) + " - " + defaultFloatFormat(graph["Degrees"]["rho CI"][1]) + ")";
-	  }
-	
-	  d3.select(histogram_label).html(label);
-	}
-	
-	function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
-	  var defaultFloatFormat = d3.format(",.3p");
-	  var histogram_w = 300,
-	      histogram_h = 300;
-	
-	  var edge_lengths = _.map(graph["Edges"], function (edge) {
-	    return edge.length;
-	  });
-	
-	  hivtrace_render_histogram_continuous(edge_lengths, histogram_w, histogram_h, histogram_tag);
-	
-	  var label = "Genetic distances among linked nodes.";
-	  d3.select(histogram_label).html(label);
-	}
-	
-	function hivtrace_render_histogram_continuous(data, w, h, id) {
-	  var margin = {
-	    top: 10,
-	    right: 30,
-	    bottom: 50,
-	    left: 10
-	  },
-	      width = w - margin.right,
-	      height = h - margin.top - margin.bottom;
-	
-	  var histogram_svg = d3.select(id).selectAll("svg");
-	
-	  if (histogram_svg) {
-	    histogram_svg.remove();
-	  }
-	
-	  if (data.length > 0) {
-	    var histogram_data = d3.layout.histogram()(data);
-	
-	    var x = d3.scale.linear().domain(d3.extent(data));
-	
-	    var y = d3.scale.linear().domain([0, d3.max(_.map(histogram_data, function (b) {
-	      return b.y;
-	    }))]).range([height, 0]);
-	
-	    margin.left += 10 * Math.ceil(Math.log10(y.domain()[1]));
-	    width -= margin.left;
-	    x.range([0, width]);
-	
-	    var xAxis = d3.svg.axis().scale(x).orient("bottom");
-	
-	    var yAxis = d3.svg.axis().scale(y).orient("left");
-	
-	    histogram_data.splice(0, 0, {
-	      x: x.domain()[0],
-	      y: 0,
-	      dx: 0
-	    });
-	    histogram_data.splice(histogram_data.length, 0, {
-	      x: x.domain()[1],
-	      y: 0,
-	      dx: 0
-	    });
-	
-	    histogram_svg = d3.select(id).insert("svg", ".histogram-label").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")").datum(histogram_data);
-	
-	    var histogram_line = d3.svg.line().x(function (d) {
-	      return x(d.x + d.dx);
-	    }).y(function (d) {
-	      return y(d.y);
-	    }).interpolate("step-before");
-	
-	    histogram_svg.selectAll("path").remove();
-	    histogram_svg.append("path").attr("d", function (d) {
-	      return histogram_line(d) + "Z";
-	    }).attr("class", "histogram");
-	
-	    var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
-	
-	    x_axis.selectAll("text").attr("transform", "rotate(45)").attr("dx", "1em").attr("dy", "0.5em");
-	
-	    var y_axis = histogram_svg.append("g").attr("class", "y axis")
-	    //.attr("transform", "translate(0," + height + ")")
-	    .call(yAxis);
-	  }
-	}
-	
-	function hivtrace_render_histogram(counts, fit, w, h, id) {
-	  var margin = {
-	    top: 10,
-	    right: 30,
-	    bottom: 50,
-	    left: 30
-	  },
-	      width = w - margin.left - margin.right,
-	      height = h - margin.top - margin.bottom;
-	
-	  var x = d3.scale.linear().domain([0, counts.length + 1]).range([0, width]);
-	
-	  var y = d3.scale.log().domain([1, d3.max(counts)]).range([height, 0]);
-	
-	  var total = d3.sum(counts);
-	
-	  var xAxis = d3.svg.axis().scale(x).orient("bottom");
-	
-	  var histogram_svg = d3.select(id).selectAll("svg");
-	
-	  if (histogram_svg) {
-	    histogram_svg.remove();
-	  }
-	
-	  var data_to_plot = counts.map(function (d, i) {
-	    return {
-	      x: i + 1,
-	      y: d + 1
-	    };
-	  });
-	  data_to_plot.push({
-	    x: counts.length + 1,
-	    y: 1
-	  });
-	  data_to_plot.push({
-	    x: 0,
-	    y: 1
-	  });
-	  data_to_plot.push({
-	    x: 0,
-	    y: counts[0] + 1
-	  });
-	
-	  histogram_svg = d3.select(id).insert("svg", ".histogram-label").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")").datum(data_to_plot);
-	
-	  var histogram_line = d3.svg.line().x(function (d) {
-	    return x(d.x);
-	  }).y(function (d) {
-	    return y(d.y);
-	  }).interpolate("step-before");
-	
-	  histogram_svg.selectAll("path").remove();
-	  histogram_svg.append("path").attr("d", function (d) {
-	    return histogram_line(d) + "Z";
-	  }).attr("class", "histogram");
-	
-	  if (fit) {
-	    var fit_line = d3.svg.line().interpolate("linear").x(function (d, i) {
-	      return x(i + 1) + (x(i + 1) - x(i)) / 2;
-	    }).y(function (d) {
-	      return y(1 + d * total);
-	    });
-	    histogram_svg.append("path").datum(fit).attr("class", "line").attr("d", function (d) {
-	      return fit_line(d);
-	    });
-	  }
-	
-	  var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
-	
-	  x_axis.selectAll("text").attr("transform", "rotate(45)").attr("dx", "1em").attr("dy", "0.5em");
-	}
-	
-	exports.histogram = hivtrace_histogram;
-	exports.histogramDistances = hivtrace_histogram_distances;
-
-/***/ }),
+/* 39 */,
 /* 40 */,
 /* 41 */,
 /* 42 */,
-/* 43 */,
-/* 44 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	var d3 = __webpack_require__(40),
-	    _ = __webpack_require__(43);
-	
-	function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
-	  var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
-	  var _defaultFloatFormat = d3.format(",.2r");
-	  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
-	
-	  var margin = {
-	    top: 10,
-	    right: 10,
-	    bottom: 100,
-	    left: 100
-	  },
-	      width = w - margin.left - margin.right,
-	      height = h - margin.top - margin.bottom;
-	
-	  var x = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
-	    return p.x;
-	  })).range([0, width]);
-	
-	  var y = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
-	    return p.y;
-	  })).range([height, 0]);
-	
-	  var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
-	
-	  var yAxis = d3.svg.axis().scale(y).orient("left").tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
-	
-	  var histogram_svg = d3.select(id).selectAll("svg");
-	
-	  if (!histogram_svg.empty()) {
-	    histogram_svg.remove();
-	  }
-	
-	  histogram_svg = d3.select(id).append("svg").attr("width", w).attr("height", h).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
-	  points = histogram_svg.selectAll("circle").data(points);
-	  points.enter().append("circle");
-	
-	  points.attr("cx", function (d) {
-	    return x(d.x);
-	  }).attr("cy", function (d) {
-	    return y(d.y);
-	  }).attr("r", 3).classed("node scatter", true);
-	
-	  points.each(function (d) {
-	    if ("title" in d) {
-	      d3.select(this).append("title").text(d.title);
-	    }
-	  });
-	
-	  var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
-	
-	  x_axis.selectAll("text").attr("transform", "rotate(-45)").attr("dx", "-.5em").attr("dy", ".25em").style("text-anchor", "end");
-	  x_axis.append("text").text(labels.x).attr("transform", "translate(" + width + ",0)").attr("dy", "-1em").attr("text-anchor", "end");
-	
-	  var y_axis = histogram_svg.append("g").attr("class", "y axis").attr("transform", "translate(0," + 0 + ")").call(yAxis);
-	
-	  y_axis.selectAll("text").attr("transform", "rotate(-45)").attr("dx", "-.5em").attr("dy", ".25em").style("text-anchor", "end");
-	  y_axis.append("text").text(labels.y).attr("transform", "rotate(-90)").attr("dy", "1em").attr("text-anchor", "end");
-	}
-	
-	module.exports.scatterPlot = hivtrace_render_scatterplot;
-
-/***/ }),
-/* 45 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($) {"use strict";
 	
-	var d3 = __webpack_require__(40),
-	    _ = __webpack_require__(43),
-	    helpers = __webpack_require__(46);
+	var d3 = __webpack_require__(39),
+	    _ = __webpack_require__(42),
+	    helpers = __webpack_require__(44);
 	
 	function hivtrace_cluster_adjacency_list(obj) {
 	  var nodes = obj.Nodes,
@@ -6330,12 +6077,12 @@ webpackJsonp([0],[
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
 /***/ }),
-/* 46 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {"use strict";
 	
-	var download = __webpack_require__(47);
+	var download = __webpack_require__(45);
 	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $("#modal-error-msg").text(msg);
@@ -6844,10 +6591,10 @@ webpackJsonp([0],[
 	module.exports.sum = datamonkey_sum;
 	module.exports.filter = datamonkey_filter_list;
 	module.exports.map = datamonkey_map_list;
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(40), __webpack_require__(2), __webpack_require__(43)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(39), __webpack_require__(2), __webpack_require__(42)))
 
 /***/ }),
-/* 47 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
@@ -7020,16 +6767,87 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 48 */
+/* 46 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var d3 = __webpack_require__(39),
+	    _ = __webpack_require__(42);
+	
+	function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
+	  var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
+	  var _defaultFloatFormat = d3.format(",.2r");
+	  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+	
+	  var margin = {
+	    top: 10,
+	    right: 10,
+	    bottom: 100,
+	    left: 100
+	  },
+	      width = w - margin.left - margin.right,
+	      height = h - margin.top - margin.bottom;
+	
+	  var x = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
+	    return p.x;
+	  })).range([0, width]);
+	
+	  var y = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
+	    return p.y;
+	  })).range([height, 0]);
+	
+	  var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
+	
+	  var yAxis = d3.svg.axis().scale(y).orient("left").tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
+	
+	  var histogram_svg = d3.select(id).selectAll("svg");
+	
+	  if (!histogram_svg.empty()) {
+	    histogram_svg.remove();
+	  }
+	
+	  histogram_svg = d3.select(id).append("svg").attr("width", w).attr("height", h).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	  points = histogram_svg.selectAll("circle").data(points);
+	  points.enter().append("circle");
+	
+	  points.attr("cx", function (d) {
+	    return x(d.x);
+	  }).attr("cy", function (d) {
+	    return y(d.y);
+	  }).attr("r", 3).classed("node scatter", true);
+	
+	  points.each(function (d) {
+	    if ("title" in d) {
+	      d3.select(this).append("title").text(d.title);
+	    }
+	  });
+	
+	  var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
+	
+	  x_axis.selectAll("text").attr("transform", "rotate(-45)").attr("dx", "-.5em").attr("dy", ".25em").style("text-anchor", "end");
+	  x_axis.append("text").text(labels.x).attr("transform", "translate(" + width + ",0)").attr("dy", "-1em").attr("text-anchor", "end");
+	
+	  var y_axis = histogram_svg.append("g").attr("class", "y axis").attr("transform", "translate(0," + 0 + ")").call(yAxis);
+	
+	  y_axis.selectAll("text").attr("transform", "rotate(-45)").attr("dx", "-.5em").attr("dy", ".25em").style("text-anchor", "end");
+	  y_axis.append("text").text(labels.y).attr("transform", "rotate(-90)").attr("dy", "1em").attr("text-anchor", "end");
+	}
+	
+	module.exports.scatterPlot = hivtrace_render_scatterplot;
+
+/***/ }),
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', { value: true });
 	
-	var topojsonClient = __webpack_require__(49);
-	var topojsonServer = __webpack_require__(50);
-	var topojsonSimplify = __webpack_require__(51);
+	var topojsonClient = __webpack_require__(48);
+	var topojsonServer = __webpack_require__(49);
+	var topojsonSimplify = __webpack_require__(50);
 	
 	
 	
@@ -7039,7 +6857,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-client Version 3.0.0. Copyright 2017 Mike Bostock.
@@ -7550,7 +7368,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-server Version 3.0.0. Copyright 2017 Mike Bostock.
@@ -8392,12 +8210,12 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-simplify Version 3.0.2. Copyright 2017 Mike Bostock.
 	(function (global, factory) {
-		 true ? factory(exports, __webpack_require__(49)) :
+		 true ? factory(exports, __webpack_require__(48)) :
 		typeof define === 'function' && define.amd ? define(['exports', 'topojson-client'], factory) :
 		(factory((global.topojson = global.topojson || {}),global.topojson));
 	}(this, (function (exports,topojsonClient) { 'use strict';
@@ -8890,6 +8708,188 @@ webpackJsonp([0],[
 	
 	})));
 
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var d3 = __webpack_require__(39),
+	    _ = __webpack_require__(42);
+	
+	function hivtrace_histogram(graph, histogram_tag, histogram_label) {
+	  var defaultFloatFormat = d3.format(",.2f");
+	  var histogram_w = 300,
+	      histogram_h = 300;
+	
+	  hivtrace_render_histogram(graph["Degrees"]["Distribution"], graph["Degrees"]["fitted"], histogram_w, histogram_h, histogram_tag);
+	
+	  var label = "Network degree distribution is best described by the <strong>" + graph["Degrees"]["Model"] + "</strong> model, with &rho; of " + defaultFloatFormat(graph["Degrees"]["rho"]);
+	
+	  if (graph["Degrees"]["rho CI"] != undefined) {
+	    label += " (95% CI " + defaultFloatFormat(graph["Degrees"]["rho CI"][0]) + " - " + defaultFloatFormat(graph["Degrees"]["rho CI"][1]) + ")";
+	  }
+	
+	  d3.select(histogram_label).html(label);
+	}
+	
+	function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
+	  var defaultFloatFormat = d3.format(",.3p");
+	  var histogram_w = 300,
+	      histogram_h = 300;
+	
+	  var edge_lengths = _.map(graph["Edges"], function (edge) {
+	    return edge.length;
+	  });
+	
+	  hivtrace_render_histogram_continuous(edge_lengths, histogram_w, histogram_h, histogram_tag);
+	
+	  var label = "Genetic distances among linked nodes.";
+	  d3.select(histogram_label).html(label);
+	}
+	
+	function hivtrace_render_histogram_continuous(data, w, h, id) {
+	  var margin = {
+	    top: 10,
+	    right: 30,
+	    bottom: 50,
+	    left: 10
+	  },
+	      width = w - margin.right,
+	      height = h - margin.top - margin.bottom;
+	
+	  var histogram_svg = d3.select(id).selectAll("svg");
+	
+	  if (histogram_svg) {
+	    histogram_svg.remove();
+	  }
+	
+	  if (data.length > 0) {
+	    var histogram_data = d3.layout.histogram()(data);
+	
+	    var x = d3.scale.linear().domain(d3.extent(data));
+	
+	    var y = d3.scale.linear().domain([0, d3.max(_.map(histogram_data, function (b) {
+	      return b.y;
+	    }))]).range([height, 0]);
+	
+	    margin.left += 10 * Math.ceil(Math.log10(y.domain()[1]));
+	    width -= margin.left;
+	    x.range([0, width]);
+	
+	    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+	
+	    var yAxis = d3.svg.axis().scale(y).orient("left");
+	
+	    histogram_data.splice(0, 0, {
+	      x: x.domain()[0],
+	      y: 0,
+	      dx: 0
+	    });
+	    histogram_data.splice(histogram_data.length, 0, {
+	      x: x.domain()[1],
+	      y: 0,
+	      dx: 0
+	    });
+	
+	    histogram_svg = d3.select(id).insert("svg", ".histogram-label").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")").datum(histogram_data);
+	
+	    var histogram_line = d3.svg.line().x(function (d) {
+	      return x(d.x + d.dx);
+	    }).y(function (d) {
+	      return y(d.y);
+	    }).interpolate("step-before");
+	
+	    histogram_svg.selectAll("path").remove();
+	    histogram_svg.append("path").attr("d", function (d) {
+	      return histogram_line(d) + "Z";
+	    }).attr("class", "histogram");
+	
+	    var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
+	
+	    x_axis.selectAll("text").attr("transform", "rotate(45)").attr("dx", "1em").attr("dy", "0.5em");
+	
+	    var y_axis = histogram_svg.append("g").attr("class", "y axis")
+	    //.attr("transform", "translate(0," + height + ")")
+	    .call(yAxis);
+	  }
+	}
+	
+	function hivtrace_render_histogram(counts, fit, w, h, id) {
+	  var margin = {
+	    top: 10,
+	    right: 30,
+	    bottom: 50,
+	    left: 30
+	  },
+	      width = w - margin.left - margin.right,
+	      height = h - margin.top - margin.bottom;
+	
+	  var x = d3.scale.linear().domain([0, counts.length + 1]).range([0, width]);
+	
+	  var y = d3.scale.log().domain([1, d3.max(counts)]).range([height, 0]);
+	
+	  var total = d3.sum(counts);
+	
+	  var xAxis = d3.svg.axis().scale(x).orient("bottom");
+	
+	  var histogram_svg = d3.select(id).selectAll("svg");
+	
+	  if (histogram_svg) {
+	    histogram_svg.remove();
+	  }
+	
+	  var data_to_plot = counts.map(function (d, i) {
+	    return {
+	      x: i + 1,
+	      y: d + 1
+	    };
+	  });
+	  data_to_plot.push({
+	    x: counts.length + 1,
+	    y: 1
+	  });
+	  data_to_plot.push({
+	    x: 0,
+	    y: 1
+	  });
+	  data_to_plot.push({
+	    x: 0,
+	    y: counts[0] + 1
+	  });
+	
+	  histogram_svg = d3.select(id).insert("svg", ".histogram-label").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")").datum(data_to_plot);
+	
+	  var histogram_line = d3.svg.line().x(function (d) {
+	    return x(d.x);
+	  }).y(function (d) {
+	    return y(d.y);
+	  }).interpolate("step-before");
+	
+	  histogram_svg.selectAll("path").remove();
+	  histogram_svg.append("path").attr("d", function (d) {
+	    return histogram_line(d) + "Z";
+	  }).attr("class", "histogram");
+	
+	  if (fit) {
+	    var fit_line = d3.svg.line().interpolate("linear").x(function (d, i) {
+	      return x(i + 1) + (x(i + 1) - x(i)) / 2;
+	    }).y(function (d) {
+	      return y(1 + d * total);
+	    });
+	    histogram_svg.append("path").datum(fit).attr("class", "line").attr("d", function (d) {
+	      return fit_line(d);
+	    });
+	  }
+	
+	  var x_axis = histogram_svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
+	
+	  x_axis.selectAll("text").attr("transform", "rotate(45)").attr("dx", "1em").attr("dy", "0.5em");
+	}
+	
+	exports.histogram = hivtrace_histogram;
+	exports.histogramDistances = hivtrace_histogram_distances;
 
 /***/ })
 ]);
