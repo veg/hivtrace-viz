@@ -727,15 +727,9 @@ webpackJsonp([0],[
 	      // Only show the "Show on map" option for clusters with valid country info (for now just 2 letter codes) for each node.
 	      var show_on_map_enabled = self.countryCentersObject;
 	
-	      _.each(cluster.children, function (node) {
+	      show_on_map_enabled = _.every(cluster.children, function (node) {
 	        //console.log (node.patient_attributes);
-	        if ("country" in node.patient_attributes) {
-	          if (node.patient_attributes.country.length != 2) {
-	            show_on_map_enabled = false;
-	          }
-	        } else {
-	          show_on_map_enabled = false;
-	        }
+	        return self._get_node_country(node).length == 2;
 	      });
 	
 	      if (show_on_map_enabled) {
@@ -765,6 +759,14 @@ webpackJsonp([0],[
 	  /*self._handle_inline_charts = function (e) {
 	   }*/
 	
+	  self._get_node_country = function (node) {
+	    var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
+	    if (countryCodeAlpha2 == _networkMissing) {
+	      countryCodeAlpha2 = self.attribute_node_value_by_id(node, "Country");
+	    }
+	    return countryCodeAlpha2;
+	  };
+	
 	  self._draw_topomap = function (no_redraw) {
 	    if (options && "showing_on_map" in options) {
 	      var countries = topojson.feature(countryOutlines, countryOutlines.objects.countries).features;
@@ -778,7 +780,7 @@ webpackJsonp([0],[
 	      self.countries_in_cluster = {};
 	
 	      _.each(self.nodes, function (node) {
-	        var countryCodeAlpha2 = node.patient_attributes.country;
+	        var countryCodeAlpha2 = self._get_node_country(node);
 	        var countryCodeNumeric = self.countryCentersObject[countryCodeAlpha2].countryCodeNumeric;
 	        if (!(countryCodeNumeric in self.countries_in_cluster)) {
 	          self.countries_in_cluster[countryCodeNumeric] = true;
@@ -2828,13 +2830,13 @@ webpackJsonp([0],[
 	        help: "Number of nodes in the cluster"
 	      }]];
 	
-	      if (!self._is_CDC) {
-	        headers.push({
+	      if (!self._is_CDC_) {
+	        headers[0].push({
 	          value: "# links/node<br>Mean [Median, IQR]",
 	          html: true
 	        });
 	
-	        headers.push({
+	        headers[0].push({
 	          value: "Genetic distance<br>Mean [Median, IQR]",
 	          help: "Genetic distance among nodes in the cluster",
 	          html: true
@@ -3725,8 +3727,10 @@ webpackJsonp([0],[
 	          if (self.showing_on_map) {
 	            var allowed_offset_from_center_of_country = 15;
 	            // If the country is in the list that we have, override the default values for the bounds.
-	            if (d.patient_attributes.country in self.countryCentersObject) {
-	              var center = self.countryCentersObject[d.patient_attributes.country].countryXY;
+	            var country_code = self._get_node_country(d);
+	
+	            if (country_code in self.countryCentersObject) {
+	              var center = self.countryCentersObject[country_code].countryXY;
 	
 	              xBoundLower = center[0] - allowed_offset_from_center_of_country;
 	              xBoundUpper = center[0] + allowed_offset_from_center_of_country;
