@@ -73,14 +73,14 @@ webpackJsonp([0],[
 	
 	var _clusternetwork = __webpack_require__(38);
 	
-	var _histogram = __webpack_require__(51);
+	var _histogram = __webpack_require__(52);
 	
-	var _scatterplot = __webpack_require__(46);
+	var _scatterplot = __webpack_require__(47);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var misc = __webpack_require__(43);
-	var helpers = __webpack_require__(44);
+	var misc = __webpack_require__(44);
+	var helpers = __webpack_require__(45);
 	
 	module.exports.clusterNetwork = _clusternetwork.clusterNetwork;
 	module.exports.graphSummary = _clusternetwork.graphSummary;
@@ -110,10 +110,10 @@ webpackJsonp([0],[
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    misc = __webpack_require__(43),
-	    helpers = __webpack_require__(44),
-	    scatterPlot = __webpack_require__(46),
-	    topojson = __webpack_require__(47);
+	    misc = __webpack_require__(44),
+	    helpers = __webpack_require__(45),
+	    scatterPlot = __webpack_require__(47),
+	    topojson = __webpack_require__(48);
 	
 	var _networkGraphAttrbuteID = "patient_attribute_schema";
 	var _networkNodeAttributeID = "patient_attributes";
@@ -5103,14 +5103,15 @@ webpackJsonp([0],[
 /* 40 */,
 /* 41 */,
 /* 42 */,
-/* 43 */
+/* 43 */,
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($) {"use strict";
 	
 	var d3 = __webpack_require__(39),
 	    _ = __webpack_require__(42),
-	    helpers = __webpack_require__(44);
+	    helpers = __webpack_require__(45);
 	
 	function hivtrace_cluster_adjacency_list(obj) {
 	  var nodes = obj.Nodes,
@@ -6081,12 +6082,12 @@ webpackJsonp([0],[
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function($, d3, jQuery, _) {"use strict";
 	
-	var download = __webpack_require__(45);
+	var download = __webpack_require__(46);
 	
 	var datamonkey_error_modal = function datamonkey_error_modal(msg) {
 	  $("#modal-error-msg").text(msg);
@@ -6598,7 +6599,7 @@ webpackJsonp([0],[
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2), __webpack_require__(39), __webpack_require__(2), __webpack_require__(42)))
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//download.js v4.2, by dandavis; 2008-2016. [MIT] see http://danml.com/download.html for tests/usage
@@ -6771,7 +6772,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -6842,16 +6843,16 @@ webpackJsonp([0],[
 	module.exports.scatterPlot = hivtrace_render_scatterplot;
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	Object.defineProperty(exports, '__esModule', { value: true });
 	
-	var topojsonClient = __webpack_require__(48);
-	var topojsonServer = __webpack_require__(49);
-	var topojsonSimplify = __webpack_require__(50);
+	var topojsonClient = __webpack_require__(49);
+	var topojsonServer = __webpack_require__(50);
+	var topojsonSimplify = __webpack_require__(51);
 	
 	
 	
@@ -6861,7 +6862,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-client Version 3.0.0. Copyright 2017 Mike Bostock.
@@ -7372,7 +7373,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 49 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-server Version 3.0.0. Copyright 2017 Mike Bostock.
@@ -8214,12 +8215,12 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 50 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// https://github.com/topojson/topojson-simplify Version 3.0.2. Copyright 2017 Mike Bostock.
 	(function (global, factory) {
-		 true ? factory(exports, __webpack_require__(48)) :
+		 true ? factory(exports, __webpack_require__(49)) :
 		typeof define === 'function' && define.amd ? define(['exports', 'topojson-client'], factory) :
 		(factory((global.topojson = global.topojson || {}),global.topojson));
 	}(this, (function (exports,topojsonClient) { 'use strict';
@@ -8714,7 +8715,7 @@ webpackJsonp([0],[
 
 
 /***/ }),
-/* 51 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
