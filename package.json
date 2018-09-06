@@ -11,6 +11,7 @@
     "font-awesome-webpack": "0.0.4",
     "hyphy-vision": "^1.1.7",
     "jquery": "^3.3.1",
+    "topojson": "3.x",
     "underscore": "1.x"
   },
   "devDependencies": {
@@ -21,12 +22,14 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-react-hmre": "^1.1.1",
     "bootstrap-webpack": "0.0.5",
+    "concurrently": "^4.0.1",
     "css-loader": "^0.25.0",
     "eslint": "0.21.x",
     "exports-loader": "^0.6.3",
     "expose-loader": "^0.7.4",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
+    "http-server": "^0.11.1",
     "imports-loader": "^0.6.5",
     "npm-version": "^1.1.0",
     "react-lazy-render": "0.3.0",
@@ -35,6 +38,9 @@
     "uglify-js": "2.6.x",
     "url-loader": "^0.5.7",
     "webpack": "^1.15.0"
+  },
+  "scripts": {
+    "develop": "concurrently \"webpack --watch --mode=development\" \"http-server\""
   },
   "license": "ISC"
 }
