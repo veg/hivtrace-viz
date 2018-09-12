@@ -2077,15 +2077,12 @@ webpackJsonp([0],[
 	      console.log(err);
 	    }
 	
+	    self._menu_label_gen = function (d) {
+	      return (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
+	    };
+	
 	    self._aux_populate_category_menus = function () {
 	      if (button_bar_ui) {
-	        var _menu_label_gen = function _menu_label_gen(d) {
-	          return (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
-	        };
-	
-	        //console.log (valid_scales);
-	        //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
-	
 	        // decide if the variable can be considered categorical by examining its range
 	
 	        //console.log ("self._aux_populate_category_menus");
@@ -2168,6 +2165,9 @@ webpackJsonp([0],[
 	          return d.type == "Number" || d.type == "Date";
 	        });
 	
+	        //console.log (valid_scales);
+	        //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
+	
 	        [d3.select(self.get_ui_element_selector_by_role("attributes")), d3.select(self.get_ui_element_selector_by_role("attributes_cat", true))].forEach(function (m) {
 	          //console.log (m);
 	
@@ -2177,12 +2177,12 @@ webpackJsonp([0],[
 	          m.selectAll("li").remove();
 	
 	          var menu_items = [[["None", null, _.partial(self.handle_attribute_categorical, null)]], [["Categorical", "heading", null]]].concat(valid_cats.map(function (d, i) {
-	            return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_categorical, d["raw_attribute_key"])]];
+	            return [[self._menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_categorical, d["raw_attribute_key"])]];
 	          }));
 	
 	          if (valid_scales.length) {
 	            menu_items = menu_items.concat([[["Continuous", "heading", null]]]).concat(valid_scales.map(function (d, i) {
-	              return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_continuous, d["raw_attribute_key"])]];
+	              return [[self._menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_attribute_continuous, d["raw_attribute_key"])]];
 	            }));
 	          }
 	
@@ -2214,7 +2214,7 @@ webpackJsonp([0],[
 	        [d3.select(self.get_ui_element_selector_by_role("shapes"))].forEach(function (m) {
 	          m.selectAll("li").remove();
 	          var cat_menu = m.selectAll("li").data([[["None", null, _.partial(self.handle_shape_categorical, null)]]].concat(valid_shapes.map(function (d, i) {
-	            return [[_menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_shape_categorical, d["raw_attribute_key"])]];
+	            return [[self._menu_label_gen(d), d["raw_attribute_key"], _.partial(self.handle_shape_categorical, d["raw_attribute_key"])]];
 	          })));
 	
 	          cat_menu.enter().append("li").style("font-variant", function (d) {
@@ -3126,7 +3126,7 @@ webpackJsonp([0],[
 	      //console.log (self.colorizer);
 	      //_.each (self.colorizer["category_map"](null, "map"), function (v){ console.log (v); });
 	
-	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Color: " + self.colorizer["category_id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Color: " + self._menu_label_gen(graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]])).style("font-weight", "bold");
 	      offset += 18;
 	
 	      if (self.colorizer["continuous"]) {
@@ -3157,7 +3157,7 @@ webpackJsonp([0],[
 	    }
 	
 	    if (self.node_shaper["id"]) {
-	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Shape: " + self.node_shaper["id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Shape: " + self._menu_label_gen(graph_data[_networkGraphAttrbuteID][self.node_shaper["id"]])).style("font-weight", "bold");
 	      offset += 18;
 	
 	      var domain_range = check_for_predefined_shapes(self.node_shaper["id"]);
@@ -3173,7 +3173,7 @@ webpackJsonp([0],[
 	    }
 	
 	    if (self.colorizer["opacity_id"]) {
-	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Opacity: " + self.colorizer["opacity_id"]).style("font-weight", "bold");
+	      self.legend_svg.append("g").attr("transform", "translate(0," + offset + ")").classed("hiv-trace-legend", true).append("text").text("Opacity: " + self._menu_label_gen(graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]])).style("font-weight", "bold");
 	      offset += 18;
 	
 	      var anchor_format = determine_label_format_cont(graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]);

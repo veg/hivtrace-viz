@@ -2736,6 +2736,13 @@ var hivtrace_cluster_network_graph = function(
       console.log(err);
     }
 
+    self._menu_label_gen = function (d) {
+          return (
+            (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"]
+          );
+    };
+
+
     self._aux_populate_category_menus = function() {
       if (button_bar_ui) {
         // decide if the variable can be considered categorical by examining its range
@@ -2859,11 +2866,6 @@ var hivtrace_cluster_network_graph = function(
           }
         );
 
-        function _menu_label_gen(d) {
-          return (
-            (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"]
-          );
-        }
 
         //console.log (valid_scales);
         //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
@@ -2890,7 +2892,7 @@ var hivtrace_cluster_network_graph = function(
             valid_cats.map(function(d, i) {
               return [
                 [
-                  _menu_label_gen(d),
+                  self._menu_label_gen(d),
                   d["raw_attribute_key"],
                   _.partial(
                     self.handle_attribute_categorical,
@@ -2908,7 +2910,7 @@ var hivtrace_cluster_network_graph = function(
                 valid_scales.map(function(d, i) {
                   return [
                     [
-                      _menu_label_gen(d),
+                      self._menu_label_gen(d),
                       d["raw_attribute_key"],
                       _.partial(
                         self.handle_attribute_continuous,
@@ -2968,7 +2970,7 @@ var hivtrace_cluster_network_graph = function(
               valid_shapes.map(function(d, i) {
                 return [
                   [
-                    _menu_label_gen(d),
+                    self._menu_label_gen(d),
                     d["raw_attribute_key"],
                     _.partial(
                       self.handle_shape_categorical,
@@ -4254,7 +4256,7 @@ var hivtrace_cluster_network_graph = function(
         .attr("transform", "translate(0," + offset + ")")
         .classed("hiv-trace-legend", true)
         .append("text")
-        .text("Color: " + self.colorizer["category_id"])
+        .text("Color: " + self._menu_label_gen (graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]))
         .style("font-weight", "bold");
       offset += 18;
 
@@ -4339,7 +4341,7 @@ var hivtrace_cluster_network_graph = function(
         .attr("transform", "translate(0," + offset + ")")
         .classed("hiv-trace-legend", true)
         .append("text")
-        .text("Shape: " + self.node_shaper["id"])
+        .text("Shape: " + self._menu_label_gen (graph_data[_networkGraphAttrbuteID][self.node_shaper["id"]]))
         .style("font-weight", "bold");
       offset += 18;
 
@@ -4380,7 +4382,7 @@ var hivtrace_cluster_network_graph = function(
         .attr("transform", "translate(0," + offset + ")")
         .classed("hiv-trace-legend", true)
         .append("text")
-        .text("Opacity: " + self.colorizer["opacity_id"])
+        .text("Opacity: " + self._menu_label_gen (graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]))
         .style("font-weight", "bold");
       offset += 18;
 
