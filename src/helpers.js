@@ -449,14 +449,23 @@ function datamonkey_export_handler(data, filename, mimeType) {
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
-  d3.select(table_id + " thead").selectAll("th").each(function() {
-    header_row.push(d3.select(this).text());
+  var extract_text = function (e) {
+    var first_element = d3.select (e).selectAll ("p, span, button");
+    if (!first_element.empty()) {
+        return d3.select(first_element.node()).text();
+    } else {
+        return d3.select(e).text();
+    }
+  };
+
+  d3.selectAll(table_id + " thead th").each(function() {
+    header_row.push(extract_text(this));
   });
   var data_rows = [];
-  d3.select(table_id + " tbody").selectAll("tr").each(function(d, i) {
+  d3.select(table_id + " tbody").selectAll ("tr").each(function(d, i) {
     data_rows.push([]);
     d3.select(this).selectAll("td").each(function() {
-      data_rows[i].push(d3.select(this).text());
+      data_rows[i].push(extract_text(this));
     });
   });
 
