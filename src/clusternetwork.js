@@ -2532,18 +2532,7 @@ var hivtrace_cluster_network_graph = function(
           .append("i")
           .classed("fa fa-compress", true);
 
-        if (!self._is_CDC_) {
-          button_group
-            .append("button")
-            .classed("btn btn-default btn-sm", true)
-            .attr("title", "Compute graph statistics")
-            .attr("id", "hivtrace-compute-graph-statistics")
-            .on("click", function(d) {
-              _.bind(self.compute_graph_stats, this)();
-            })
-            .append("i")
-            .classed("fa fa-calculator", true);
-        } else {
+        if (self._is_CDC_) {
            button_group
             .append("button")
             .classed("btn btn-default btn-sm", true)

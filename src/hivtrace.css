@@ -196,3 +196,6 @@ path.injected_object, circle.injected_object {
   cursor: move;
 }
 
+.nav.main-hivtrace-tabs > li.disabled {
+  display:none;
+}
