@@ -532,6 +532,11 @@ var hivtrace_cluster_network_graph = function(
     }
   }
 
+  // Disable the "show small clusters" button if you can't filter by size.
+  if (self.minimum_cluster_size <= 0 ) {
+    d3.select (".show-small-clusters-button").classed ("hidden", true);
+  }
+
   if (options && "cluster-time" in options) {
     self.cluster_time_scale = options["cluster-time"];
   }
