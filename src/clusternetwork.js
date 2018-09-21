@@ -307,6 +307,21 @@ var hivtrace_cluster_network_graph = function(
     options["init_code"].call(null, self, options);
   }
 
+  // Only show help button when on the main "Network" tab.
+  $("#trace-default-tab").click(function() {
+    d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "table-cell")
+  })
+  $(".individual_cluster_tab").click(function() {
+    d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "none")
+  })
+  if ($('#main-tab').hasClass('active')) {
+    console.log('is active')
+    d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "table-cell")
+  } else {
+    console.log('is inactive')
+    d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "none")
+  }
+
   self.dom_prefix =
     options && options["prefix"] ? options["prefix"] : "hiv-trace";
   self.extra_cluster_table_columns =
@@ -1170,6 +1185,7 @@ var hivtrace_cluster_network_graph = function(
     var new_link = $("<a></a>")
       .attr("href", "#" + random_content_id)
       .attr("data-toggle", "tab")
+      .attr("class", "individual_cluster_tab")
       .text(title);
     $(
       '<button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
