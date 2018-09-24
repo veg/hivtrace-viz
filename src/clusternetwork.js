@@ -315,10 +315,8 @@ var hivtrace_cluster_network_graph = function(
     d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "none")
   })
   if ($('#main-tab').hasClass('active')) {
-    console.log('is active')
     d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "table-cell")
   } else {
-    console.log('is inactive')
     d3.selectAll("#network_ui_bar_legend_icon_span").style("display", "none")
   }
 
@@ -5671,7 +5669,7 @@ var hivtrace_cluster_network_graph = function(
         .append("path")
         .attr("d", d3.svg.chord().radius(innerRadius))
         .style("fill", function(d) {
-          return fill(d.target.index);
+          return "#a6cee3";
         })
         .style("opacity", 1);
 
