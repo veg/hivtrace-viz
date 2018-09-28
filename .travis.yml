@@ -1,0 +1,27 @@
+language: node_js
+node_js:
+- '8'
+sudo: false
+notifications:
+  email:
+    recipients:
+    - spond@temple.edu
+    - steven@stevenweaver.org
+    - tuj86312@temple.edu
+    on_success: always
+    on_failure: always
+
+branches:
+  only:
+  - master
+  - develop
+
+cache:
+  yarn: true
+  directories:
+  - ".eslintcache"
+  - node_modules
+
+script:
+  - webpack
+  - yarn lint

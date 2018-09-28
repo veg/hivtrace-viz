@@ -24,15 +24,18 @@
     "bootstrap-webpack": "0.0.5",
     "concurrently": "^4.0.1",
     "css-loader": "^0.25.0",
-    "eslint": "0.21.x",
+    "eslint": "^5.6.0",
     "exports-loader": "^0.6.3",
     "expose-loader": "^0.7.4",
     "express": "^4.16.3",
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.9.0",
     "http-server": "^0.11.1",
+    "husky": "^0.14.3",
     "imports-loader": "^0.6.5",
     "npm-version": "^1.1.0",
+    "prettier": "^1.14.3",
+    "pretty-quick": "^1.7.0",
     "react-lazy-render": "0.3.0",
     "react-test-renderer": "^15.5.4",
     "style-loader": "^0.13.1",
@@ -41,7 +44,10 @@
     "webpack": "^1.15.0"
   },
   "scripts": {
-    "develop": "concurrently \"webpack --watch --mode=development\" \"http-server\""
+    "develop": "concurrently \"webpack --watch --mode=development\" \"http-server\"",
+    "lint": "eslint --ext .js ./",
+    "format": "prettier 'src/*.js' --write",
+    "precommit": "pretty-quick --staged"
   },
   "license": "ISC"
 }
