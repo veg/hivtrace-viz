@@ -72,6 +72,8 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
     var histogram_data = d3.layout.histogram()(data);
 
     var x = d3.scale.linear().domain(d3.extent(data));
+    var y_axis_label_width = 12;
+    var x_axis_label_height = 18;
 
     var y = d3.scale
       .linear()
@@ -85,7 +87,8 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       ])
       .range([height, 0]);
 
-    margin.left += 10 * Math.ceil(Math.log10(y.domain()[1]));
+    margin.left += y_axis_label_width + 10 * Math.ceil(Math.log10(y.domain()[1]));
+    margin.top += x_axis_label_height;
     width -= margin.left;
     x.range([0, width]);
 
@@ -142,6 +145,22 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .attr("transform", "rotate(45)")
       .attr("dx", "1em")
       .attr("dy", "0.5em");
+
+    var y_axis_label = histogram_svg
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left + y_axis_label_width)
+      .attr("x", 0-(height / 2))
+      .style("text-anchor", "middle")
+      .text("Edges")
+
+    var x_axis_label = histogram_svg
+      .append("text")
+      .attr("transform",
+            "translate(" + (width/2) + " ," +
+                           (height + margin.top + 20) + ")")
+      .style("text-anchor", "middle")
+      .text("Genetic Distance")
 
     var y_axis = histogram_svg
       .append("g")

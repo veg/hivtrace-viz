@@ -145,7 +145,7 @@
 
   <div class="tabbable">
 
-    <ul class="nav nav-tabs" id="top_level_tab_container">
+    <ul class="nav nav-tabs main-hivtrace-tabs" id="top_level_tab_container">
       <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
       <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
       <li class='disabled' id="graph-tab"><a href="#trace-graph" data-toggle="tab">Statistics</a></li>
@@ -216,7 +216,7 @@
                         <span class="input-group-addon show-small-clusters-button">
                            Show small clusters <input type = 'checkbox' data-hivtrace-ui-role = 'show_small_clusters'> </input>
                         </span>
-                        <span class="input-group-addon">
+                        <span class="input-group-addon" id="network_ui_bar_legend_icon_span">
                             <a data-toggle="collapse" href="#network_ui_bar_legend" aria-expanded="false" aria-controls="network_ui_bar_legend">
                             <i class = "fa fa-question"></i>
                             </a>
@@ -533,8 +533,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  //url = "example.json";
-  url = "example_with_random_countries.json" // For testing the mapping feature.
+  url = "example.json";
+  //url = "example_with_random_countries.json" // For testing the mapping feature.
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
