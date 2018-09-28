@@ -5669,7 +5669,7 @@ var hivtrace_cluster_network_graph = function(
         .append("path")
         .attr("d", d3.svg.chord().radius(innerRadius))
         .style("fill", function(d) {
-          return "#a6cee3";
+          return fill(d.target.index);
         })
         .style("opacity", 1);
 
