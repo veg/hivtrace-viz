@@ -87,14 +87,21 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       ])
       .range([height, 0]);
 
-    margin.left += y_axis_label_width + 10 * Math.ceil(Math.log10(y.domain()[1]));
+    margin.left +=
+      y_axis_label_width + 10 * Math.ceil(Math.log10(y.domain()[1]));
     margin.top += x_axis_label_height;
     width -= margin.left;
     x.range([0, width]);
 
-    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+    var xAxis = d3.svg
+      .axis()
+      .scale(x)
+      .orient("bottom");
 
-    var yAxis = d3.svg.axis().scale(y).orient("left");
+    var yAxis = d3.svg
+      .axis()
+      .scale(y)
+      .orient("left");
 
     histogram_data.splice(0, 0, {
       x: x.domain()[0],
@@ -150,17 +157,18 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .append("text")
       .attr("transform", "rotate(-90)")
       .attr("y", 0 - margin.left + y_axis_label_width)
-      .attr("x", 0-(height / 2))
+      .attr("x", 0 - height / 2)
       .style("text-anchor", "middle")
-      .text("Edges")
+      .text("Edges");
 
     var x_axis_label = histogram_svg
       .append("text")
-      .attr("transform",
-            "translate(" + (width/2) + " ," +
-                           (height + margin.top + 20) + ")")
+      .attr(
+        "transform",
+        "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
+      )
       .style("text-anchor", "middle")
-      .text("Genetic Distance")
+      .text("Genetic Distance");
 
     var y_axis = histogram_svg
       .append("g")
@@ -180,13 +188,22 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 
-  var x = d3.scale.linear().domain([0, counts.length + 1]).range([0, width]);
+  var x = d3.scale
+    .linear()
+    .domain([0, counts.length + 1])
+    .range([0, width]);
 
-  var y = d3.scale.log().domain([1, d3.max(counts)]).range([height, 0]);
+  var y = d3.scale
+    .log()
+    .domain([1, d3.max(counts)])
+    .range([height, 0]);
 
   var total = d3.sum(counts);
 
-  var xAxis = d3.svg.axis().scale(x).orient("bottom");
+  var xAxis = d3.svg
+    .axis()
+    .scale(x)
+    .orient("bottom");
 
   var histogram_svg = d3.select(id).selectAll("svg");
 

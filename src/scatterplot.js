@@ -72,7 +72,9 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
 
   points.each(function(d) {
     if ("title" in d) {
-      d3.select(this).append("title").text(d.title);
+      d3.select(this)
+        .append("title")
+        .text(d.title);
     }
   });
 

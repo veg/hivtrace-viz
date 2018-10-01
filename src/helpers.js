@@ -187,27 +187,45 @@ var datamonkey_save_image = function(type, container) {
 var datamonkey_validate_date = function() {
   // Check that it is not empty
   if ($(this).val().length === 0) {
-    $(this).next(".help-block").remove();
-    $(this).parent().removeClass("has-success");
-    $(this).parent().addClass("has-error");
+    $(this)
+      .next(".help-block")
+      .remove();
+    $(this)
+      .parent()
+      .removeClass("has-success");
+    $(this)
+      .parent()
+      .addClass("has-error");
 
     jQuery("<span/>", {
       class: "help-block",
       text: "Field is empty"
     }).insertAfter($(this));
   } else if (isNaN(Date.parse($(this).val()))) {
-    $(this).next(".help-block").remove();
-    $(this).parent().removeClass("has-success");
-    $(this).parent().addClass("has-error");
+    $(this)
+      .next(".help-block")
+      .remove();
+    $(this)
+      .parent()
+      .removeClass("has-success");
+    $(this)
+      .parent()
+      .addClass("has-error");
 
     jQuery("<span/>", {
       class: "help-block",
       text: "Date format should be in the format YYYY-mm-dd"
     }).insertAfter($(this));
   } else {
-    $(this).parent().removeClass("has-error");
-    $(this).parent().addClass("has-success");
-    $(this).next(".help-block").remove();
+    $(this)
+      .parent()
+      .removeClass("has-error");
+    $(this)
+      .parent()
+      .addClass("has-success");
+    $(this)
+      .next(".help-block")
+      .remove();
   }
 };
 
@@ -337,13 +355,23 @@ function datamonkey_save_newick_tree(type) {
 function datamonkey_validate_email(email) {
   if ($(this).find("input[name='receive_mail']")[0].checked) {
     var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
-    if (regex.test($(this).find("input[name='mail']").val())) {
+    if (
+      regex.test(
+        $(this)
+          .find("input[name='mail']")
+          .val()
+      )
+    ) {
       // Give them green. They like that.
       $(this).removeClass("has-error");
       $(this).addClass("has-success");
-      $(this).next(".help-block").remove();
+      $(this)
+        .next(".help-block")
+        .remove();
     } else {
-      $(this).next(".help-block").remove();
+      $(this)
+        .next(".help-block")
+        .remove();
       $(this).removeClass("has-error");
       $(this).removeClass("has-success");
       $(this).addClass("has-error");
@@ -355,7 +383,9 @@ function datamonkey_validate_email(email) {
   } else {
     $(this).removeClass("has-error");
     $(this).removeClass("has-success");
-    $(this).next(".help-block").remove();
+    $(this)
+      .next(".help-block")
+      .remove();
   }
 }
 
@@ -449,12 +479,12 @@ function datamonkey_export_handler(data, filename, mimeType) {
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
-  var extract_text = function (e) {
-    var first_element = d3.select (e).selectAll ("p, span, button");
+  var extract_text = function(e) {
+    var first_element = d3.select(e).selectAll("p, span, button");
     if (!first_element.empty()) {
-        return d3.select(first_element.node()).text();
+      return d3.select(first_element.node()).text();
     } else {
-        return d3.select(e).text();
+      return d3.select(e).text();
     }
   };
 
@@ -462,12 +492,16 @@ function datamonkey_table_to_text(table_id, sep) {
     header_row.push(extract_text(this));
   });
   var data_rows = [];
-  d3.select(table_id + " tbody").selectAll ("tr").each(function(d, i) {
-    data_rows.push([]);
-    d3.select(this).selectAll("td").each(function() {
-      data_rows[i].push(extract_text(this));
+  d3.select(table_id + " tbody")
+    .selectAll("tr")
+    .each(function(d, i) {
+      data_rows.push([]);
+      d3.select(this)
+        .selectAll("td")
+        .each(function() {
+          data_rows[i].push(extract_text(this));
+        });
     });
-  });
 
   return (
     header_row.join(sep) +

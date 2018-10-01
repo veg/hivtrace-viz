@@ -36,7 +36,7 @@ function hivtrace_cluster_adjacency_list(obj) {
 var hivtrace_generate_svg_polygon_lookup = {};
 
 _.each(_.range(3, 20), function(d) {
-  var angle_step = Math.PI * 2 / d;
+  var angle_step = (Math.PI * 2) / d;
   hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), function(i) {
     return [Math.cos(angle_step * i), Math.sin(angle_step * i)];
   });
@@ -92,7 +92,7 @@ var hivtrace_generate_svg_ellipse = function() {
   self.ellipse.size = function(attr) {
     if (_.isNumber(attr)) {
       self.size = attr;
-      self.radius = Math.sqrt(1.25 * attr / Math.PI);
+      self.radius = Math.sqrt((1.25 * attr) / Math.PI);
       return self.ellipse;
     }
 
@@ -117,7 +117,7 @@ var hivtrace_generate_svg_polygon = function() {
         })
         .join(" ");
     } else {
-      var angle_step = Math.PI * 2 / self.sides,
+      var angle_step = (Math.PI * 2) / self.sides,
         current_angle = 0;
       for (i = 0; i < self.sides - 1; i++) {
         current_angle += angle_step;
@@ -635,7 +635,8 @@ var hivtrace_compute_local_clustering_coefficients = _.once(function(obj) {
             }
           }
         }
-        a_node.lcc = 2 * counter / neighborhood_size / (neighborhood_size - 1);
+        a_node.lcc =
+          (2 * counter) / neighborhood_size / (neighborhood_size - 1);
       }
     }
   });
@@ -666,7 +667,6 @@ function hivtrace_format_value(value, formatter) {
   return formatter ? formatter(value) : value;
 }
 
-
 function hivtrace_plot_case_time_series(
   time_series,
   container,
@@ -687,8 +687,6 @@ function hivtrace_plot_case_time_series(
     width: 1024,
     height: 600
   };
-
-
 }
 
 function hivtrace_plot_cluster_dynamics(
@@ -716,10 +714,8 @@ function hivtrace_plot_cluster_dynamics(
     return;
   }
 
-  var do_barchart     = options && options["barchart"];
-  var skip_cumulative = options && options["skip_cumulative"] || do_barchart;
-
-
+  var do_barchart = options && options["barchart"];
+  var skip_cumulative = (options && options["skip_cumulative"]) || do_barchart;
 
   var width = options.width - options.left - options.right;
   var height = options.height - options.top - options.bottom;
@@ -747,20 +743,18 @@ function hivtrace_plot_cluster_dynamics(
       return ["Q" + quarter + " " + year, nearest_quarter, mid_point];
     };
 
-    min_diff = new Date (2018,3,0) - new Date(2018,0,0);
+    min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
   }
 
-
-
-  var x_tick_format = function (d) {
+  var x_tick_format = function(d) {
     var year = d.getFullYear();
     var quarter = Math.floor(d.getMonth() / 3) + 1;
 
     return "" + year + "-Q" + quarter;
   };
 
-  if (options && options ["x-tick-format"]) {
-    x_tick_format = options ["x-tick-format"];
+  if (options && options["x-tick-format"]) {
+    x_tick_format = options["x-tick-format"];
   }
 
   /** plot_data is an array with entries like
@@ -782,9 +776,8 @@ function hivtrace_plot_cluster_dynamics(
 
   var y = y_scale ? y_scale : d3.scale.linear();
 
-
   if (!y_scale) {
-    y.rangeRound ([height, 0]);
+    y.rangeRound([height, 0]);
   } else {
     y.range([height, 0]);
   }
@@ -797,15 +790,20 @@ function hivtrace_plot_cluster_dynamics(
     .tickFormat(d3.time.format("%m/%Y"));
 
   if (x_tick_format) {
-    xAxis.tickFormat (x_tick_format);
+    xAxis.tickFormat(x_tick_format);
   }
 
-  var yAxis = d3.svg.axis().scale(y).orient("left").tickFormat(function (v) {
-    if (v << 0 == v) { // an integer
+  var yAxis = d3.svg
+    .axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(function(v) {
+      if (v << 0 == v) {
+        // an integer
         return v;
-    }
-    return;
-  });
+      }
+      return;
+    });
 
   var binned = {};
   var values_by_attribute = {};
@@ -859,24 +857,23 @@ function hivtrace_plot_cluster_dynamics(
     binned_array.push(v);
   });
 
-
   binned_array.sort(function(a, b) {
     return b["time"] > a["time"] ? 1 : b["time"] == a["time"] ? 0 : -1;
   });
 
-
   if (do_barchart) {
-    if (_.isUndefined (min_diff)) {
-      _.each(binned_array, function (d, i) {
-            if (i > 0) {
-                min_diff = Math.min (min_diff, -(d["time"] - binned_array[i-1]["time"]));
-            }
+    if (_.isUndefined(min_diff)) {
+      _.each(binned_array, function(d, i) {
+        if (i > 0) {
+          min_diff = Math.min(
+            min_diff,
+            -(d["time"] - binned_array[i - 1]["time"])
+          );
+        }
       });
     }
     min_diff = min_diff * 0.8; // convert to seconds and shrink a bit
   }
-
-
 
   var min_x = d3.min(time_series, function(d) {
     return d["time"] < d["_bin"] ? d["time"] : d["_bin"];
@@ -886,18 +883,16 @@ function hivtrace_plot_cluster_dynamics(
   });
 
   if (do_barchart) {
-     var max_x2 = new Date ();
-     max_x2.setTime(max_x.getTime() + min_diff);
-     max_x = max_x2;
+    var max_x2 = new Date();
+    max_x2.setTime(max_x.getTime() + min_diff);
+    max_x = max_x2;
   }
 
   x.domain([min_x, max_x]).clamp(true);
-  y
-    .domain([
-      0.0,
-      Math.round(skip_cumulative ? max_bin + 1 : time_series.length * 1.2)
-    ])
-    .clamp(true);
+  y.domain([
+    0.0,
+    Math.round(skip_cumulative ? max_bin + 1 : time_series.length * 1.2)
+  ]).clamp(true);
 
   /* step-plot generator*/
 
@@ -942,7 +937,7 @@ function hivtrace_plot_cluster_dynamics(
 
   if (do_barchart) {
     if (plot_types.length == 0) {
-        plot_types.push(total_id);
+      plot_types.push(total_id);
     }
   } else {
     plot_types.push(total_id);
@@ -955,102 +950,99 @@ function hivtrace_plot_cluster_dynamics(
     drag.on("drag", function() {
       options["drag"].x += d3.event.dx;
       options["drag"].y += d3.event.dy;
-      d3
-        .select(this)
-        .attr(
-          "transform",
-          "translate(" + options["drag"].x + "," + options["drag"].y + ")"
-        );
+      d3.select(this).attr(
+        "transform",
+        "translate(" + options["drag"].x + "," + options["drag"].y + ")"
+      );
     });
     container.call(drag);
   }
 
   function opacity_toggle(tag, on_off) {
     if (do_barchart) {
-        d3
-          .selectAll('[data-plotid="' + tag + '"]')
-          .style("stroke-width", on_off ? 4 : 1);
-
+      d3.selectAll('[data-plotid="' + tag + '"]').style(
+        "stroke-width",
+        on_off ? 4 : 1
+      );
     } else {
-        d3
-          .selectAll('[data-plotid="' + tag + '"]')
-          .style("fill-opacity", on_off ? 0.5 : 0.1);
+      d3.selectAll('[data-plotid="' + tag + '"]').style(
+        "fill-opacity",
+        on_off ? 0.5 : 0.1
+      );
     }
-    d3
-      .selectAll('[data-curveid="' + tag + '"]')
-      .style("stroke-width", on_off ? 3 : 1);
+    d3.selectAll('[data-curveid="' + tag + '"]').style(
+      "stroke-width",
+      on_off ? 3 : 1
+    );
   }
 
   if (!do_barchart || plot_types.length > 1 || plot_types[0] != total_id) {
+    var legend_lines = legend_area.selectAll("g").data(plot_types);
 
-      var legend_lines = legend_area.selectAll("g").data(plot_types);
+    legend_lines
+      .enter()
+      .append("g")
+      .attr("class", "annotation-text");
 
-      legend_lines.enter().append("g").attr("class", "annotation-text");
+    legend_lines
+      .selectAll("text")
+      .data(function(d) {
+        return [d];
+      })
+      .enter()
+      .append("text")
+      .attr("transform", function(d, i, j) {
+        return (
+          "translate(" +
+          options.rect_size +
+          "," +
+          (options.rect_size * (plot_types.length - 1 - j) -
+            (options.rect_size - options.font_size)) +
+          ")"
+        );
+      })
+      .attr("dx", "0.2em")
+      .style("font-size", options.font_size)
+      .text(function(d) {
+        return d;
+      })
+      .on("mouseover", function(d) {
+        opacity_toggle(prefix + d, true);
+      })
+      .on("mouseout", function(d) {
+        opacity_toggle(prefix + d, false);
+      });
 
-
-      legend_lines
-        .selectAll("text")
-        .data(function(d) {
-          return [d];
-        })
-        .enter()
-        .append("text")
-        .attr("transform", function(d, i, j) {
-          return (
-            "translate(" +
-            options.rect_size +
-            "," +
-            (options.rect_size * (plot_types.length - 1 - j) -
-              (options.rect_size - options.font_size)) +
-            ")"
-          );
-        })
-        .attr("dx", "0.2em")
-        .style("font-size", options.font_size)
-        .text(function(d) {
-          return d;
-        })
-        .on("mouseover", function(d) {
-          opacity_toggle(prefix + d, true);
-        })
-        .on("mouseout", function(d) {
-          opacity_toggle(prefix + d, false);
-        });
-
-      legend_lines
-        .selectAll("rect")
-        .data(function(d) {
-          return [d];
-        })
-        .enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", function(d, i, j) {
-          return options.rect_size * (plot_types.length - 2 - j);
-        })
-        .attr("width", options.rect_size)
-        .attr("height", options.rect_size)
-        .attr("class", "area")
-        .style("fill", function(d, i, j) {
-          return color_scale(d);
-        })
-        .on("mouseover", function(d) {
-          opacity_toggle(prefix + d, true);
-        })
-        .on("mouseout", function(d) {
-          opacity_toggle(prefix + d, false);
-        });
-    }
+    legend_lines
+      .selectAll("rect")
+      .data(function(d) {
+        return [d];
+      })
+      .enter()
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", function(d, i, j) {
+        return options.rect_size * (plot_types.length - 2 - j);
+      })
+      .attr("width", options.rect_size)
+      .attr("height", options.rect_size)
+      .attr("class", "area")
+      .style("fill", function(d, i, j) {
+        return color_scale(d);
+      })
+      .on("mouseover", function(d) {
+        opacity_toggle(prefix + d, true);
+      })
+      .on("mouseout", function(d) {
+        opacity_toggle(prefix + d, false);
+      });
+  }
 
   var last = _.clone(time_series[time_series.length - 1]);
   last["time"] = x.domain()[1];
   time_series.push(last);
 
-
-
   _.each(plot_types, function(plot_key, idx) {
-
-
     var plot_color = color_scale(plot_key);
     var y_accessor = function(d) {
       //console.log ((plot_key in d['y']) ? d['y'][plot_key] : 0);
@@ -1100,64 +1092,68 @@ function hivtrace_plot_cluster_dynamics(
         .attr("data-plotid", prefix + plot_key);
     }
 
-
-
     if (do_barchart) {
-        binned_array.forEach(function(d) {
-            var dd = new Date();
-            dd.setTime(d["time"].getTime() - min_diff * 0.5);
-            var dd2 = new Date();
-            dd2.setTime(d["time"].getTime() + min_diff * 0.5);
-            var xc = x(dd);
-            var w = x(dd2) - x(dd);
-            var last_y = ("last_y" in d) ? d["last_y"] : 0;
-            var new_y = bin_accessor(d);
-            svg.append ("rect")
-               .attr ("x", xc)
-               .attr ("y", y(last_y+new_y))
-               .attr ("height",  y(0) - y(new_y))
-               .attr ("width", w).attr("data-plotid", prefix + plot_key)
-               .classed("tracer", true)
-               .style("fill", plot_color)
-               .style("stroke", d3.rgb (plot_color).darker (2))
-               .style("fill-opacity", 1)
-               .append ("title").text (plot_key + " " + new_y + " cases in " +
-                    (x_tick_format ? x_tick_format(d["time"]) : d["time"]));
-
-            d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
-
-        });
-    } else {
-
-        binned_array.forEach(function(d) {
-          svg
-            .append("circle")
-            .attr("cx", x(d["time"]))
-            .attr("cy", y(bin_accessor(d)))
-            .attr("r", "5")
-            .classed("node", true)
-            .style("fill", plot_color)
-            .style("stroke", plot_color)
-            .attr("title", plot_key + " : " + bin_accessor(d));
-        });
-
-        var curve_year = d3.svg
-          .line()
-          .x(function(d) {
-            return x(d["time"]);
-          })
-          .y(function(d) {
-            return y(bin_accessor(d));
-          })
-          .interpolate("cardinal");
-
+      binned_array.forEach(function(d) {
+        var dd = new Date();
+        dd.setTime(d["time"].getTime() - min_diff * 0.5);
+        var dd2 = new Date();
+        dd2.setTime(d["time"].getTime() + min_diff * 0.5);
+        var xc = x(dd);
+        var w = x(dd2) - x(dd);
+        var last_y = "last_y" in d ? d["last_y"] : 0;
+        var new_y = bin_accessor(d);
         svg
-          .append("path")
-          .datum(binned_array)
+          .append("rect")
+          .attr("x", xc)
+          .attr("y", y(last_y + new_y))
+          .attr("height", y(0) - y(new_y))
+          .attr("width", w)
+          .attr("data-plotid", prefix + plot_key)
           .classed("tracer", true)
+          .style("fill", plot_color)
+          .style("stroke", d3.rgb(plot_color).darker(2))
+          .style("fill-opacity", 1)
+          .append("title")
+          .text(
+            plot_key +
+              " " +
+              new_y +
+              " cases in " +
+              (x_tick_format ? x_tick_format(d["time"]) : d["time"])
+          );
+
+        d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
+      });
+    } else {
+      binned_array.forEach(function(d) {
+        svg
+          .append("circle")
+          .attr("cx", x(d["time"]))
+          .attr("cy", y(bin_accessor(d)))
+          .attr("r", "5")
+          .classed("node", true)
+          .style("fill", plot_color)
           .style("stroke", plot_color)
-          .attr("d", curve_year)
-          .attr("data-curveid", prefix + plot_key);
+          .attr("title", plot_key + " : " + bin_accessor(d));
+      });
+
+      var curve_year = d3.svg
+        .line()
+        .x(function(d) {
+          return x(d["time"]);
+        })
+        .y(function(d) {
+          return y(bin_accessor(d));
+        })
+        .interpolate("cardinal");
+
+      svg
+        .append("path")
+        .datum(binned_array)
+        .classed("tracer", true)
+        .style("stroke", plot_color)
+        .attr("d", curve_year)
+        .attr("data-curveid", prefix + plot_key);
     }
   });
 
