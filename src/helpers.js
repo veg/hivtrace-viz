@@ -93,8 +93,8 @@ var datamonkey_save_image = function(type, container) {
     return styles;
   }
 
+  // eslint-disable-next-line
   var convert_svg_to_png = function(image_string) {
-    // eslint-disable-line
     var image = document.getElementById("hyphy-chart-image");
 
     image.onload = function() {
@@ -441,8 +441,8 @@ function datamonkey_export_handler(data, filename, mimeType) {
   function msieversion() {
     var ua = window.navigator.userAgent;
     var msie = ua.indexOf("MSIE ");
+    // eslint-disable-next-line
     if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
-      // eslint-disable-line
       return true;
     }
     return false;

@@ -209,8 +209,8 @@ var hivtrace_cluster_depthwise_traversal = function(
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
     } catch (err) {
+      // eslint-disable-next-line
       console.log(
-        // eslint-disable-line
         "Edge does not map to an existing node " + e.source + " to " + e.target
       );
       throw "Edge does not map to an existing node " +
@@ -2727,8 +2727,8 @@ var hivtrace_cluster_network_graph = function(
               ]);
             } else {
               if (d.type == "Date") {
+                // eslint-disable-next-line
                 var values = _.filter(
-                  // eslint-disable-line
                   _.map(graph_data.Nodes, function(nd) {
                     try {
                       var a_date = self.attribute_node_value_by_id(nd, k);
@@ -4295,8 +4295,8 @@ var hivtrace_cluster_network_graph = function(
         .style("font-weight", "bold");
       offset += 18;
 
+      // eslint-disable-next-line
       var anchor_format = determine_label_format_cont(
-        // eslint-disable-line
         graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]
       );
 
@@ -5559,8 +5559,8 @@ var hivtrace_cluster_network_graph = function(
         .style("opacity", 1);
 
       // Returns an event handler for fading a given chord group.
+      // eslint-disable-next-line
       function fade(opacity, t) {
-        // eslint-disable-line
         return function(g, i) {
           text_label.text(t ? lookup[i] : "");
           svg
@@ -6021,12 +6021,12 @@ var hivtrace_cluster_network_graph = function(
           try {
             if ("Index" in e && "Partner" in e && "Contact" in e) {
               // RV TODO 10-02-18: look at changing "!e["Index"] in node_name_2_id" to "!(e["index"] in node_name_2_id)" and esure that is what was inteded.
+              // eslint-disable-next-line
               if (!e["Index"] in node_name_2_id) {
-                // eslint-disable-line
                 throw "Invalid index node";
               }
+              // eslint-disable-next-line
               if (!e["Partner"] in node_name_2_id) {
-                // eslint-disable-line
                 throw "Invalid partner node";
               }
 

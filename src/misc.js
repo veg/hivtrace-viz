@@ -314,11 +314,11 @@ function hivtrace_compute_shortest_paths_with_reconstruction(
   var distances2 = _.map(distances, _.clone);
 
   for (var index_k = 0; index_k < subset.length; index_k++) {
+    // eslint-disable-next-line
     for (var index_i = 0; index_i < subset.length; index_i++) {
-      // eslint-disable-line
       var n_i = subset[index_i]; // eslint-disable-line
+      // eslint-disable-next-line
       for (var index_j = 0; index_j < subset.length; index_j++) {
-        // eslint-disable-line
         var n_j = subset[index_j]; // eslint-disable-line
 
         if (n_i != n_j) {
@@ -566,8 +566,8 @@ function hivtrace_convert_to_csv(obj, callback) {
 }
 
 function hivtrace_export_csv_button(graph, tag) {
+  // eslint-disable-next-line
   var data = hivtrace_convert_to_csv(graph, function(err, data) {
-    // eslint-disable-line
     if (data !== null) {
       var pom = document.createElement("a");
       pom.setAttribute(
