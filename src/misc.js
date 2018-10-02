@@ -258,9 +258,6 @@ function hivtrace_compute_shortest_paths_with_reconstruction(
   // Floyd-Warshall implementation
   var distances = [];
   var next = [];
-  var nodes = obj.Nodes;
-  var edges = obj.Edges;
-  var node_ids = [];
 
   var adjacency_list = hivtrace_cluster_adjacency_list(obj);
 
@@ -283,7 +280,7 @@ function hivtrace_compute_shortest_paths_with_reconstruction(
   }
 
   for (var index = 0; index < subset.length; index++) {
-    var a_node = subset[index];
+    var a_node = subset[index]; // eslint-disable-line
     for (var index2 = 0; index2 < subset.length; index2++) {
       var second_node = subset[index2];
       if (second_node != a_node) {
@@ -315,14 +312,14 @@ function hivtrace_compute_shortest_paths_with_reconstruction(
 
   // clone distances
   var distances2 = _.map(distances, _.clone);
-  var c = 0;
 
   for (var index_k = 0; index_k < subset.length; index_k++) {
-    var n_k = subset[index_k];
     for (var index_i = 0; index_i < subset.length; index_i++) {
-      var n_i = subset[index_i];
+      // eslint-disable-line
+      var n_i = subset[index_i]; // eslint-disable-line
       for (var index_j = 0; index_j < subset.length; index_j++) {
-        var n_j = subset[index_j];
+        // eslint-disable-line
+        var n_j = subset[index_j]; // eslint-disable-line
 
         if (n_i != n_j) {
           d_ik = distances[index_k][index_i];
@@ -345,7 +342,6 @@ function hivtrace_compute_shortest_paths_with_reconstruction(
               );
             }
           }
-          c++;
           distances2[index_j][index_i] = distances[index_j][index_i];
           distances2[index_i][index_j] = distances[index_i][index_j];
         }
@@ -377,7 +373,7 @@ function hivtrace_filter_to_node_in_cluster(node, obj) {
   if (node_obj) {
     cluster_id = node_obj[0].cluster;
   } else {
-    console.log("could not find node");
+    console.log("could not find node"); // eslint-disable-line
     return null;
   }
 
@@ -428,7 +424,7 @@ function hivtrace_compute_betweenness_centrality_all_nodes_in_cluster(
 
   // get paths
   var paths = hivtrace_compute_shortest_paths_with_reconstruction(filtered_obj);
-  var node_ids = nodes_in_cluster.map(function(n) {
+  node_ids = nodes_in_cluster.map(function(n) {
     return n.id;
   });
 
@@ -571,6 +567,7 @@ function hivtrace_convert_to_csv(obj, callback) {
 
 function hivtrace_export_csv_button(graph, tag) {
   var data = hivtrace_convert_to_csv(graph, function(err, data) {
+    // eslint-disable-line
     if (data !== null) {
       var pom = document.createElement("a");
       pom.setAttribute(
@@ -665,28 +662,6 @@ function hivtrace_format_value(value, formatter) {
   }
 
   return formatter ? formatter(value) : value;
-}
-
-function hivtrace_plot_case_time_series(
-  time_series,
-  container,
-  x_title,
-  y_title,
-  y_scale,
-  bin_by,
-  options
-) {
-  options = options || {
-    base_line: 20,
-    top: 40,
-    right: 30,
-    bottom: 3 * 20,
-    left: 5 * 20,
-    font_size: 18,
-    rect_size: 22,
-    width: 1024,
-    height: 600
-  };
 }
 
 function hivtrace_plot_cluster_dynamics(

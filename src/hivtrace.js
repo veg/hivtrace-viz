@@ -1,4 +1,4 @@
-import Bootstrap from "bootstrap/dist/css/bootstrap.css";
+import Bootstrap from "bootstrap/dist/css/bootstrap.css"; // eslint-disable-line
 import { clusterNetwork, graphSummary } from "./clusternetwork.js";
 import { histogram, histogramDistances } from "./histogram.js";
 import { scatterPlot } from "./scatterplot.js";

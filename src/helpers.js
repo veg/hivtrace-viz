@@ -77,7 +77,7 @@ var datamonkey_save_image = function(type, container) {
           }
         }
       } catch (e) {
-        console.log("Could not process stylesheet : " + ss);
+        console.log("Could not process stylesheet : " + ss); // eslint-disable-line
       }
     }
 
@@ -94,6 +94,7 @@ var datamonkey_save_image = function(type, container) {
   }
 
   var convert_svg_to_png = function(image_string) {
+    // eslint-disable-line
     var image = document.getElementById("hyphy-chart-image");
 
     image.onload = function() {
@@ -104,7 +105,6 @@ var datamonkey_save_image = function(type, container) {
       context.fillStyle = "#FFFFFF";
       context.fillRect(0, 0, image.width, image.height);
       context.drawImage(image, 0, 0);
-      var img = canvas.toDataURL("image/png");
       var pom = document.createElement("a");
       pom.setAttribute("download", "image.png");
       pom.href = canvas.toDataURL("image/png");
@@ -148,7 +148,6 @@ var datamonkey_save_image = function(type, container) {
   var source = new XMLSerializer()
     .serializeToString(svg)
     .replace("</style>", "<![CDATA[" + styles + "]]></style>");
-  var rect = svg.getBoundingClientRect();
   var doctype =
     '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
   var to_download = [doctype + source];
@@ -171,7 +170,7 @@ var datamonkey_save_image = function(type, container) {
         pom.remove();
       },
       function(error) {
-        console.log(error);
+        console.log(error); // eslint-disable-line
       }
     );
   } else {
@@ -286,7 +285,6 @@ function datamonkey_convert_svg_to_png(image_string) {
     context.fillStyle = "#FFFFFF";
     context.fillRect(0, 0, image.width, image.height);
     context.drawImage(image, 0, 0);
-    var img = canvas.toDataURL("image/png");
 
     var pom = document.createElement("a");
     pom.setAttribute("download", "phylotree.png");
@@ -304,7 +302,6 @@ function datamonkey_save_newick_tree(type) {
     svg: "http://www.w3.org/2000/svg"
   };
 
-  var tree_container = "#tree_container";
   var svg = $("#tree_container").find("svg")[0];
   var styles = datamonkey_get_styles(window.document);
 
@@ -333,7 +330,6 @@ function datamonkey_save_newick_tree(type) {
   var source = new XMLSerializer()
     .serializeToString(svg)
     .replace("</style>", "<![CDATA[" + styles + "]]></style>");
-  var rect = svg.getBoundingClientRect();
   var doctype =
     '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
   var to_download = [doctype + source];
@@ -354,7 +350,7 @@ function datamonkey_save_newick_tree(type) {
 
 function datamonkey_validate_email(email) {
   if ($(this).find("input[name='receive_mail']")[0].checked) {
-    var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/; // eslint-disable-line
     if (
       regex.test(
         $(this)
@@ -375,10 +371,6 @@ function datamonkey_validate_email(email) {
       $(this).removeClass("has-error");
       $(this).removeClass("has-success");
       $(this).addClass("has-error");
-      var span = jQuery("<span/>", {
-        class: "help-block col-lg-9 pull-right",
-        text: "Invalid Email"
-      }).insertAfter($(this));
     }
   } else {
     $(this).removeClass("has-error");
@@ -395,7 +387,7 @@ function datamonkey_describe_vector(vector, as_list) {
   if (vector.length) {
     vector.sort(d3.ascending);
 
-    var d = {
+    d = {
       min: d3.min(vector),
       max: d3.max(vector),
       median: d3.median(vector),
@@ -404,7 +396,7 @@ function datamonkey_describe_vector(vector, as_list) {
       mean: d3.mean(vector)
     };
   } else {
-    var d = {
+    d = {
       min: null,
       max: null,
       median: null,
@@ -450,6 +442,7 @@ function datamonkey_export_handler(data, filename, mimeType) {
     var ua = window.navigator.userAgent;
     var msie = ua.indexOf("MSIE ");
     if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+      // eslint-disable-line
       return true;
     }
     return false;

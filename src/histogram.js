@@ -33,7 +33,6 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
 }
 
 function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
-  var defaultFloatFormat = d3.format(",.3p");
   var histogram_w = 300,
     histogram_h = 300;
 
@@ -153,7 +152,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .attr("dx", "1em")
       .attr("dy", "0.5em");
 
-    var y_axis_label = histogram_svg
+    var y_axis_label = histogram_svg // eslint-disable-line
       .append("text")
       .attr("transform", "rotate(-90)")
       .attr("y", 0 - margin.left + y_axis_label_width)
@@ -161,7 +160,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .style("text-anchor", "middle")
       .text("Edges");
 
-    var x_axis_label = histogram_svg
+    var x_axis_label = histogram_svg // eslint-disable-line
       .append("text")
       .attr(
         "transform",
@@ -170,7 +169,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .style("text-anchor", "middle")
       .text("Genetic Distance");
 
-    var y_axis = histogram_svg
+    var y_axis = histogram_svg // eslint-disable-line
       .append("g")
       .attr("class", "y axis")
       //.attr("transform", "translate(0," + height + ")")
