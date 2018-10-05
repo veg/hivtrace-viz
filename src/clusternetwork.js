@@ -178,10 +178,6 @@ var _networkPresetShapeSchemes = {
   }
 };
 
-// Constants for the map.
-
-// TODO: convert and save this data rather than do it each time.
-
 var hivtrace_cluster_depthwise_traversal = function(
   nodes,
   edges,
@@ -2370,7 +2366,7 @@ var hivtrace_cluster_network_graph = function(
         ]
       ];
 
-      if (!self._is_CDC_) {
+      var addCommandForShowOrRemoveEdges = function() {
         cluster_commands.push([
           "Show removed edges",
           function(item) {
@@ -2387,6 +2383,23 @@ var hivtrace_cluster_network_graph = function(
           },
           "hivtrace-show-removed-edges"
         ]);
+      };
+
+      if (self.json.Settings) {
+        if (self.json.Settings["edge-filtering"] == "report") {
+          addCommandForShowOrRemoveEdges();
+        }
+      } else {
+        // If there is no Settings in the json (i.e. when viewing a cluster on its own) go through and check if any of the edges are removed.
+        let clusterContainsRemovedEdges = _.contains(
+          _.map(self.json.Edges, function(edge) {
+            return edge.removed;
+          }),
+          true
+        );
+        if (clusterContainsRemovedEdges) {
+          addCommandForShowOrRemoveEdges();
+        }
       }
 
       cluster_commands.forEach(function(item, index) {
