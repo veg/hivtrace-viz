@@ -1797,7 +1797,7 @@ var hivtrace_cluster_network_graph = function(
         });
 
         subclusters = _.map(subclusters, function(c, i) {
-          var label = self.clusters[array_index].cluster_id + "." + (i + 1);
+          var label = self.clusters[array_index].cluster_id + "-" + (i + 1);
 
           _.each(c, function(n) {
             n.subcluster = label;
