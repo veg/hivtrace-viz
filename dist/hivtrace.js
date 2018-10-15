@@ -1404,8 +1404,9 @@ webpackJsonp([0],[
 	          return oldest_nodes_first(c1[0], c2[0]);
 	        });
 	
+	        console.log('hi');
 	        subclusters = _.map(subclusters, function (c, i) {
-	          var label = self.clusters[array_index].cluster_id + "." + (i + 1);
+	          var label = self.clusters[array_index].cluster_id + "-" + (i + 1);
 	
 	          _.each(c, function (n) {
 	            n.subcluster = label;
