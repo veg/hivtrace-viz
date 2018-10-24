@@ -537,52 +537,6 @@ function hivtrace_is_contaminant(node) {
   return node.attributes.indexOf("problematic") != -1;
 }
 
-function hivtrace_convert_to_csv(obj, callback) {
-  //Translate nodes to rows, and then use d3.format
-  hivtrace_compute_node_degrees(obj);
-
-  hivtrace_compute_cluster_betweenness(obj, function(err) {
-    var node_array = obj.Nodes.map(function(d) {
-      return [
-        d.id,
-        d.cluster,
-        d.degree,
-        d.betweenness,
-        hivtrace_is_contaminant(d),
-        d.attributes.join(";")
-      ];
-    });
-    node_array.unshift([
-      "seqid",
-      "cluster",
-      "degree",
-      "betweenness",
-      "is_contaminant",
-      "attributes"
-    ]);
-    node_csv = d3.csv.format(node_array);
-    callback(null, node_csv);
-  });
-}
-
-function hivtrace_export_csv_button(graph, tag) {
-  // eslint-disable-next-line
-  var data = hivtrace_convert_to_csv(graph, function(err, data) {
-    if (data !== null) {
-      var pom = document.createElement("a");
-      pom.setAttribute(
-        "href",
-        "data:text/csv;charset=utf-8," + encodeURIComponent(data)
-      );
-      pom.setAttribute("download", "export.csv");
-      pom.className = "btn btn-default btn-sm";
-      pom.innerHTML =
-        '<span class="glyphicon glyphicon-floppy-save"></span> Export Results';
-      $(tag).append(pom);
-    }
-  });
-}
-
 function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
   var the_button = d3.select(parent_id);
   the_button.selectAll("[data-type='download-button']").remove();
@@ -605,45 +559,6 @@ function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
 
   the_button.append("i").classed("fa fa-download fa-2x", true);
   return the_button;
-}
-
-var hivtrace_compute_local_clustering_coefficients = _.once(function(obj) {
-  hivtrace_new_cluster_adjacency_list(obj);
-
-  var nodes = obj.Nodes;
-
-  nodes.forEach(function(n) {
-    var a_node = n;
-    var neighborhood_size = a_node.neighbors.size();
-
-    if (neighborhood_size < 2) {
-      a_node.lcc = undefined;
-    } else {
-      if (neighborhood_size > 500) {
-        a_node.lcc = hivtrace_too_large;
-      } else {
-        // count triangles
-        neighborhood = a_node.neighbors.values();
-        counter = 0;
-        for (n1 = 0; n1 < neighborhood_size; n1 += 1) {
-          for (n2 = n1 + 1; n2 < neighborhood_size; n2 += 1) {
-            if (nodes[neighborhood[n1]].neighbors.has(neighborhood[n2])) {
-              counter++;
-            }
-          }
-        }
-        a_node.lcc =
-          (2 * counter) / neighborhood_size / (neighborhood_size - 1);
-      }
-    }
-  });
-});
-
-function hivtrace_render_settings(settings, explanations) {
-  // TODO:
-  //d3.json (explanations, function (error, expl) {
-  //    //console.log (settings);
-  //});
 }
 
 function hivtrace_format_value(value, formatter) {
@@ -1171,19 +1086,10 @@ function hivtrace_plot_cluster_dynamics(
 }
 
 module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
-module.exports.export_csv_button = hivtrace_export_csv_button;
-module.exports.convert_to_csv = hivtrace_convert_to_csv;
-module.exports.betweenness_centrality = hivtrace_compute_betweenness_centrality;
-module.exports.betweenness_centrality_all_nodes_in_cluster = hivtrace_compute_betweenness_centrality_all_nodes_in_cluster;
-module.exports.cluster_adjacency_list = hivtrace_cluster_adjacency_list;
-module.exports.new_cluster_adjacency_list = hivtrace_new_cluster_adjacency_list;
-module.exports.analysis_settings = hivtrace_render_settings;
 module.exports.export_table_to_text = hiv_trace_export_table_to_text;
-module.exports.compute_local_clustering = hivtrace_compute_local_clustering_coefficients;
 module.exports.undefined = {};
 module.exports.too_large = {};
 module.exports.processing = {};
 module.exports.format_value = hivtrace_format_value;
-module.exports.polygon = hivtrace_generate_svg_polygon;
 module.exports.symbol = hivtrace_generate_svg_symbol;
 module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
