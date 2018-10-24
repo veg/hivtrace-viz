@@ -1,9 +1,9 @@
 var d3 = require("d3"),
   _ = require("underscore"),
+  topojson = require("topojson"),
   misc = require("misc"),
   helpers = require("helpers"),
-  scatterPlot = require("scatterplot"),
-  topojson = require("topojson");
+  scatterPlot = require("scatterplot");
 
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
@@ -176,75 +176,6 @@ var _networkPresetShapeSchemes = {
     Missing: "diamond",
     missing: "diamond"
   }
-};
-
-var hivtrace_cluster_depthwise_traversal = function(
-  nodes,
-  edges,
-  edge_filter,
-  save_edges,
-  seed_nodes
-) {
-  var clusters = [],
-    adjacency = {},
-    by_node = {};
-
-  seed_nodes = seed_nodes || nodes;
-
-  _.each(nodes, function(n) {
-    n.visited = false;
-    adjacency[n.id] = [];
-  });
-
-  if (edge_filter) {
-    edges = _.filter(edges, edge_filter);
-  }
-
-  _.each(edges, function(e) {
-    try {
-      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-    } catch (err) {
-      // eslint-disable-next-line
-      console.log(
-        "Edge does not map to an existing node " + e.source + " to " + e.target
-      );
-      throw "Edge does not map to an existing node " +
-        e.source +
-        " to " +
-        e.target;
-    }
-  });
-
-  var traverse = function(node) {
-    if (!(node.id in by_node)) {
-      clusters.push([node]);
-      by_node[node.id] = clusters.length - 1;
-      if (save_edges) {
-        save_edges.push([]);
-      }
-    }
-    node.visited = true;
-
-    _.each(adjacency[node.id], function(neighbor) {
-      if (!neighbor[0].visited) {
-        by_node[neighbor[0].id] = by_node[node.id];
-        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
-        if (save_edges) {
-          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
-        }
-        traverse(neighbor[0]);
-      }
-    });
-  };
-
-  _.each(seed_nodes, function(n) {
-    if (!n.visited) {
-      traverse(n);
-    }
-  });
-
-  return clusters;
 };
 
 var _networkUpperBoundOnDate = new Date().getFullYear();
@@ -1787,7 +1718,7 @@ var hivtrace_cluster_network_graph = function(
         var edges = [];
 
         var subclusters = _.filter(
-          hivtrace_cluster_depthwise_traversal(
+          misc.hivtrace_cluster_depthwise_traversal(
             cluster_nodes.Nodes,
             cluster_nodes.Edges,
             null,
@@ -1858,7 +1789,7 @@ var hivtrace_cluster_network_graph = function(
             cluster_nodes
           );
           var rr_cluster = _.filter(
-            hivtrace_cluster_depthwise_traversal(
+            misc.hivtrace_cluster_depthwise_traversal(
               subcluster_json.Nodes,
               _.filter(subcluster_json.Edges, function(e) {
                 return e.length <= self.subcluster_threshold;
@@ -6233,7 +6164,7 @@ var hivtrace_cluster_network_graph = function(
 
           var subcluster_edges = [];
 
-          var direct_links_only = hivtrace_cluster_depthwise_traversal(
+          var direct_links_only = misc.hivtrace_cluster_depthwise_traversal(
             self.json.Nodes,
             self.json.Edges,
             edge_filter || edge_filter_for_subclusters,
@@ -6405,7 +6336,7 @@ var hivtrace_cluster_network_graph = function(
                           node_ids[n.id] = 1;
                         });
 
-                        var direct_links_only = hivtrace_cluster_depthwise_traversal(
+                        var direct_links_only = misc.hivtrace_cluster_depthwise_traversal(
                           self.json.Nodes,
                           self.json.Edges,
                           function(edge) {
@@ -6525,7 +6456,7 @@ var hivtrace_cluster_network_graph = function(
           return true;
         };
 
-      var recomputed_clusters = hivtrace_cluster_depthwise_traversal(
+      var recomputed_clusters = misc.hivtrace_cluster_depthwise_traversal(
         _.filter(self.json.Nodes, node_filter),
         self.json.Edges,
         null,
@@ -6725,113 +6656,4 @@ var hivtrace_cluster_network_graph = function(
   return self;
 };
 
-var hivtrace_cluster_graph_summary = function(graph, tag) {
-  var summary_table = d3.select(tag);
-
-  summary_table = d3.select(tag).select("tbody");
-  if (summary_table.empty()) {
-    summary_table = d3.select(tag).append("tbody");
-  }
-
-  var table_data = [];
-
-  if (!summary_table.empty()) {
-    _.each(graph["Network Summary"], function(value, key) {
-      if (self._is_CDC_ && key == "Edges") {
-        key = "Links";
-      }
-      if (_.isNumber(value)) {
-        table_data.push([key, value]);
-      }
-    });
-  }
-
-  var degrees = [];
-  _.each(graph["Degrees"]["Distribution"], function(value, index) {
-    for (var k = 0; k < value; k++) {
-      degrees.push(index + 1);
-    }
-  });
-  degrees = helpers.describe_vector(degrees);
-  table_data.push(["Links/node", ""]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
-    _defaultFloatFormat(degrees["mean"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
-    _defaultFloatFormat(degrees["median"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
-    degrees["min"] + " - " + degrees["max"]
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
-    degrees["Q1"] + " - " + degrees["Q3"]
-  ]);
-
-  degrees = helpers.describe_vector(graph["Cluster sizes"]);
-  table_data.push(["Cluster sizes", ""]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
-    _defaultFloatFormat(degrees["mean"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
-    _defaultFloatFormat(degrees["median"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
-    degrees["min"] + " - " + degrees["max"]
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
-    degrees["Q1"] + " - " + degrees["Q3"]
-  ]);
-
-  if (self._is_CDC_) {
-    degrees = helpers.describe_vector(
-      _.map(graph["Edges"], function(e) {
-        return e.length;
-      })
-    );
-    table_data.push(["Genetic distances (links only)", ""]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>Mean</i>",
-      _defaultPercentFormat(degrees["mean"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>Median</i>",
-      _defaultPercentFormat(degrees["median"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>Range</i>",
-      _defaultPercentFormat(degrees["min"]) +
-        " - " +
-        _defaultPercentFormat(degrees["max"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>Interquartile range</i>",
-      _defaultPercentFormat(degrees["Q1"]) +
-        " - " +
-        _defaultPercentFormat(degrees["Q3"])
-    ]);
-  }
-
-  var rows = summary_table.selectAll("tr").data(table_data);
-  rows.enter().append("tr");
-  rows.exit().remove();
-  var columns = rows.selectAll("td").data(function(d) {
-    return d;
-  });
-  columns.enter().append("td");
-  columns.exit();
-  columns.html(function(d) {
-    return d;
-  });
-};
-
-module.exports.computeCluster = hivtrace_cluster_depthwise_traversal;
 module.exports.clusterNetwork = hivtrace_cluster_network_graph;
-module.exports.graphSummary = hivtrace_cluster_graph_summary;

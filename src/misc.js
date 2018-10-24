@@ -693,6 +693,75 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
+var hivtrace_cluster_depthwise_traversal = function(
+  nodes,
+  edges,
+  edge_filter,
+  save_edges,
+  seed_nodes
+) {
+  var clusters = [],
+    adjacency = {},
+    by_node = {};
+
+  seed_nodes = seed_nodes || nodes;
+
+  _.each(nodes, function(n) {
+    n.visited = false;
+    adjacency[n.id] = [];
+  });
+
+  if (edge_filter) {
+    edges = _.filter(edges, edge_filter);
+  }
+
+  _.each(edges, function(e) {
+    try {
+      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
+      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
+    } catch (err) {
+      // eslint-disable-next-line
+      console.log(
+        "Edge does not map to an existing node " + e.source + " to " + e.target
+      );
+      throw "Edge does not map to an existing node " +
+        e.source +
+        " to " +
+        e.target;
+    }
+  });
+
+  var traverse = function(node) {
+    if (!(node.id in by_node)) {
+      clusters.push([node]);
+      by_node[node.id] = clusters.length - 1;
+      if (save_edges) {
+        save_edges.push([]);
+      }
+    }
+    node.visited = true;
+
+    _.each(adjacency[node.id], function(neighbor) {
+      if (!neighbor[0].visited) {
+        by_node[neighbor[0].id] = by_node[node.id];
+        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
+        if (save_edges) {
+          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
+        }
+        traverse(neighbor[0]);
+      }
+    });
+  };
+
+  _.each(seed_nodes, function(n) {
+    if (!n.visited) {
+      traverse(n);
+    }
+  });
+
+  return clusters;
+};
+
 module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
 module.exports.export_table_to_text = hiv_trace_export_table_to_text;
 module.exports.undefined = {};
@@ -701,3 +770,4 @@ module.exports.processing = {};
 module.exports.format_value = hivtrace_format_value;
 module.exports.symbol = hivtrace_generate_svg_symbol;
 module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
+module.exports.hivtrace_cluster_depthwise_traversal = hivtrace_cluster_depthwise_traversal;
