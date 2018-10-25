@@ -164,21 +164,6 @@ function hivtrace_render_prevalence(
       }
     }
 
-    var scaler_per_year = 1000 * 60 * 60 * 24 * 365;
-
-    var lf = linear_fit(
-      year_points.map(function(d) {
-        return [(d["x"] - x.domain()[0]) / scaler_per_year, d["y"]];
-      })
-    );
-
-    /*var line = d3.svg.line()
-                .x(function(d) { return x(d['x']); })
-                .y(function(d) { return y(
-                Math.max (0,(d['x'] - x.domain ()[0] )*lf["slope"]/scaler_per_year+lf["intercept"]))
-                ; })
-                .interpolate ("linear");*/
-
     var line = d3.svg
       .line()
       .x(function(d) {

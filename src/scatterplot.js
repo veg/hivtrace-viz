@@ -1,8 +1,6 @@
-var d3 = require("d3"),
-  _ = require("underscore");
+var d3 = require("d3");
 
 function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
-  var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
   var _defaultFloatFormat = d3.format(",.2r");
   var _defaultDateViewFormatShort = d3.time.format("%B %Y");
 
