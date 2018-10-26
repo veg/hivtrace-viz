@@ -3493,6 +3493,11 @@ var hivtrace_cluster_network_graph = function(
     given_json = given_json || json;
 
     cluster_json.Edges = _.filter(given_json.Edges, function(e) {
+
+      if(_.isUndefined(e.source) || _.isUndefined(e.target)) {
+        return false;
+      }
+
       return (
         given_json.Nodes[e.source].id in map_to_id &&
         given_json.Nodes[e.target].id in map_to_id && (

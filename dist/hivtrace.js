@@ -1404,7 +1404,6 @@ webpackJsonp([0],[
 	          return oldest_nodes_first(c1[0], c2[0]);
 	        });
 	
-	        console.log('hi');
 	        subclusters = _.map(subclusters, function (c, i) {
 	          var label = self.clusters[array_index].cluster_id + "-" + (i + 1);
 	
@@ -2581,6 +2580,11 @@ webpackJsonp([0],[
 	    given_json = given_json || json;
 	
 	    cluster_json.Edges = _.filter(given_json.Edges, function (e) {
+	
+	      if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
+	        return false;
+	      }
+	
 	      return given_json.Nodes[e.source].id in map_to_id && given_json.Nodes[e.target].id in map_to_id && (include_extra_edges || !self.is_edge_injected(e));
 	    });
 	
