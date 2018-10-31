@@ -2609,6 +2609,15 @@ var hivtrace_cluster_network_graph = function(
           );
         });
 
+        var valid_labels = valid_cats.slice();
+        valid_labels.unshift({
+          label: "id",
+          type: "string",
+          raw_attribute_key: "id",
+          discrete: true,
+          value_range: null
+        });
+
         // sort values alphabetically for consistent coloring
 
         _.each([valid_cats, valid_shapes], function(list) {
@@ -2639,8 +2648,6 @@ var hivtrace_cluster_network_graph = function(
                 var vrnc = _.reduce(bins, function(p, c) {
                   return p + (c - mean) * (c - mean);
                 });
-
-                //console.log (d['value_range'], bins);
 
                 if (vrnc < low_var) {
                   low_var = vrnc;
@@ -2676,7 +2683,6 @@ var hivtrace_cluster_network_graph = function(
                   _.map(graph_data.Nodes, function(nd) {
                     try {
                       var a_date = self.attribute_node_value_by_id(nd, k);
-                      //console.log (k, a_date);
                       inject_attribute_node_value_by_id(
                         nd,
                         k,
@@ -2706,6 +2712,11 @@ var hivtrace_cluster_network_graph = function(
           }
         );
 
+        // Add dropdown menus for formatting nodes (Color. Shape, Opacity, Label).
+        // The Color dropdown menu is a bit different because it has both Categorical and Continuous options.
+        // The Shape, Opacity and Label dropdowns are all very similar and are handled by the same function.
+
+        // Color dropdown menu "attributes" is used instead of "color"... idk.
         [
           d3.select(self.get_ui_element_selector_by_role("attributes")),
           d3.select(
@@ -2793,59 +2804,74 @@ var hivtrace_cluster_network_graph = function(
             });
         });
 
-        [d3.select(self.get_ui_element_selector_by_role("shapes"))].forEach(
-          function(m) {
-            m.selectAll("li").remove();
-            var cat_menu = m.selectAll("li").data(
-              [
-                [["None", null, _.partial(self.handle_shape_categorical, null)]]
-              ].concat(
-                valid_shapes.map(function(d, i) {
-                  return [
-                    [
-                      self._menu_label_gen(d),
-                      d["raw_attribute_key"],
-                      _.partial(
-                        self.handle_shape_categorical,
-                        d["raw_attribute_key"]
-                      )
-                    ]
-                  ];
-                })
-              )
-            );
+        // The function for the Shape, Opacity and Label dropdown menus.
+        var formatNodesDropdownMenus = function(
+          type,
+          handleFunction,
+          validTypes
+        ) {
+          var formatNodesDropdownMenuLabel = d3.select(
+            self.get_ui_element_selector_by_role(type)
+          );
 
-            cat_menu
-              .enter()
-              .append("li")
-              .style("font-variant", function(d) {
-                return d[0][1] < -1 ? "small-caps" : "normal";
-              });
+          formatNodesDropdownMenuLabel.selectAll("li").remove();
+          var cat_menu = formatNodesDropdownMenuLabel.selectAll("li").data(
+            [[["None", null, _.partial(handleFunction, null)]]].concat(
+              validTypes.map(function(d, i) {
+                return [
+                  [
+                    self._menu_label_gen(d),
+                    d["raw_attribute_key"],
+                    _.partial(handleFunction, d["raw_attribute_key"])
+                  ]
+                ];
+              })
+            )
+          );
 
-            cat_menu
-              .selectAll("a")
-              .data(function(d) {
-                return d;
-              })
-              .enter()
-              .append("a")
-              .text(function(d, i, j) {
-                return d[0];
-              })
-              .attr("style", function(d, i, j) {
-                if (j == 0) {
-                  return " font-weight: bold;";
-                }
-                return null;
-              })
-              .attr("href", "#")
-              .on("click", function(d) {
-                if (d[2]) {
-                  d[2].call();
-                }
-              });
-          }
+          cat_menu
+            .enter()
+            .append("li")
+            .style("font-variant", function(d) {
+              return d[0][1] < -1 ? "small-caps" : "normal";
+            });
+
+          cat_menu
+            .selectAll("a")
+            .data(function(d) {
+              return d;
+            })
+            .enter()
+            .append("a")
+            .text(function(d, i, j) {
+              return d[0];
+            })
+            .attr("style", function(d, i, j) {
+              if (j == 0) {
+                return " font-weight: bold;";
+              }
+              return null;
+            })
+            .attr("href", "#")
+            .on("click", function(d) {
+              if (d[2]) {
+                d[2].call();
+              }
+            });
+        };
+
+        // Call the function for each menu (Shape, Opacity and Label).
+        formatNodesDropdownMenus(
+          "shapes",
+          self.handle_shape_categorical,
+          valid_shapes
         );
+        formatNodesDropdownMenus(
+          "opacity",
+          self.handle_attribute_opacity,
+          valid_scales
+        );
+        formatNodesDropdownMenus("labels", self.handle_label, valid_labels);
 
         $(self.get_ui_element_selector_by_role("opacity_invert")).on(
           "click",
@@ -2855,7 +2881,7 @@ var hivtrace_cluster_network_graph = function(
                 self.colorizer["opacity_scale"].range().reverse()
               );
               self.update(true);
-              self.draw_attribute_labels();
+              self.draw_attribute_legend();
             }
             $(this).toggleClass("btn-active btn-default");
           }
@@ -2881,62 +2907,9 @@ var hivtrace_cluster_network_graph = function(
                 );
               });
               self.update(true);
-              self.draw_attribute_labels();
+              self.draw_attribute_legend();
             }
             $(this).toggleClass("btn-active btn-default");
-          }
-        );
-
-        [d3.select(self.get_ui_element_selector_by_role("opacity"))].forEach(
-          function(m) {
-            m.selectAll("li").remove();
-            var cat_menu = m.selectAll("li").data(
-              [
-                [["None", null, _.partial(self.handle_attribute_opacity, null)]]
-              ].concat(
-                valid_scales.map(function(d, i) {
-                  return [
-                    [
-                      d["label"],
-                      d["raw_attribute_key"],
-                      _.partial(
-                        self.handle_attribute_opacity,
-                        d["raw_attribute_key"]
-                      )
-                    ]
-                  ];
-                })
-              )
-            );
-
-            cat_menu
-              .enter()
-              .append("li")
-              .style("font-variant", function(d) {
-                return d[0][1] < -1 ? "small-caps" : "normal";
-              });
-            cat_menu
-              .selectAll("a")
-              .data(function(d) {
-                return d;
-              })
-              .enter()
-              .append("a")
-              .text(function(d, i, j) {
-                return d[0];
-              })
-              .attr("style", function(d, i, j) {
-                if (j == 0) {
-                  return " font-weight: bold;";
-                }
-                return null;
-              })
-              .attr("href", "#")
-              .on("click", function(d) {
-                if (d[2]) {
-                  d[2].call();
-                }
-              });
           }
         );
       }
@@ -3815,7 +3788,7 @@ var hivtrace_cluster_network_graph = function(
 
   function draw_a_node(container, node) {
     if (node) {
-      container = d3.select(container);
+      let container_group = d3.select(container);
 
       var symbol_type =
         node.hxb2_linked && !node.is_lanl
@@ -3826,7 +3799,15 @@ var hivtrace_cluster_network_graph = function(
 
       node.rendered_size = Math.sqrt(node_size(node)) / 2 + 2;
 
-      container
+      container_group
+        .attr("class", "node")
+        .on("click", handle_node_click)
+        .on("mouseover", node_pop_on)
+        .on("mouseout", node_pop_off)
+        .call(network_layout.drag().on("dragstart", node_pop_off));
+
+      var node_path = container_group
+        .append("path")
         .attr("d", misc.symbol(symbol_type).size(node_size(node)))
         .attr("class", "node")
         .classed("selected_object", function(d) {
@@ -3834,9 +3815,6 @@ var hivtrace_cluster_network_graph = function(
         })
         .classed("injected_object", function(d) {
           return d.node_class == "injected";
-        })
-        .attr("transform", function(d) {
-          return "translate(" + d.x + "," + d.y + ")";
         })
         .style("fill", function(d) {
           return node_color(d);
@@ -3847,12 +3825,31 @@ var hivtrace_cluster_network_graph = function(
         .style("display", function(d) {
           if (d.is_hidden) return "none";
           return null;
-        })
-        .on("click", handle_node_click)
-        .on("mouseover", node_pop_on)
-        .on("mouseout", node_pop_off)
-        .call(network_layout.drag().on("dragstart", node_pop_off));
+        });
     }
+  }
+
+  function label_a_node(container, theNode, selectedCatID) {
+    let container_group = d3.select(container);
+
+    function getLabelText(theNode, selectedCatID) {
+      let labelText = null;
+      if (selectedCatID == "id") {
+        labelText = theNode["id"];
+      } else {
+        labelText = theNode["patient_attributes"][self.label];
+      }
+      return labelText;
+    }
+
+    container_group.selectAll(".nodeLabel").remove();
+
+    container_group
+      .append("text")
+      .attr("class", "nodeLabel")
+      .attr("dx", 5)
+      .attr("dy", -5)
+      .text(getLabelText(theNode, selectedCatID));
   }
 
   function draw_a_cluster(container, the_cluster) {
@@ -4021,12 +4018,24 @@ var hivtrace_cluster_network_graph = function(
       self.node_shaper["category_map"] = null;
     }
     //console.log (graph_data [_networkGraphAttrbuteID][cat_id]['value_map'], self.node_shaper.domain(), self.node_shaper.range());
-    self.draw_attribute_labels();
+    self.draw_attribute_legend();
     self.update(true);
     d3.event.preventDefault();
   };
 
-  self.draw_attribute_labels = function() {
+  self.handle_label = function(cat_id) {
+    self.label = cat_id;
+    // TODO: get this to show the correct format ("Sex" instead of "birth_sex" and "race_cat" instead of "race")
+    d3.select(self.get_ui_element_selector_by_role("labels_label")).html(
+      "Label: " + cat_id + ' <span class="caret"></span>'
+    );
+
+    self.network_svg.selectAll(".node").each(function(d) {
+      label_a_node(this, d, self.label);
+    });
+  };
+
+  self.draw_attribute_legend = function() {
     var determine_label_format_cont = function(field_data) {
       if ("label_format" in field_data) {
         return field_data["label_format"];
@@ -4380,7 +4389,7 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["opacity_scale"] = null;
     }
 
-    self.draw_attribute_labels();
+    self.draw_attribute_legend();
     self.update(true);
     d3.event.preventDefault();
   };
@@ -4420,8 +4429,6 @@ var hivtrace_cluster_network_graph = function(
       .classed("btn-default", true);
 
     if (cat_id) {
-      //console.log (graph_data [_networkGraphAttrbuteID][cat_id]);
-
       self.colorizer["category"] = _.wrap(
         d3.scale
           .linear()
@@ -4442,7 +4449,7 @@ var hivtrace_cluster_network_graph = function(
             graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg)
           );
         }
-      ); //console.log (self.colorizer['category'].exponent ());
+      );
 
       //console.log (self.colorizer['category'] (graph_data [_networkGraphAttrbuteID][cat_id]['value_range'][0]), self.colorizer['category'] (d['value_range'][1]));
 
@@ -4505,7 +4512,7 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["category_map"] = null;
     }
 
-    self.draw_attribute_labels();
+    self.draw_attribute_legend();
     self.update(true);
     d3.event.preventDefault();
   };
@@ -4630,7 +4637,7 @@ var hivtrace_cluster_network_graph = function(
       self.handle_inline_charts();
     }
 
-    self.draw_attribute_labels();
+    self.draw_attribute_legend();
     self.update(true);
     d3.event.preventDefault();
   };
@@ -4893,7 +4900,7 @@ var hivtrace_cluster_network_graph = function(
         });
 
       rendered_nodes.exit().remove();
-      rendered_nodes.enter().append("path");
+      rendered_nodes.enter().append("g");
 
       rendered_clusters = self.network_svg.selectAll(".cluster-group").data(
         draw_me.clusters.map(function(d) {
@@ -4967,6 +4974,9 @@ var hivtrace_cluster_network_graph = function(
 
     rendered_nodes.each(function(d) {
       draw_a_node(this, d);
+      if (self.label) {
+        label_a_node(this, d, self.label);
+      }
     });
 
     rendered_clusters.each(function(d) {
@@ -6353,8 +6363,6 @@ var hivtrace_cluster_network_graph = function(
                           directly_linked_ids[n.id] = true;
                         });
 
-                        //console.log (directly_linked_ids);
-
                         _social_view_handler(
                           payload[2],
                           function(n) {
@@ -6647,7 +6655,7 @@ var hivtrace_cluster_network_graph = function(
     }
   }
 
-  self.draw_attribute_labels();
+  self.draw_attribute_legend();
   d3.select(self.container)
     .selectAll(".my_progress")
     .style("display", "none");
