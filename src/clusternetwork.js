@@ -1744,7 +1744,7 @@ var hivtrace_cluster_network_graph = function(
         });
 
         subclusters = _.map(subclusters, function(c, i) {
-          var label = self.clusters[array_index].cluster_id + "." + (i + 1);
+          var label = self.clusters[array_index].cluster_id + "-" + (i + 1);
 
           _.each(c, function(n) {
             n.subcluster = label;
@@ -3305,6 +3305,10 @@ var hivtrace_cluster_network_graph = function(
     given_json = given_json || json;
 
     cluster_json.Edges = _.filter(given_json.Edges, function(e) {
+      if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
+        return false;
+      }
+
       return (
         given_json.Nodes[e.source].id in map_to_id &&
         given_json.Nodes[e.target].id in map_to_id &&

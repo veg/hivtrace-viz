@@ -3,7 +3,8 @@
 This repository contains the visualization code for HIV-TRACE.
 
 ## Dependencies
-* Yarn or NPM
+
+- Yarn or NPM
 
 ## Development
 
@@ -12,7 +13,7 @@ git clone https://github.com/veg/hivtrace-viz.git
 cd hivtrace-viz
 yarn
 webpack
-node server.js
+yarn develop
 ```
 
 Navigate your browser to localhost:8273
