@@ -3812,10 +3812,12 @@ var hivtrace_cluster_network_graph = function(
         .on("mouseout", node_pop_off)
         .call(network_layout.drag().on("dragstart", node_pop_off));
 
+      container_group.selectAll(".node-path").remove();
+
       var node_path = container_group
         .append("path")
         .attr("d", misc.symbol(symbol_type).size(node_size(node)))
-        .attr("class", "node")
+        .attr("class", "node-path")
         .classed("selected_object", function(d) {
           return d.match_filter;
         })
