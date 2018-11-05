@@ -1922,9 +1922,12 @@ var hivtrace_cluster_network_graph = function(
     }
 
     var minWidth = options.minWidth || 200;
+    var maxWidth = options.maxWidth || 4000;
+    self.width = Math.min(Math.max(self.width, minWidth), maxWidth);
+
     var minHeight = options.minHeight || 200;
-    self.width = Math.min(Math.max(self.width, minWidth), 4000);
-    self.height = Math.min(Math.max(self.height, minHeight), 4000);
+    var maxHeight = options.maxHeight || 4000;
+    self.height = Math.min(Math.max(self.height, minHeight), maxHeight);
 
     network_layout.size([self.width, self.height]);
     self.network_svg.attr("width", self.width).attr("height", self.height);
