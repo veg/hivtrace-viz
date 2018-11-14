@@ -304,8 +304,11 @@ var hivtrace_cluster_network_graph = function(
       {
         description: {
           value: "Cases dx within 12 months",
-          sort: "value",
-          presort: "desc",
+          sort: //"value",
+            function(c) {
+              return c.value.length > 0 ? c.value[0] : 0;
+            },
+          presort : "desc",
           help:
             "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months"
         },
@@ -2032,6 +2035,9 @@ var hivtrace_cluster_network_graph = function(
             if (c.raw_attribute_key == _networkNodeIDField) {
               return n.id;
             }
+            if (_.has (n, c.raw_attribute_key)) {
+                return n[c.raw_attribute_key];
+            }
             return self.attribute_node_value_by_id(n, c.raw_attribute_key);
           })
         );
@@ -2039,23 +2045,40 @@ var hivtrace_cluster_network_graph = function(
       return result;
     };
 
-    self._extract_exportable_attributes = function() {
+    self._extract_exportable_attributes = function(extended) {
       var allowed_types = {
         String: 1,
         Date: 1,
         Number: 1
       };
 
-      var return_array = [
-        {
-          raw_attribute_key: _networkNodeIDField,
-          type: "String",
-          label: "Node ID",
-          format: function() {
-            return "Node ID";
-          }
-        }
-      ];
+      var return_array = [];
+      
+      if (extended) {
+        return_array = [{
+                            "raw_attribute_key" : _networkNodeIDField,
+                            "type" : "String",
+                            "label" : "Node ID",
+                            "format" : function () {return "Node ID";}
+                        },
+                        {
+                            "raw_attribute_key" : "cluster",
+                            "type" : "String",
+                            "label" : "Which cluster the individual belongs to",
+                            "format" : function () {return "Cluster ID";}
+                        },
+                        {                        
+                            "raw_attribute_key" : "subcluster",
+                            "type" : "String",
+                            "label" : "Which subcluster the individual belongs to",
+                            "format" : function () {return "Subcluster ID";}
+                        }                        
+                        ];
+      }
+
+      return_array.push(_.filter(self.json[_networkGraphAttrbuteID], function(d) {
+        return d.type in allowed_types;
+      }));
 
       return_array.push(
         _.filter(self.json[_networkGraphAttrbuteID], function(d) {
@@ -3406,7 +3429,7 @@ var hivtrace_cluster_network_graph = function(
   self.draw_extended_node_table = function(node_list) {
     if (self.node_table) {
       node_list = node_list || self.nodes;
-      var column_ids = self._extract_exportable_attributes();
+      var column_ids = self._extract_exportable_attributes(true);
 
       self.displayed_node_subset = _.map(self.displayed_node_subset, function(
         n,
@@ -3425,15 +3448,9 @@ var hivtrace_cluster_network_graph = function(
         return n;
       });
 
-      var node_data = self._extract_attributes_for_nodes(
-        node_list,
-        self.displayed_node_subset
-      );
-      node_data.splice(0, 1);
-      var table_headers = _.map(self.displayed_node_subset, function(
-        n,
-        col_id
-      ) {
+      var node_data = self._extract_attributes_for_nodes (node_list, self.displayed_node_subset);
+      node_data.splice (0,1);
+      var table_headers = _.map (self.displayed_node_subset, function (n, col_id) {
         return {
           value: n.raw_attribute_key,
           sort: "value",
@@ -3619,7 +3636,7 @@ var hivtrace_cluster_network_graph = function(
           {
             value: "Cluster ID",
             sort: function(c) {
-              return _.map(c.value[0].split("."), function(ss) {
+              return _.map(c.value[0].split("-"), function(ss) {
                 return _networkDotFormatPadder(+ss);
               }).join("|");
             },
@@ -4962,11 +4979,12 @@ var hivtrace_cluster_network_graph = function(
           self.extra_subcluster_table_columns,
           self.subcluster_table,
           {
-            "no-clusters": true,
-            subclusters: true,
-            headers: function(headers) {
-              headers[0][0].value = "Subcluster ID";
-              headers[0][2].help = "Number of total cases in the subcluster";
+            "no-clusters" : true,
+            "subclusters" : true,
+            "headers" : function (headers) {
+                headers[0][0].value = "Subcluster ID";
+                headers[0][0].help  = "Unique subcluster ID";
+                headers[0][2].help  = "Number of total cases in the subcluster";
             }
           }
         );
