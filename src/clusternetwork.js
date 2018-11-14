@@ -348,7 +348,10 @@ var hivtrace_cluster_network_graph = function(
       {
         description: {
           value: "Cases dx within 12 months",
-          sort: "value",
+          sort: //"value",
+            function(c) {
+              return c.value.length > 0 ? c.value[0] : 0;
+            },
           presort : "desc",
           help:
             "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months"
@@ -3793,7 +3796,7 @@ var hivtrace_cluster_network_graph = function(
           {
             value: "Cluster ID",
             sort: function(c) {
-              return _.map(c.value[0].split("."), function(ss) {
+              return _.map(c.value[0].split("-"), function(ss) {
                 return _networkDotFormatPadder(+ss);
               }).join("|");
             },
@@ -5097,6 +5100,7 @@ var hivtrace_cluster_network_graph = function(
             "subclusters" : true,
             "headers" : function (headers) {
                 headers[0][0].value = "Subcluster ID";
+                headers[0][0].help  = "Unique subcluster ID";
                 headers[0][2].help  = "Number of total cases in the subcluster";
             }
           }
