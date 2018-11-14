@@ -2199,14 +2199,17 @@ var hivtrace_cluster_network_graph = function(
       return result;
     };
 
-    self._extract_exportable_attributes = function() {
+    self._extract_exportable_attributes = function(extended) {
       var allowed_types = {
         String: 1,
         Date: 1,
         Number: 1
       };
 
-      var return_array = [{
+      var return_array = [];
+      
+      if (extended) {
+        return_array = [{
                             "raw_attribute_key" : _networkNodeIDField,
                             "type" : "String",
                             "label" : "Node ID",
@@ -2225,6 +2228,7 @@ var hivtrace_cluster_network_graph = function(
                             "format" : function () {return "Subcluster ID";}
                         }                        
                         ];
+      }
 
       return_array.push(_.filter(self.json[_networkGraphAttrbuteID], function(d) {
         return d.type in allowed_types;
@@ -3609,7 +3613,7 @@ var hivtrace_cluster_network_graph = function(
   self.draw_extended_node_table = function (node_list) {
     if (self.node_table) {
       node_list = node_list || self.nodes;
-      var column_ids = self._extract_exportable_attributes();
+      var column_ids = self._extract_exportable_attributes(true);
 
       self.displayed_node_subset = _.map (self.displayed_node_subset, function (n, i) {
         if (_.isString (n)) {
