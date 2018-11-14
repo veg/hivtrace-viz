@@ -2189,6 +2189,9 @@ var hivtrace_cluster_network_graph = function(
             if (c.raw_attribute_key == _networkNodeIDField) {
                 return n.id;
             }
+            if (_.has (n, c.raw_attribute_key)) {
+                return n[c.raw_attribute_key];
+            }
             return self.attribute_node_value_by_id(n, c.raw_attribute_key);
           })
         );
@@ -2204,11 +2207,24 @@ var hivtrace_cluster_network_graph = function(
       };
 
       var return_array = [{
-                        "raw_attribute_key" : _networkNodeIDField,
-                        "type" : "String",
-                        "label" : "Node ID",
-                        "format" : function () {return "Node ID";}
-                        }];
+                            "raw_attribute_key" : _networkNodeIDField,
+                            "type" : "String",
+                            "label" : "Node ID",
+                            "format" : function () {return "Node ID";}
+                        },
+                        {
+                            "raw_attribute_key" : "cluster",
+                            "type" : "String",
+                            "label" : "Which cluster the individual belongs to",
+                            "format" : function () {return "Cluster ID";}
+                        },
+                        {                        
+                            "raw_attribute_key" : "subcluster",
+                            "type" : "String",
+                            "label" : "Which subcluster the individual belongs to",
+                            "format" : function () {return "Subcluster ID";}
+                        }                        
+                        ];
 
       return_array.push(_.filter(self.json[_networkGraphAttrbuteID], function(d) {
         return d.type in allowed_types;
@@ -3610,7 +3626,6 @@ var hivtrace_cluster_network_graph = function(
         }
         return n;
       });
-
 
       var node_data = self._extract_attributes_for_nodes (node_list, self.displayed_node_subset);
       node_data.splice (0,1);
