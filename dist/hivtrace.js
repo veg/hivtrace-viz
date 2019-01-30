@@ -370,7 +370,10 @@ webpackJsonp([0],[
 	    }, {
 	      description: {
 	        value: "Cases dx within 12 months",
-	        sort: "value",
+	        sort: //"value",
+	        function sort(c) {
+	          return c.value.length > 0 ? c.value[0] : 0;
+	        },
 	        presort: "desc",
 	        help: "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months"
 	      },
@@ -1749,27 +1752,48 @@ webpackJsonp([0],[
 	          if (c.raw_attribute_key == _networkNodeIDField) {
 	            return n.id;
 	          }
+	          if (_.has(n, c.raw_attribute_key)) {
+	            return n[c.raw_attribute_key];
+	          }
 	          return self.attribute_node_value_by_id(n, c.raw_attribute_key);
 	        }));
 	      });
 	      return result;
 	    };
 	
-	    self._extract_exportable_attributes = function () {
+	    self._extract_exportable_attributes = function (extended) {
 	      var allowed_types = {
 	        String: 1,
 	        Date: 1,
 	        Number: 1
 	      };
 	
-	      var return_array = [{
-	        "raw_attribute_key": _networkNodeIDField,
-	        "type": "String",
-	        "label": "Node ID",
-	        "format": function format() {
-	          return "Node ID";
-	        }
-	      }];
+	      var return_array = [];
+	
+	      if (extended) {
+	        return_array = [{
+	          "raw_attribute_key": _networkNodeIDField,
+	          "type": "String",
+	          "label": "Node ID",
+	          "format": function format() {
+	            return "Node ID";
+	          }
+	        }, {
+	          "raw_attribute_key": "cluster",
+	          "type": "String",
+	          "label": "Which cluster the individual belongs to",
+	          "format": function format() {
+	            return "Cluster ID";
+	          }
+	        }, {
+	          "raw_attribute_key": "subcluster",
+	          "type": "String",
+	          "label": "Which subcluster the individual belongs to",
+	          "format": function format() {
+	            return "Subcluster ID";
+	          }
+	        }];
+	      }
 	
 	      return_array.push(_.filter(self.json[_networkGraphAttrbuteID], function (d) {
 	        return d.type in allowed_types;
@@ -2654,7 +2678,7 @@ webpackJsonp([0],[
 	  self.draw_extended_node_table = function (node_list) {
 	    if (self.node_table) {
 	      node_list = node_list || self.nodes;
-	      var column_ids = self._extract_exportable_attributes();
+	      var column_ids = self._extract_exportable_attributes(true);
 	
 	      self.displayed_node_subset = _.map(self.displayed_node_subset, function (n, i) {
 	        if (_.isString(n)) {
@@ -2820,7 +2844,7 @@ webpackJsonp([0],[
 	      var headers = [[{
 	        value: "Cluster ID",
 	        sort: function sort(c) {
-	          return _.map(c.value[0].split("."), function (ss) {
+	          return _.map(c.value[0].split("-"), function (ss) {
 	            return _networkDotFormatPadder(+ss);
 	          }).join("|");
 	        },
@@ -3674,6 +3698,7 @@ webpackJsonp([0],[
 	          "subclusters": true,
 	          "headers": function headers(_headers) {
 	            _headers[0][0].value = "Subcluster ID";
+	            _headers[0][0].help = "Unique subcluster ID";
 	            _headers[0][2].help = "Number of total cases in the subcluster";
 	          }
 	        });
