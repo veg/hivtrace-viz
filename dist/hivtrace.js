@@ -123,24 +123,17 @@ webpackJsonp([0],[
 	var _networkMissingColor = "#999";
 	var _networkContinuousColorStops = 9;
 	var _networkShapeOrdering = ["circle", "square", "hexagon", "diamond", "cross", "octagon", "ellipse", "pentagon"];
+	
 	var _defaultFloatFormat = d3.format(",.2r");
 	var _defaultPercentFormat = d3.format(",.3p");
 	var _defaultDateFormats = [d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"), d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")];
+	
 	var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
 	var _defaultDateViewFormatShort = d3.time.format("%B %Y");
 	var _defaultDateViewFormatSlider = d3.time.format("%Y-%m-%d");
 	var _networkDotFormatPadder = d3.format("08d");
 	
 	var _networkCategoricalBase = ["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99", "#b15928"];
-	
-	/*
-	var _networkCategoricalDashPatterns = [
-	  "1 0",
-	  "4 2",
-	  "2 4",
-	  "1 1"
-	];
-	*/
 	
 	var _networkCategorical = [];
 	
@@ -343,6 +336,7 @@ webpackJsonp([0],[
 	  self.subcluster_table = null;
 	
 	  if (self._is_CDC_) {
+	
 	    self.displayed_node_subset = [_networkNodeIDField, "trans_categ", "race", "hiv_aids_dx_dt", "cur_city_name"];
 	    self.subcluster_table = options && options["subcluster-table"] ? d3.select(options["subcluster-table"]) : null;
 	    self.extra_subcluster_table_columns = null;
@@ -454,6 +448,7 @@ webpackJsonp([0],[
 	  };
 	
 	  self.subcluster_threshold = options && options["subcluster-thershold"] ? options["subcluster-thershold"] : 0.005;
+	
 	  self.today = options && options["today"] ? options["today"] : new Date();
 	
 	  self.node_shaper = {
@@ -530,6 +525,7 @@ webpackJsonp([0],[
 	  };
 	
 	  self.cluster_filtering_functions = { size: self.filter_by_size };
+	
 	  self.cluster_display_filter = function (cluster) {
 	    return _.every(self.cluster_filtering_functions, function (filter) {
 	      return filter(cluster);
@@ -975,7 +971,8 @@ webpackJsonp([0],[
 	      prefix: random_prefix,
 	      extra_menu: options && "extra_menu" in options ? options["extra_menu"] : null,
 	      "edge-styler": options && "edge-styler" in options ? options["edge-styler"] : null,
-	      "no-subclusters": true
+	      "no-subclusters": true,
+	      "no-subcluster-compute": true
 	    };
 	
 	    if (option_extras) {
@@ -1190,9 +1187,12 @@ webpackJsonp([0],[
 	  self._refresh_subcluster_view = function (set_date) {
 	
 	    self.annotate_priority_clusters(_networkCDCDateField, 36, 12, set_date);
+	
 	    var field_def = self.recent_rapid_definition(self, set_date);
+	
 	    self.inject_attribute_description("recent_rapid", field_def);
 	    self._aux_process_category_values(self._aux_populate_category_fields(field_def, "recent_rapid"));
+	
 	    self.handle_attribute_categorical("recent_rapid");
 	  };
 	
@@ -1338,6 +1338,7 @@ webpackJsonp([0],[
 	        } else {
 	          return node1_dx < node2_dx ? -1 : 1;
 	        }
+	
 	        return 0;
 	      };
 	
@@ -3682,7 +3683,7 @@ webpackJsonp([0],[
 	
 	      self.draw_cluster_table(self.extra_cluster_table_columns, self.cluster_table);
 	
-	      if (self._is_CDC_ && !(options && options["no-subclusters"])) {
+	      if (self._is_CDC_ && !(options && options["no-subclusters"]) && !(options && options["no-subcluster-compute"])) {
 	        self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
 	
 	        try {
