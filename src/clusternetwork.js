@@ -22,12 +22,14 @@ var _networkShapeOrdering = [
   "ellipse",
   "pentagon"
 ];
+
 var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 var _defaultDateFormats = [
   d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"),
   d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ")
 ];
+
 var _defaultDateViewFormat = d3.time.format("%B %d, %Y");
 var _defaultDateViewFormatShort = d3.time.format("%B %Y");
 var _defaultDateViewFormatSlider = d3.time.format("%Y-%m-%d");
@@ -47,15 +49,6 @@ var _networkCategoricalBase = [
   "#ffff99",
   "#b15928"
 ];
-
-/*
-var _networkCategoricalDashPatterns = [
-  "1 0",
-  "4 2",
-  "2 4",
-  "1 1"
-];
-*/
 
 var _networkCategorical = [];
 
@@ -316,6 +309,7 @@ var hivtrace_cluster_network_graph = function(
   self.subcluster_table = null;
 
   if (self._is_CDC_) {
+
     self.displayed_node_subset = [_networkNodeIDField, "trans_categ", "race", "hiv_aids_dx_dt", "cur_city_name"];
     self.subcluster_table =
       options && options["subcluster-table"]
@@ -479,6 +473,7 @@ var hivtrace_cluster_network_graph = function(
     options && options["subcluster-thershold"]
       ? options["subcluster-thershold"]
       : 0.005;
+
   self.today = options && options["today"] ? options["today"] : new Date();
 
   self.node_shaper = {
@@ -561,6 +556,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.cluster_filtering_functions = { size: self.filter_by_size };
+
   self.cluster_display_filter = function(cluster) {
     return _.every(self.cluster_filtering_functions, function(filter) {
       return filter(cluster);
@@ -1221,7 +1217,8 @@ var hivtrace_cluster_network_graph = function(
         options && "extra_menu" in options ? options["extra_menu"] : null,
       "edge-styler":
         options && "edge-styler" in options ? options["edge-styler"] : null,
-      "no-subclusters": true
+      "no-subclusters": true,
+      "no-subcluster-compute": true
     };
 
     if (option_extras) {
@@ -1498,10 +1495,12 @@ var hivtrace_cluster_network_graph = function(
       12,
       set_date
     );
+
     var field_def = self.recent_rapid_definition(
       self,
       set_date
     );
+
     self.inject_attribute_description("recent_rapid", field_def);
     self._aux_process_category_values(
       self._aux_populate_category_fields(
@@ -1509,7 +1508,9 @@ var hivtrace_cluster_network_graph = function(
         "recent_rapid"
       )
     );
+
     self.handle_attribute_categorical("recent_rapid");
+
   };
 
   self.view_subcluster = function(cluster, custom_filter, custom_name, options, custom_edge_filter, include_injected_edges) {
@@ -1718,7 +1719,9 @@ var hivtrace_cluster_network_graph = function(
         } else {
           return node1_dx < node2_dx ? -1 : 1;
         }
+
         return 0;
+
       };
 
       // extract all clusters at once to avoid inefficiencies of multiple edge-set traverals
@@ -5099,7 +5102,7 @@ var hivtrace_cluster_network_graph = function(
         self.cluster_table
       );
 
-      if (self._is_CDC_ && !(options && options["no-subclusters"])) {
+      if (self._is_CDC_ && !(options && options["no-subclusters"]) && !(options && options["no-subcluster-compute"])) {
         self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
 
         try {
