@@ -306,16 +306,20 @@ var hivtrace_cluster_network_graph = function(
     options && options["cluster-table-columns"]
       ? options["cluster-table-columns"]
       : null;
+
   self.subcluster_table = null;
 
   if (self._is_CDC_) {
 
     self.displayed_node_subset = [_networkNodeIDField, "trans_categ", "race", "hiv_aids_dx_dt", "cur_city_name"];
+
     self.subcluster_table =
       options && options["subcluster-table"]
         ? d3.select(options["subcluster-table"])
         : null;
+    
     self.extra_subcluster_table_columns = null;
+
     var cdc_extra = [
       {
         description: {
@@ -437,16 +441,16 @@ var hivtrace_cluster_network_graph = function(
                   value: function() {
                     return [
                       [
-                        node.subcluster ? "Subcluster " + node.subcluster : "",
+                        node.subcluster_label ? "Subcluster " + node.subcluster_label : "",
                         "btn-primary",
-                        node.subcluster
+                        node.subcluster_label
                           ? function() {
                               self.view_subcluster(
-                                node.subcluster,
+                                node.subcluster_label,
                                 function(n) {
-                                  return n.subcluster == node.subcluster;
+                                  return n.subcluster_label == node.subcluster_label;
                                 },
-                                "Subcluster " + node.subcluster
+                                "Subcluster " + node.subcluster_label
                               );
                             }
                           : null
@@ -482,6 +486,7 @@ var hivtrace_cluster_network_graph = function(
       return "circle";
     }
   };
+
   (self.filter_edges = true), (self.hide_hxb2 = false), (self.charge_correction = 5), (self.margin = {
     top: 20,
     right: 10,
@@ -612,7 +617,7 @@ var hivtrace_cluster_network_graph = function(
       },
 
       map: function(node) {
-        if (node.subcluster) {
+        if (node.subcluster_label) {
           if (node.priority_flag > 0) {
             return subcluster_enum[node.priority_flag];
           }
@@ -665,7 +670,7 @@ var hivtrace_cluster_network_graph = function(
       type: "String",
 
       map: function(node) {
-        return node.subcluster;
+        return node.subcluster_label;
       }
     },
 
