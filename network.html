@@ -533,6 +533,7 @@ var init = function(data) {
        }
    }
    catch (e) {
+     console.log(e.stack);
      HandleAppError ("Network loading failed with the following error " + e);
    }
 }
