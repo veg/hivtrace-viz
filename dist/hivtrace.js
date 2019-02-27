@@ -357,7 +357,8 @@ webpackJsonp([0],[
 	          html: true,
 	          value: cluster.recent_nodes,
 	          format: function format(v) {
-	            console.log(cluster);
+	            // TODO: Fill in 
+	            v = v || [];
 	            if (v.length) {
 	              return v.join(", ");
 	            } else {
@@ -371,7 +372,9 @@ webpackJsonp([0],[
 	        value: "Cases dx within 12 months",
 	        sort: //"value",
 	        function sort(c) {
-	          return c.value.length > 0 ? c.value[0] : 0;
+	          // TODO : Fill in
+	          var v = c.value || [];
+	          return v.length > 0 ? v[0] : 0;
 	        },
 	        presort: "desc",
 	        help: "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months"
@@ -381,6 +384,8 @@ webpackJsonp([0],[
 	          html: true,
 	          value: cluster.priority_score,
 	          format: function format(v) {
+	            // TODO: Fill in 
+	            v = v || [];
 	            if (v.length) {
 	              var str = v.join(", ");
 	              if (v[0] >= 3) {

@@ -334,7 +334,8 @@ var hivtrace_cluster_network_graph = function(
             html: true,
             value: cluster.recent_nodes,
             format: function(v) {
-              console.log(cluster);
+              // TODO: Fill in 
+              v = v || [];
               if (v.length) {
                 return v.join(", ");
               } else {
@@ -349,7 +350,9 @@ var hivtrace_cluster_network_graph = function(
           value: "Cases dx within 12 months",
           sort: //"value",
             function(c) {
-              return c.value.length > 0 ? c.value[0] : 0;
+              // TODO : Fill in
+              let v = c.value || [];
+              return v.length > 0 ? v[0] : 0;
             },
           presort : "desc",
           help:
@@ -360,6 +363,8 @@ var hivtrace_cluster_network_graph = function(
             html: true,
             value: cluster.priority_score,
             format: function(v) {
+              // TODO: Fill in 
+              v = v || [];
               if (v.length) {
                 var str = v.join(", ");
                 if (v[0] >= 3) {
