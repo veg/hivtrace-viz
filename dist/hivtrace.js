@@ -1310,7 +1310,9 @@ webpackJsonp([0],[
 	  };
 	
 	  self.annotate_priority_clusters = function (date_field, span_months, recent_months, start_date) {
+	
 	    try {
+	
 	      start_date = start_date || self.today;
 	
 	      var filter_by_date = function filter_by_date(cutoff, node) {
@@ -1338,6 +1340,7 @@ webpackJsonp([0],[
 	      if (start_date == self.today) {
 	        node_iterator = self.nodes;
 	      } else {
+	
 	        var beginning_of_time = new Date();
 	        beginning_of_time.setYear(1900);
 	        node_iterator = [];
@@ -1413,7 +1416,6 @@ webpackJsonp([0],[
 	        });
 	
 	        /** sort subclusters by oldest node */
-	
 	        _.each(subclusters, function (c, i) {
 	          c.sort(oldest_nodes_first);
 	        });
@@ -1457,8 +1459,13 @@ webpackJsonp([0],[
 	            */
 	
 	        _.each(subclusters, function (sub) {
+	
+	          console.log(sub.children);
+	          console.log(cutoff_long);
+	
 	          // extract nodes based on dates
 	          var subcluster_json = _extract_single_cluster(_.filter(sub.children, _.partial(filter_by_date, cutoff_long)), null, true, cluster_nodes);
+	
 	          var rr_cluster = _.filter(hivtrace_cluster_depthwise_traversal(subcluster_json.Nodes, _.filter(subcluster_json.Edges, function (e) {
 	            return e.length <= self.subcluster_threshold;
 	          })), function (cc) {

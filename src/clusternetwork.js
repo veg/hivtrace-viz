@@ -1690,7 +1690,9 @@ var hivtrace_cluster_network_graph = function(
     recent_months,
     start_date
   ) {
+
     try {
+
       start_date = start_date || self.today;
 
       var filter_by_date = function(cutoff, node) {
@@ -1720,6 +1722,7 @@ var hivtrace_cluster_network_graph = function(
       if (start_date == self.today) {
         node_iterator = self.nodes;
       } else {
+
         var beginning_of_time = new Date();
         beginning_of_time.setYear(1900);
         node_iterator = [];
@@ -1736,6 +1739,7 @@ var hivtrace_cluster_network_graph = function(
               }
           }
         });
+
       }
 
       // extract all clusters at once to avoid inefficiencies of multiple edge-set traverals
@@ -1807,7 +1811,6 @@ var hivtrace_cluster_network_graph = function(
         });
 
         /** sort subclusters by oldest node */
-
         _.each(subclusters, function(c, i) {
           c.sort(oldest_nodes_first);
         });
@@ -1854,6 +1857,10 @@ var hivtrace_cluster_network_graph = function(
             */
 
         _.each(subclusters, function(sub) {
+
+          console.log(sub.children) 
+          console.log(cutoff_long);
+
           // extract nodes based on dates
           var subcluster_json = _extract_single_cluster(
             _.filter(sub.children, _.partial(filter_by_date, cutoff_long)),
@@ -1861,6 +1868,7 @@ var hivtrace_cluster_network_graph = function(
             true,
             cluster_nodes
           );
+
           var rr_cluster = _.filter(
             hivtrace_cluster_depthwise_traversal(
               subcluster_json.Nodes,
@@ -1913,11 +1921,13 @@ var hivtrace_cluster_network_graph = function(
           //console.log (sub.recent_nodes);
           self.clusters[array_index].priority_score = sub.priority_score;
         });
+
       });
     } catch (err) {
       console.log(err);
       return;
     }
+
   };
 
   function default_layout(packed) {
