@@ -357,7 +357,6 @@ webpackJsonp([0],[
 	          html: true,
 	          value: cluster.recent_nodes,
 	          format: function format(v) {
-	            // TODO: Fill in 
 	            v = v || [];
 	            if (v.length) {
 	              return v.join(", ");
@@ -372,7 +371,6 @@ webpackJsonp([0],[
 	        value: "Cases dx within 12 months",
 	        sort: //"value",
 	        function sort(c) {
-	          // TODO : Fill in
 	          var v = c.value || [];
 	          return v.length > 0 ? v[0] : 0;
 	        },
@@ -384,7 +382,7 @@ webpackJsonp([0],[
 	          html: true,
 	          value: cluster.priority_score,
 	          format: function format(v) {
-	            // TODO: Fill in 
+	            console.log(v);
 	            v = v || [];
 	            if (v.length) {
 	              var str = v.join(", ");
@@ -1459,9 +1457,6 @@ webpackJsonp([0],[
 	            */
 	
 	        _.each(subclusters, function (sub) {
-	
-	          console.log(sub.children);
-	          console.log(cutoff_long);
 	
 	          // extract nodes based on dates
 	          var subcluster_json = _extract_single_cluster(_.filter(sub.children, _.partial(filter_by_date, cutoff_long)), null, true, cluster_nodes);
@@ -3766,11 +3761,15 @@ webpackJsonp([0],[
 	              return es.length > 1;
 	            });
 	
+	            var stats = self.json.subcluster_summary_stats[parent_cluster_id][subcluster_id];
+	
 	            return {
 	              children: _.clone(c),
 	              parent_cluster: cluster_nodes,
 	              cluster_id: label,
 	              subcluster: subcluster_id,
+	              recent_nodes: stats.recent_nodes,
+	              priority_score: stats.priority_score,
 	              distances: helpers.describe_vector(_.map(edges[i], function (e) {
 	                return e.length;
 	              }))
@@ -3782,8 +3781,19 @@ webpackJsonp([0],[
 	          });
 	
 	          cluster_nodes.subclusters = subclusters || [];
+	
+	          // add additional information
+	          var stats = self.json.subcluster_summary_stats[cluster_nodes.cluster_id];
+	          cluster_nodes.recent_nodes = _.map(_.values(stats), function (d) {
+	            return d.recent_nodes[0] || 0;
+	          });
+	          cluster_nodes.priority_score = _.map(_.values(stats), function (d) {
+	            return d.priority_score[0] || 0;
+	          });
 	        });
 	      }
+	
+	      console.log(self.clusters);
 	
 	      if (self.subcluster_table) {
 	        self.draw_cluster_table(self.extra_subcluster_table_columns, self.subcluster_table, {

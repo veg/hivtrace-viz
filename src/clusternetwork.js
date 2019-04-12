@@ -334,7 +334,6 @@ var hivtrace_cluster_network_graph = function(
             html: true,
             value: cluster.recent_nodes,
             format: function(v) {
-              // TODO: Fill in 
               v = v || [];
               if (v.length) {
                 return v.join(", ");
@@ -350,7 +349,6 @@ var hivtrace_cluster_network_graph = function(
           value: "Cases dx within 12 months",
           sort: //"value",
             function(c) {
-              // TODO : Fill in
               let v = c.value || [];
               return v.length > 0 ? v[0] : 0;
             },
@@ -363,7 +361,7 @@ var hivtrace_cluster_network_graph = function(
             html: true,
             value: cluster.priority_score,
             format: function(v) {
-              // TODO: Fill in 
+              console.log(v);
               v = v || [];
               if (v.length) {
                 var str = v.join(", ");
@@ -1538,7 +1536,6 @@ var hivtrace_cluster_network_graph = function(
       include_injected_edges
     );
 
-
     _.each(filtered_json.Nodes, function(n) {
       n.subcluster = "1.1";
     });
@@ -1858,9 +1855,6 @@ var hivtrace_cluster_network_graph = function(
 
         _.each(subclusters, function(sub) {
 
-          console.log(sub.children) 
-          console.log(cutoff_long);
-
           // extract nodes based on dates
           var subcluster_json = _extract_single_cluster(
             _.filter(sub.children, _.partial(filter_by_date, cutoff_long)),
@@ -1923,6 +1917,7 @@ var hivtrace_cluster_network_graph = function(
         });
 
       });
+
     } catch (err) {
       console.log(err);
       return;
@@ -5195,11 +5190,15 @@ var hivtrace_cluster_network_graph = function(
               return es.length > 1;
             });
 
+            var stats = self.json.subcluster_summary_stats[parent_cluster_id][subcluster_id];
+
             return {
               children: _.clone(c),
               parent_cluster: cluster_nodes,
               cluster_id: label,
               subcluster : subcluster_id,
+              recent_nodes : stats.recent_nodes,
+              priority_score: stats.priority_score,
               distances: helpers.describe_vector(
                 _.map(edges[i], function(e) {
                   return e.length;
@@ -5214,8 +5213,15 @@ var hivtrace_cluster_network_graph = function(
 
           cluster_nodes.subclusters = subclusters || [];
 
+          // add additional information
+          let stats = self.json.subcluster_summary_stats[cluster_nodes.cluster_id];
+          cluster_nodes.recent_nodes = _.map(_.values(stats), d => d.recent_nodes[0] || 0);
+          cluster_nodes.priority_score = _.map(_.values(stats), d => d.priority_score[0] || 0);
         });
+
       }
+
+      console.log(self.clusters);
 
       if (self.subcluster_table) {
         self.draw_cluster_table(

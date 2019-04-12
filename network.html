@@ -479,7 +479,7 @@ var init = function(data) {
                                                   parent_container,
                                                   {
                                                     "no_cdc" : false,
-                                                    "no-subcluster-compute" : false,
+                                                    "no-subcluster-compute" : true,
                                                     "subcluster-table" : subcluster_table
                                                   });
 
@@ -542,7 +542,7 @@ var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
   //url = "workshop/DummyNetworkAttributes.json";
-  url = "test/precomputed_subcluster.json";
+  url = "workshop/DummyNetworkAttributesPreComputed.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
