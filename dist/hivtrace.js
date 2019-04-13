@@ -382,7 +382,6 @@ webpackJsonp([0],[
 	          html: true,
 	          value: cluster.priority_score,
 	          format: function format(v) {
-	            console.log(v);
 	            v = v || [];
 	            if (v.length) {
 	              var str = v.join(", ");
@@ -3793,8 +3792,6 @@ webpackJsonp([0],[
 	        });
 	      }
 	
-	      console.log(self.clusters);
-	
 	      if (self.subcluster_table) {
 	        self.draw_cluster_table(self.extra_subcluster_table_columns, self.subcluster_table, {
 	          "no-clusters": true,
@@ -4592,10 +4589,42 @@ webpackJsonp([0],[
 	    var new_nodes = [];
 	    var edge_types_dict = {};
 	    var existing_nodes = 0;
+	
 	    try {
+	      var injected_nodes = {};
+	      var node_attributes = {};
+	      var existing_network_nodes = {};
+	      var node_name_2_id = {};
+	
+	      _.each(self.json.Nodes, function (n, i) {
+	        existing_network_nodes[n.id] = n;
+	        node_name_2_id[n.id] = i;
+	      });
+	
+	      var handle_node_attributes = function handle_node_attributes(target, n) {
+	        _.each(n, function (attribute_value, attribute_key) {
+	          if (attribute_key != index_id) {
+	            inject_attribute_node_value_by_id(target, attribute_key, attribute_value);
+	          }
+	        });
+	      };
+	
+	      var inject_new_node = function inject_new_node(node_name, n) {
+	        var new_node = {
+	          node_class: "injected",
+	          node_annotation: annotation,
+	          attributes: [],
+	          degree: 0
+	        };
+	        new_node[_networkNodeAttributeID] = {};
+	        new_node.id = node_name;
+	        handle_node_attributes(new_node, n);
+	        node_name_2_id[node_name] = self.json.Nodes.length;
+	        self.json.Nodes.push(new_node);
+	        new_nodes.push(new_node);
+	      };
+	
 	      if (nodes_and_attributes && nodes_and_attributes.length) {
-	        var injected_nodes = {};
-	        var node_attributes = {};
 	
 	        if (!(index_id in nodes_and_attributes[0])) {
 	          throw index_id + " is not one of the attributes in the imported node records";
@@ -4612,50 +4641,51 @@ webpackJsonp([0],[
 	          }
 	        });
 	
-	        var existing_network_nodes = {},
-	            node_name_2_id = {};
-	
-	        _.each(self.json.Nodes, function (n, i) {
-	          existing_network_nodes[n.id] = n;
-	          node_name_2_id[n.id] = i;
-	        });
-	
 	        _.each(nodes_and_attributes, function (n) {
-	          function handle_node_attributes(target) {
-	            _.each(n, function (attribute_value, attribute_key) {
-	              if (attribute_key != index_id) {
-	                inject_attribute_node_value_by_id(target, attribute_key, attribute_value);
-	              }
-	            });
-	          }
-	
 	          if (n[index_id] in existing_network_nodes) {
-	            handle_node_attributes(existing_network_nodes[n[index_id]]);
+	            handle_node_attributes(existing_network_nodes[n[index_id]], n);
 	            existing_nodes++;
 	          } else {
-	            var new_node = {
-	              node_class: "injected",
-	              node_annotation: annotation,
-	              attributes: [],
-	              degree: 0
-	            };
-	            new_node[_networkNodeAttributeID] = {};
-	            new_node.id = n[index_id];
-	            handle_node_attributes(new_node);
-	            node_name_2_id[new_node.id] = self.json.Nodes.length;
-	            self.json.Nodes.push(new_node);
-	            new_nodes.push(new_node);
+	            inject_new_node(n[index_id], n);
 	          }
 	        });
+	      }
+	
+	      if (edges_and_attributes && edges_and_attributes.length) {
+	
+	        var auto_inject = !(nodes_and_attributes && nodes_and_attributes.length);
+	
+	        if (auto_inject) {
+	          _.map(existing_network_nodes, function (e) {
+	            return false;
+	          });
+	        }
 	
 	        _.each(edges_and_attributes, function (e) {
 	          try {
 	            if ("Index" in e && "Partner" in e && "Contact" in e) {
-	              if (!e["Index"] in node_name_2_id) {
-	                throw "Invalid index node";
+	              if (!(e["Index"] in node_name_2_id)) {
+	                if (auto_inject) {
+	                  inject_new_node(e["Index"], []);
+	                } else {
+	                  throw "Invalid index node";
+	                }
+	              } else {
+	                if (auto_inject) {
+	                  existing_network_nodes[e["Index"]] = true;
+	                }
 	              }
-	              if (!e["Partner"] in node_name_2_id) {
-	                throw "Invalid partner node";
+	
+	              if (!(e["Partner"] in node_name_2_id)) {
+	                if (auto_inject) {
+	                  inject_new_node(e["Partner"], []);
+	                } else {
+	                  throw "Invalid partner node";
+	                }
+	              } else {
+	                if (auto_inject) {
+	                  existing_network_nodes[e["Partner"]] = true;
+	                }
 	              }
 	
 	              edge_types_dict[e["Contact"]] = (edge_types_dict[e["Contact"]] ? edge_types_dict[e["Contact"]] : 0) + 1;
@@ -4676,6 +4706,12 @@ webpackJsonp([0],[
 	            throw "Invalid edge specification ( " + err + ") " + JSON.stringify(e);
 	          }
 	        });
+	
+	        if (auto_inject) {
+	          existing_nodes = _.size(_.filter(existing_network_nodes, function (e) {
+	            return e;
+	          }));
+	        }
 	
 	        self._aux_populate_category_menus();
 	        self.update_clusters_with_injected_nodes(null, null, annotation);
