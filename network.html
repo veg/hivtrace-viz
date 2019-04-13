@@ -479,6 +479,7 @@ var init = function(data) {
                                                   parent_container,
                                                   {
                                                     "no_cdc" : false,
+                                                    "no-subcluster-compute" : true,
                                                     "subcluster-table" : subcluster_table
                                                   });
 
@@ -493,6 +494,7 @@ var init = function(data) {
           ["#main-tab","#graph-tab","#clusters-tab","#subclusters-tab", "#nodes-tab","#attributes-tab"].forEach (function (tab) {
             d3.select (tab).classed ("disabled",false);
           });
+
           d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', null)});
 
           hivtrace.misc.export_table_to_text("#cluster-table-export", cluster_table);
@@ -531,6 +533,7 @@ var init = function(data) {
        }
    }
    catch (e) {
+     console.log(e.stack);
      HandleAppError ("Network loading failed with the following error " + e);
    }
 }
@@ -538,7 +541,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetworkAttributes.json";
+  //url = "workshop/DummyNetworkAttributes.json";
+  url = "workshop/DummyNetworkAttributesPreComputed.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
