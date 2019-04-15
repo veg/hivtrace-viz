@@ -4,7 +4,7 @@
   "description": "Visualization for the popular HIV-TRACE package",
   "main": "dist/hivtrace.js",
   "dependencies": {
-    "bootstrap": "3.x",
+    "bootstrap": "^3.4.1",
     "d3": "3.x",
     "downloadjs": "^1.4.7",
     "font-awesome": "4.x",
