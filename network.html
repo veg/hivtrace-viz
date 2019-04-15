@@ -479,7 +479,7 @@ var init = function(data) {
                                                   parent_container,
                                                   {
                                                     "no_cdc" : false,
-                                                    "no-subcluster-compute" : true,
+                                                    "no-subcluster-compute" : false,
                                                     "subcluster-table" : subcluster_table
                                                   });
 
@@ -541,8 +541,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  //url = "workshop/DummyNetworkAttributes.json";
-  url = "workshop/DummyNetworkAttributesPreComputed.json";
+  url = "workshop/DummyNetworkAttributes.json";
+  //url = "workshop/DummyNetworkAttributesPreComputed.json";
   //url = "test/LA.json"
 
   d3.json(url, function(error, results) {
@@ -737,9 +737,9 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
     });
 
     $("#csv_loader_modal").on ("show.bs.modal", function (e) {
-        d3.select ("#csv_import_status").style ('display', "none");
-        $("#csv_enclosing_form").get (0).reset();
-        $ ("#csv_proceed_button").prop ("disabled", true);
+        d3.select("#csv_import_status").style('display', "none");
+        $("#csv_enclosing_form").get(0).reset();
+        $("#csv_proceed_button").prop("disabled", true);
     });
 
   // *** HANDLERS ***

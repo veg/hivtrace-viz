@@ -1226,7 +1226,7 @@ var hivtrace_cluster_network_graph = function(
       "edge-styler":
         options && "edge-styler" in options ? options["edge-styler"] : null,
       "no-subclusters": true,
-      "no-subcluster-compute": true
+      "no-subcluster-compute": false
     };
 
     if (option_extras) {
@@ -1820,6 +1820,7 @@ var hivtrace_cluster_network_graph = function(
 
           _.each(c, function(n) {
             n.subcluster = label;
+            n.subcluster_label = label;
             n.priority_flag = 0;
             n.in_rr = 0;
           });

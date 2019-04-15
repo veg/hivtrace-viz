@@ -980,7 +980,7 @@ webpackJsonp([0],[
 	      extra_menu: options && "extra_menu" in options ? options["extra_menu"] : null,
 	      "edge-styler": options && "edge-styler" in options ? options["edge-styler"] : null,
 	      "no-subclusters": true,
-	      "no-subcluster-compute": true
+	      "no-subcluster-compute": false
 	    };
 	
 	    if (option_extras) {
@@ -1426,6 +1426,7 @@ webpackJsonp([0],[
 	
 	          _.each(c, function (n) {
 	            n.subcluster = label;
+	            n.subcluster_label = label;
 	            n.priority_flag = 0;
 	            n.in_rr = 0;
 	          });
