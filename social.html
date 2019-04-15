@@ -733,7 +733,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
                     _loaded_network_data[d[2]] = d3.csv.parse (e.target.result);
                     d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-info").text ("Loaded " + _loaded_network_data[d[2]].length + " CSV records ");
                     d3.select(d[1]).style("display", "none");
-                    if ( _loaded_network_data["nodes"].length ) {
+                    if ( _loaded_network_data["nodes"].length  || _loaded_network_data["edges"].length) {
                         $ ("#csv_proceed_button").prop ("disabled", null);
                     }
                 };
