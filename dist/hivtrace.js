@@ -1211,7 +1211,7 @@ webpackJsonp([0],[
 	    }, false, null, include_injected_edges);
 	
 	    _.each(filtered_json.Nodes, function (n) {
-	      n.subcluster = "1.1";
+	      n.subcluster_label = "1.1";
 	    });
 	
 	    if (_networkGraphAttrbuteID in json) {
@@ -1425,7 +1425,9 @@ webpackJsonp([0],[
 	          var label = self.clusters[array_index].cluster_id + "-" + (i + 1);
 	
 	          _.each(c, function (n) {
-	            n.subcluster = label;
+	            if (!("subcluster_label" in n)) {
+	              n.subcluster_label = label;
+	            }
 	            n.priority_flag = 0;
 	            n.in_rr = 0;
 	          });
@@ -1823,7 +1825,7 @@ webpackJsonp([0],[
 	    self._extract_nodes_by_id = function (id) {
 	      var string_id = id.toString();
 	      return _.filter(self.nodes, function (n) {
-	        return n.cluster == id || n.subcluster == string_id;
+	        return n.cluster == id || n.subcluster_label == string_id;
 	      });
 	    };
 	
@@ -3766,7 +3768,7 @@ webpackJsonp([0],[
 	              children: _.clone(c),
 	              parent_cluster: cluster_nodes,
 	              cluster_id: label,
-	              subcluster: subcluster_id,
+	              subcluster_label: subcluster_id,
 	              recent_nodes: stats.recent_nodes,
 	              priority_score: stats.priority_score,
 	              distances: helpers.describe_vector(_.map(edges[i], function (e) {
