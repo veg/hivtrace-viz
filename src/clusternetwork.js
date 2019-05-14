@@ -1758,10 +1758,10 @@ var hivtrace_cluster_network_graph = function(
 
       _.each(self.edges, function(edge) {
         if (edge.length <= self.subcluster_threshold) {
-          var edge_cluster = json.Nodes[edge.source].cluster;
+          var edge_cluster = self.nodes[edge.source].cluster;
 
-          var source_id = json.Nodes[edge.source].id,
-            target_id = json.Nodes[edge.target].id;
+          var source_id = self.nodes[edge.source].id,
+            target_id = self.nodes[edge.target].id;
 
           if (
             source_id in node_id_to_local_cluster &&
@@ -2176,7 +2176,7 @@ var hivtrace_cluster_network_graph = function(
 
   /*------------ Constructor ---------------*/
   function initial_json_load() {
-    var connected_links = [];
+    var connected_links = {};
     var total = 0;
     self.exclude_cluster_ids = {};
     self.has_hxb2_links = false;
@@ -2715,18 +2715,24 @@ var hivtrace_cluster_network_graph = function(
       }
       return false;
     });
+    
+    
     self.edges = graph_data.Edges.filter(function(v, i) {
       return (
-        connected_links[v.source] != undefined &&
-        connected_links[v.target] != undefined
+        (v.source in connected_links) &&
+        (v.target in connected_links)
       );
     });
+    
     self.edges = self.edges.map(function(v, i) {
-      v.source = connected_links[v.source];
-      v.target = connected_links[v.target];
-      v.id = i;
-      return v;
+      var cp_v = _.clone (v);
+      cp_v.source = connected_links[v.source];
+      cp_v.target = connected_links[v.target];
+      cp_v.id = i;
+      return cp_v;
     });
+
+
 
     compute_node_degrees(self.nodes, self.edges);
 
@@ -3529,9 +3535,10 @@ var hivtrace_cluster_network_graph = function(
 
     var cluster_json = {};
     var map_to_id = {};
-
+    
     cluster_json.Nodes = _.map(nodes, function(c, i) {
       map_to_id[c.id] = i;
+     
       if (no_clone) {
         return c;
       }
@@ -3541,13 +3548,13 @@ var hivtrace_cluster_network_graph = function(
     });
 
     given_json = given_json || json;
-
+    
     cluster_json.Edges = _.filter(given_json.Edges, function(e) {
 
       if(_.isUndefined(e.source) || _.isUndefined(e.target)) {
         return false;
       }
-
+      
       return (
         given_json.Nodes[e.source].id in map_to_id &&
         given_json.Nodes[e.target].id in map_to_id && (
@@ -3555,6 +3562,7 @@ var hivtrace_cluster_network_graph = function(
       );
     });
 
+    
     if (filter) {
       cluster_json.Edges = _.filter(cluster_json.Edges, filter);
     }
