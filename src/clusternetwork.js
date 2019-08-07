@@ -6937,11 +6937,21 @@ var hivtrace_cluster_network_graph = function(
   //.append("g")
   // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
 
-  var legend_vertical_offset;
+  var legend_drag = d3.behavior.drag()
+    .on("dragstart", function() {
+      d3.event.sourceEvent.stopPropagation();
+    })
+    .on("drag", function(d) {
+      d3.select(this)
+        .attr("transform", "translate(" + [d3.event.x, d3.event.y] + ")");
+    }),
+    legend_vertical_offset;
+
   self.showing_on_map ? legend_vertical_offset = 100 : legend_vertical_offset = 5;
   self.legend_svg = self.network_svg
     .append("g")
-    .attr("transform", "translate(5," + legend_vertical_offset + ")");
+    .attr("transform", "translate(5," + legend_vertical_offset + ")")
+    .call(legend_drag);
 
 /*
     self.network_svg

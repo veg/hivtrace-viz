@@ -33,7 +33,6 @@ circle.scatter {
 }
 
 circle.legend, path.legend {
-  cursor: pointer;
   stroke: #000;
   stroke-width: .5px;
 }
@@ -196,3 +195,6 @@ path.injected_object, circle.injected_object {
   cursor: move;
 }
 
+.hiv-trace-legend {
+  cursor: all-scroll;
+}
