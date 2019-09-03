@@ -199,9 +199,6 @@ var hivtrace_cluster_depthwise_traversal = function(
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
     } catch (err) {
-      console.log(
-        "Edge does not map to an existing node " + e.source + " to " + e.target
-      );
       throw "Edge does not map to an existing node " +
         e.source +
         " to " +
@@ -278,6 +275,9 @@ var hivtrace_cluster_network_graph = function(
       n[_networkNodeAttributeID] = [];
     }
   });
+  
+  /** SLKP 20190902: somehow our networks have malformed edges! This will remove them */
+  json.Edges = _.filter (json.Edges, function (e) {if (( "source" in e ) && ( "target" in e)) {return true}; console.log (e); return false;});
 
   var self = {};
 
@@ -6367,6 +6367,7 @@ var hivtrace_cluster_network_graph = function(
         }
 
         self._aux_populate_category_menus();
+
         self.update_clusters_with_injected_nodes(null, null, annotation);
         if (self._is_CDC_) {
             self.draw_extended_node_table (self.json.Nodes);
@@ -6382,18 +6383,22 @@ var hivtrace_cluster_network_graph = function(
 
         var edge_types_by_cluster = {};
         _.each(self.json.Edges, function(e) {
-          var edge_clusters = _.union(
-            _.keys(self.json.Nodes[e.source].extended_cluster),
-            _.keys(self.json.Nodes[e.target].extended_cluster)
-          );
-          _.each(edge_clusters, function(c) {
-            if (!(c in edge_types_by_cluster)) {
-              edge_types_by_cluster[c] = {};
+          try {
+              var edge_clusters = _.union(
+                _.keys(self.json.Nodes[e.source].extended_cluster),
+                _.keys(self.json.Nodes[e.target].extended_cluster)
+              );
+              _.each(edge_clusters, function(c) {
+                if (!(c in edge_types_by_cluster)) {
+                  edge_types_by_cluster[c] = {};
+                }
+                if (e.edge_type) {
+                  edge_types_by_cluster[c][e.edge_type] = 1;
+                }
+              });
+            } catch (err) {
+                console.log (err);
             }
-            if (e.edge_type) {
-              edge_types_by_cluster[c][e.edge_type] = 1;
-            }
-          });
         });
 
 
@@ -6786,7 +6791,7 @@ var hivtrace_cluster_network_graph = function(
 
       var split_clusters = {};
       var node_id_to_local_cluster = {};
-
+      
       var recomputed_clusters = hivtrace_cluster_depthwise_traversal(
         _.filter(self.json.Nodes, node_filter),
         self.json.Edges,
@@ -6794,6 +6799,12 @@ var hivtrace_cluster_network_graph = function(
         false
       );
 
+      var cluster_id_to_array_index = {};
+      
+      _.each (self.clusters, function (c,i) {
+        cluster_id_to_array_index[c.cluster_id] = i;
+      });
+        
       _.each(recomputed_clusters, function(c) {
         var cluster_ids = {};
         var injected_count = 0;
@@ -6822,10 +6833,10 @@ var hivtrace_cluster_network_graph = function(
             n["extended_cluster"] = cluster_ids;
           }
         });
+        
 
         _.each(cluster_ids, function(c, k) {
-          //console.log (k);
-          var existing_cluster = self.clusters[k - 1];
+          var existing_cluster = self.clusters[cluster_id_to_array_index[k]];
           if (!existing_cluster.injected) {
             existing_cluster.injected = {};
           }
