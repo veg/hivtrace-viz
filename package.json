@@ -1,6 +1,6 @@
 {
   "name": "hivtrace-viz",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Visualization for the popular HIV-TRACE package",
   "main": "dist/hivtrace.js",
   "dependencies": {
