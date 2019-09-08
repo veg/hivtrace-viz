@@ -263,6 +263,7 @@
                         have 'MSM' in any of the data fields. <br/>
                         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <br/>
                         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <br/>
+                        If nodes have time information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges. <p/>\
                         Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <br/>
                          <p/>
                         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><br/>
@@ -541,7 +542,7 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetworkAttributes.json";
+  url = "private/new-attributes.json";
   //url = "workshop/DummyNetworkAttributesPreComputed.json";
   //url = "test/LA.json"
 
@@ -549,7 +550,11 @@ var initialize_cluster_network_graphs = function () {
     if (error) {
         HandleAppError ("Failed loading file " + error.responseURL);
     } else {
-        init(results);
+        if ("trace_results" in results) {
+            init(results["trace_results"]);
+        } else {
+            init(results);
+        }
     }
   });
 
@@ -661,6 +666,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         have 'MSM' in any of the data fields. <p/>\
         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <p/>\
         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <p/>\
+        If nodes have time information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges. <p/>\
         Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <p/>\
         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><p/>\
         Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>\
