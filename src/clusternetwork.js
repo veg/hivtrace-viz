@@ -605,7 +605,7 @@ var hivtrace_cluster_network_graph = function(
     self.cluster_filtering_functions ['new'] = self.filter_if_added;
   } else {
     self.showing_diff = false;
-    if (self.cluster_time_scale && self.json["Cluster sizes"].length > 250) {
+    if (self.cluster_time_scale && ("Cluster sizes" in self.json) && self.json["Cluster sizes"].length > 250) {
         self.using_time_filter = new Date();
         self.warning_string += "Only displaying clusters with nodes dates in the last 12 months [use the <i>Clusters</i> menu to change this]<br>";
         self.using_time_filter.setFullYear (self.using_time_filter.getFullYear()-1);
