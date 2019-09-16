@@ -702,7 +702,6 @@ var hivtrace_cluster_network_graph = function(
       depends: "vl_recent_value",
       label: "binned_vl_recent_value",
       enum: ["≤200", "200-10000", ">10000"],
-      type: "String",
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -743,9 +742,9 @@ var hivtrace_cluster_network_graph = function(
 
     age_dx: {
       depends: "age",
+      overwrites : "age",
       label: "age_dx",
       enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
-      type: "String",
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -2993,7 +2992,8 @@ var hivtrace_cluster_network_graph = function(
             return (
               d.discrete &&
               "value_range" in d &&
-              d["value_range"].length <= _maximumValuesInCategories
+              d["value_range"].length <= _maximumValuesInCategories &&
+              !d['_hidden_']
             );
           }
         );
@@ -3001,7 +3001,9 @@ var hivtrace_cluster_network_graph = function(
         var valid_shapes = _.filter(valid_cats, function(d) {
           return (
             (d.discrete && d.dimension <= 7) ||
-            d["raw_attribute_key"] in _networkPresetShapeSchemes
+            d["raw_attribute_key"] in _networkPresetShapeSchemes&&
+            !d['_hidden_']
+            
           );
         });
 
@@ -3097,7 +3099,8 @@ var hivtrace_cluster_network_graph = function(
             return d;
           }),
           function(d) {
-            return d.type == "Number" || d.type == "Date";
+            return (d.type == "Number" || d.type == "Date") &&
+              !d['_hidden_'];
           }
         );
 
@@ -3387,6 +3390,7 @@ var hivtrace_cluster_network_graph = function(
           });
         }
       }
+      
 
       _.each(self._networkPredefinedAttributeTransforms, function(
         computed,
@@ -3411,8 +3415,14 @@ var hivtrace_cluster_network_graph = function(
               computed["map"](node, self)
             );
           });
+          if (computed["overwrites"]) {
+            if (_.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])) {
+                graph_data[_networkGraphAttrbuteID][computed["overwrites"]]['_hidden_'] = true;
+            }
+          }
         }
       });
+
 
       self._aux_populate_category_menus();
 
@@ -3730,7 +3740,15 @@ var hivtrace_cluster_network_graph = function(
           }
         } else {
             if (d[1] == 2) {
-                self.open_exclusive_tab_view (payload [3]).handle_attribute_categorical ("_newly_added");
+                //_social_view_options (labeled_links, shown_types),
+                
+                var shown_types = {'Existing' : 1 , 'Newly added' : 1},
+                    link_class  = ['Existing', 'Newly added'];
+                
+                self.open_exclusive_tab_view (payload [3], null, (cluster_id) => "Cluster " + cluster_id + " [changes view]",
+                            self._social_view_options (link_class, shown_types, (e) => {
+                                return (e.attributes.indexOf ('added-to-prior') >= 0 ? 'Newly added' : 'Existing' )
+                            }) ).handle_attribute_categorical ("_newly_added");
             }
         }
       });
@@ -4501,6 +4519,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.draw_attribute_labels = function() {
+  // draw color legend in the network SVG
 
     var determine_label_format_cont =   function (field_data) {
         if ("label_format" in field_data) {
@@ -6175,7 +6194,7 @@ var hivtrace_cluster_network_graph = function(
         }
         d["dimension"] = d["value_range"].length;
         d["no-sort"] = true;
-      }
+       }
     }
     return d;
   };
@@ -6515,6 +6534,118 @@ var hivtrace_cluster_network_graph = function(
     //console.log (e, "edge_type" in e);
     return "edge_type" in e;
   }
+  
+  self._social_view_options = function (labeled_links, shown_types, edge_typer) {
+        edge_typer = edge_typer || function (e) {return _.has (e, "edge_type") ? e["edge_type"] : ""};
+  
+        return {
+            "edge-styler": function(element, d, network) {
+              var e_type = edge_typer (d);
+              if (e_type != '') {
+                d3
+                  .select(element)
+                  .style(
+                    "stroke",
+                    network._edge_colorizer(edge_typer(d))
+                  );//.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
+
+                d.is_hidden = !network.shown_types[
+                  e_type
+                ];
+              } else {
+                d.is_hidden = !network.shown_types[""];
+              }
+              d3.select(element).style ("stroke-width", "5px");
+            },
+
+            init_code: function(network) {
+              function style_edge(type) {
+                this.style("stroke-width", "5px");
+                if (type.length) {
+                  this.style(
+                    "stroke",
+                    network._edge_colorizer(type)
+                  );//.style ("stroke-dasharray", network._edge_dasher (type));
+                } else {
+                  this.classed("link", true);
+                  var def_color = this.style("stroke");
+                  this.classed("link", null);
+                  this.style("stroke", def_color);
+                }
+              }
+              
+              var edge_types = _.keys(shown_types);
+              edge_types.sort();
+        
+              network._edge_colorizer = d3.scale
+                                      .ordinal()
+                                      .range(_networkCategoricalBase)
+                                      .domain(edge_types);
+              //network._edge_dasher   = _edge_dasher;
+              network.shown_types = _.clone(shown_types);
+              network.edge_legend = {
+                caption: "Network links",
+                types: {}
+              };
+
+              _.each(network.shown_types, function(ignore, t) {
+                if (t.length) {
+                  network.edge_legend.types[t] = _.partial(
+                    style_edge,
+                    t
+                  );
+                } else {
+                  network.edge_legend.types[
+                    "Molecular links"
+                  ] = _.partial(style_edge, t);
+                }
+              });
+            },
+
+            extra_menu: {
+              title: "Additional options",
+              items: _.map(labeled_links, function(edge_class) {
+                return [
+                  function(network, element) {
+                    function toggle_element() {
+                      network.shown_types[edge_class] = !network
+                        .shown_types[edge_class];
+                      checkbox.attr(
+                        "checked",
+                        network.shown_types[edge_class]
+                          ? ""
+                          : null
+                      );
+                      network.update(true);
+                    }
+
+                    var link;
+
+                    if (edge_class.length) {
+                      link = element
+                        .append("a")
+                        .text(edge_class + " links")
+                        .style(
+                          "color",
+                          network._edge_colorizer(edge_class)
+                        )
+                        .on("click", toggle_element);
+                    } else {
+                      link = element
+                        .append("a")
+                        .text("Molecular links")
+                        .on("click", toggle_element);
+                    }
+                    var checkbox = link
+                      .append("input")
+                      .attr("type", "checkbox")
+                      .attr("checked", "");
+                  }
+                ];
+              })
+            }
+          };
+    };
 
   /*------------ Node injection (social network) ---------------*/
 
@@ -6718,128 +6849,23 @@ var hivtrace_cluster_network_graph = function(
           edge_types_by_cluster_sorted[c] = my_keys;
         });
 
-        var edge_types = _.keys(edge_types_dict);
-        edge_types.sort();
-        var _edge_colorizer = d3.scale
-          .ordinal()
-          .range(_networkCategoricalBase)
-          .domain(edge_types);
-
+        
         /*var _edge_dasher = d3.scale
           .ordinal()
           .range(_networkCategoricalDashPatterns)
           .domain(edge_types);
         */
 
-        var _social_view_options = function (labeled_links, shown_types) {
-            return {
-                "edge-styler": function(element, d, network) {
-                  if (_.has(d, "edge_type")) {
-                    d3
-                      .select(element)
-                      .style(
-                        "stroke",
-                        network._edge_colorizer(d["edge_type"])
-                      );//.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
-
-                    d.is_hidden = !network.shown_types[
-                      d["edge_type"]
-                    ];
-                  } else {
-                    d.is_hidden = !network.shown_types[""];
-                  }
-                  d3.select(element).style ("stroke-width", "5px");
-                },
-
-                init_code: function(network) {
-                  function style_edge(type) {
-                    this.style("stroke-width", "5px");
-                    if (type.length) {
-                      this.style(
-                        "stroke",
-                        network._edge_colorizer(type)
-                      );//.style ("stroke-dasharray", network._edge_dasher (type));
-                    } else {
-                      this.classed("link", true);
-                      var def_color = this.style("stroke");
-                      this.classed("link", null);
-                      this.style("stroke", def_color);
-                    }
-                  }
-                  network._edge_colorizer = _edge_colorizer;
-                  //network._edge_dasher   = _edge_dasher;
-                  network.shown_types = _.clone(shown_types);
-                  network.edge_legend = {
-                    caption: "Network links",
-                    types: {}
-                  };
-
-                  _.each(network.shown_types, function(ignore, t) {
-                    if (t.length) {
-                      network.edge_legend.types[t] = _.partial(
-                        style_edge,
-                        t
-                      );
-                    } else {
-                      network.edge_legend.types[
-                        "Molecular links"
-                      ] = _.partial(style_edge, t);
-                    }
-                  });
-                },
-
-                extra_menu: {
-                  title: "Additional options",
-                  items: _.map(labeled_links, function(edge_class) {
-                    return [
-                      function(network, element) {
-                        function toggle_element() {
-                          network.shown_types[edge_class] = !network
-                            .shown_types[edge_class];
-                          checkbox.attr(
-                            "checked",
-                            network.shown_types[edge_class]
-                              ? ""
-                              : null
-                          );
-                          network.update(true);
-                        }
-
-                        var link;
-
-                        if (edge_class.length) {
-                          link = element
-                            .append("a")
-                            .text(edge_class + " links")
-                            .style(
-                              "color",
-                              network._edge_colorizer(edge_class)
-                            )
-                            .on("click", toggle_element);
-                        } else {
-                          link = element
-                            .append("a")
-                            .text("Molecular links")
-                            .on("click", toggle_element);
-                        }
-                        var checkbox = link
-                          .append("input")
-                          .attr("type", "checkbox")
-                          .attr("checked", "");
-                      }
-                    ];
-                  })
-                }
-              };
-        };
+        
 
         var _social_view_handler = function(id, node_filter, labeled_links, shown_types, title, e) {
+
 
             self.open_exclusive_tab_view(
               id,
               node_filter,
               title,
-              _social_view_options (labeled_links, shown_types),
+              self._social_view_options (labeled_links, shown_types),
             true);
           };
 
@@ -6877,7 +6903,7 @@ var hivtrace_cluster_network_graph = function(
                 title = title || function (id) { return "Subcluster " + payload.cluster_id + "[+ " + annotation + "]"; };
 
                 var cv = self.view_subcluster (payload, direct_links_only[0],  title (payload.cluster_id),
-                        _social_view_options (labeled_links, shown_types), edge_filter_for_subclusters, true);
+                        self._social_view_options (labeled_links, shown_types), edge_filter_for_subclusters, true);
                 //cv.annotate_priority_clusters(_networkCDCDateField, 36, 12);
                 //cv.handle_attribute_categorical("recent_rapid");
                 cv._refresh_subcluster_view (new Date ());
@@ -7161,6 +7187,9 @@ var hivtrace_cluster_network_graph = function(
   /*------------ Event Functions ---------------*/
   function toggle_tooltip(element, turn_on, title, tag, container) {
     //if (d3.event.defaultPrevented) return;
+    if (!element) {
+        return;
+    }
 
     if (turn_on && !element.tooltip) {
       // check to see if there are any other tooltips shown
