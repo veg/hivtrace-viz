@@ -12,7 +12,7 @@ var _networkMissing = "missing";
 var _networkMissingOpacity = "0.1";
 var _networkMissingColor = "#999";
 var _networkContinuousColorStops = 9;
-var _networkTimeQuery = new RegExp ("([0-9]{8})\:([0-9]{8})", "gi");
+var _networkTimeQuery = new RegExp ("([0-9]{8})\:([0-9]{8})", "i");
 var _networkShapeOrdering = [
   "circle",
   "square",
@@ -516,7 +516,8 @@ var hivtrace_cluster_network_graph = function(
       : 0.005;
 
   self.today = options && options["today"] ? options["today"] : new Date();
-
+  self.highlight_unsuppored_edges = true;
+  
   self.node_shaper = {
     id: null,
     shaper: function() {
@@ -568,7 +569,7 @@ var hivtrace_cluster_network_graph = function(
     if (self._is_CDC_) {
       self.minimum_cluster_size = 5;
     } else {
-      self.minimum_cluster_size = 0;
+      self.minimum_cluster_size = 2;
     }
   }
 
@@ -593,8 +594,12 @@ var hivtrace_cluster_network_graph = function(
     self.additional_edge_styler = null;
   }
 
-  self.filter_by_size = function(cluster) {
+  self.filter_by_size = function(cluster, value) {
     return cluster.children.length >= self.minimum_cluster_size;
+  };
+  
+  self.filter_singletons = function(cluster, value) {
+    return cluster.children.length > 1;
   };
   
   self.filter_if_added = function(cluster) {
@@ -610,7 +615,7 @@ var hivtrace_cluster_network_graph = function(
     });
   };
 
-  self.cluster_filtering_functions = { size: self.filter_by_size };
+  self.cluster_filtering_functions = { size: self.filter_by_size, singletons : self.filter_singletons };
  
   self.using_time_filter = null;
   
@@ -2618,8 +2623,23 @@ var hivtrace_cluster_network_graph = function(
           },
           self.has_hxb2_links,
           "hivtrace-hide-problematic-clusters"
+        ],
+        [        
+            "Highlight edges that were not supported",
+            function (item) {
+                if (self.highlight_unsuppored_edges) {
+                    d3.select (item).selectAll ('.fa-check-square').remove();
+                } else {
+                    d3.select (item).insert ("i",":first-child").classed ("fa fa-check-square", true);
+                }
+                self.toggle_highlight_unsupported_edges();
+            },
+            true,
+            "hivtrace-highlight-unsuppored_edges",
+            self.highlight_unsuppored_edges 
         ]
       ];
+      
       
        
       if (self.cluster_attributes) {
@@ -2781,7 +2801,9 @@ var hivtrace_cluster_network_graph = function(
           .classed("fa fa-image", true);
       }
 
-      $(self.get_ui_element_selector_by_role("filter")).on(
+
+
+      $(self.get_ui_element_selector_by_role("filter")).off ("input propertychange").on(
         "input propertychange",
         _.throttle(function(e) {
           var filter_value = $(this).val();
@@ -2833,7 +2855,7 @@ var hivtrace_cluster_network_graph = function(
         }, 250)
       );
 
-      $(self.get_ui_element_selector_by_role("hide_filter")).on(
+      $(self.get_ui_element_selector_by_role("hide_filter")).off ("change").on(
         "change",
         _.throttle(function(e) {
           self.hide_unselected = !self.hide_unselected;
@@ -2842,7 +2864,7 @@ var hivtrace_cluster_network_graph = function(
         }, 250)
       );
 
-      $(self.get_ui_element_selector_by_role("show_small_clusters")).on(
+      $(self.get_ui_element_selector_by_role("show_small_clusters")).off ("change").on(
         "change",
         _.throttle(function(e) {
           if ("size" in self.cluster_filtering_functions) {
@@ -2857,7 +2879,7 @@ var hivtrace_cluster_network_graph = function(
 
       $(
         self.get_ui_element_selector_by_role("pairwise_table_pecentage", true)
-      ).on(
+      ).off("change").on(
         "change",
         _.throttle(function(e) {
           self.show_percent_in_pairwise_table = !self.show_percent_in_pairwise_table;
@@ -3255,7 +3277,7 @@ var hivtrace_cluster_network_graph = function(
 
         $(
           self.get_ui_element_selector_by_role("opacity_invert")
-        ).on("click", function(e) {
+        ).off ("click").on("click", function(e) {
           if (self.colorizer["opacity_scale"]) {
             self.colorizer["opacity_scale"].range(
               self.colorizer["opacity_scale"].range().reverse()
@@ -3268,7 +3290,7 @@ var hivtrace_cluster_network_graph = function(
 
         $(
           self.get_ui_element_selector_by_role("attributes_invert")
-        ).on("click", function(e) {
+        ).off("click").on("click", function(e) {
           if (self.colorizer["category_id"]) {
             graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
               "scale"
@@ -4323,7 +4345,7 @@ var hivtrace_cluster_network_graph = function(
         //.attr("d", misc.symbol(symbol_type).size(node_size(node)))
         .attr("class", "node")
         .classed("selected_object", function(d) {
-          return d.match_filter;
+          return d.match_filter && !self.hide_unselected;
         })
         .classed("injected_object", function(d) {
           return d.node_class == "injected";
@@ -5135,6 +5157,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.filter = function(conditions, skip_update) {
+  
     var anything_changed = false;
 
     conditions = _.map(["re", "distance", "date"], function(cnd) {
@@ -5168,6 +5191,7 @@ var hivtrace_cluster_network_graph = function(
         n.length_filter = false;
       });
     }
+    
     
     if (conditions[2].length) {
        self.nodes.forEach(function(n) {
@@ -5367,10 +5391,10 @@ var hivtrace_cluster_network_graph = function(
 
       link
         .classed("removed", function(d) {
-          return d.removed;
+          return self.highlight_unsuppored_edges && d.removed;
         })
         .classed("unsupported", function(d) {
-          return "support" in d && d["support"] > 0.05;
+          return self.highlight_unsuppored_edges && ("support" in d) && d["support"] > 0.05;
         })
         .classed("core-link", function(d) {
           //console.log (d["length"] <= self.core_link_length);
@@ -6490,6 +6514,11 @@ var hivtrace_cluster_network_graph = function(
     }
     self.update();
   };
+  
+  self.toggle_highlight_unsupported_edges = function() {
+    self.highlight_unsuppored_edges = !self.highlight_unsuppored_edges;
+    self.update();
+  };
 
   self.toggle_time_filter = function() {
     if (self.using_time_filter) {
@@ -7228,7 +7257,11 @@ var hivtrace_cluster_network_graph = function(
       .pow()
       .exponent(0.5)
       .domain([1, 100000])
-      .range([0.1, 0.15]);
+      .range([0.1, 0.15]),
+    link_scale = d3.scale.pow()
+      .exponent(1.25)
+      .clamp (true)
+      .domain([0, 0.1]);
 
   /*------------ D3 globals and SVG elements ---------------*/
 
@@ -7237,27 +7270,27 @@ var hivtrace_cluster_network_graph = function(
     .on("tick", tick)
     .charge(function(d) {
       if (self.showing_on_map) {
-        return -60
+        return -60;
       }
       if (d.cluster_id)
         return (
-          self.charge_correction * (-20 - 5 * Math.pow(d.children.length, 0.7))
+          self.charge_correction * (-15 - 5 * Math.pow(d.children.length, 0.4))
         );
-      return self.charge_correction * (-5 - 20 * Math.sqrt(d.degree));
+      return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
     })
     .linkDistance(function(d) {
-      return Math.max(d.length, 0.005) * l_scale;
+      return link_scale(d.length) * l_scale * 0.2;//Math.max(d.length, 0.005) * l_scale * 10; 
     })
     .linkStrength(function(d) {
       if (self.showing_on_map) {
         return 0.01;
       }
       if (d.support !== undefined) {
-        return 2 * (0.5 - d.support);
+        return (0.75 - 0.5*d.support);
       }
       return 1;
     })
-    .chargeDistance(l_scale * 0.25)
+    .chargeDistance(l_scale * 0.1)
     .gravity(self.showing_on_map ? 0 : gravity_scale(json.Nodes.length))
     .friction(0.25);
 
