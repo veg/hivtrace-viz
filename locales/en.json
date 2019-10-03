@@ -33,7 +33,8 @@
     "clusters": "Clusters",
     "subclusters": "Sub-Clusters",
     "nodes": "Nodes",
-    "attributes": "Attributes"
+    "attributes": "Attributes",
+    "missing": "Missing"
   },
   "network_tab": {
     "color": "Color",

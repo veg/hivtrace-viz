@@ -8,7 +8,7 @@ var d3 = require("d3"),
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
 var _networkNodeIDField     = "hivtrace_node_id";
-var _networkMissing = "missing";
+var _networkMissing = __("general")["missing"];
 var _networkMissingOpacity = "0.1";
 var _networkMissingColor = "#999";
 var _networkContinuousColorStops = 9;
@@ -2345,7 +2345,7 @@ var hivtrace_cluster_network_graph = function(
                             "raw_attribute_key" : "cluster",
                             "type" : "String",
                             "label" : "Which cluster the individual belongs to",
-                            "format" : function () {return "Cluster ID";}
+                            "format" : function () {return __("clusters_tab")["cluster_id"];}
                         },
                         {                        
                             "raw_attribute_key" : "subcluster",
@@ -2441,11 +2441,11 @@ var hivtrace_cluster_network_graph = function(
           var button_clicked = $(this);
           if (button_clicked.data("view") == "id") {
             button_clicked.data("view", "attribute");
-            button_clicked.text("Group by ID");
+            button_clicked.text( __("clusters_tab")["group_by_id"]);
             group_by_id = false;
           } else {
             button_clicked.data("view", "id");
-            button_clicked.text("Group by attribute");
+            button_clicked.text(__("clusters_tab")["group_by_attribute"]);
             group_by_id = true;
           }
           self._cluster_list_view_render(
@@ -2467,7 +2467,7 @@ var hivtrace_cluster_network_graph = function(
         );
         modal
           .selectAll(".modal-title")
-          .text("Listing nodes in cluster " + cluster_id);
+          .text( __("clusters_tab")["listing_nodes_in_cluster"] + " " + cluster_id);
         $(
           self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
         ).data("cluster", cluster_id);
@@ -2534,7 +2534,7 @@ var hivtrace_cluster_network_graph = function(
 
       var cluster_commands = [
         [
-          "Expand All",
+          __("clusters_main")["expand_all"],
           function() {
             return self.expand_some_clusters();
           },
@@ -2542,7 +2542,7 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-expand-all"
         ],
         [
-          "Collapse All",
+          ,__("clusters_main")["collapse_all"],
           function() {
             return self.collapse_some_clusters();
           },
@@ -2550,7 +2550,7 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-collapse-all"
         ],
         [
-          "Expand Filtered",
+           __("clusters_main")["expand_filtered"],
           function() {
             return self.expand_some_clusters(
               self.select_some_clusters(function(n) {
@@ -2562,7 +2562,7 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-expand-filtered"
         ],
         [
-          "Collapse Filtered",
+           __("clusters_main")["collapse_filtered"],
           function() {
             return self.collapse_some_clusters(
               self.select_some_clusters(function(n) {
@@ -2574,25 +2574,25 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-collapse-filtered"
         ],
         [
-          "Fix all objects in place",
+           __("clusters_main")["fix_all_objects_in_place"],
           _.partial(fix_handler, true),
           true,
           "hivtrace-fix-in-place"
         ],
         [
-          "Allow all objects to float",
+           __("clusters_main")["allow_all_objects_to_float"],
           _.partial(fix_handler, false),
           true,
           "hivtrace-allow-to-float"
         ],
         [
-          "Reset layout [packed]",
+           __("clusters_main")["reset_layout"] + " [packed]",
           _.partial(layout_reset_handler, true),
           true,
           "hivtrace-reset-layout"
         ],
         [
-          "Reset layout [tiled]",
+          __("clusters_main")["reset_layout"] + " [tiled]",
           _.partial(layout_reset_handler, false),
           true,
           "hivtrace-reset-layout"
@@ -2731,7 +2731,7 @@ var hivtrace_cluster_network_graph = function(
         button_group
           .append("button")
           .classed("btn btn-default btn-sm", true)
-          .attr("title", "Expand spacing")
+          .attr("title", __("network_tab")["expand_spacing"])
           .on("click", function(d) {
             change_spacing(5 / 4);
           })
@@ -2740,7 +2740,7 @@ var hivtrace_cluster_network_graph = function(
         button_group
           .append("button")
           .classed("btn btn-default btn-sm", true)
-          .attr("title", "Compress spacing")
+          .attr("title", __("network_tab")["compress_spacing"])
           .on("click", function(d) {
             change_spacing(4 / 5);
           })
@@ -2749,7 +2749,7 @@ var hivtrace_cluster_network_graph = function(
         button_group
           .append("button")
           .classed("btn btn-default btn-sm", true)
-          .attr("title", "Enlarge window")
+          .attr("title", __("network_tab")["enlarge_window"])
           .on("click", function(d) {
             change_window_size(100, true);
           })
@@ -2758,7 +2758,7 @@ var hivtrace_cluster_network_graph = function(
         button_group
           .append("button")
           .classed("btn btn-default btn-sm", true)
-          .attr("title", "Shrink window")
+          .attr("title", __("network_tab")["shrink_window"])
           .on("click", function(d) {
             change_window_size(-100, true);
           })
@@ -2792,7 +2792,7 @@ var hivtrace_cluster_network_graph = function(
         button_group
           .append("button")
           .classed("btn btn-default btn-sm", true)
-          .attr("title", "Save Image")
+          .attr("title", __("network_tab")["save_image"])
           //.attr("id", "hivtrace-export-image")
           .on("click", function(d) {
             helpers.save_image("png", "#" + self.dom_prefix + "-network-svg");
@@ -3696,7 +3696,7 @@ var hivtrace_cluster_network_graph = function(
       .append("button")
       .classed("btn btn-default btn-xs pull-right", true)
       .style("margin-right", "0.25em")
-      .text("list")
+      .text(__("clusters_tab")["list"])
       .attr("data-toggle", "modal")
       .attr(
         "data-target",
@@ -3725,7 +3725,7 @@ var hivtrace_cluster_network_graph = function(
     }
 
 
-    labels.push([payload[0] ? "expand" : "collapse", 0]);
+    labels.push([payload[0] ? __("clusters_tab")["expand"] : "collapse", 0]);
     if (payload[1]) {
       labels.push(["problematic", 1]);
     }
@@ -4127,7 +4127,7 @@ var hivtrace_cluster_network_graph = function(
             help: "Visibility in the network tab and other attributes"
           },
           {
-            value: "Size",
+            value: __("clusters_tab")["size"],
             sort: "value",
             help: "Number of nodes in the cluster"
           }
@@ -4507,7 +4507,7 @@ var hivtrace_cluster_network_graph = function(
         });
       d3
         .select(self.get_ui_element_selector_by_role(lbl + "_label"))
-        .html("Shape: " + set_attr + ' <span class="caret"></span>');
+        .html(__("network_tab")["shape"] + ": " + set_attr + ' <span class="caret"></span>');
     });
 
     if (cat_id) {
@@ -4739,7 +4739,7 @@ var hivtrace_cluster_network_graph = function(
         .attr("transform", "translate(0," + offset + ")")
         .classed("hiv-trace-legend", true)
         .append("text")
-        .text("Opacity: " + self.colorizer["opacity_id"])
+        .text(__("network_tab")["opacity"] + ": " + self.colorizer["opacity_id"])
         .style("font-weight", "bold");
       offset += 18;
 
@@ -4858,7 +4858,7 @@ var hivtrace_cluster_network_graph = function(
         });
       d3
         .select(self.get_ui_element_selector_by_role(lbl + "_label"))
-        .html("Opacity: " + set_attr + ' <span class="caret"></span>');
+        .html( __("network_tab")["opacity"] + ": " + set_attr + ' <span class="caret"></span>');
     });
 
     d3
@@ -7425,7 +7425,8 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
         key = "Links";
       }
       if (_.isNumber(value)) {
-        table_data.push([key, value]);
+        console.log(key);
+        table_data.push([__("statistics")[key.replace(/ /g, '_').toLowerCase()], value]);
       }
     });
   }
@@ -7439,11 +7440,11 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
   degrees = helpers.describe_vector(degrees);
   table_data.push(["Links/node", ""]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
+    "&nbsp;&nbsp;<i>"+  __("statistics")["mean"] +"</i>",
     _defaultFloatFormat(degrees["mean"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
     _defaultFloatFormat(degrees["median"])
   ]);
   table_data.push([
@@ -7451,26 +7452,26 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     degrees["min"] + " - " + degrees["max"]
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
+    "&nbsp;&nbsp;<i>" +  __("statistics")["interquartile_range"] + "</i>",
     degrees["Q1"] + " - " + degrees["Q3"]
   ]);
 
   degrees = helpers.describe_vector(graph["Cluster sizes"]);
-  table_data.push(["Cluster sizes", ""]);
+  table_data.push([ __("statistics")["cluster_sizes"], ""]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
     _defaultFloatFormat(degrees["mean"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
     _defaultFloatFormat(degrees["median"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["range"]+ "</i>",
     degrees["min"] + " - " + degrees["max"]
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"]+ "range</i>",
     degrees["Q1"] + " - " + degrees["Q3"]
   ]);
 
@@ -7482,21 +7483,21 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     );
     table_data.push(["Genetic distances (links only)", ""]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Mean</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["mean"]+ "</i>",
       _defaultPercentFormat(degrees["mean"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Median</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["median"]+ "</i>",
       _defaultPercentFormat(degrees["median"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Range</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["range"]+ "</i>",
       _defaultPercentFormat(degrees["min"]) +
         " - " +
         _defaultPercentFormat(degrees["max"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Interquartile range</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"]+ "range</i>",
       _defaultPercentFormat(degrees["Q1"]) +
         " - " +
         _defaultPercentFormat(degrees["Q3"])
