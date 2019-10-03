@@ -1,0 +1,97 @@
+{
+  "lang": "en",
+  "home": {
+    "title": "Secure HIV-TRACE",
+    "login": "Please sign in",
+    "email": "Email address",
+    "password": "Password",
+    "password_forgot": "I forgot my password",
+    "signin": "Sign In",
+    "disclaimer":"",
+    "welcome":"Welcome",
+    "contact_hiv_trace":  "Contact Secure HIV-TRACE",
+    "stored_networks": "Stored Networks",
+    "current_network": "Current Network",
+    "created": "Created",
+    "size":  "Size",
+    "options":  "Options",
+    "previous_networks": "Previous Networks",
+    "revert_to_this_network":  "Revert to this Network",
+    "delete_all_network_history":  "Delete all network history",
+    "stand_alone_analysis":"Stand-alone analysis",
+    "go_to_network": "Go To Network",
+    "append_network":  "Append Network",
+    "site":  "Site",
+    "no_previous_runs_detected": "No Previous Runs Detected",
+    "conduct_stand_alone_analysis":  "Conduct Stand-Alone Analysis",
+    "start_a_new_network": "Start a New Network"
+  },
+  "general": {
+    "network": "Network",
+    "networks": "Networks",
+    "statistics": "Statistics",
+    "clusters": "Clusters",
+    "subclusters": "Sub-Clusters",
+    "nodes": "Nodes",
+    "attributes": "Attributes"
+  },
+  "network_tab": {
+    "color": "Color",
+    "shape": "Shape",
+    "opacity": "Opacity",
+    "hide_others": "Hide Others",
+    "show_small_clusters": "Show small clusters",
+    "none": "None",
+    "expand_spacing":  "Expand spacing",
+    "compress_spacing":  "Compress spacing",
+    "enlarge_window": "Enlarge window",
+    "shrink_window": "Shrink window",
+    "save_image":  "Save image",
+    "show_epidemiological_growth": "Show epidemiological growth"
+  },
+  "clusters_main": {
+    "search_text_in_attributes": "Search text in attributes",
+    "expand_all":  "Expand All",
+    "collapse_all":  "Collapse All",
+    "expand_filtered": "Expand Filtered",
+    "collapse_filtered":  "Collapse Filtered ",
+    "fix_all_objects_in_place":  "Fix all objects in place",
+    "allow_all_objects_to_float":  "Allow all objects to float",
+    "reset_layout":  "Reset layout"
+  },
+  "statistics" : {
+    "network_statistics":  "Network Statistics",
+    "singletons":  "Singletons",
+    "sequences_used_to_make_links":  "Sequences used to make links",
+    "clusters":  "Clusters",
+    "nodes": "Nodes",
+    "edges": "Edges",
+    "links_per_node":  "Links per node",
+    "mean":  "Mean",
+    "median":  "Median",
+    "range": "Range",
+    "interquartile_range": "Interquartile range",
+    "cluster_sizes": "Cluster sizes",
+    "genetic_distances_among_linked_nodes":  "Genetic distances among linked nodes",
+    "miscellaneous": "Miscellaneous"
+  },
+  "clusters_tab" : {
+    "cluster_id":  "Cluster ID",
+    "visibillity": "Visibillity",
+    "list":  "List",
+    "view":  "View",
+    "expand":  "Expand",
+    "size":  "Size",
+    "number_of_genotypes_in_past_2_months":  "Number of genotypes in past 2 months",
+    "scaled_number_of_genotypes_in_past_2_months": "Scaled Number of Genotypes in past 2 months",
+    "group_by_attribute":  "Group by attribute",
+    "group_by_id": "Group by ID",
+    "listing_nodes_in_cluster":  "Listing Nodes in Cluster",
+    "missing": "Missing"
+  },
+  "nodes_tab" : {
+    "clustered_invidiuals":  "Clustered Invidiuals",
+    "export_to_csv": "Export to CSV"
+  }
+
+}
