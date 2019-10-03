@@ -7425,7 +7425,6 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
         key = "Links";
       }
       if (_.isNumber(value)) {
-        console.log(key);
         table_data.push([__("statistics")[key.replace(/ /g, '_').toLowerCase()], value]);
       }
     });
