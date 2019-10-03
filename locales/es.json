@@ -33,7 +33,8 @@
     "clusters":  "Agrupamientos",
     "subclusters":  "Sub_Agrupamientos",
     "nodes": "Nodos",
-    "attributes":  "Atributos"
+    "attributes":  "Atributos",
+    "missing": "Faltantes"
   },
   "network_tab": {
     "color": "Color",

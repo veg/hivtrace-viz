@@ -9,7 +9,7 @@ var languages = {
 	es: require("./locales/es.json")
 };
 
-var language = "en";
+var language = "es";
 
 var filename = "hivtrace.js";
 
@@ -31,7 +31,7 @@ var config = {
   },
   output: {
     path: path.resolve(__dirname, "dist/"),
-    filename: "[name].js",
+    filename: filename,
   },
 	externals: {
 		"jsdom":"window"

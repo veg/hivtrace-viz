@@ -10,6 +10,8 @@
     "font-awesome": "4.x",
     "font-awesome-webpack": "0.0.4",
     "hyphy-vision": "^1.1.7",
+    "i18n-webpack-plugin": "0.2.0",
+    "i18next": "^17.0.18",
     "jquery": "^3.3.1",
     "topojson": "3.x",
     "underscore": "1.x"

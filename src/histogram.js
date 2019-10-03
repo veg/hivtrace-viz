@@ -48,7 +48,7 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
     histogram_tag
   );
 
-  var label = "Genetic distances among linked nodes.";
+  var label = __("statistics")["genetic_distances_among_linked_nodes"];
   d3.select(histogram_label).html(label);
 }
 
