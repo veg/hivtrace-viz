@@ -6,8 +6,6 @@ require("bootstrap");
 
 var hivtrace = require("./hivtrace.js");
 
-console.log(__("statistics.range"));
-
 Math.log10 = Math.log10 || function(x) {
   return Math.log(x) / Math.LN10;
 };
