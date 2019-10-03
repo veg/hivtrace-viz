@@ -144,6 +144,7 @@ async@^2.1.2:
 async@~0.2.6:
   version "0.2.10"
   resolved "https://registry.yarnpkg.com/async/-/async-0.2.10.tgz#b6bbe0b0674b9d719708ca38de8c237cb526c3d1"
+  integrity sha1-trvgsGdLnXGXCMo43owjfLUmw9E=
 
 autoprefixer-core@^5.2.1:
   version "5.2.1"
@@ -1982,9 +1983,10 @@ hyphy-vision@^1.1.7:
     save-svg-as-png "^1.2.0"
     underscore "^1.8.3"
 
-i18n-webpack-plugin@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/i18n-webpack-plugin/-/i18n-webpack-plugin-1.0.0.tgz#0ca12296ec937a4f94325cd0264d08f4e0549831"
+i18n-webpack-plugin@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/i18n-webpack-plugin/-/i18n-webpack-plugin-0.2.0.tgz#935c250c3ceb8a29426e04f3546740cd80a06085"
+  integrity sha1-k1wlDDzriilCbgTzVGdAzYCgYIU=
 
 i18next@^17.0.18:
   version "17.0.18"
@@ -3915,6 +3917,7 @@ source-map-support@^0.4.15:
 source-map@0.1.x:
   version "0.1.43"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.1.43.tgz#c24bc146ca517c1471f5dacbe2571b2b7f9e3346"
+  integrity sha1-wkvBRspRfBRx9drL4lcbK3+eM0Y=
   dependencies:
     amdefine ">=0.0.4"
 
@@ -4111,6 +4114,7 @@ svgo@^0.7.0:
 tapable@^0.1.8, tapable@~0.1.8:
   version "0.1.10"
   resolved "https://registry.yarnpkg.com/tapable/-/tapable-0.1.10.tgz#29c35707c2b70e50d07482b5d202e8ed446dafd4"
+  integrity sha1-KcNXB8K3DlDQdIK10gLo7URtr9Q=
 
 tapable@^1.0.0:
   version "1.1.0"
