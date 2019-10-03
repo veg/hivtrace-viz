@@ -1,8 +1,14 @@
 var path = require('path'),
     webpack = require('webpack'),
-    cloneDeep = require('lodash.clonedeep');
+    cloneDeep = require('lodash.clonedeep'),
+		I18nPlugin = require("i18n-webpack-plugin");
 
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
+
+var languages = {
+	en: require("./locales/en.json"),
+	es: require("./locales/es.json")
+};
 
 config = {
   debug: true,
@@ -58,6 +64,7 @@ config = {
 				d3: "d3",
 				_ : "underscore"
 		}),
+		new I18nPlugin(languages['es']),
  		new webpack.IgnorePlugin(/jsdom$/),
 		new ExtractTextPlugin("[name].css")
 	],

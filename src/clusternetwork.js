@@ -7447,7 +7447,7 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     _defaultFloatFormat(degrees["median"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics.range") + "</i>",
     degrees["min"] + " - " + degrees["max"]
   ]);
   table_data.push([
