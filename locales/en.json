@@ -30,8 +30,10 @@
     "network": "Network",
     "networks": "Networks",
     "statistics": "Statistics",
+    "cluster": "Cluster",
     "clusters": "Clusters",
     "subclusters": "Sub-Clusters",
+    "subcluster": "Sub-Cluster",
     "nodes": "Nodes",
     "attributes": "Attributes",
     "missing": "Missing"
