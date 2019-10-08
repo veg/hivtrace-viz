@@ -31,7 +31,9 @@
     "networks": "Redes",
     "statistics":  "Estadísticas",
     "clusters":  "Agrupamientos",
+    "cluster":  "Agrupamiento",
     "subclusters":  "Sub_Agrupamientos",
+    "subcluster":  "Sub_Agrupamiento",
     "nodes": "Nodos",
     "attributes":  "Atributos",
     "missing": "Faltantes"

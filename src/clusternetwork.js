@@ -1427,7 +1427,7 @@ var hivtrace_cluster_network_graph = function(
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text("Collapse cluster")
+        .text(__("clusters_main")["collapse_cluster"])
         .on("click", function(d) {
           node.fixed = 0;
           collapse_cluster_handler(node, true);
@@ -2542,7 +2542,7 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-expand-all"
         ],
         [
-          ,__("clusters_main")["collapse_all"],
+          __("clusters_main")["collapse_all"],
           function() {
             return self.collapse_some_clusters();
           },
@@ -4106,7 +4106,7 @@ var hivtrace_cluster_network_graph = function(
       var headers = [
         [
           {
-            value: "Cluster ID",
+            value: __("general")["cluster"] + " ID",
             sort: function(c) {
               return _.map(c.value[0].split("-"), function(ss) {
                 return _networkDotFormatPadder(+ss);
@@ -4115,7 +4115,7 @@ var hivtrace_cluster_network_graph = function(
             help: "Unique cluster ID"
           },
           {
-            value: "Attributes",
+            value: __("general")["attributes"],
             sort: function (c) {   
               c = c.value();
               if (c[4]) { // has attributes
@@ -4140,12 +4140,12 @@ var hivtrace_cluster_network_graph = function(
 
       if (!self._is_CDC_) {
         headers[0].push({
-          value: "# links/node<br>Mean [Median, IQR]",
+          value: __("statistics")["links_per_node"] + "<br>" + __("statistics")["mean"] + "[" + __("statistics")["median"] + ", IQR]",
           html: true
         });
 
         headers[0].push({
-          value: "Genetic distance<br>Mean [Median, IQR]",
+          value: __("statistics")["genetic_distances_among_linked_nodes"] + "<br>" + __("statistics")["mean"] + "[" + __("statistics")["median"] + ", IQR]",
           help: "Genetic distance among nodes in the cluster",
           html: true
         });
