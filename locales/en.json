@@ -90,6 +90,8 @@
     "view":  "View",
     "expand":  "Expand",
     "size":  "Size",
+    "genotyped_last_two_months":  "Number nodes two months",
+    "genotyped_last_two_months_ratio":  "Recent ratio",
     "number_of_genotypes_in_past_2_months":  "Number of genotypes in past 2 months",
     "scaled_number_of_genotypes_in_past_2_months": "Scaled Number of Genotypes in past 2 months",
     "group_by_attribute":  "Group by attribute",

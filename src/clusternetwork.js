@@ -283,6 +283,8 @@ var hivtrace_cluster_network_graph = function(
   var self = {};
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
+  self._is_seguro = options && options["seguro"] ? true : false;
+
   self.ww =
     options && options["width"]
       ? options["width"]
@@ -4138,6 +4140,23 @@ var hivtrace_cluster_network_graph = function(
         headers[0][1]["presort"] = "desc";
       }
 
+      if(self._is_seguro) {
+
+          headers[0].push({
+            value: __("clusters_tab")["genotyped_last_two_months"],
+            sort: "value",
+            help: "# of cases in cluster genotyped in the last 2 months"
+          })
+
+          headers[0].push(
+          {
+            value: __("clusters_tab")["genotyped_last_two_months_ratio"],
+            sort: "value",
+            help: "# of cases in cluster genotyped in the last 2 months divided by the square-root of the cluster size"
+          });
+
+      }
+
       if (!self._is_CDC_) {
         headers[0].push({
           value: __("statistics")["links_per_node"] + "<br>" + __("statistics")["mean"] + "[" + __("statistics")["median"] + ", IQR]",
@@ -4189,6 +4208,24 @@ var hivtrace_cluster_network_graph = function(
               value: d.children.length
             }
           ];
+
+          if(self._is_seguro){
+            this_row.push({
+              value: d,
+              format: function(d) {
+                return _.filter(d.children, child => d3.time.months(child.patient_attributes["sample_dt"], new Date).length <= 2).length;
+                return "hi";
+              }
+            });
+
+            this_row.push({
+              value: d,
+              format: function(d) {
+                let recent = _.filter(d.children, child => d3.time.months(child.patient_attributes["sample_dt"], new Date).length <= 2).length;
+                return recent/Math.sqrt(d.children.length);
+              }
+            });
+          }
 
           if (!self._is_CDC_) {
             this_row.push({
