@@ -50,7 +50,12 @@
     "enlarge_window":  "Agrandar Ventana",
     "shrink_window": "Encoger Ventana",
     "save_image":  "Guardar Imagen",
-    "show_epidemiological_growth": "Mostrar Crecimiento Epidemiológico"
+    "show_labels_for_all":  "Mostrar etiquetas para todos los nodos",
+    "hide_labels_for_all":  "Ocultar etiquetas para todos los nodos",
+    "highlight_unsupported_edges":  "Resaltar bordes no compatibles",
+    "show_epidemiological_growth": "Mostrar Crecimiento Epidemiológico",
+    "only_recent_clusters": "Mostrar solo los clústeres cambiados en los últimos 12 meses",
+    "show_removed_edges": "Mostrar bordes eliminados"
   },
   "clusters_main": {
     "search_text_in_attributes": "Buscar Texto en Atributos",

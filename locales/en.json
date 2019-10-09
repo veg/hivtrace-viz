@@ -50,7 +50,12 @@
     "enlarge_window": "Enlarge window",
     "shrink_window": "Shrink window",
     "save_image":  "Save image",
-    "show_epidemiological_growth": "Show epidemiological growth"
+    "show_labels_for_all":  "Show labels for all nodes",
+    "hide_labels_for_all":  "Hide labels for all nodes",
+    "highlight_unsupported_edges":  "Highlight unsupported edges",
+    "show_epidemiological_growth": "Show epidemiological growth",
+    "only_recent_clusters": "Show only clusters changed in the recent 12 months",
+    "show_removed_edges": "Show removed edges"
   },
   "clusters_main": {
     "search_text_in_attributes": "Search text in attributes",

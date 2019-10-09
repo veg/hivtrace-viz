@@ -10,7 +10,6 @@ var languages = {
 };
 
 var language = "en";
-
 var filename = "hivtrace.js";
 
 if(language != "en") {

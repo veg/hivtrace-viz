@@ -2439,12 +2439,12 @@ var hivtrace_cluster_network_graph = function(
           var group_by_id = false;
 
           var button_clicked = $(this);
-          if (button_clicked.data("view") == "id") {
-            button_clicked.data("view", "attribute");
+          if (button_clicked.data(__("clusters_tab")["view"]) == "id") {
+            button_clicked.data(__("clusters_tab")["view"], "attribute");
             button_clicked.text( __("clusters_tab")["group_by_id"]);
             group_by_id = false;
           } else {
-            button_clicked.data("view", "id");
+            button_clicked.data(__("clusters_tab")["view"], "id");
             button_clicked.text(__("clusters_tab")["group_by_attribute"]);
             group_by_id = true;
           }
@@ -2479,7 +2479,7 @@ var hivtrace_cluster_network_graph = function(
               "cluster_list_view_toggle",
               true
             )
-          ).data("view") != "id",
+          ).data(__("clusters_tab")["view"]) != "id",
           modal.select(
             self.get_ui_element_selector_by_role("cluster_list_payload", true)
           )
@@ -2598,13 +2598,13 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-reset-layout"
         ],
         [
-          "Show labels for all nodes",
+          __("network_tab")["show_labels_for_all"],
           _.partial(node_label_handler, true),
           true,
           "hivtrace-node-labels-on"
         ],
         [
-          "Hide labels for all nodes",
+          __("network_tab")["hide_labels_for_all"],
           _.partial(node_label_handler, false),
           true,
           "hivtrace-node-labels-off"
@@ -2625,7 +2625,7 @@ var hivtrace_cluster_network_graph = function(
           "hivtrace-hide-problematic-clusters"
         ],
         [        
-            "Highlight edges that were not supported",
+            __("network_tab")["highlight_unsupported_edges"],
             function (item) {
                 if (self.highlight_unsuppored_edges) {
                     d3.select (item).selectAll ('.fa-check-square').remove();
@@ -2661,7 +2661,7 @@ var hivtrace_cluster_network_graph = function(
       
       if (self.cluster_time_scale) {
         cluster_commands.push ([        
-            "Show only clusters changed in the recent 12 months",
+            __("network_tab")["only_recent_clusters"],
             function (item) {
                 if (self.using_time_filter) {
                     d3.select (item).selectAll ('.fa-check-square').remove();
@@ -3676,7 +3676,7 @@ var hivtrace_cluster_network_graph = function(
       this_cell
         .append("button")
         .classed("btn btn-primary btn-xs pull-right", true)
-        .text("view")
+        .text(__("clusters_tab")["view"])
         .on("click", function(e) {
           self.view_subcluster(payload[2]);
         });
@@ -3686,7 +3686,7 @@ var hivtrace_cluster_network_graph = function(
         .append("button")
         .classed("btn btn-primary btn-xs pull-right", true)
         .style("margin-right", "0.25em")
-        .text("view")
+        .text(__("clusters_tab")["view"])
         .on("click", function(e) {
           self.open_exclusive_tab_view(cluster_id);
         });
@@ -7437,7 +7437,7 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     }
   });
   degrees = helpers.describe_vector(degrees);
-  table_data.push(["Links/node", ""]);
+  table_data.push([__("statistics")["links_per_node"], ""]);
   table_data.push([
     "&nbsp;&nbsp;<i>"+  __("statistics")["mean"] +"</i>",
     _defaultFloatFormat(degrees["mean"])
