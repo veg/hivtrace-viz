@@ -145,7 +145,7 @@
 
   <div class="tabbable">
 
-    <ul class="nav nav-tabs" id="top_level_tab_container">
+    <ul class="nav nav-tabs main-hivtrace-tabs" id="top_level_tab_container">
       <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
       <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
       <li class='disabled' id="graph-tab"><a href="#trace-graph" data-toggle="tab">Statistics</a></li>
@@ -180,6 +180,8 @@
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role="cluster_operations_button">Clusters <span class="caret"></span></button>
                       <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='cluster_operations_container'></ul>
                     </span>
+
+                    <!-- Dropdowns to Format Notes By Attributes (Color, Shape, Opacity and Label) -->
                     <div class="input-group-btn">
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
                       data-hivtrace-ui-role = "attributes_label">Color <span class="caret"></span></button>
@@ -191,12 +193,16 @@
                       data-hivtrace-ui-role="shapes_label">Shape <span class="caret"></span></button>
                       <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='shapes'></ul>
                     </div>
-
                     <div class="input-group-btn">
                       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
                       data-hivtrace-ui-role="opacity_label">Opacity <span class="caret"></span></button>
                       <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='opacity'></ul>
                       <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='opacity_invert'>Invert</button>
+                    </div>
+                    <div class="input-group-btn">
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                      data-hivtrace-ui-role="labels_label">Label <span class="caret"></span></button>
+                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='labels'></ul>
                     </div>
 
                    <div class="input-group-btn" style = 'display: none' data-hivtrace-ui-role='extra_operations_enclosure'>
@@ -216,7 +222,7 @@
                         <span class="input-group-addon show-small-clusters-button">
                            Show small clusters <input type = 'checkbox' data-hivtrace-ui-role = 'show_small_clusters'> </input>
                         </span>
-                        <span class="input-group-addon">
+                        <span class="input-group-addon" id="network_ui_bar_legend_icon_span">
                             <a data-toggle="collapse" href="#network_ui_bar_legend" aria-expanded="false" aria-controls="network_ui_bar_legend">
                             <i class = "fa fa-question"></i>
                             </a>
@@ -225,15 +231,6 @@
                   </div>
                 </div>
 
-
-                <!--<div class="nav-trace" id = "network_ui_bar_sliders" style = "display: none">
-                    <div class="input-group">
-                        <label  id = "network_ui_bar_sliders_label_from">2001/01/01</label>
-                            <input id = "network_ui_bar_sliders_from" class = "col-lg-3" type = "range" min = "0" max = "100" step = "0.1" value = "1"></input>
-                            <input id = "network_ui_bar_sliders_to" class = "col-lg-3" type = "range" min = "0" max = "100" step = "0.1" value = "1"/>
-                        <label class = "pull-right" id = "network_ui_bar_sliders_label_to">2012/01/01</label>
-                    </div>
-                </div>-->
 
               </div>
             </div>
@@ -447,7 +444,9 @@ var network_container     = '#network_tag',
     subcluster_table      = '#subcluster_table',
     parent_container      = '#top_level_tab_container',
     node_table            = '#node_table',
-    user_graph;
+    user_graph,
+    countryCenersObject   = null,
+    countryOutlines       = null;
 
 function HandleAppError (err_string) {
     $('#main-tab').tab('show');
@@ -474,6 +473,10 @@ var init = function(data) {
                                                   parent_container, 
                                                   {
                                                     "no_cdc" : true,
+                                                    "subcluster-table" : subcluster_table,
+                                                    "country-centers" : countryCentersObject,
+                                                    "country-outlines" : countryOutlines,
+                                                    "seguro" : true,
                                                     "subcluster-table" : subcluster_table
                                                   });
                                               
@@ -533,8 +536,8 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  //url = "example.json";
-  url = "example_with_random_countries.json" // For testing the mapping feature.
+  url = "example.json";
+  //url = "example_with_random_countries.json" // For testing the mapping feature.
   //url = "test/LA.json"
   //url = "private/new.json";
 
@@ -553,6 +556,24 @@ function in_progress() {
 }
 
 $(document).ready(function(){
+
+ d3.json("./assets/mapping/outlines.json", function (error, outlines) {
+     countryOutlines = outlines;
+     d3.csv("./assets/mapping/country_centers.csv", function(data) {
+      countryCentersObject = {};
+       for (var i=0; i < data.length; i++) {
+        let countryCode = data[i]["Alpha-2 code"];
+        let countryCodeNumeric = data[i]["Numeric code"];
+        countryCodeNumeric.length == 2 ? countryCodeNumeric = "0" + countryCodeNumeric : null;
+        let countryName = data[i]["Country"];
+        let countryLat = data[i]["Latitude (average)"];
+        let countryLong = data[i]["Longitude (average)"];
+        //let countryXY = mapProjection([countryLong, countryLat])
+        //let countryLL = [countryLong, countryLat];
+        countryCentersObject[countryCode] = {'longt': countryLong, 'lat': countryLat, 'countryCodeNumeric': countryCodeNumeric, 'countryName': countryName}
+      }
+  });
+ })
 
 $("#network_pairwise_chord_legend").popover(
 {
