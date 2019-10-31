@@ -263,6 +263,7 @@
                         have 'MSM' in any of the data fields. <br/>
                         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <br/>
                         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <br/>
+                        If nodes have time information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges. <p/>\
                         Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <br/>
                          <p/>
                         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><br/>
@@ -479,6 +480,7 @@ var init = function(data) {
                                                   parent_container,
                                                   {
                                                     "no_cdc" : false,
+                                                    "no-subcluster-compute" : false,
                                                     "subcluster-table" : subcluster_table
                                                   });
 
@@ -493,6 +495,7 @@ var init = function(data) {
           ["#main-tab","#graph-tab","#clusters-tab","#subclusters-tab", "#nodes-tab","#attributes-tab"].forEach (function (tab) {
             d3.select (tab).classed ("disabled",false);
           });
+
           d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', null)});
 
           hivtrace.misc.export_table_to_text("#cluster-table-export", cluster_table);
@@ -531,6 +534,7 @@ var init = function(data) {
        }
    }
    catch (e) {
+     console.log(e.stack);
      HandleAppError ("Network loading failed with the following error " + e);
    }
 }
@@ -538,14 +542,20 @@ var init = function(data) {
 var initialize_cluster_network_graphs = function () {
 
   //Initialize clusternetworkgraph with json url
-  url = "workshop/DummyNetworkAttributes.json";
-  //url = "test/LA.json"
+  //url = "private/new-attributes.json";
+  //url = "workshop/DummyNetworkAttributesPreComputed.json";
+  //url = "test/LA.json" 
+  url = "private/small.json";
 
   d3.json(url, function(error, results) {
     if (error) {
         HandleAppError ("Failed loading file " + error.responseURL);
     } else {
-        init(results);
+        if ("trace_results" in results) {
+            init(results["trace_results"]);
+        } else {
+            init(results);
+        }
     }
   });
 
@@ -657,6 +667,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         have 'MSM' in any of the data fields. <p/>\
         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <p/>\
         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <p/>\
+        If nodes have time information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges. <p/>\
         Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <p/>\
         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><p/>\
         Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>\
@@ -676,8 +687,6 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
     initialize_cluster_network_graphs();
 
     var _loaded_network_data = {"nodes" : [], "edges" : []};
-
-
 
     $("#csv_proceed_button").on ("click", function (e) {
         try {
@@ -724,7 +733,7 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
                     _loaded_network_data[d[2]] = d3.csv.parse (e.target.result);
                     d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-info").text ("Loaded " + _loaded_network_data[d[2]].length + " CSV records ");
                     d3.select(d[1]).style("display", "none");
-                    if ( _loaded_network_data["nodes"].length ) {
+                    if ( _loaded_network_data["nodes"].length || _loaded_network_data["edges"].length) {
                         $ ("#csv_proceed_button").prop ("disabled", null);
                     }
                 };
@@ -735,9 +744,9 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
     });
 
     $("#csv_loader_modal").on ("show.bs.modal", function (e) {
-        d3.select ("#csv_import_status").style ('display', "none");
-        $("#csv_enclosing_form").get (0).reset();
-        $ ("#csv_proceed_button").prop ("disabled", true);
+        d3.select("#csv_import_status").style('display', "none");
+        $("#csv_enclosing_form").get(0).reset();
+        $("#csv_proceed_button").prop("disabled", true);
     });
 
   // *** HANDLERS ***
