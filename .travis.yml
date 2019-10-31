@@ -1,26 +1,26 @@
 language: node_js
 node_js:
-- '8'
+  - "8"
 sudo: false
 notifications:
   email:
     recipients:
-    - spond@temple.edu
-    - steven@stevenweaver.org
-    - tuj86312@temple.edu
+      - spond@temple.edu
+      - jwertheim@ucsd.edu
+      - steven@stevenweaver.org
     on_success: always
     on_failure: always
 
 branches:
   only:
-  - master
-  - develop
+    - master
+    - develop
 
 cache:
   yarn: true
   directories:
-  - ".eslintcache"
-  - node_modules
+    - ".eslintcache"
+    - node_modules
 
 script:
   - webpack
