@@ -2,13 +2,17 @@
   "name": "hivtrace-viz",
   "version": "0.3.11",
   "description": "Visualization for the popular HIV-TRACE package",
-  "main": ["dist/hivtrace.js", "dist/hivtrace.es.js"],
+  "main": [
+    "dist/hivtrace.js",
+    "dist/hivtrace.es.js"
+  ],
   "dependencies": {
     "bootstrap": "^3.4.1",
     "d3": "3.x",
     "downloadjs": "^1.4.7",
     "font-awesome": "4.x",
     "font-awesome-webpack": "0.0.4",
+    "graceful-fs": "^4.2.3",
     "hyphy-vision": "^1.1.7",
     "i18n-webpack-plugin": "0.2.0",
     "i18next": "^17.0.18",
@@ -26,7 +30,7 @@
     "bootstrap-webpack": "0.0.5",
     "concurrently": "^4.0.1",
     "css-loader": "^0.25.0",
-    "eslint": "^5.6.0",
+    "eslint": "^6.6.0",
     "exports-loader": "^0.6.3",
     "expose-loader": "^0.7.4",
     "express": "^4.16.3",
