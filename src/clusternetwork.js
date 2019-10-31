@@ -4249,13 +4249,13 @@ var hivtrace_cluster_network_graph = function(
 
       if (self._is_seguro) {
         headers[0].push({
-          value: __("clusters_tab")["genotyped_last_two_months"],
+          value: __("clusters_tab")["number_of_genotypes_in_past_2_months"],
           sort: "value",
           help: "# of cases in cluster genotyped in the last 2 months"
         });
 
         headers[0].push({
-          value: __("clusters_tab")["genotyped_last_two_months_ratio"],
+          value: __("clusters_tab")["scaled_number_of_genotypes_in_past_2_months"],
           sort: "value",
           help:
             "# of cases in cluster genotyped in the last 2 months divided by the square-root of the cluster size"
