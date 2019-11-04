@@ -311,7 +311,7 @@ var hivtrace_cluster_network_graph = function(
 
   if (self._is_CDC_) {
 
-    self.displayed_node_subset = [_networkNodeIDField, "trans_categ", "race", "hiv_aids_dx_dt", "cur_city_name"];
+    self.displayed_node_subset = options && options ["node-attributes"] ? options ["node-attributes"] : [_networkNodeIDField, "trans_categ", "race", "hiv_aids_dx_dt", "cur_city_name"];
 
     self.subcluster_table =
       options && options["subcluster-table"]
@@ -5084,7 +5084,7 @@ var hivtrace_cluster_network_graph = function(
           return d.removed;
         })
         .classed("unsupported", function(d) {
-          return "support" in d && d["support"] > 0.05;
+          return "support" in d && d["support"] > 0.05 || "filtered" in d && d["filtered"];
         })
         .classed("core-link", function(d) {
           //console.log (d["length"] <= self.core_link_length);
@@ -5877,6 +5877,8 @@ var hivtrace_cluster_network_graph = function(
   }
 
   self._aux_populate_category_fields = function(d, k) {
+  
+  
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
         d["label"] = k;
