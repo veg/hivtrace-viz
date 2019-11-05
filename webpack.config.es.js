@@ -9,11 +9,14 @@ var languages = {
   es: require("./locales/es.json")
 };
 
-var language = "en";
+var language = "es";
+
 var filename = "hivtrace.js";
+var vendor_filename = "vendor.js";
 
 if (language != "en") {
   filename = "hivtrace." + language + ".js";
+  vendor_filename = "vendor." + language + ".js";
 }
 
 var config = {
@@ -25,7 +28,7 @@ var config = {
   },
   output: {
     path: path.resolve(__dirname, "dist/"),
-    filename: "[name].js"
+    filename: filename
   },
   externals: {
     jsdom: "window"
@@ -70,7 +73,7 @@ var config = {
     ]
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin("vendor", "vendor.js"),
+    new webpack.optimize.CommonsChunkPlugin("vendor", vendor_filename),
     new webpack.ProvidePlugin({
       $: "jquery",
       jQuery: "jquery",

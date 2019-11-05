@@ -2,41 +2,10 @@ var d3 = require("d3"),
   _ = require("underscore"),
   helpers = require("./helpers.js");
 
-function hivtrace_cluster_adjacency_list(obj) {
-  var nodes = obj.Nodes,
-    edges = obj.Edges;
-
-  var adjacency_list = {};
-
-  edges.forEach(function(e, i) {
-    function in_nodes(n, id) {
-      return n.id == id;
-    }
-
-    var seq_ids = e["sequences"];
-
-    var n1 = nodes.filter(function(n) {
-        return in_nodes(n, seq_ids[0]);
-      })[0],
-      n2 = nodes.filter(function(n) {
-        return in_nodes(n, seq_ids[1]);
-      })[0];
-
-    adjacency_list[n1.id]
-      ? adjacency_list[n1.id].push(n2)
-      : (adjacency_list[n1.id] = [n2]);
-    adjacency_list[n2.id]
-      ? adjacency_list[n2.id].push(n1)
-      : (adjacency_list[n2.id] = [n1]);
-  });
-
-  return adjacency_list;
-}
-
 var hivtrace_generate_svg_polygon_lookup = {};
 
 _.each(_.range(3, 20), function(d) {
-  var angle_step = Math.PI * 2 / d;
+  var angle_step = (Math.PI * 2) / d;
   hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), function(i) {
     return [Math.cos(angle_step * i), Math.sin(angle_step * i)];
   });
@@ -92,7 +61,7 @@ var hivtrace_generate_svg_ellipse = function() {
   self.ellipse.size = function(attr) {
     if (_.isNumber(attr)) {
       self.size = attr;
-      self.radius = Math.sqrt(1.25 * attr / Math.PI);
+      self.radius = Math.sqrt((1.25 * attr) / Math.PI);
       return self.ellipse;
     }
 
@@ -117,7 +86,7 @@ var hivtrace_generate_svg_polygon = function() {
         })
         .join(" ");
     } else {
-      var angle_step = Math.PI * 2 / self.sides,
+      var angle_step = (Math.PI * 2) / self.sides,
         current_angle = 0;
       for (i = 0; i < self.sides - 1; i++) {
         current_angle += angle_step;
@@ -162,324 +131,6 @@ var hivtrace_generate_svg_polygon = function() {
   return self.polygon;
 };
 
-function hivtrace_new_cluster_adjacency_list(obj) {
-  var nodes = obj.Nodes,
-    edges = obj.Edges;
-
-  nodes.forEach(function(n) {
-    n.neighbors = d3.set();
-  });
-
-  edges.forEach(function(e) {
-    nodes[e.source].neighbors.add(e.target);
-    nodes[e.target].neighbors.add(e.source);
-  });
-}
-
-// Reconstructs path from floyd-warshall algorithm
-function hivtrace_get_path(next, i, j) {
-  var all_paths = [];
-  i = parseInt(i);
-  j = parseInt(j);
-
-  for (var c = 0; c < next[i][j].length; c++) {
-    var k = next[i][j][c];
-    var intermediate = k;
-
-    if (intermediate === null || intermediate == i) {
-      return [[parseInt(i), parseInt(j)]];
-    } else {
-      var paths_i_k = hivtrace_get_path(next, i, intermediate);
-      var paths_k_j = hivtrace_get_path(next, intermediate, j);
-
-      for (var i_k_index = 0; i_k_index < paths_i_k.length; i_k_index++) {
-        var i_k = paths_i_k[i_k_index];
-        for (var k_j_index = 0; k_j_index < paths_k_j.length; k_j_index++) {
-          var k_j = paths_k_j[k_j_index];
-          if (i_k.length) {
-            if (
-              i_k[0] == i &&
-              i_k[i_k.length - 1] == k &&
-              k_j[0] == k &&
-              k_j[k_j.length - 1] == j
-            ) {
-              i_k.pop();
-              all_paths.push(i_k.concat(k_j));
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return all_paths;
-}
-
-function hivtrace_paths_with_node(node, next, i, j) {
-  var paths = hivtrace_get_path(next, i, j);
-
-  // Retrieve intermediary paths
-  paths = paths.map(function(sublist) {
-    return sublist.slice(1, -1);
-  });
-
-  if (!paths) {
-    return 0;
-  }
-
-  var num_nodes = [];
-
-  for (var k = 0; i < paths.length; k++) {
-    sublist = paths[k];
-    num_nodes.push(
-      d3.sum(
-        sublist.map(function(n) {
-          return n == node;
-        })
-      )
-    );
-  }
-
-  var mean = d3.mean(num_nodes);
-
-  if (mean === undefined) {
-    mean = 0;
-  }
-
-  return mean;
-}
-
-// Same as compute shortest paths, but with an additional next parameter for reconstruction
-function hivtrace_compute_shortest_paths_with_reconstruction(
-  obj,
-  subset,
-  use_actual_distances
-) {
-  // Floyd-Warshall implementation
-  var distances = [];
-  var next = [];
-  var nodes = obj.Nodes;
-  var edges = obj.Edges;
-  var node_ids = [];
-
-  var adjacency_list = hivtrace_cluster_adjacency_list(obj);
-
-  if (!subset) {
-    subset = Object.keys(adjacency_list);
-  }
-
-  var node_count = subset.length;
-
-  for (var i = 0; i < subset.length; i++) {
-    var a_node = subset[i];
-    var empty_arr = _.range(node_count).map(function(d) {
-      return null;
-    });
-    var zeroes = _.range(node_count).map(function(d) {
-      return null;
-    });
-    distances.push(zeroes);
-    next.push(empty_arr);
-  }
-
-  for (var index = 0; index < subset.length; index++) {
-    var a_node = subset[index];
-    for (var index2 = 0; index2 < subset.length; index2++) {
-      var second_node = subset[index2];
-      if (second_node != a_node) {
-        if (
-          adjacency_list[a_node]
-            .map(function(n) {
-              return n.id;
-            })
-            .indexOf(second_node) != -1
-        ) {
-          distances[index][index2] = 1;
-          distances[index2][index] = 1;
-        }
-      }
-    }
-  }
-
-  for (var index_i = 0; index_i < subset.length; index_i++) {
-    var n_i = subset[index_i];
-    for (var index_j = 0; index_j < subset.length; index_j++) {
-      var n_j = subset[index_j];
-      if (index_i == index_j) {
-        next[index_i][index_j] = [];
-      } else {
-        next[index_i][index_j] = [index_i];
-      }
-    }
-  }
-
-  // clone distances
-  var distances2 = _.map(distances, _.clone);
-  var c = 0;
-
-  for (var index_k = 0; index_k < subset.length; index_k++) {
-    var n_k = subset[index_k];
-    for (var index_i = 0; index_i < subset.length; index_i++) {
-      var n_i = subset[index_i];
-      for (var index_j = 0; index_j < subset.length; index_j++) {
-        var n_j = subset[index_j];
-
-        if (n_i != n_j) {
-          d_ik = distances[index_k][index_i];
-          d_jk = distances[index_k][index_j];
-          d_ij = distances[index_i][index_j];
-
-          if (d_ik !== null && d_jk !== null) {
-            d_ik += d_jk;
-            if (d_ij === null || d_ij > d_ik) {
-              distances2[index_i][index_j] = d_ik;
-              distances2[index_j][index_i] = d_ik;
-              next[index_i][index_j] = [];
-              next[index_i][index_j] = next[index_i][index_j].concat(
-                next[index_k][index_j]
-              );
-              continue;
-            } else if (d_ij == d_ik) {
-              next[index_i][index_j] = next[index_i][index_j].concat(
-                next[index_k][index_j]
-              );
-            }
-          }
-          c++;
-          distances2[index_j][index_i] = distances[index_j][index_i];
-          distances2[index_i][index_j] = distances[index_i][index_j];
-        }
-      }
-    }
-
-    var t = distances2;
-    distances2 = distances;
-    distances = t;
-  }
-
-  return {
-    ordering: subset,
-    distances: distances,
-    next: next
-  };
-}
-
-function hivtrace_filter_to_node_in_cluster(node, obj) {
-  var nodes = obj.Nodes,
-    edges = obj.Edges,
-    cluster_id = null;
-
-  // Retrieve nodes that are part of the cluster
-  var node_obj = nodes.filter(function(n) {
-    return node == n.id;
-  });
-
-  if (node_obj) {
-    cluster_id = node_obj[0].cluster;
-  } else {
-    console.log("could not find node");
-    return null;
-  }
-
-  // Filter out all edges and nodes that belong to the cluster
-  var nodes_in_cluster = nodes.filter(function(n) {
-    return cluster_id == n.cluster;
-  });
-  var node_ids = nodes_in_cluster.map(function(n) {
-    return n.id;
-  });
-  var edges_in_cluster = edges.filter(function(e) {
-    return node_ids.indexOf(e.sequences[0]) != -1;
-  });
-
-  var filtered_obj = {};
-  filtered_obj["Nodes"] = nodes_in_cluster;
-  filtered_obj["Edges"] = edges_in_cluster;
-  return filtered_obj;
-}
-
-function hivtrace_compute_betweenness_centrality_all_nodes_in_cluster(
-  cluster,
-  obj,
-  cb
-) {
-  var nodes = obj.Nodes,
-    edges = obj.Edges;
-
-  var nodes_in_cluster = nodes.filter(function(n) {
-    return cluster == n.cluster;
-  });
-  var node_ids = nodes_in_cluster.map(function(n) {
-    return n.id;
-  });
-  var edges_in_cluster = edges.filter(function(e) {
-    return node_ids.indexOf(e.sequences[0]) != -1;
-  });
-
-  var filtered_obj = {};
-  filtered_obj["Nodes"] = nodes_in_cluster;
-  filtered_obj["Edges"] = edges_in_cluster;
-
-  // get length of cluster
-  if (nodes_in_cluster.length > 70) {
-    cb("cluster too large", null);
-    return;
-  }
-
-  // get paths
-  var paths = hivtrace_compute_shortest_paths_with_reconstruction(filtered_obj);
-  var node_ids = nodes_in_cluster.map(function(n) {
-    return n.id;
-  });
-
-  var betweenness = {};
-  nodes_in_cluster.forEach(function(n) {
-    betweenness[n.id] = hivtrace_compute_betweenness_centrality(
-      n.id,
-      filtered_obj,
-      paths
-    );
-  });
-
-  cb(null, betweenness);
-  return;
-}
-
-// Returns dictionary of nodes' betweenness centrality
-// Utilizes the Floyd-Warshall Algorithm with reconstruction
-function hivtrace_compute_betweenness_centrality(node, obj, paths) {
-  if (!paths) {
-    var filtered_obj = hivtrace_filter_to_node_in_cluster(node, obj);
-    paths = hivtrace_compute_shortest_paths_with_reconstruction(filtered_obj);
-  }
-
-  // find index of id
-  var index = paths.ordering.indexOf(node);
-
-  if (index == -1) {
-    return null;
-  }
-
-  var length = paths.distances.length;
-
-  if (length != 2) {
-    scale = 1 / ((length - 1) * (length - 2));
-  } else {
-    scale = 1;
-  }
-
-  // If s->t goes through 1, add to sum
-  // Reconstruct each shortest path and check if node is in it
-  var paths_with_node = [];
-  for (var i in _.range(length)) {
-    for (var j in _.range(length)) {
-      paths_with_node.push(hivtrace_paths_with_node(index, paths.next, i, j));
-    }
-  }
-
-  return d3.sum(paths_with_node) * scale;
-}
-
 function hivtrace_compute_node_degrees(obj) {
   var nodes = obj.Nodes,
     edges = obj.Edges;
@@ -492,98 +143,6 @@ function hivtrace_compute_node_degrees(obj) {
     nodes[edges[e].source].degree++;
     nodes[edges[e].target].degree++;
   }
-}
-
-function hivtrace_get_node_by_id(id, obj) {
-  return (
-    obj.Nodes.filter(function(n) {
-      return id == n.id;
-    })[0] || undefined
-  );
-}
-
-function hivtrace_compute_cluster_betweenness(obj, callback) {
-  var nodes = obj.Nodes;
-
-  function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;
-  }
-
-  // Get all unique clusters
-  var clusters = nodes.map(function(n) {
-    return n.cluster;
-  });
-  var unique_clusters = clusters.filter(onlyUnique);
-
-  var cb_count = 0;
-
-  function cb(err, results) {
-    cb_count++;
-
-    for (var node in results) {
-      hivtrace_get_node_by_id(node, obj)["betweenness"] = results[node];
-    }
-
-    if (cb_count >= unique_clusters.length) {
-      callback("done");
-    }
-  }
-
-  // Compute betweenness in parallel
-  unique_clusters.forEach(function(cluster_id) {
-    hivtrace_betweenness_centrality_all_nodes_in_cluster(cluster_id, obj, cb);
-  });
-
-  // once all settled callback
-}
-
-function hivtrace_is_contaminant(node) {
-  return node.attributes.indexOf("problematic") != -1;
-}
-
-function hivtrace_convert_to_csv(obj, callback) {
-  //Translate nodes to rows, and then use d3.format
-  hivtrace_compute_node_degrees(obj);
-
-  hivtrace_compute_cluster_betweenness(obj, function(err) {
-    var node_array = obj.Nodes.map(function(d) {
-      return [
-        d.id,
-        d.cluster,
-        d.degree,
-        d.betweenness,
-        hivtrace_is_contaminant(d),
-        d.attributes.join(";")
-      ];
-    });
-    node_array.unshift([
-      "seqid",
-      "cluster",
-      "degree",
-      "betweenness",
-      "is_contaminant",
-      "attributes"
-    ]);
-    node_csv = d3.csv.format(node_array);
-    callback(null, node_csv);
-  });
-}
-
-function hivtrace_export_csv_button(graph, tag) {
-  var data = hivtrace_convert_to_csv(graph, function(err, data) {
-    if (data !== null) {
-      var pom = document.createElement("a");
-      pom.setAttribute(
-        "href",
-        "data:text/csv;charset=utf-8," + encodeURIComponent(data)
-      );
-      pom.setAttribute("download", "export.csv");
-      pom.className = "btn btn-default btn-sm";
-      pom.innerHTML =
-        '<span class="glyphicon glyphicon-floppy-save"></span> Export Results';
-      $(tag).append(pom);
-    }
-  });
 }
 
 function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
@@ -610,44 +169,6 @@ function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
   return the_button;
 }
 
-var hivtrace_compute_local_clustering_coefficients = _.once(function(obj) {
-  hivtrace_new_cluster_adjacency_list(obj);
-
-  var nodes = obj.Nodes;
-
-  nodes.forEach(function(n) {
-    var a_node = n;
-    var neighborhood_size = a_node.neighbors.size();
-
-    if (neighborhood_size < 2) {
-      a_node.lcc = undefined;
-    } else {
-      if (neighborhood_size > 500) {
-        a_node.lcc = hivtrace_too_large;
-      } else {
-        // count triangles
-        neighborhood = a_node.neighbors.values();
-        counter = 0;
-        for (n1 = 0; n1 < neighborhood_size; n1 += 1) {
-          for (n2 = n1 + 1; n2 < neighborhood_size; n2 += 1) {
-            if (nodes[neighborhood[n1]].neighbors.has(neighborhood[n2])) {
-              counter++;
-            }
-          }
-        }
-        a_node.lcc = 2 * counter / neighborhood_size / (neighborhood_size - 1);
-      }
-    }
-  });
-});
-
-function hivtrace_render_settings(settings, explanations) {
-  // TODO:
-  //d3.json (explanations, function (error, expl) {
-  //    //console.log (settings);
-  //});
-}
-
 function hivtrace_format_value(value, formatter) {
   if (typeof value === "undefined") {
     return "Not computed";
@@ -664,31 +185,6 @@ function hivtrace_format_value(value, formatter) {
   }
 
   return formatter ? formatter(value) : value;
-}
-
-
-function hivtrace_plot_case_time_series(
-  time_series,
-  container,
-  x_title,
-  y_title,
-  y_scale,
-  bin_by,
-  options
-) {
-  options = options || {
-    base_line: 20,
-    top: 40,
-    right: 30,
-    bottom: 3 * 20,
-    left: 5 * 20,
-    font_size: 18,
-    rect_size: 22,
-    width: 1024,
-    height: 600
-  };
-
-
 }
 
 function hivtrace_plot_cluster_dynamics(
@@ -716,10 +212,8 @@ function hivtrace_plot_cluster_dynamics(
     return;
   }
 
-  var do_barchart     = options && options["barchart"];
-  var skip_cumulative = options && options["skip_cumulative"] || do_barchart;
-
-
+  var do_barchart = options && options["barchart"];
+  var skip_cumulative = (options && options["skip_cumulative"]) || do_barchart;
 
   var width = options.width - options.left - options.right;
   var height = options.height - options.top - options.bottom;
@@ -747,20 +241,18 @@ function hivtrace_plot_cluster_dynamics(
       return ["Q" + quarter + " " + year, nearest_quarter, mid_point];
     };
 
-    min_diff = new Date (2018,3,0) - new Date(2018,0,0);
+    min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
   }
 
-
-
-  var x_tick_format = function (d) {
+  var x_tick_format = function(d) {
     var year = d.getFullYear();
     var quarter = Math.floor(d.getMonth() / 3) + 1;
 
     return "" + year + "-Q" + quarter;
   };
 
-  if (options && options ["x-tick-format"]) {
-    x_tick_format = options ["x-tick-format"];
+  if (options && options["x-tick-format"]) {
+    x_tick_format = options["x-tick-format"];
   }
 
   /** plot_data is an array with entries like
@@ -782,9 +274,8 @@ function hivtrace_plot_cluster_dynamics(
 
   var y = y_scale ? y_scale : d3.scale.linear();
 
-
   if (!y_scale) {
-    y.rangeRound ([height, 0]);
+    y.rangeRound([height, 0]);
   } else {
     y.range([height, 0]);
   }
@@ -797,15 +288,20 @@ function hivtrace_plot_cluster_dynamics(
     .tickFormat(d3.time.format("%m/%Y"));
 
   if (x_tick_format) {
-    xAxis.tickFormat (x_tick_format);
+    xAxis.tickFormat(x_tick_format);
   }
 
-  var yAxis = d3.svg.axis().scale(y).orient("left").tickFormat(function (v) {
-    if (v << 0 == v) { // an integer
+  var yAxis = d3.svg
+    .axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(function(v) {
+      if (v << 0 == v) {
+        // an integer
         return v;
-    }
-    return;
-  });
+      }
+      return;
+    });
 
   var binned = {};
   var values_by_attribute = {};
@@ -859,24 +355,23 @@ function hivtrace_plot_cluster_dynamics(
     binned_array.push(v);
   });
 
-
   binned_array.sort(function(a, b) {
     return b["time"] > a["time"] ? 1 : b["time"] == a["time"] ? 0 : -1;
   });
 
-
   if (do_barchart) {
-    if (_.isUndefined (min_diff)) {
-      _.each(binned_array, function (d, i) {
-            if (i > 0) {
-                min_diff = Math.min (min_diff, -(d["time"] - binned_array[i-1]["time"]));
-            }
+    if (_.isUndefined(min_diff)) {
+      _.each(binned_array, function(d, i) {
+        if (i > 0) {
+          min_diff = Math.min(
+            min_diff,
+            -(d["time"] - binned_array[i - 1]["time"])
+          );
+        }
       });
     }
     min_diff = min_diff * 0.8; // convert to seconds and shrink a bit
   }
-
-
 
   var min_x = d3.min(time_series, function(d) {
     return d["time"] < d["_bin"] ? d["time"] : d["_bin"];
@@ -886,18 +381,16 @@ function hivtrace_plot_cluster_dynamics(
   });
 
   if (do_barchart) {
-     var max_x2 = new Date ();
-     max_x2.setTime(max_x.getTime() + min_diff);
-     max_x = max_x2;
+    var max_x2 = new Date();
+    max_x2.setTime(max_x.getTime() + min_diff);
+    max_x = max_x2;
   }
 
   x.domain([min_x, max_x]).clamp(true);
-  y
-    .domain([
-      0.0,
-      Math.round(skip_cumulative ? max_bin + 1 : time_series.length * 1.2)
-    ])
-    .clamp(true);
+  y.domain([
+    0.0,
+    Math.round(skip_cumulative ? max_bin + 1 : time_series.length * 1.2)
+  ]).clamp(true);
 
   /* step-plot generator*/
 
@@ -942,7 +435,7 @@ function hivtrace_plot_cluster_dynamics(
 
   if (do_barchart) {
     if (plot_types.length == 0) {
-        plot_types.push(total_id);
+      plot_types.push(total_id);
     }
   } else {
     plot_types.push(total_id);
@@ -955,102 +448,99 @@ function hivtrace_plot_cluster_dynamics(
     drag.on("drag", function() {
       options["drag"].x += d3.event.dx;
       options["drag"].y += d3.event.dy;
-      d3
-        .select(this)
-        .attr(
-          "transform",
-          "translate(" + options["drag"].x + "," + options["drag"].y + ")"
-        );
+      d3.select(this).attr(
+        "transform",
+        "translate(" + options["drag"].x + "," + options["drag"].y + ")"
+      );
     });
     container.call(drag);
   }
 
   function opacity_toggle(tag, on_off) {
     if (do_barchart) {
-        d3
-          .selectAll('[data-plotid="' + tag + '"]')
-          .style("stroke-width", on_off ? 4 : 1);
-
+      d3.selectAll('[data-plotid="' + tag + '"]').style(
+        "stroke-width",
+        on_off ? 4 : 1
+      );
     } else {
-        d3
-          .selectAll('[data-plotid="' + tag + '"]')
-          .style("fill-opacity", on_off ? 0.5 : 0.1);
+      d3.selectAll('[data-plotid="' + tag + '"]').style(
+        "fill-opacity",
+        on_off ? 0.5 : 0.1
+      );
     }
-    d3
-      .selectAll('[data-curveid="' + tag + '"]')
-      .style("stroke-width", on_off ? 3 : 1);
+    d3.selectAll('[data-curveid="' + tag + '"]').style(
+      "stroke-width",
+      on_off ? 3 : 1
+    );
   }
 
   if (!do_barchart || plot_types.length > 1 || plot_types[0] != total_id) {
+    var legend_lines = legend_area.selectAll("g").data(plot_types);
 
-      var legend_lines = legend_area.selectAll("g").data(plot_types);
+    legend_lines
+      .enter()
+      .append("g")
+      .attr("class", "annotation-text");
 
-      legend_lines.enter().append("g").attr("class", "annotation-text");
+    legend_lines
+      .selectAll("text")
+      .data(function(d) {
+        return [d];
+      })
+      .enter()
+      .append("text")
+      .attr("transform", function(d, i, j) {
+        return (
+          "translate(" +
+          options.rect_size +
+          "," +
+          (options.rect_size * (plot_types.length - 1 - j) -
+            (options.rect_size - options.font_size)) +
+          ")"
+        );
+      })
+      .attr("dx", "0.2em")
+      .style("font-size", options.font_size)
+      .text(function(d) {
+        return d;
+      })
+      .on("mouseover", function(d) {
+        opacity_toggle(prefix + d, true);
+      })
+      .on("mouseout", function(d) {
+        opacity_toggle(prefix + d, false);
+      });
 
-
-      legend_lines
-        .selectAll("text")
-        .data(function(d) {
-          return [d];
-        })
-        .enter()
-        .append("text")
-        .attr("transform", function(d, i, j) {
-          return (
-            "translate(" +
-            options.rect_size +
-            "," +
-            (options.rect_size * (plot_types.length - 1 - j) -
-              (options.rect_size - options.font_size)) +
-            ")"
-          );
-        })
-        .attr("dx", "0.2em")
-        .style("font-size", options.font_size)
-        .text(function(d) {
-          return d;
-        })
-        .on("mouseover", function(d) {
-          opacity_toggle(prefix + d, true);
-        })
-        .on("mouseout", function(d) {
-          opacity_toggle(prefix + d, false);
-        });
-
-      legend_lines
-        .selectAll("rect")
-        .data(function(d) {
-          return [d];
-        })
-        .enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", function(d, i, j) {
-          return options.rect_size * (plot_types.length - 2 - j);
-        })
-        .attr("width", options.rect_size)
-        .attr("height", options.rect_size)
-        .attr("class", "area")
-        .style("fill", function(d, i, j) {
-          return color_scale(d);
-        })
-        .on("mouseover", function(d) {
-          opacity_toggle(prefix + d, true);
-        })
-        .on("mouseout", function(d) {
-          opacity_toggle(prefix + d, false);
-        });
-    }
+    legend_lines
+      .selectAll("rect")
+      .data(function(d) {
+        return [d];
+      })
+      .enter()
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", function(d, i, j) {
+        return options.rect_size * (plot_types.length - 2 - j);
+      })
+      .attr("width", options.rect_size)
+      .attr("height", options.rect_size)
+      .attr("class", "area")
+      .style("fill", function(d, i, j) {
+        return color_scale(d);
+      })
+      .on("mouseover", function(d) {
+        opacity_toggle(prefix + d, true);
+      })
+      .on("mouseout", function(d) {
+        opacity_toggle(prefix + d, false);
+      });
+  }
 
   var last = _.clone(time_series[time_series.length - 1]);
   last["time"] = x.domain()[1];
   time_series.push(last);
 
-
-
   _.each(plot_types, function(plot_key, idx) {
-
-
     var plot_color = color_scale(plot_key);
     var y_accessor = function(d) {
       //console.log ((plot_key in d['y']) ? d['y'][plot_key] : 0);
@@ -1100,64 +590,68 @@ function hivtrace_plot_cluster_dynamics(
         .attr("data-plotid", prefix + plot_key);
     }
 
-
-
     if (do_barchart) {
-        binned_array.forEach(function(d) {
-            var dd = new Date();
-            dd.setTime(d["time"].getTime() - min_diff * 0.5);
-            var dd2 = new Date();
-            dd2.setTime(d["time"].getTime() + min_diff * 0.5);
-            var xc = x(dd);
-            var w = x(dd2) - x(dd);
-            var last_y = ("last_y" in d) ? d["last_y"] : 0;
-            var new_y = bin_accessor(d);
-            svg.append ("rect")
-               .attr ("x", xc)
-               .attr ("y", y(last_y+new_y))
-               .attr ("height",  y(0) - y(new_y))
-               .attr ("width", w).attr("data-plotid", prefix + plot_key)
-               .classed("tracer", true)
-               .style("fill", plot_color)
-               .style("stroke", d3.rgb (plot_color).darker (2))
-               .style("fill-opacity", 1)
-               .append ("title").text (plot_key + " " + new_y + " cases in " +
-                    (x_tick_format ? x_tick_format(d["time"]) : d["time"]));
-
-            d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
-
-        });
-    } else {
-
-        binned_array.forEach(function(d) {
-          svg
-            .append("circle")
-            .attr("cx", x(d["time"]))
-            .attr("cy", y(bin_accessor(d)))
-            .attr("r", "5")
-            .classed("node", true)
-            .style("fill", plot_color)
-            .style("stroke", plot_color)
-            .attr("title", plot_key + " : " + bin_accessor(d));
-        });
-
-        var curve_year = d3.svg
-          .line()
-          .x(function(d) {
-            return x(d["time"]);
-          })
-          .y(function(d) {
-            return y(bin_accessor(d));
-          })
-          .interpolate("cardinal");
-
+      binned_array.forEach(function(d) {
+        var dd = new Date();
+        dd.setTime(d["time"].getTime() - min_diff * 0.5);
+        var dd2 = new Date();
+        dd2.setTime(d["time"].getTime() + min_diff * 0.5);
+        var xc = x(dd);
+        var w = x(dd2) - x(dd);
+        var last_y = "last_y" in d ? d["last_y"] : 0;
+        var new_y = bin_accessor(d);
         svg
-          .append("path")
-          .datum(binned_array)
+          .append("rect")
+          .attr("x", xc)
+          .attr("y", y(last_y + new_y))
+          .attr("height", y(0) - y(new_y))
+          .attr("width", w)
+          .attr("data-plotid", prefix + plot_key)
           .classed("tracer", true)
+          .style("fill", plot_color)
+          .style("stroke", d3.rgb(plot_color).darker(2))
+          .style("fill-opacity", 1)
+          .append("title")
+          .text(
+            plot_key +
+              " " +
+              new_y +
+              " cases in " +
+              (x_tick_format ? x_tick_format(d["time"]) : d["time"])
+          );
+
+        d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
+      });
+    } else {
+      binned_array.forEach(function(d) {
+        svg
+          .append("circle")
+          .attr("cx", x(d["time"]))
+          .attr("cy", y(bin_accessor(d)))
+          .attr("r", "5")
+          .classed("node", true)
+          .style("fill", plot_color)
           .style("stroke", plot_color)
-          .attr("d", curve_year)
-          .attr("data-curveid", prefix + plot_key);
+          .attr("title", plot_key + " : " + bin_accessor(d));
+      });
+
+      var curve_year = d3.svg
+        .line()
+        .x(function(d) {
+          return x(d["time"]);
+        })
+        .y(function(d) {
+          return y(bin_accessor(d));
+        })
+        .interpolate("cardinal");
+
+      svg
+        .append("path")
+        .datum(binned_array)
+        .classed("tracer", true)
+        .style("stroke", plot_color)
+        .attr("d", curve_year)
+        .attr("data-curveid", prefix + plot_key);
     }
   });
 
@@ -1199,20 +693,81 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
+var hivtrace_cluster_depthwise_traversal = function(
+  nodes,
+  edges,
+  edge_filter,
+  save_edges,
+  seed_nodes
+) {
+  var clusters = [],
+    adjacency = {},
+    by_node = {};
+
+  seed_nodes = seed_nodes || nodes;
+
+  _.each(nodes, function(n) {
+    n.visited = false;
+    adjacency[n.id] = [];
+  });
+
+  if (edge_filter) {
+    edges = _.filter(edges, edge_filter);
+  }
+
+  _.each(edges, function(e) {
+    try {
+      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
+      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
+    } catch (err) {
+      // eslint-disable-next-line
+      console.log(
+        "Edge does not map to an existing node " + e.source + " to " + e.target
+      );
+      throw "Edge does not map to an existing node " +
+        e.source +
+        " to " +
+        e.target;
+    }
+  });
+
+  var traverse = function(node) {
+    if (!(node.id in by_node)) {
+      clusters.push([node]);
+      by_node[node.id] = clusters.length - 1;
+      if (save_edges) {
+        save_edges.push([]);
+      }
+    }
+    node.visited = true;
+
+    _.each(adjacency[node.id], function(neighbor) {
+      if (!neighbor[0].visited) {
+        by_node[neighbor[0].id] = by_node[node.id];
+        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
+        if (save_edges) {
+          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
+        }
+        traverse(neighbor[0]);
+      }
+    });
+  };
+
+  _.each(seed_nodes, function(n) {
+    if (!n.visited) {
+      traverse(n);
+    }
+  });
+
+  return clusters;
+};
+
 module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
-module.exports.export_csv_button = hivtrace_export_csv_button;
-module.exports.convert_to_csv = hivtrace_convert_to_csv;
-module.exports.betweenness_centrality = hivtrace_compute_betweenness_centrality;
-module.exports.betweenness_centrality_all_nodes_in_cluster = hivtrace_compute_betweenness_centrality_all_nodes_in_cluster;
-module.exports.cluster_adjacency_list = hivtrace_cluster_adjacency_list;
-module.exports.new_cluster_adjacency_list = hivtrace_new_cluster_adjacency_list;
-module.exports.analysis_settings = hivtrace_render_settings;
 module.exports.export_table_to_text = hiv_trace_export_table_to_text;
-module.exports.compute_local_clustering = hivtrace_compute_local_clustering_coefficients;
 module.exports.undefined = {};
 module.exports.too_large = {};
 module.exports.processing = {};
 module.exports.format_value = hivtrace_format_value;
-module.exports.polygon = hivtrace_generate_svg_polygon;
 module.exports.symbol = hivtrace_generate_svg_symbol;
 module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
+module.exports.hivtrace_cluster_depthwise_traversal = hivtrace_cluster_depthwise_traversal;

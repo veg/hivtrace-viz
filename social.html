@@ -1,237 +1,438 @@
-<html lang='en'>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>CDC HIV-TRACE Workshop</title>
 
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>CDC HIV-TRACE Workshop</title>
+    <!-- Latest compiled and minified CSS -->
+    <link href="dist/hivtrace.css" rel="stylesheet" />
 
-  <!-- Latest compiled and minified CSS -->
-  <link href="dist/hivtrace.css" rel="stylesheet">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="dist/vendor.js"></script>
 
-  <!-- Latest compiled and minified JavaScript -->
-  <script src="dist/vendor.js"></script>
+    <style>
+      .navbar {
+        position: relative;
+      }
+    </style>
+  </head>
 
-  <style>
-    .navbar {
-      position : relative;
-    }
-  </style>
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button
+            type="button"
+            class="navbar-toggle"
+            data-toggle="collapse"
+            data-target="#navbar-collapse-1"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">CDC HIV-TRACE Workshop</a>
+        </div>
 
-</head>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                >Datasets<b class="caret"></b
+              ></a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a href=""><label>Item One</label></a>
+                </li>
+              </ul>
+            </li>
 
-<body>
-
-<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
-
-  <div class="container">
-
-    <!-- Brand and toggle get grouped for better mobile display -->
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="#">CDC HIV-TRACE Workshop</a>
-    </div>
-
-    <!-- Collect the nav links, forms, and other content for toggling -->
-    <div class="collapse navbar-collapse" id = "navbar-collapse-1">
-
-      <ul class="nav navbar-nav">
-
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Datasets<b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href=""><label>Item One</label></a></li>
-          </ul>
-        </li>
-
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">File<b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li> <label>Load network JSON</label> <input type="file" id="json_file"></id></li>
-            <li>
-                <a href = "#" data-toggle = "modal" data-target = "#csv_loader_modal"><span class = "fa fa-database"></span> Load .CSV data </a>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                >File<b class="caret"></b
+              ></a>
+              <ul class="dropdown-menu">
+                <li>
+                  <label>Load network JSON</label>
+                  <input type="file" id="json_file" />
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    data-toggle="modal"
+                    data-target="#csv_loader_modal"
+                    ><span class="fa fa-database"></span> Load .CSV data
+                  </a>
+                </li>
+              </ul>
             </li>
           </ul>
-        </li>
 
-      </ul>
-
-      <form class="navbar-form navbar-right">
-        <div class = 'form-group'  id='network_status_string'>
+          <form class="navbar-form navbar-right">
+            <div class="form-group" id="network_status_string"></div>
+          </form>
         </div>
-      </form>
-
-    </div><!-- /.navbar-collapse -->
-  </div><!-- /.container-fluid -->
-</nav>
-
-
-<div class="modal fade" id = "csv_loader_modal" tabindex="-1" role="dialog">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-         <h4 class="modal-title">Load external network information</h4>
+        <!-- /.navbar-collapse -->
       </div>
-      <div class="modal-body">      
-        <form id = "csv_enclosing_form">
-          <div class="form-group">
-            <label for="csv_import_text">Data type label</label>
-            <input type="text" id="csv_import_text" value="Social"/>
-             <p class="help-block">Descriptive name for the type of data being loaded.</p>
-          </div>
+      <!-- /.container-fluid -->
+    </nav>
 
-          <div class="form-group">
-            <label for = "csv_node_progress">Node attribute file</label> 
-            <button id = "csv_node_file_help" type="button" class="btn btn-xs btn-info">
-                <span class = "fa fa-question"></span>
-            </button>
-            <input type="file" id="csv_node_file"/>
-            <div id = "csv_node_progress" style = "display:none">Loading...<span class = "fa fa-spinner fa-spin"></span></div>
-            <p class="help-block">A CSV file with node attributes.</p>
-          </div>
-
-          <div class="input-group">
-            <label for = "csv_edge_progress">Link attribute file</label> 
-            <button id = "csv_edge_file_help" type="button" class="btn btn-xs btn-info">
-                <span class = "fa fa-question"></span>
-            </button>
-            <input type="file" id="csv_edge_file"/>
-            <div id = "csv_node_progress" style = "display:none">Loading...<span class = "fa fa-spinner fa-spin"></span></div>
-            <p class="help-block">A CSV file with links and their attribute.</p>
-          </div>
-          
-          <div class="alert" role="alert" style = "display:none" id = "csv_import_status">
-                
-          </div>
-          
-        </form>
-      </div>
-      
-      <div class="modal-footer">
-      
-        <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
-        <button type="button" class="btn btn-primary" disabled id = "csv_proceed_button">Proceed</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
-      </div>
-    </div>
-  </div>
-</div>
-    
-<div class="container">
-   <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
-     <div class="col-lg-12">
-         <div class="alert alert-danger alert-lg" id='app-error' style='display:none;'></div>
-    </div>
-   </div>
-   
-    <div class="modal fade" data-hivtrace-ui-role="cluster_list" tabindex="-1" role="dialog">
+    <div class="modal fade" id="csv_loader_modal" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
-        <div class="modal-content" data-hivtrace-ui-role = "cluster_list_body">
+        <div class="modal-content">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Listing nodes in cluster X</h4>
-             <button type="button" data-hivtrace-ui-role = "cluster_list_view_toggle" class = 'btn btn-primary pull-right' data-view = 'attribute'>Group by ID</button>
-             <button type="button"  class = 'btn btn-default btn-small'><i class="fa fa-download" data-hivtrace-ui-role = "cluster_list_data_export"></i></button>
-         </div>
-          <ul data-hivtrace-ui-role = 'cluster_list_payload' class = 'list-unstyled'>
-          </ul>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">Load external network information</h4>
+          </div>
+          <div class="modal-body">
+            <form id="csv_enclosing_form">
+              <div class="form-group">
+                <label for="csv_import_text">Data type label</label>
+                <input type="text" id="csv_import_text" value="Social" />
+                <p class="help-block">
+                  Descriptive name for the type of data being loaded.
+                </p>
+              </div>
+
+              <div class="form-group">
+                <label for="csv_node_progress">Node attribute file</label>
+                <button
+                  id="csv_node_file_help"
+                  type="button"
+                  class="btn btn-xs btn-info"
+                >
+                  <span class="fa fa-question"></span>
+                </button>
+                <input type="file" id="csv_node_file" />
+                <div id="csv_node_progress" style="display:none">
+                  Loading...<span class="fa fa-spinner fa-spin"></span>
+                </div>
+                <p class="help-block">A CSV file with node attributes.</p>
+              </div>
+
+              <div class="input-group">
+                <label for="csv_edge_progress">Link attribute file</label>
+                <button
+                  id="csv_edge_file_help"
+                  type="button"
+                  class="btn btn-xs btn-info"
+                >
+                  <span class="fa fa-question"></span>
+                </button>
+                <input type="file" id="csv_edge_file" />
+                <div id="csv_node_progress" style="display:none">
+                  Loading...<span class="fa fa-spinner fa-spin"></span>
+                </div>
+                <p class="help-block">
+                  A CSV file with links and their attribute.
+                </p>
+              </div>
+
+              <div
+                class="alert"
+                role="alert"
+                style="display:none"
+                id="csv_import_status"
+              ></div>
+            </form>
+          </div>
+
           <div class="modal-footer">
             <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
-            <button type="button" class="btn btn-default" data-dismiss="modal">Dismiss</button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              disabled
+              id="csv_proceed_button"
+            >
+              Proceed
+            </button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+              Dismiss
+            </button>
           </div>
         </div>
       </div>
     </div>
 
+    <div class="container">
+      <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
+        <div class="col-lg-12">
+          <div
+            class="alert alert-danger alert-lg"
+            id="app-error"
+            style="display:none;"
+          ></div>
+        </div>
+      </div>
 
-  <div class="tabbable">
-    <ul class="nav nav-tabs" id="top_level_tab_container">
-      <li class="active" id="main-tab"><a id = 'trace-default-tab' href="#trace-results" data-toggle="tab">Network</a></li>
-      <li class='disabled' id='lanl-result-tab'><a href="#lanl-trace-results" data-toggle="tab">Network + DB</a></li>
-      <li class='disabled' id="graph-tab"><a href="#trace-graph" data-toggle="tab">Statistics</a></li>
-      <li class='disabled' id="clusters-tab"><a href="#trace-clusters" data-toggle="tab">Clusters (1.5%)</a></li>
-      <li class='disabled' id="subclusters-tab"><a href="#trace-subclusters" data-toggle="tab">Subclusters (0.5%)</a></li>
-      <li class='disabled' id="nodes-tab"><a href="#trace-nodes" data-toggle="tab">Nodes</a></li>
-      <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
-      <li class='disabled'><a href="#trace-settings" data-toggle="tab">Settings</a></li>
-    </ul>
-
-    <div class="tab-content" id = "top_level_tab_content">
-      <div id="trace-results" class="tab-pane active">
-        <!-- Warning bar -->
-        <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
-          <div class="col-lg-12">
-            <div class="alert alert-warning alert-dismissible" id='main-warning' style='display:none;'>
-             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div
+        class="modal fade"
+        data-hivtrace-ui-role="cluster_list"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content" data-hivtrace-ui-role="cluster_list_body">
+            <div class="modal-header">
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 class="modal-title">Listing nodes in cluster X</h4>
+              <button
+                type="button"
+                data-hivtrace-ui-role="cluster_list_view_toggle"
+                class="btn btn-primary pull-right"
+                data-view="attribute"
+              >
+                Group by ID
+              </button>
+              <button type="button" class="btn btn-default btn-small">
+                <i
+                  class="fa fa-download"
+                  data-hivtrace-ui-role="cluster_list_data_export"
+                ></i>
+              </button>
+            </div>
+            <ul
+              data-hivtrace-ui-role="cluster_list_payload"
+              class="list-unstyled"
+            ></ul>
+            <div class="modal-footer">
+              <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
+              <button
+                type="button"
+                class="btn btn-default"
+                data-dismiss="modal"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="row" data-hivtrace = "cluster-clone">
-          <div class='col-lg-12'>
-            <div class="nav-trace">
-              <div class="input-group input-group-sm">
+      <div class="tabbable">
+        <ul class="nav nav-tabs" id="top_level_tab_container">
+          <li class="active" id="main-tab">
+            <a id="trace-default-tab" href="#trace-results" data-toggle="tab"
+              >Network</a
+            >
+          </li>
+          <li class="disabled" id="lanl-result-tab">
+            <a href="#lanl-trace-results" data-toggle="tab">Network + DB</a>
+          </li>
+          <li class="disabled" id="graph-tab">
+            <a href="#trace-graph" data-toggle="tab">Statistics</a>
+          </li>
+          <li class="disabled" id="clusters-tab">
+            <a href="#trace-clusters" data-toggle="tab">Clusters (1.5%)</a>
+          </li>
+          <li class="disabled" id="subclusters-tab">
+            <a href="#trace-subclusters" data-toggle="tab"
+              >Subclusters (0.5%)</a
+            >
+          </li>
+          <li class="disabled" id="nodes-tab">
+            <a href="#trace-nodes" data-toggle="tab">Nodes</a>
+          </li>
+          <li class="disabled" id="attributes-tab">
+            <a href="#trace-attributes" data-toggle="tab">Attributes</a>
+          </li>
+          <li class="disabled">
+            <a href="#trace-settings" data-toggle="tab">Settings</a>
+          </li>
+        </ul>
 
-                <!-- UI Bar -->
-                <div class="nav-trace">
-                  <div class="input-group input-group-sm" id = 'network_ui_bar' data-hivtrace-button-bar = 'yes'>
-                    <div class="input-group-btn" data-hivtrace-ui-role = 'button_group'></div>
-                    <span class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role = "cluster_operations_button">Clusters <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='cluster_operations_container'></ul>
-                    </span>
-                    <div class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      data-hivtrace-ui-role = "attributes_label">Color <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role ='attributes'></ul>
-                      <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='attributes_invert'>Invert</button>
-                    </div>
-                    <div class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      data-hivtrace-ui-role="shapes_label">Shape <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='shapes'></ul>
-                    </div>
-
-                    <div class="input-group-btn">
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      data-hivtrace-ui-role="opacity_label">Opacity <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='opacity'></ul>
-                      <button type="button" class="btn btn-default" style = 'display:none' data-hivtrace-ui-role='opacity_invert'>Invert</button>
-                    </div>
-
-                   <div class="input-group-btn" style = 'display: none' data-hivtrace-ui-role='extra_operations_enclosure'>
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                      data-hivtrace-ui-role="extra_label">Action <span class="caret"></span></button>
-                      <ul class="dropdown-menu" role="menu" data-hivtrace-ui-role='extra_operations_container'></ul>
-                    </div>
-
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-addon">
-                            <i class = "fa fa-search" ></i>
-                        </span>
-                        <input type="text" class="form-control" placeholder="Text in attributes" data-hivtrace-ui-role='filter' />
-                        <span class="input-group-addon">
-                           Hide others <input type = 'checkbox' data-hivtrace-ui-role = 'hide_filter'> </input>
-                        </span>
-                        <span class="input-group-addon">
-                           Show small clusters <input type = 'checkbox' data-hivtrace-ui-role = 'show_small_clusters'> </input>
-                        </span>
-                        <span class="input-group-addon">
-                            <a data-toggle="collapse" href="#network_ui_bar_legend" aria-expanded="false" aria-controls="network_ui_bar_legend">
-                            <i class = "fa fa-question"></i>
-                            </a>
-                       </span>
-                    </div>
-                  </div>
+        <div class="tab-content" id="top_level_tab_content">
+          <div id="trace-results" class="tab-pane active">
+            <!-- Warning bar -->
+            <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
+              <div class="col-lg-12">
+                <div
+                  class="alert alert-warning alert-dismissible"
+                  id="main-warning"
+                  style="display:none;"
+                >
+                  <button
+                    type="button"
+                    class="close"
+                    data-dismiss="alert"
+                    aria-label="Close"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
                 </div>
+              </div>
+            </div>
 
+            <div class="row" data-hivtrace="cluster-clone">
+              <div class="col-lg-12">
+                <div class="nav-trace">
+                  <div class="input-group input-group-sm">
+                    <!-- UI Bar -->
+                    <div class="nav-trace">
+                      <div
+                        class="input-group input-group-sm"
+                        id="network_ui_bar"
+                        data-hivtrace-button-bar="yes"
+                      >
+                        <div
+                          class="input-group-btn"
+                          data-hivtrace-ui-role="button_group"
+                        ></div>
+                        <span class="input-group-btn">
+                          <button
+                            type="button"
+                            class="btn btn-default dropdown-toggle"
+                            data-toggle="dropdown"
+                            data-hivtrace-ui-role="cluster_operations_button"
+                          >
+                            Clusters <span class="caret"></span>
+                          </button>
+                          <ul
+                            class="dropdown-menu"
+                            role="menu"
+                            data-hivtrace-ui-role="cluster_operations_container"
+                          ></ul>
+                        </span>
+                        <div class="input-group-btn">
+                          <button
+                            type="button"
+                            class="btn btn-default dropdown-toggle"
+                            data-toggle="dropdown"
+                            data-hivtrace-ui-role="attributes_label"
+                          >
+                            Color <span class="caret"></span>
+                          </button>
+                          <ul
+                            class="dropdown-menu"
+                            role="menu"
+                            data-hivtrace-ui-role="attributes"
+                          ></ul>
+                          <button
+                            type="button"
+                            class="btn btn-default"
+                            style="display:none"
+                            data-hivtrace-ui-role="attributes_invert"
+                          >
+                            Invert
+                          </button>
+                        </div>
+                        <div class="input-group-btn">
+                          <button
+                            type="button"
+                            class="btn btn-default dropdown-toggle"
+                            data-toggle="dropdown"
+                            data-hivtrace-ui-role="shapes_label"
+                          >
+                            Shape <span class="caret"></span>
+                          </button>
+                          <ul
+                            class="dropdown-menu"
+                            role="menu"
+                            data-hivtrace-ui-role="shapes"
+                          ></ul>
+                        </div>
 
-                <!--<div class="nav-trace" id = "network_ui_bar_sliders" style = "display: none">
+                        <div class="input-group-btn">
+                          <button
+                            type="button"
+                            class="btn btn-default dropdown-toggle"
+                            data-toggle="dropdown"
+                            data-hivtrace-ui-role="opacity_label"
+                          >
+                            Opacity <span class="caret"></span>
+                          </button>
+                          <ul
+                            class="dropdown-menu"
+                            role="menu"
+                            data-hivtrace-ui-role="opacity"
+                          ></ul>
+                          <button
+                            type="button"
+                            class="btn btn-default"
+                            style="display:none"
+                            data-hivtrace-ui-role="opacity_invert"
+                          >
+                            Invert
+                          </button>
+                        </div>
+
+                        <div
+                          class="input-group-btn"
+                          style="display: none"
+                          data-hivtrace-ui-role="extra_operations_enclosure"
+                        >
+                          <button
+                            type="button"
+                            class="btn btn-default dropdown-toggle"
+                            data-toggle="dropdown"
+                            data-hivtrace-ui-role="extra_label"
+                          >
+                            Action <span class="caret"></span>
+                          </button>
+                          <ul
+                            class="dropdown-menu"
+                            role="menu"
+                            data-hivtrace-ui-role="extra_operations_container"
+                          ></ul>
+                        </div>
+
+                        <div class="input-group input-group-sm">
+                          <span class="input-group-addon">
+                            <i class="fa fa-search"></i>
+                          </span>
+                          <input
+                            type="text"
+                            class="form-control"
+                            placeholder="Text in attributes"
+                            data-hivtrace-ui-role="filter"
+                          />
+                          <span class="input-group-addon">
+                            Hide others
+                            <input
+                              type="checkbox"
+                              data-hivtrace-ui-role="hide_filter"
+                            />
+                          </span>
+                          <span class="input-group-addon">
+                            Show small clusters
+                            <input
+                              type="checkbox"
+                              data-hivtrace-ui-role="show_small_clusters"
+                            />
+                          </span>
+                          <span class="input-group-addon">
+                            <a
+                              data-toggle="collapse"
+                              href="#network_ui_bar_legend"
+                              aria-expanded="false"
+                              aria-controls="network_ui_bar_legend"
+                            >
+                              <i class="fa fa-question"></i>
+                            </a>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!--<div class="nav-trace" id = "network_ui_bar_sliders" style = "display: none">
                     <div class="input-group">
                         <label  id = "network_ui_bar_sliders_label_from">2001/01/01</label>
                             <input id = "network_ui_bar_sliders_from" class = "col-lg-3" type = "range" min = "0" max = "100" step = "0.1" value = "1"></input>
@@ -239,330 +440,513 @@
                         <label class = "pull-right" id = "network_ui_bar_sliders_label_to">2012/01/01</label>
                     </div>
                 </div>-->
+                  </div>
+                </div>
 
-              </div>
-            </div>
+                <!-- Legend SVG -->
+                <div
+                  class="row collapse"
+                  id="network_ui_bar_legend"
+                  style="margin-top : 0.1em"
+                  data-hivtrace="cluster-clone"
+                >
+                  <div class="well">
+                    <span class="label label-primary">Clusters</span> are shown
+                    as circles with thick rims
+                    <svg
+                      width="20"
+                      height="20"
+                      style="vertical-align: bottom; display: inline"
+                    >
+                      <circle cx="10" cy="10" r="7" class="cluster"></circle>
+                    </svg>
+                    with <em>area</em> proportional to the number of nodes in a
+                    cluster. Click on clusters to show menu options, click and
+                    drag to reposition.
+                    <p />
+                    <span class="label label-primary">Nodes</span> are shown as
+                    different symbols (depending on rendering options), with
+                    thin rims
+                    <svg
+                      width="20"
+                      height="20"
+                      style="vertical-align: bottom; display: inline"
+                    >
+                      <circle cx="10" cy="10" r="7" class="node"></circle></svg
+                    >, and <em>area</em> scaling with the number of links.
 
-            <!-- Legend SVG -->
-            <div class = "row collapse" id= "network_ui_bar_legend" style = "margin-top : 0.1em" data-hivtrace = "cluster-clone">
-                <div class="well">
-                    <span class="label label-primary">Clusters</span> are shown as circles with thick rims
-                        <svg width = "20" height = "20" style = "vertical-align: bottom; display: inline">
-                            <circle cx = "10" cy = "10" r = "7" class = 'cluster'> </circle>
-                        </svg>
-                      with <em>area</em> proportional to the number of nodes in a cluster. Click on clusters
-                      to show menu options, click and drag to reposition. <p/>
-                     <span class="label label-primary">Nodes</span> are shown as different symbols (depending on
-                     rendering options), with thin rims <svg width = "20" height = "20" style = "vertical-align: bottom; display: inline">
-                            <circle cx = "10" cy = "10" r = "7" class = 'node'> </circle>
-                        </svg>, and <em>area</em> scaling with the number of links.
+                    <p />
+                    Type in text to search for clusters and nodes whose
+                    <em>attributes contain the term</em>. <br />
+                    For example, typing in <code>MSM</code> will highlight nodes
+                    and/or clusters that have 'MSM' in any of the data fields.
+                    <br />
+                    Type in space separated terms (<code>MSM IDU</code>) to
+                    search for <b>either</b> term. <br />
+                    Type in terms in quotes (<code>\"male\"</code>) will search
+                    for this <b>exact</b> term. <br />
+                    Type in <code>&lt;0.01</code> to search for nodes that have
+                    edges which are 0.01 (1%) or shorter. Any positive threshold
+                    works <br />
+                    <p />
+                    Matching node
+                    <svg
+                      width="20"
+                      height="20"
+                      style="vertical-align: bottom; display: inline"
+                    >
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="7"
+                        class="node selected_object"
+                      ></circle></svg
+                    ><br />
+                    Cluster where 25% of nodes match the term
+                    <svg
+                      width="28"
+                      height="28"
+                      style="vertical-align: bottom; display: inline"
+                    >
+                      <circle cx="14" cy="14" r="8" class="cluster"></circle>
+                      <path d = 'M 2 14 A 12 12 0 0 1 14 2'/ style = 'fill:
+                      none; stroke: #337AB7; stroke-width: 3px;'></svg
+                    ><br />
+                    Cluster where 75% of nodes match the term
+                    <svg
+                      width="28"
+                      height="28"
+                      style="vertical-align: bottom; display: inline"
+                    >
+                      <circle cx="14" cy="14" r="8" class="cluster"></circle>
+                      <path d = 'M 2 14 A 12 12 0 1 1 14 26'/ style = 'fill:
+                      none; stroke: #337AB7; stroke-width: 3px;'>
+                    </svg>
+                    <p />
 
-                        <p/>
-                        Type in text to search for clusters and nodes whose <em>attributes contain the term</em>. <br/>
-                        For example, typing in <code>MSM</code> will highlight nodes and/or clusters that 
-                        have 'MSM' in any of the data fields. <br/>
-                        Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <br/>
-                        Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <br/>
-                        Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <br/>
-                         <p/>
-                        Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><br/>
-                        Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
-                        <path d = 'M 2 14 A 12 12 0 0 1 14 2'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
-                        </svg><br/> 
-                        Cluster where 75% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>
-                        <path d = 'M 2 14 A 12 12 0 1 1 14 26'/ style = 'fill: none; stroke: #337AB7; stroke-width: 3px;'>
-                        </svg>
-                        <p/>
-        
-                        Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms
-                        <br/>
-                        Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity
-               </div>
-            </div>
+                    Use the <code>Hide others</code> checkbox to automatically
+                    hide all clusters/nodes that do not match the search terms
+                    <br />
+                    Use the <code>Show small clusters</code> checkbox to display
+                    small clusters that may have been hidden for clarity
+                  </div>
+                </div>
 
-
-            <!-- Main SVG -->
-            <div id='network_tag'>
-              <div class="my_progress">
-                <div class="progress-bar progress-bar-striped disabled" role="progressbar" aria-valuenow="100"
-                aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 50px">
-                  Loading the network
+                <!-- Main SVG -->
+                <div id="network_tag">
+                  <div class="my_progress">
+                    <div
+                      class="progress-bar progress-bar-striped disabled"
+                      role="progressbar"
+                      aria-valuenow="100"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      style="width: 100%; height: 50px"
+                    >
+                      Loading the network
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
 
-        </div>
-
-      </div>
-
-
-    <div id="trace-graph" class="tab-pane">
-      <div class='row'>
-        <div class='col-lg-6'>
-          <p class="lead"> Network Statistics </p>
-          <table class="table table-striped table-condensed table-responsive" id="graph_summary_table">
-          </table>
-        </div>
-        <div class='col-lg-6'>
-          <p id='histogram_label' class="lead"></p>
-          <div class='row' id='histogram_tag' style='margin-left: 5px'>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="lanl-trace-results" class="tab-pane">
-      <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
-        <div class="col-lg-12">
-          <div class="alert alert-info" id='lanl-main-warning' style='display:none;'>
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class='col-lg-12'>
-          <div class="row">
-            <div class="input-group input-group-sm" id='lanl_network_ui_bar'>
-              <span class="input-group-btn">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id = "lanl_network_ui_bar_cluster_operations_button">Clusters <span class="caret"></span></button>
-              <ul class="dropdown-menu" role="menu" id='lanl_network_ui_bar_cluster_operations_container'></ul>
-              </span>
-              <div class="input-group-btn">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                id="lanl_network_ui_bar_attribute_label">Attribute <span class="caret"></span></button>
-                <ul class="dropdown-menu" role="menu" id='lanl_network_ui_bar_attributes'></ul>
+          <div id="trace-graph" class="tab-pane">
+            <div class="row">
+              <div class="col-lg-6">
+                <p class="lead">Network Statistics</p>
+                <table
+                  class="table table-striped table-condensed table-responsive"
+                  id="graph_summary_table"
+                ></table>
               </div>
-              <input type="text" class="form-control" placeholder="search" id='lanl_network_ui_bar_search'>
-            </div>
-          </div>
-          <div class='row' id='lanl-network_tag'>
-            <div class="my_progress">
-              <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100"
-              aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-                Loading the network...
+              <div class="col-lg-6">
+                <p id="histogram_label" class="lead"></p>
+                <div
+                  class="row"
+                  id="histogram_tag"
+                  style="margin-left: 5px"
+                ></div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class='col-lg-9'>
-          <p id='lanl-network_status_string' class='text-info'></p>
-        </div>
-      </div>
-    </div>
 
-    <div id="trace-clusters" class="tab-pane">
-      <div class='row'>
-        <div class='col-lg-12'>
-          <span class="pull-right" id="cluster-table-export"> </span>
-          <p class="lead"> Clusters </p>
-          <table class="table table-striped table-condensed table-hover" id="cluster_table">
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="trace-subclusters" class="tab-pane">
-      <div class='row'>
-        <div class='col-lg-12'>
-          <span class="pull-right" id="subcluster-table-export"> </span>
-          <p class="lead"> Subclusters </p>
-          <table class="table table-striped table-condensed table-hover" id="subcluster_table">
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="trace-nodes" class="tab-pane">
-      <div class='row'>
-        <div class='col-lg-12'>
-          <span class="pull-right" id="node-table-export"> </span>
-          <p class="lead"> Linked individuals </p>
-          <table class="table table-striped table-condensed table-hover" id="node_table">
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="trace-attributes" class="tab-pane">
-      <div class='row'>
-        <div class="nav-trace">
-          <div class="input-group input-group-sm" data-hivtrace-ui-role ='attributes_container'>
-            <span class="input-group-btn">
-                          Categorical
-                          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-hivtrace-ui-role = "attributes_cat_label">Attributes <span class="caret"></span></button>
-            <ul class="dropdown-menu" role="menu"  data-hivtrace-ui-role='attributes_cat'></ul>
-            </span>
-          </div>
-        </div>
-        <div class='col-lg-6'  data-hivtrace-ui-role = "aux_svg_holder_enclosed" style = 'display: none'>
-            <div class = "row">
-				<button type="button" class="btn btn-info" id = "network_pairwise_chord_legend"><i class = "fa fa-question"></i></button>
-            </div>
-
-              <div  data-hivtrace-ui-role ='aux_svg_holder' class='row style = margin-left: 5px'>
-             </div>
-        </div>
-        <div class='col-lg-6 '  data-hivtrace-ui-role = 'attribute_table_enclosed' style = 'display: none'>
-            <div class = "row">
-            	 <div class = "col-lg-2">
-            	 <div class="input-group input-group-sm" >
-            	 	<span class="input-group-addon" id = "network_pairwise_table_legend">
-						<i class = "fa fa-question"></i></button>
-					</span>
-						<span class="input-group-addon">
-                           Show as % <input type = 'checkbox'  data-hivtrace-ui-role = 'pairwise_table_pecentage'> </input>
-                        </span>
-    				 </div>
-    			  </div>
-            </div>
-            <div class = "row">
-                   <table class = "table table-striped table-condensed table-hover" data-hivtrace-ui-role = "attribute_table">
-                   </table>
+          <div id="lanl-trace-results" class="tab-pane">
+            <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
+              <div class="col-lg-12">
+                <div
+                  class="alert alert-info"
+                  id="lanl-main-warning"
+                  style="display:none;"
+                ></div>
               </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="row">
+                  <div
+                    class="input-group input-group-sm"
+                    id="lanl_network_ui_bar"
+                  >
+                    <span class="input-group-btn">
+                      <button
+                        type="button"
+                        class="btn btn-default dropdown-toggle"
+                        data-toggle="dropdown"
+                        id="lanl_network_ui_bar_cluster_operations_button"
+                      >
+                        Clusters <span class="caret"></span>
+                      </button>
+                      <ul
+                        class="dropdown-menu"
+                        role="menu"
+                        id="lanl_network_ui_bar_cluster_operations_container"
+                      ></ul>
+                    </span>
+                    <div class="input-group-btn">
+                      <button
+                        type="button"
+                        class="btn btn-default dropdown-toggle"
+                        data-toggle="dropdown"
+                        id="lanl_network_ui_bar_attribute_label"
+                      >
+                        Attribute <span class="caret"></span>
+                      </button>
+                      <ul
+                        class="dropdown-menu"
+                        role="menu"
+                        id="lanl_network_ui_bar_attributes"
+                      ></ul>
+                    </div>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="search"
+                      id="lanl_network_ui_bar_search"
+                    />
+                  </div>
+                </div>
+                <div class="row" id="lanl-network_tag">
+                  <div class="my_progress">
+                    <div
+                      class="progress-bar progress-bar-striped active"
+                      role="progressbar"
+                      aria-valuenow="100"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      style="width: 100%"
+                    >
+                      Loading the network...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-9">
+                <p id="lanl-network_status_string" class="text-info"></p>
+              </div>
+            </div>
           </div>
+
+          <div id="trace-clusters" class="tab-pane">
+            <div class="row">
+              <div class="col-lg-12">
+                <span class="pull-right" id="cluster-table-export"> </span>
+                <p class="lead">Clusters</p>
+                <table
+                  class="table table-striped table-condensed table-hover"
+                  id="cluster_table"
+                ></table>
+              </div>
+            </div>
+          </div>
+
+          <div id="trace-subclusters" class="tab-pane">
+            <div class="row">
+              <div class="col-lg-12">
+                <span class="pull-right" id="subcluster-table-export"> </span>
+                <p class="lead">Subclusters</p>
+                <table
+                  class="table table-striped table-condensed table-hover"
+                  id="subcluster_table"
+                ></table>
+              </div>
+            </div>
+          </div>
+
+          <div id="trace-nodes" class="tab-pane">
+            <div class="row">
+              <div class="col-lg-12">
+                <span class="pull-right" id="node-table-export"> </span>
+                <p class="lead">Linked individuals</p>
+                <table
+                  class="table table-striped table-condensed table-hover"
+                  id="node_table"
+                ></table>
+              </div>
+            </div>
+          </div>
+
+          <div id="trace-attributes" class="tab-pane">
+            <div class="row">
+              <div class="nav-trace">
+                <div
+                  class="input-group input-group-sm"
+                  data-hivtrace-ui-role="attributes_container"
+                >
+                  <span class="input-group-btn">
+                    Categorical
+                    <button
+                      type="button"
+                      class="btn btn-default dropdown-toggle"
+                      data-toggle="dropdown"
+                      data-hivtrace-ui-role="attributes_cat_label"
+                    >
+                      Attributes <span class="caret"></span>
+                    </button>
+                    <ul
+                      class="dropdown-menu"
+                      role="menu"
+                      data-hivtrace-ui-role="attributes_cat"
+                    ></ul>
+                  </span>
+                </div>
+              </div>
+              <div
+                class="col-lg-6"
+                data-hivtrace-ui-role="aux_svg_holder_enclosed"
+                style="display: none"
+              >
+                <div class="row">
+                  <button
+                    type="button"
+                    class="btn btn-info"
+                    id="network_pairwise_chord_legend"
+                  >
+                    <i class="fa fa-question"></i>
+                  </button>
+                </div>
+
+                <div
+                  data-hivtrace-ui-role="aux_svg_holder"
+                  class="row style = margin-left: 5px"
+                ></div>
+              </div>
+              <div
+                class="col-lg-6 "
+                data-hivtrace-ui-role="attribute_table_enclosed"
+                style="display: none"
+              >
+                <div class="row">
+                  <div class="col-lg-2">
+                    <div class="input-group input-group-sm">
+                      <span
+                        class="input-group-addon"
+                        id="network_pairwise_table_legend"
+                      >
+                        <i class="fa fa-question"></i>
+                      </span>
+                      <span class="input-group-addon">
+                        Show as %
+                        <input
+                          type="checkbox"
+                          data-hivtrace-ui-role="pairwise_table_pecentage"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <table
+                    class="table table-striped table-condensed table-hover"
+                    data-hivtrace-ui-role="attribute_table"
+                  ></table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-
     </div>
-  </div>
-</div>
 
-<img class="hidden" id="hyphy-chart-image" />
-<canvas class="hidden" id="hyphy-chart-canvas"></canvas>
+    <img class="hidden" id="hyphy-chart-image" />
+    <canvas class="hidden" id="hyphy-chart-canvas"></canvas>
 
-<script src="dist/hivtrace.js"></script>
+    <script src="dist/hivtrace.js"></script>
 
-<script>
+    <script>
+      var network_container = "#network_tag",
+        network_status_string = "#network_status_string",
+        network_warning = "#main-warning",
+        histogram_tag = "#histogram_tag",
+        histogram_label = "#histogram_label",
+        button_bar_prefix = "network_ui_bar",
+        csvexport_label = "#csvexport",
+        fasta_export_label = "#fasta-export",
+        filter_edges_toggle = "#network_ui_bar_toggle_filter_edges",
+        graph_summary_tag = "#graph_summary_table",
+        cluster_table = "#cluster_table",
+        subcluster_table = "#subcluster_table",
+        parent_container = "#top_level_tab_container",
+        node_table = "#node_table",
+        user_graph;
 
-var network_container     = '#network_tag',
-    network_status_string = '#network_status_string',
-    network_warning       = '#main-warning',
-    histogram_tag         = '#histogram_tag',
-    histogram_label       = '#histogram_label',
-    button_bar_prefix     = 'network_ui_bar',
-    csvexport_label       = '#csvexport',
-    fasta_export_label    = '#fasta-export',
-    filter_edges_toggle   = '#network_ui_bar_toggle_filter_edges',
-    graph_summary_tag     = '#graph_summary_table',
-    cluster_table         = '#cluster_table',
-    subcluster_table      = '#subcluster_table',
-    parent_container      = '#top_level_tab_container',
-    node_table            = '#node_table',
-    user_graph;
-
-function HandleAppError (err_string) {
-    $('#main-tab').tab('show');
-    d3.select ("#app-error").text (err_string).style ('display', null);
-    d3.select (parent_container).selectAll ("li").classed ("disabled", true);
-    d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', 'none')});
-}
-
-var init = function(data) {
-
-  try {
-    var graph = "trace_results" in data ? data.trace_results : data;
-    var attributes = null;
-
-      user_graph = new hivtrace.clusterNetwork(graph, 
-                                                  network_container, 
-                                                  network_status_string, 
-                                                  network_warning, 
-                                                  button_bar_prefix, 
-                                                  attributes, 
-                                                  filter_edges_toggle, 
-                                                  cluster_table, 
-                                                  node_table, 
-                                                  parent_container, 
-                                                  {
-                                                    "no_cdc" : false,
-                                                    "subcluster-table" : subcluster_table
-                                                  });
-                                              
-      if (user_graph.is_empty()) { 
-          HandleAppError ("This network contains no clusters and cannot be displayed");
-      } else {
-
-          d3.select ("#app-error").style ('display', 'none');
-          hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
-          hivtrace.graphSummary(graph, graph_summary_tag);
-
-          ["#main-tab","#graph-tab","#clusters-tab","#subclusters-tab", "#nodes-tab","#attributes-tab"].forEach (function (tab) {
-            d3.select (tab).classed ("disabled",false);
+      function HandleAppError(err_string) {
+        $("#main-tab").tab("show");
+        d3.select("#app-error")
+          .text(err_string)
+          .style("display", null);
+        d3.select(parent_container)
+          .selectAll("li")
+          .classed("disabled", true);
+        d3.select(parent_container)
+          .selectAll("li")
+          .selectAll("a")
+          .each(function(d) {
+            d3.select(d3.select(this).attr("href")).style("display", "none");
           });
-          d3.select (parent_container).selectAll ("li").selectAll ("a").each (function (d) { d3.select (d3.select (this).attr ("href")).style ('display', null)});
+      }
 
-          hivtrace.misc.export_table_to_text("#cluster-table-export", cluster_table);
-          hivtrace.misc.export_table_to_text("#subcluster-table-export", subcluster_table);
-          hivtrace.misc.export_table_to_text("#node-table-export", node_table);
+      var init = function(data) {
+        try {
+          var graph = "trace_results" in data ? data.trace_results : data;
+          var attributes = null;
 
-          $("#main-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-                if (user_graph.needs_an_update) {
-                    user_graph.update(false, 0.5);
-                }
-          });
+          user_graph = new hivtrace.clusterNetwork(
+            graph,
+            network_container,
+            network_status_string,
+            network_warning,
+            button_bar_prefix,
+            attributes,
+            filter_edges_toggle,
+            cluster_table,
+            node_table,
+            parent_container,
+            {
+              no_cdc: false,
+              "subcluster-table": subcluster_table
+            }
+          );
 
-          $("#clusters-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-                user_graph.update_volatile_elements (d3.select (cluster_table));
-          });
+          if (user_graph.is_empty()) {
+            HandleAppError(
+              "This network contains no clusters and cannot be displayed"
+            );
+          } else {
+            d3.select("#app-error").style("display", "none");
+            hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
+            hivtrace.graphSummary(graph, graph_summary_tag);
 
-          $("#nodes-tab a[data-toggle='tab']").on ("shown.bs.tab", function (e) {
-                user_graph.update_volatile_elements (d3.select (node_table));
-          });
+            [
+              "#main-tab",
+              "#graph-tab",
+              "#clusters-tab",
+              "#subclusters-tab",
+              "#nodes-tab",
+              "#attributes-tab"
+            ].forEach(function(tab) {
+              d3.select(tab).classed("disabled", false);
+            });
+            d3.select(parent_container)
+              .selectAll("li")
+              .selectAll("a")
+              .each(function(d) {
+                d3.select(d3.select(this).attr("href")).style("display", null);
+              });
 
-          if(data.lanl_trace_results > 0) {
-            // Only if the comparison was done
-            var lanl_network_container     = '#lanl-network_tag',
-                lanl_network_status_string = '#lanl-network_status_string',
-                lanl_network_warning       = '#lanl-main-warning',
-                lanl_histogram_tag         = '#lanl-histogram_tag',
-                lanl_histogram_label       = '#lanl-histogram_label',
-                lanl_csvexport_label       = '#lanl-csvexport',
-                lanl_button_bar_prefix     = 'lanl_network_ui_bar';
+            hivtrace.misc.export_table_to_text(
+              "#cluster-table-export",
+              cluster_table
+            );
+            hivtrace.misc.export_table_to_text(
+              "#subcluster-table-export",
+              subcluster_table
+            );
+            hivtrace.misc.export_table_to_text(
+              "#node-table-export",
+              node_table
+            );
 
-            d3.select ("#lanl-trace-results").classed ("disabled", false);
+            $("#main-tab a[data-toggle='tab']").on("shown.bs.tab", function(e) {
+              if (user_graph.needs_an_update) {
+                user_graph.update(false, 0.5);
+              }
+            });
 
-            var lanl_graph = data.lanl_trace_results;
-            var lanl_graph_rendered = new hivtrace.clusterNetwork(lanl_graph, lanl_network_container, lanl_network_status_string, lanl_network_warning, lanl_button_bar_prefix, attributes, filter_edges_toggle, null, null, parent_container);
+            $("#clusters-tab a[data-toggle='tab']").on("shown.bs.tab", function(
+              e
+            ) {
+              user_graph.update_volatile_elements(d3.select(cluster_table));
+            });
+
+            $("#nodes-tab a[data-toggle='tab']").on("shown.bs.tab", function(
+              e
+            ) {
+              user_graph.update_volatile_elements(d3.select(node_table));
+            });
+
+            if (data.lanl_trace_results > 0) {
+              // Only if the comparison was done
+              var lanl_network_container = "#lanl-network_tag",
+                lanl_network_status_string = "#lanl-network_status_string",
+                lanl_network_warning = "#lanl-main-warning",
+                lanl_histogram_tag = "#lanl-histogram_tag",
+                lanl_histogram_label = "#lanl-histogram_label",
+                lanl_csvexport_label = "#lanl-csvexport",
+                lanl_button_bar_prefix = "lanl_network_ui_bar";
+
+              d3.select("#lanl-trace-results").classed("disabled", false);
+
+              var lanl_graph = data.lanl_trace_results;
+              var lanl_graph_rendered = new hivtrace.clusterNetwork(
+                lanl_graph,
+                lanl_network_container,
+                lanl_network_status_string,
+                lanl_network_warning,
+                lanl_button_bar_prefix,
+                attributes,
+                filter_edges_toggle,
+                null,
+                null,
+                parent_container
+              );
+            }
           }
-       }
-   } 
-   catch (e) {
-     HandleAppError ("Network loading failed with the following error " + e);   
-   }
-}
+        } catch (e) {
+          HandleAppError(
+            "Network loading failed with the following error " + e
+          );
+        }
+      };
 
-var initialize_cluster_network_graphs = function () {
+      var initialize_cluster_network_graphs = function() {
+        //Initialize clusternetworkgraph with json url
+        url = "workshop/SocialDemoFiles/SocialNetwork.trace.json";
+        //url = "test/LA.json"
 
-  //Initialize clusternetworkgraph with json url
-  url = "workshop/SocialDemoFiles/SocialNetwork.trace.json";
-  //url = "test/LA.json"
+        d3.json(url, function(error, results) {
+          if (error) {
+            HandleAppError("Failed loading file " + error.responseURL);
+          } else {
+            init(results);
+          }
+        });
+      };
 
-  d3.json(url, function(error, results) {
-    if (error) {
-        HandleAppError ("Failed loading file " + error.responseURL);
-    } else {
-        init(results);
-    }
-  });
+      function in_progress() {
+        return $(".progress").length > 0;
+      }
 
-}
-
-function in_progress() {
-  return $('.progress').length > 0;
-}
-
-$(document).ready(function(){
-
-$("#network_pairwise_chord_legend").popover(
-{
-     'html' : true,
-     'trigger' : "click",
-     'placement' : "bottom",
-     'content' : "<div style = 'width : 250px'>\
+      $(document).ready(function() {
+        $("#network_pairwise_chord_legend").popover({
+          html: true,
+          trigger: "click",
+          placement: "bottom",
+          content:
+            "<div style = 'width : 250px'>\
                     This panel will show either a <a href = 'https://en.wikipedia.org/wiki/Chord_diagram'><b>chord diagram</b></a> (for category values) \
                     or a <b>scatterplot</b> (for continous values). They are useful to display the pairings \
                     for node attributes across links. Mouse over a particular color to display what attribute it\
@@ -574,45 +958,42 @@ $("#network_pairwise_chord_legend").popover(
                     weight. The connection between females and males (with the females as the focus) will be given 50 / (50+10) = 5/6 of the weight.\
         </div>\
      "
-    }
-);
+        });
 
-$("#network_pairwise_table_legend").popover(
-{
-     'html' : true,
-     'trigger' : "hover",
-     'placement' : "bottom",
-     'content' : "<div style = 'width : 250px'>\
+        $("#network_pairwise_table_legend").popover({
+          html: true,
+          trigger: "hover",
+          placement: "bottom",
+          content:
+            '<div style = \'width : 250px\'>\
 		This table shows how many connections exist between each pair of attribute values. For example, if \
-		a link connects a node which is \"Male\" and a node that is \"Female\", this link contributes \
-		a count of 1 to both \"Male/Female\", and \"Female/Male\" cells of the table. A link connecting a \"Male\" node  \
-		to a \"Male\" node will contribute 2 counts to the Male/Male cell.\
+		a link connects a node which is "Male" and a node that is "Female", this link contributes \
+		a count of 1 to both "Male/Female", and "Female/Male" cells of the table. A link connecting a "Male" node  \
+		to a "Male" node will contribute 2 counts to the Male/Male cell.\
         </div>\
-     "
-    }
-);
+     '
+        });
 
-$("#network_pairwise_chart_legend").popover(
-{
-     'html' : true,
-     'trigger' : "click",
-     'placement' : "bottom",
-     'content' : "<div style = 'width : 250px'>\
+        $("#network_pairwise_chart_legend").popover({
+          html: true,
+          trigger: "click",
+          placement: "bottom",
+          content:
+            '<div style = \'width : 250px\'>\
 		This table shows how many connections exist between each pair of attribute values. For example, if\
-		a link connects a node which is \"Male\" and a node that is \"Female\", this link contributes\
-		a count of 1 to both \"Male/Female\", and \"Female/Male\" cells of the table. A link connecting a \"Male\" node\
-		to a \"Male\" node will contribute 2 counts to the Male/Male cell.\
+		a link connects a node which is "Male" and a node that is "Female", this link contributes\
+		a count of 1 to both "Male/Female", and "Female/Male" cells of the table. A link connecting a "Male" node\
+		to a "Male" node will contribute 2 counts to the Male/Male cell.\
         </div>\
-     "
-    }
-);
+     '
+        });
 
-$("#csv_node_file_help").popover(
-{
-     'html' : true,
-     'trigger' : "click",
-     'placement' : "right",
-     'content' : "<div style = 'width : 250px'>\
+        $("#csv_node_file_help").popover({
+          html: true,
+          trigger: "click",
+          placement: "right",
+          content:
+            "<div style = 'width : 250px'>\
 		Example content<br>\
 		<code>Index,Heroin_Use,Internet_Dating</code><br>\
  <code>SocialID669,No,Yes</code><br>\
@@ -621,15 +1002,14 @@ $("#csv_node_file_help").popover(
 		Must have 'Index' column that will be mapped to existing network node IDs.\
         </div>\
      "
-    }
-);
+        });
 
-$("#csv_edge_file_help").popover(
-{
-     'html' : true,
-     'trigger' : "click",
-     'placement' : "right",
-     'content' : "<div style = 'width : 250px'>\
+        $("#csv_edge_file_help").popover({
+          html: true,
+          trigger: "click",
+          placement: "right",
+          content:
+            "<div style = 'width : 250px'>\
 		Example content<br>\
 		<code>Index,Partner,Contact</code><br>\
  <code>SocialID39,SocialID542,IDU</code><br>\
@@ -638,20 +1018,18 @@ $("#csv_edge_file_help").popover(
 		All three listed columns must be present. Index and Partner ID must either be in the molecular network or the node attribute file\
         </div>\
      "
-    }
-);
+        });
 
+        $("#network_pairwise_table_legend").on("click", function(e) {
+          e.preventDefault();
+        });
 
-$("#network_pairwise_table_legend").on ("click", function (e) {
-	e.preventDefault();
-});
-
- $("#network_ui_search_help").popover(
-    {
-     'html' : true,
-     'trigger' : "hover click",
-     'placement' : "bottom",
-     'content' : "<div style = 'width : 250px'>\
+        $("#network_ui_search_help").popover({
+          html: true,
+          trigger: "hover click",
+          placement: "bottom",
+          content:
+            "<div style = 'width : 250px'>\
         Type in text to search for clusters and nodes whose <em>attributes contain the term</em>. <p/>\
         For example, typing in <code>MSM</code> will highlight nodes and/or clusters that \
         have 'MSM' in any of the data fields. <p/>\
@@ -670,57 +1048,74 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
         Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity\
         </div>\
      "
-    }
-  );
+        });
 
-    initialize_cluster_network_graphs();
-  
-    _loaded_network_data = {"nodes" : [], "edges" : []};
+        initialize_cluster_network_graphs();
 
-   
-    $("#csv_proceed_button").on ("click", function (e) {
-        try {
+        _loaded_network_data = { nodes: [], edges: [] };
 
-            var import_result = user_graph.load_nodes_edges (_loaded_network_data["nodes"], "Index", _loaded_network_data["edges"],  $("#csv_import_text").value);
-            
+        $("#csv_proceed_button").on("click", function(e) {
+          try {
+            var import_result = user_graph.load_nodes_edges(
+              _loaded_network_data["nodes"],
+              "Index",
+              _loaded_network_data["edges"],
+              $("#csv_import_text").value
+            );
+
             var imported_edges = [];
             for (k in import_result.edges) {
-                imported_edges.push ("" + import_result.edges[k] + " <i>" + k + "</i> links");
+              imported_edges.push(
+                "" + import_result.edges[k] + " <i>" + k + "</i> links"
+              );
             }
             if (imported_edges.length == 0) {
-                imported_edges = ["no link data"];
+              imported_edges = ["no link data"];
             }
-            
-            user_graph.display_warning (
-            "Loaded data on <em>" + import_result.existing_nodes + "</em> existing and <em>" + import_result.nodes.length + "</em> new nodes. <br>" +
-            "Loaded  " + imported_edges.join (", ")
-            ,true);
-            $("#csv_loader_modal").modal ('hide');
-            
-            
-        } 
-        catch (e) {
-            d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-danger").text (e);
-            $ ("#csv_proceed_button").prop ("disabled", true);
-            console.log (e);
-        }
-    });
 
-    d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function(error, nodes) {
-      d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function(error, edges) {
-        _loaded_network_data["nodes"] = nodes;
-        _loaded_network_data["edges"] = edges;
-        setTimeout(function() { $("#csv_proceed_button").trigger("click")}, 100);
-      });
-    });
- 
-    
-    [["#csv_node_file", "#csv_node_progress", "nodes"], 
-     ["#csv_edge_file", "#csv_edge_progress", "edges"]].forEach (function (d) {
+            user_graph.display_warning(
+              "Loaded data on <em>" +
+                import_result.existing_nodes +
+                "</em> existing and <em>" +
+                import_result.nodes.length +
+                "</em> new nodes. <br>" +
+                "Loaded  " +
+                imported_edges.join(", "),
+              true
+            );
+            $("#csv_loader_modal").modal("hide");
+          } catch (e) {
+            d3.select("#csv_import_status")
+              .style("display", null)
+              .attr("class", "alert alert-danger")
+              .text(e);
+            $("#csv_proceed_button").prop("disabled", true);
+            console.log(e);
+          }
+        });
 
-        $(d[0]).on ("change", function (e) {
-  
-            $ ("#csv_proceed_button").prop ("disabled");
+        d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function(
+          error,
+          nodes
+        ) {
+          d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function(
+            error,
+            edges
+          ) {
+            _loaded_network_data["nodes"] = nodes;
+            _loaded_network_data["edges"] = edges;
+            setTimeout(function() {
+              $("#csv_proceed_button").trigger("click");
+            }, 100);
+          });
+        });
+
+        [
+          ["#csv_node_file", "#csv_node_progress", "nodes"],
+          ["#csv_edge_file", "#csv_edge_progress", "edges"]
+        ].forEach(function(d) {
+          $(d[0]).on("change", function(e) {
+            $("#csv_proceed_button").prop("disabled");
             d3.select(d[1]).style("display", "block");
             var files = e.target.files; // FileList object
 
@@ -730,50 +1125,57 @@ $("#network_pairwise_table_legend").on ("click", function (e) {
 
               reader.onload = (function(theFile) {
                 return function(e) {
-                    _loaded_network_data[d[2]] = d3.csv.parse (e.target.result);
-                    d3.select ("#csv_import_status").style ('display', null).attr ("class", "alert alert-info").text ("Loaded " + _loaded_network_data[d[2]].length + " CSV records ");
-                    d3.select(d[1]).style("display", "none");
-                    if ( _loaded_network_data["nodes"].length  || _loaded_network_data["edges"].length) {
-                        $ ("#csv_proceed_button").prop ("disabled", null);
-                    }
+                  _loaded_network_data[d[2]] = d3.csv.parse(e.target.result);
+                  d3.select("#csv_import_status")
+                    .style("display", null)
+                    .attr("class", "alert alert-info")
+                    .text(
+                      "Loaded " +
+                        _loaded_network_data[d[2]].length +
+                        " CSV records "
+                    );
+                  d3.select(d[1]).style("display", "none");
+                  if (
+                    _loaded_network_data["nodes"].length ||
+                    _loaded_network_data["edges"].length
+                  ) {
+                    $("#csv_proceed_button").prop("disabled", null);
+                  }
                 };
               })(f);
               reader.readAsText(f);
-        }
+            }
+          });
         });
-    });
-    
-    $("#csv_loader_modal").on ("show.bs.modal", function (e) {
-        d3.select ("#csv_import_status").style ('display', "none");
-        $("#csv_enclosing_form").get (0).reset();
-        $ ("#csv_proceed_button").prop ("disabled", true);
-    });
 
+        $("#csv_loader_modal").on("show.bs.modal", function(e) {
+          d3.select("#csv_import_status").style("display", "none");
+          $("#csv_enclosing_form")
+            .get(0)
+            .reset();
+          $("#csv_proceed_button").prop("disabled", true);
+        });
 
-  
-  // *** HANDLERS ***
-  $("#json_file").on ("change", function (e) {
-  
-    d3.selectAll(".my_progress").style("display", "block");
+        // *** HANDLERS ***
+        $("#json_file").on("change", function(e) {
+          d3.selectAll(".my_progress").style("display", "block");
 
-    var files = e.target.files; // FileList object
+          var files = e.target.files; // FileList object
 
-    if (files.length == 1) {
-      var f = files[0];
-      var reader = new FileReader();
+          if (files.length == 1) {
+            var f = files[0];
+            var reader = new FileReader();
 
-      reader.onload = (function(theFile) {
-        return function(e) {
-            analysis_data = JSON.parse (e.target.result);
-            init(analysis_data);
-        };
-      })(f);
-      reader.readAsText(f);
-    }
-  });
-});
-
-</script>
-
-</body>
+            reader.onload = (function(theFile) {
+              return function(e) {
+                analysis_data = JSON.parse(e.target.result);
+                init(analysis_data);
+              };
+            })(f);
+            reader.readAsText(f);
+          }
+        });
+      });
+    </script>
+  </body>
 </html>

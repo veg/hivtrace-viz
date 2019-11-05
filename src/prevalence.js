@@ -33,7 +33,10 @@ function hivtrace_render_prevalence(
 
   y.range([height, 0]);
 
-  var xAxis = d3.svg.axis().scale(x).orient("bottom"); //.ticks (5, y.tickFormat(5, ".0f"));
+  var xAxis = d3.svg
+    .axis()
+    .scale(x)
+    .orient("bottom"); //.ticks (5, y.tickFormat(5, ".0f"));
 
   var yAxis = d3.svg
     .axis()
@@ -41,13 +44,11 @@ function hivtrace_render_prevalence(
     .orient("left")
     .ticks(8, fractions ? "p" : "f");
 
-  x
-    .domain(
-      d3.extent(plot_data, function(d) {
-        return d["x"];
-      })
-    )
-    .clamp(true);
+  x.domain(
+    d3.extent(plot_data, function(d) {
+      return d["x"];
+    })
+  ).clamp(true);
 
   var extents = d3.extent(plot_data, function(d) {
     return _.max(d["y"]);
@@ -101,7 +102,10 @@ function hivtrace_render_prevalence(
 
   var legend_lines = legend_area.selectAll("g").data(plot_types);
 
-  legend_lines.enter().append("g").attr("class", "annotation-text");
+  legend_lines
+    .enter()
+    .append("g")
+    .attr("class", "annotation-text");
 
   legend_lines
     .selectAll("text")
@@ -159,21 +163,6 @@ function hivtrace_render_prevalence(
         year_points.push({ x: new Date(k, 7, 1), y: fraction });
       }
     }
-
-    var scaler_per_year = 1000 * 60 * 60 * 24 * 365;
-
-    var lf = linear_fit(
-      year_points.map(function(d) {
-        return [(d["x"] - x.domain()[0]) / scaler_per_year, d["y"]];
-      })
-    );
-
-    /*var line = d3.svg.line()
-                .x(function(d) { return x(d['x']); })
-                .y(function(d) { return y(
-                Math.max (0,(d['x'] - x.domain ()[0] )*lf["slope"]/scaler_per_year+lf["intercept"]))
-                ; })
-                .interpolate ("linear");*/
 
     var line = d3.svg
       .line()
