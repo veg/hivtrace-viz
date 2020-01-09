@@ -65,6 +65,7 @@
     "collapse_filtered": "Colapsar Filtrados",
     "fix_all_objects_in_place": "Fijar Todos los Objetos en su Lugar",
     "allow_all_objects_to_float": "Permitir que los Objetos Floten",
+    "collapse_cluster": "Colapsar de Agrupamiento",
     "reset_layout": "Restablecer Diseño"
   },
   "statistics": {
@@ -94,7 +95,7 @@
     "scaled_number_of_genotypes_in_past_2_months": "Número escalado de genotipos en los 2 meses anteriores",
     "group_by_attribute": "Grupo por Atributo",
     "group_by_id": "Grupo por Identificación",
-    "listing_nodes_in_cluster": "Listado de Nodos en Agrupamiento",
+    "listing_nodes": "Listado de nodos ",
     "missing": "Faltantes"
   },
   "nodes_tab": {

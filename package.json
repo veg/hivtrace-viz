@@ -1,12 +1,13 @@
 {
   "name": "hivtrace-viz",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "Visualization for the popular HIV-TRACE package",
   "main": [
     "dist/hivtrace.js",
     "dist/hivtrace.es.js"
   ],
   "dependencies": {
+    "autocomplete.js": "^0.x",
     "bootstrap": "^3.4.1",
     "d3": "3.x",
     "downloadjs": "^1.4.7",
@@ -18,6 +19,7 @@
     "i18n-webpack-plugin": "0.2.0",
     "i18next": "^17.0.18",
     "jquery": "^3.3.1",
+    "jspanel4": "^4.9.1",
     "topojson": "3.x",
     "underscore": "1.x"
   },

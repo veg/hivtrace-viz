@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Cluster 77.1",
+    "description": "6 nodes from Cluster 77.1",
+    "nodes": [
+      "DummyID_928",
+      "DummyID_537",
+      "DummyID_523",
+      "DummyID_189",
+      "DummyID_472",
+      "DummyID_473"
+    ],
+    "created": "2018-01-01T12:14:52.151Z"
+  },
+  {
+    "name": "Subcluster 39.2",
+    "description": "",
+    "nodes": ["DummyID_695", "DummyID_998", "DummyID_993", "DummyID_878"],
+    "created": "2017-01-09T12:15:21.507Z"
+  }
+]
