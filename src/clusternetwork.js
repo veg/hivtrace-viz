@@ -418,6 +418,10 @@ var hivtrace_cluster_network_graph = function(
 
     self.extra_subcluster_table_columns = null;
 
+    var lookup_form_generator = function() {
+      return '<div><ul data-hivtrace-ui-role = "priority-membership-list"></ul></div>';
+    };
+
     var cdc_extra = [
       {
         description: {
@@ -502,33 +506,151 @@ var hivtrace_cluster_network_graph = function(
           };
 
           definition["actions"] = function(item, value) {
-            if (
-              !self.priority_set_editor ||
-              cluster.priority_score.length == 0
-            ) {
-              return null;
-            } else {
-              return _.map(cluster.priority_score, function(c) {
-                let nodeset = new Set(c);
-                return {
-                  icon: "fa-plus",
-                  action: function(button, v) {
-                    if (self.priority_set_editor) {
-                      self.priority_set_editor.append_node_objects(
-                        _.filter(cluster.children, n => {
-                          return (
-                            nodeset.has(n.id) &&
-                            (n.priority_flag == 2 || n.priority_flag == 1)
-                          );
-                        })
-                      );
+            let result = [];
+
+            if (cluster.priority_score.length > 0) {
+              result = result.concat(
+                _.map(cluster.priority_score, function(c) {
+                  return {
+                    icon: "fa-question",
+                    help:
+                      "Do some of these " +
+                      c.length +
+                      " nodes belong to a priority set?",
+                    action: function(this_button, cv) {
+                      let nodeset = new Set(c);
+                      this_button = $(this_button.node());
+                      if (this_button.data("popover_shown") != "shown") {
+                        let popover = this_button
+                          .popover({
+                            sanitize: false,
+                            placement: "right",
+                            container: "body",
+                            html: true,
+                            content: lookup_form_generator,
+                            trigger: "manual"
+                          })
+                          .on("shown.bs.popover", function(e) {
+                            var clicked_object = d3.select(this);
+                            var popover_div = d3.select(
+                              "#" + clicked_object.attr("aria-describedby")
+                            );
+                            var list_element = popover_div.selectAll(
+                              self.get_ui_element_selector_by_role(
+                                "priority-membership-list",
+                                true
+                              )
+                            );
+
+                            list_element.selectAll("li").remove();
+                            let check_membership = _.filter(
+                              _.map(self.defined_priority_groups, g => {
+                                console.log(g);
+                                return [
+                                  g.name,
+                                  _.filter(g.nodes, n => nodeset.has(n)).length,
+                                  _.filter(
+                                    g.partitioned_nodes[1]["new_direct"],
+                                    n => nodeset.has(n.id)
+                                  ).length,
+                                  _.filter(
+                                    g.partitioned_nodes[1]["new_indirect"],
+                                    n => nodeset.has(n.id)
+                                  ).length
+                                ];
+                              }),
+                              gg => gg[1] + gg[2] + gg[3] > 0
+                            );
+
+                            if (check_membership.length == 0) {
+                              check_membership = [
+                                [
+                                  "No nodes belong to any priority set or are linked to any of the priority sets."
+                                ]
+                              ];
+                            } else {
+                              check_membership = _.map(check_membership, m => {
+                                let description = "";
+                                if (m[1]) {
+                                  description +=
+                                    " " + m[1] + " nodes belong to ";
+                                }
+                                if (m[2]) {
+                                  description +=
+                                    " " +
+                                    m[2] +
+                                    " nodes are directly linked @ " +
+                                    _defaultPercentFormatShort(
+                                      self.subcluster_threshold
+                                    );
+                                }
+                                if (m[3]) {
+                                  description +=
+                                    " " +
+                                    m[3] +
+                                    " nodes are indirectly linked @ " +
+                                    _defaultPercentFormatShort(
+                                      self.subcluster_threshold
+                                    );
+                                }
+
+                                description +=
+                                  " to priority set <code>" + m[0] + "</code>";
+                                return description;
+                              });
+                            }
+                            list_element = list_element
+                              .selectAll("li")
+                              .data(check_membership);
+                            list_element.enter().insert("li");
+                            list_element.html(function(d) {
+                              return d;
+                            });
+                          });
+
+                        popover.popover("show");
+                        this_button.data("popover_shown", "shown");
+                        this_button
+                          .off("hidden.bs.popover")
+                          .on("hidden.bs.popover", function() {
+                            $(this).data("popover_shown", "hidden");
+                          });
+                      } else {
+                        this_button.data("popover_shown", "hidden");
+                        this_button.popover("destroy");
+                      }
                     }
-                    return false;
-                  },
-                  help: "Add to priority set"
-                };
-              });
+                  };
+                })
+              );
             }
+
+            if (self.priority_set_editor && cluster.priority_score.length > 0) {
+              result = result.concat(
+                _.map(cluster.priority_score, function(c) {
+                  let nodeset = new Set(c);
+                  return {
+                    icon: "fa-plus",
+                    action: function(button, v) {
+                      if (self.priority_set_editor) {
+                        self.priority_set_editor.append_node_objects(
+                          _.filter(cluster.children, n => {
+                            return (
+                              nodeset.has(n.id) &&
+                              (n.priority_flag == 2 || n.priority_flag == 1)
+                            );
+                          })
+                        );
+                      }
+                      return false;
+                    },
+                    help: "Add to priority set"
+                  };
+                })
+              );
+            }
+
+            return result;
           };
 
           return definition;
@@ -853,7 +975,7 @@ var hivtrace_cluster_network_graph = function(
     // operation: one of
     // "insert" , "delete", "update"
 
-    console.log(name, operation, self.priority_groups_export());
+    //console.log(name, operation, self.priority_groups_export());
 
     if (self.priority_set_table_write) {
       d3.text(self.priority_set_table_write)
@@ -1136,6 +1258,7 @@ var hivtrace_cluster_network_graph = function(
           .append("p")
           .classed("help-block", true)
           .text("Describe this priority group set");
+
         panel_object.first_save = true;
 
         function save_priority_set() {
@@ -5900,11 +6023,6 @@ var hivtrace_cluster_network_graph = function(
                 this_button.popover("destroy");
               }
             }
-            /*'action' : function (button, value) {
-                            if (confirm('This action cannon be undone. Proceed?')) {
-                                self.priority_groups_remove_set (value, true);
-                            }
-                        }*/
           },
           function(button_group, value) {
             if (self.priority_set_editor) {
