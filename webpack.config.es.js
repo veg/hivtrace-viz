@@ -2,7 +2,7 @@ var path = require("path"),
   webpack = require("webpack"),
   I18nPlugin = require("i18n-webpack-plugin");
 
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 var languages = {
   en: require("./locales/en.json"),
@@ -10,70 +10,123 @@ var languages = {
 };
 
 var language = "es";
-
 var filename = "hivtrace.js";
-var vendor_filename = "vendor.js";
 
 if (language != "en") {
   filename = "hivtrace." + language + ".js";
-  vendor_filename = "vendor." + language + ".js";
 }
 
 var config = {
-  debug: true,
   devtool: "source-map",
+  mode: "development",
   entry: {
-    hivtrace: ["./src/entry.js"],
-    vendor: ["jquery", "underscore", "bootstrap", "d3"]
+    hivtrace: ["./src/entry.js"]
+  },
+  optimization: {
+    splitChunks: {
+      chunks: "async",
+      minSize: 30000,
+      maxSize: 0,
+      minChunks: 2,
+      maxAsyncRequests: 6,
+      maxInitialRequests: 4,
+      automaticNameDelimiter: "~",
+      automaticNameMaxLength: 30,
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true
+        }
+      }
+    }
   },
   output: {
     path: path.resolve(__dirname, "dist/"),
-    filename: filename
+    filename: "[name].js"
+    //library: '',
+    //libraryTarget: 'commonjs'
   },
   externals: {
     jsdom: "window"
   },
   module: {
-    loaders: [
+    rules: [
+      {
+        test: /\.css$/i,
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+            options: { publicPath: "/dist/", minimize: false }
+          },
+          "css-loader"
+        ]
+      },
       {
         test: /\.js?$/,
         exclude: /node_modules/,
-        loader: "babel",
+        loader: "babel-loader",
         query: {
-          presets: ["es2015"]
+          presets: ["@babel/preset-env"]
         }
       },
       {
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        loader: "babel",
-        query: {
-          presets: ["react"]
-        }
+        test: require.resolve("jquery"),
+        use: [
+          {
+            loader: "expose-loader",
+            query: "jQuery"
+          },
+          {
+            loader: "expose-loader",
+            query: "$"
+          }
+        ]
       },
       {
-        test: /\.css$/,
-        loader: ExtractTextPlugin.extract("style-loader", "css-loader")
+        test: require.resolve("d3"),
+        use: [
+          {
+            loader: "expose-loader",
+            query: "d3"
+          }
+        ]
       },
-      { test: /jquery/, loader: "expose?$!expose?jQuery" },
-      { test: /d3/, loader: "expose?$!expose?d3" },
+      {
+        test: require.resolve("underscore"),
+        use: [
+          {
+            loader: "expose-loader",
+            query: "_"
+          }
+        ]
+      },
       {
         test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=application/font-woff"
+        loader: "url-loader?limit=10000&mimetype=application/font-woff"
       },
       {
         test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=application/octet-stream"
+        loader: "url-loader?limit=10000&mimetype=application/octet-stream"
       },
-      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file" },
+      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file-loader" },
       {
         test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=image/svg+xml"
+        loader: "url-loader?limit=10000&mimetype=image/svg+xml"
       }
     ]
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin("vendor", vendor_filename),
+    new MiniCssExtractPlugin({
+      // Options similar to the same options in webpackOptions.output
+      // both options are optional
+      filename: "[name].css",
+      chunkFilename: "[id].css"
+    }),
     new webpack.ProvidePlugin({
       $: "jquery",
       jQuery: "jquery",
@@ -81,12 +134,12 @@ var config = {
       _: "underscore"
     }),
     new I18nPlugin(languages[language]),
-    new webpack.IgnorePlugin(/jsdom$/),
-    new ExtractTextPlugin("[name].css")
+    new webpack.IgnorePlugin(/jsdom$/)
+    //new ExtractTextPlugin("[name].css")
   ],
   resolve: {
-    modulesDirectories: ["src", "node_modules"],
-    extensions: ["", ".json", ".js", ".jsx"]
+    //modulesDirectories: ["src", "node_modules"],
+    //extensions: ["", ".json", ".js", ".jsx"]
   }
 };
 
@@ -103,8 +156,8 @@ if (process.env.HOT) {
 
   // Note: enabling React Transform and React Transform HMR:
 
-  config.module.loaders[0].query.plugins.push("react-transform");
-  config.module.loaders[0].query.extra = {
+  config.module.rules[0].query.plugins.push("react-transform");
+  config.module.rules[0].query.extra = {
     "react-transform": [
       {
         target: "react-transform-hmr",
@@ -117,9 +170,7 @@ if (process.env.HOT) {
 
 if (process.env.NODE_ENV === "production") {
   config.devtool = false;
-  config.debug = false;
   config.plugins.push(new webpack.optimize.OccurrenceOrderPlugin());
-  config.plugins.push(new webpack.optimize.UglifyJsPlugin());
 }
 
 module.exports = [config];

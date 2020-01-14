@@ -17,18 +17,39 @@ if (language != "en") {
 }
 
 var config = {
-  mode: "development",
   devtool: "source-map",
+  mode: "development",
   entry: {
-    hivtrace: ["./src/entry.js"],
-    vendor: ["jquery", "underscore", "bootstrap", "d3"]
+    hivtrace: ["./src/entry.js"]
   },
-  //optimization: {
-  //  webpack.optimize.splitChunks("vendor", "vendor.js"),
-  //},
+  optimization: {
+    splitChunks: {
+      chunks: "async",
+      minSize: 30000,
+      maxSize: 0,
+      minChunks: 2,
+      maxAsyncRequests: 6,
+      maxInitialRequests: 4,
+      automaticNameDelimiter: "~",
+      automaticNameMaxLength: 30,
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true
+        }
+      }
+    }
+  },
   output: {
     path: path.resolve(__dirname, "dist/"),
     filename: "[name].js"
+    //library: '',
+    //libraryTarget: 'commonjs'
   },
   externals: {
     jsdom: "window"
@@ -40,7 +61,7 @@ var config = {
         use: [
           {
             loader: MiniCssExtractPlugin.loader,
-            options: { publicPath: "/dist/" }
+            options: { publicPath: "/dist/", minimize: false }
           },
           "css-loader"
         ]
@@ -86,16 +107,16 @@ var config = {
       },
       {
         test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=application/font-woff"
+        loader: "url-loader?limit=10000&mimetype=application/font-woff"
       },
       {
         test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=application/octet-stream"
+        loader: "url-loader?limit=10000&mimetype=application/octet-stream"
       },
-      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file" },
+      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file-loader" },
       {
         test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-        loader: "url?limit=10000&mimetype=image/svg+xml"
+        loader: "url-loader?limit=10000&mimetype=image/svg+xml"
       }
     ]
   },
@@ -112,7 +133,7 @@ var config = {
       d3: "d3",
       _: "underscore"
     }),
-    //new I18nPlugin(languages[language]),
+    new I18nPlugin(languages[language]),
     new webpack.IgnorePlugin(/jsdom$/)
     //new ExtractTextPlugin("[name].css")
   ],

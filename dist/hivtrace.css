@@ -6,13 +6,11 @@
  * -------------------------- */
 @font-face {
   font-family: "FontAwesome";
-  src: url(674f50d287a8c48dc19ba404d20fe713.eot);
-  src: url(674f50d287a8c48dc19ba404d20fe713.eot?#iefix&v=4.7.0)
-      format("embedded-opentype"),
-    url(af7ae505a9eed503f8b8e6982036873e.woff2) format("woff2"),
-    url(fee66e712a8a08eef5805a46892932ad.woff) format("woff"),
-    url(b06871f281fee6b241d60582ae9369b9.ttf) format("truetype"),
-    url(912ec66d7572ff821749319396470bde.svg#fontawesomeregular) format("svg");
+  src: url([objectModule]);
+  src: url([objectModule]?#iefix&v=4.7.0) format("embedded-opentype"),
+    url([objectModule]) format("woff2"), url([objectModule]) format("woff"),
+    url([objectModule]) format("truetype"),
+    url([objectModule]#fontawesomeregular) format("svg");
   font-weight: normal;
   font-style: normal;
 }
@@ -2340,6 +2338,7 @@
   overflow: visible;
   clip: auto;
 }
+
 .default-bg,
 .secondary-bg {
   background-color: #b0bec5;
@@ -3365,6 +3364,7 @@ circle.injected_object {
 .list-smaller li {
   font-size: 0.75em;
 }
+
 /*!
  * Bootstrap v3.4.1 (https://getbootstrap.com/)
  * Copyright 2011-2019 Twitter, Inc.
@@ -3632,14 +3632,11 @@ th {
 }
 @font-face {
   font-family: "Glyphicons Halflings";
-  src: url(f4769f9bdb7466be65088239c12046d1.eot);
-  src: url(f4769f9bdb7466be65088239c12046d1.eot?#iefix)
-      format("embedded-opentype"),
-    url(448c34a56d699c29117adc64c43affeb.woff2) format("woff2"),
-    url(fa2772327f55d8198301fdb8bcfc8158.woff) format("woff"),
-    url(e18bbf611f2a2e43afc071aa2f4e1512.ttf) format("truetype"),
-    url(89889688147bd7575d6327160d64e760.svg#glyphicons_halflingsregular)
-      format("svg");
+  src: url([objectModule]);
+  src: url([objectModule]?#iefix) format("embedded-opentype"),
+    url([objectModule]) format("woff2"), url([objectModule]) format("woff"),
+    url([objectModule]) format("truetype"),
+    url([objectModule]#glyphicons_halflingsregular) format("svg");
 }
 .glyphicon {
   position: relative;
@@ -10493,4 +10490,5 @@ button.close {
   }
 }
 /*# sourceMappingURL=bootstrap.css.map */
+
 /*# sourceMappingURL=hivtrace.css.map*/
