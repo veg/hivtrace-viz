@@ -1,6 +1,6 @@
 var _ = require("underscore");
 var d3 = require("d3");
-var helpers = require("helpers");
+var helpers = require("./helpers");
 
 var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
