@@ -1,8 +1,8 @@
 var d3 = require("d3"),
   _ = require("underscore"),
-  misc = require("misc"),
-  helpers = require("helpers"),
-  scatterPlot = require("scatterplot"),
+  misc = require("./misc"),
+  helpers = require("./helpers"),
+  scatterPlot = require("./scatterplot"),
   topojson = require("topojson"),
   jsPanel = require("jspanel4"),
   autocomplete = require("autocomplete.js");
@@ -7160,7 +7160,10 @@ var hivtrace_cluster_network_graph = function(
       delete the_cluster["gradient"];
     });
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7286,7 +7289,10 @@ var hivtrace_cluster_network_graph = function(
 
     self.network_svg.selectAll("radialGradient").remove();
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7795,7 +7801,7 @@ var hivtrace_cluster_network_graph = function(
       if (
         self._is_CDC_ &&
         !(options && options["no-subclusters"]) &&
-        (options && options["no-subcluster-compute"])
+        options && options["no-subcluster-compute"]
       ) {
         //// Create subcluster list from nodes data
         //_.each(self.clusters, d => {
