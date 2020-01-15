@@ -4,7 +4,7 @@ var d3 = require("d3"),
   helpers = require("./helpers"),
   scatterPlot = require("./scatterplot"),
   topojson = require("topojson"),
-  jsPanel = require("jspanel4"),
+  jsPanel = require("jspanel4").jsPanel,
   autocomplete = require("autocomplete.js");
 
 const _networkSubclusterSeparator = ".";
@@ -7801,7 +7801,8 @@ var hivtrace_cluster_network_graph = function(
       if (
         self._is_CDC_ &&
         !(options && options["no-subclusters"]) &&
-        options && options["no-subcluster-compute"]
+        options &&
+        options["no-subcluster-compute"]
       ) {
         //// Create subcluster list from nodes data
         //_.each(self.clusters, d => {
