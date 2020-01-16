@@ -3106,6 +3106,12 @@ var hivtrace_cluster_network_graph = function(
         }
       });
 
+      let cluster_id_match =
+        self.precomputed_subclusters &&
+        self.subcluster_threshold in self.precomputed_subclusters
+          ? self.precomputed_subclusters
+          : null;
+
       _.each(split_clusters, function(cluster_nodes, cluster_index) {
         /** extract subclusters; all nodes at given threshold */
         /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
@@ -3144,11 +3150,48 @@ var hivtrace_cluster_network_graph = function(
           return oldest_nodes_first(c1[0], c2[0]);
         });
 
+        let next_id = subclusters.length + 1;
+
         subclusters = _.map(subclusters, function(c, i) {
+          let subcluster_id = i + 1;
+
+          if (cluster_id_match) {
+            let precomputed_values = {};
+            _.each(c, function(n) {
+              if ("subcluster" in n) {
+                var sub_at_k = _.find(
+                  n.subcluster,
+                  t => t[0] == self.subcluster_threshold
+                );
+                if (sub_at_k) {
+                  precomputed_values[
+                    sub_at_k[1].split(_networkSubclusterSeparator)[1]
+                  ] = 1;
+                  return;
+                }
+              }
+
+              precomputed_values[null] = 1;
+            });
+
+            if (
+              null in precomputed_values ||
+              _.keys(precomputed_values).length != 1
+            ) {
+              subcluster_id = next_id++;
+            } else {
+              subcluster_id = _.keys(precomputed_values)[0];
+            }
+
+            /*if ((i+1) != 0 + subcluster_id) {
+                console.log (self.clusters[array_index].cluster_id, i, "=>", subcluster_id, _.keys(precomputed_values));
+             }*/
+          }
+
           var label =
             self.clusters[array_index].cluster_id +
             _networkSubclusterSeparator +
-            (i + 1);
+            subcluster_id;
 
           _.each(c, function(n) {
             //if (!("subcluster_label" in n)) {
