@@ -985,7 +985,7 @@ var hivtrace_cluster_network_graph = function(
     if (self.priority_set_table_write) {
       d3.text(self.priority_set_table_write)
         .header("Content-Type", "application/json")
-        .post(to_post, function(error, data) {
+        .post(JSON.stringify(to_post), function(error, data) {
           if (error) {
             $(".container").html(
               '<div class="alert alert-danger">FATAL ERROR. Please reload the page and contact help desk.</div>'
