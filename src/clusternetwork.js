@@ -975,17 +975,20 @@ var hivtrace_cluster_network_graph = function(
     // operation: one of
     // "insert" , "delete", "update"
 
-    //console.log(name, operation, self.priority_groups_export());
+    let to_post = {
+      operation: operation,
+      name: name,
+      sets: JSON.stringify(self.priority_groups_export())
+    };
 
     if (self.priority_set_table_write) {
       d3.text(self.priority_set_table_write)
         .header("Content-Type", "application/json")
-        .post(JSON.stringify(self.priority_groups_export()), function(
-          error,
-          data
-        ) {
+        .post(to_post, function(error, data) {
           if (error) {
-            // TODO: HANDLE ERROR CONDITIONS HERE
+            $(".container").html(
+              '<div class="alert alert-danger">FATAL ERROR. Please reload the page and contact help desk.</div>'
+            );
           }
         });
     }
@@ -7203,10 +7206,7 @@ var hivtrace_cluster_network_graph = function(
       delete the_cluster["gradient"];
     });
 
-    [
-      ["attributes", false],
-      ["attributes_cat", true]
-    ].forEach(function(lbl) {
+    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7332,10 +7332,7 @@ var hivtrace_cluster_network_graph = function(
 
     self.network_svg.selectAll("radialGradient").remove();
 
-    [
-      ["attributes", false],
-      ["attributes_cat", true]
-    ].forEach(function(lbl) {
+    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
