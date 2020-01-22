@@ -978,6 +978,7 @@ var hivtrace_cluster_network_graph = function(
     let to_post = {
       operation: operation,
       name: name,
+      url: window.location.href,
       sets: JSON.stringify(self.priority_groups_export())
     };
 
@@ -7206,7 +7207,10 @@ var hivtrace_cluster_network_graph = function(
       delete the_cluster["gradient"];
     });
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7332,7 +7336,10 @@ var hivtrace_cluster_network_graph = function(
 
     self.network_svg.selectAll("radialGradient").remove();
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
