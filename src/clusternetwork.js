@@ -1213,7 +1213,11 @@ var hivtrace_cluster_network_graph = function(
         var panel_content = d3.select(panel_object.content);
         panel_content.selectAll("*").remove();
 
-        var form = panel_content.append("form").classed("form-inline", true);
+        var form = panel_content
+          .append("form")
+          .attr("action", "javascript:void(0)")
+          .classed("form-inline", true);
+
         var form_grp = form.append("div").classed("form-group", true);
         var node_ids_selector = form_grp
           .append("input")
@@ -1234,7 +1238,9 @@ var hivtrace_cluster_network_graph = function(
         var form_save = panel_content
           .append("form")
           .classed("form", true)
+          .attr("action", "javascript:void(0);")
           .style("display", "none");
+
         var grp_name = form_save
           .append("div")
           .classed("form-group has-error", true);
@@ -1252,7 +1258,9 @@ var hivtrace_cluster_network_graph = function(
           .append("p")
           .classed("help-block", true)
           .text("Name this priority group set");
+
         var grp_desc = form_save.append("div").classed("form-group", true);
+
         grp_desc
           .append("textarea")
           .classed("form-control input-sm", true)
@@ -1267,6 +1275,7 @@ var hivtrace_cluster_network_graph = function(
 
         function save_priority_set() {
           form_save.style("display", null);
+
           // check if can save
           if (panel_object.network_nodes.length) {
             let name = $(
@@ -1315,6 +1324,7 @@ var hivtrace_cluster_network_graph = function(
           .on("click", function(e) {
             save_priority_set();
           });
+
         form
           .append("button")
           .classed("btn btn-info btn-sm pull-right", true)
