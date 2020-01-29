@@ -65,6 +65,7 @@
     "collapse_filtered": "Collapse Filtered ",
     "fix_all_objects_in_place": "Fix all objects in place",
     "allow_all_objects_to_float": "Allow all objects to float",
+    "collapse_cluster": "Collapse cluster",
     "reset_layout": "Reset layout"
   },
   "statistics": {
@@ -92,11 +93,11 @@
     "size": "Size",
     "genotyped_last_two_months": "# genotyped <= two months",
     "genotyped_last_two_months_ratio": "Recently genotyped ratio",
-    "number_of_genotypes_in_past_2_months": "Number of genotypes in past 2 months",
-    "scaled_number_of_genotypes_in_past_2_months": "Scaled Number of Genotypes in past 2 months",
+    "number_of_genotypes_in_past_2_months": "Genotypes past 2 mo",
+    "scaled_number_of_genotypes_in_past_2_months": "Genotypes past 2 mo scaled",
     "group_by_attribute": "Group by attribute",
     "group_by_id": "Group by ID",
-    "listing_nodes_in_cluster": "Listing Nodes in Cluster",
+    "listing_nodes": "Listing nodes ",
     "missing": "Missing"
   },
   "nodes_tab": {

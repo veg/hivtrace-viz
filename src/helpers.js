@@ -45,6 +45,23 @@ var datamonkey_export_csv_button = function(data) {
   }
 };
 
+var datamonkey_export_json_button = function(data) {
+  if (data !== null) {
+    var pom = document.createElement("a");
+    pom.setAttribute(
+      "href",
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data))
+    );
+    pom.setAttribute("download", "export.json");
+    pom.className = "btn btn-default btn-sm";
+    pom.innerHTML =
+      '<span class="glyphicon glyphicon-floppy-save"></span> Download JSON';
+    $("body").append(pom);
+    pom.click();
+    pom.remove();
+  }
+};
+
 var datamonkey_save_image = function(type, container) {
   var prefix = {
     xmlns: "http://www.w3.org/2000/xmlns/",
@@ -247,12 +264,14 @@ function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
   var extract_text = function(e) {
+    var plain_text = d3.select(e).node().firstChild;
+    if (plain_text) plain_text = plain_text.nodeValue;
+    if (plain_text && plain_text.length) return plain_text;
     var first_element = d3.select(e).selectAll("p, span, button");
     if (!first_element.empty()) {
       return d3.select(first_element.node()).text();
-    } else {
-      return d3.select(e).text();
     }
+    return "";
   };
 
   d3.selectAll(table_id + " thead th").each(function() {
@@ -261,13 +280,17 @@ function datamonkey_table_to_text(table_id, sep) {
   var data_rows = [];
   d3.select(table_id + " tbody")
     .selectAll("tr")
-    .each(function(d, i) {
-      data_rows.push([]);
-      d3.select(this)
-        .selectAll("td")
-        .each(function() {
-          data_rows[i].push(extract_text(this));
-        });
+    .each(function(d) {
+      var this_row = d3.select(this);
+      if (this_row.style("display") != "none") {
+        var write_to = data_rows.length;
+        data_rows.push([]);
+        d3.select(this)
+          .selectAll("td")
+          .each(function() {
+            data_rows[write_to].push(extract_text(this));
+          });
+      }
     });
 
   return (
@@ -282,6 +305,7 @@ function datamonkey_table_to_text(table_id, sep) {
 }
 
 module.exports.export_csv_button = datamonkey_export_csv_button;
+module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
 module.exports.describe_vector = datamonkey_describe_vector;
 module.exports.table_to_text = datamonkey_table_to_text;

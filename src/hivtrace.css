@@ -212,3 +212,57 @@ circle.injected_object {
 .hiv-trace-legend {
   cursor: all-scroll;
 }
+
+.algolia-autocomplete {
+  width: 100%;
+}
+.algolia-autocomplete .aa-input,
+.algolia-autocomplete .aa-hint {
+  width: 100%;
+}
+.algolia-autocomplete .aa-hint {
+  color: #999;
+}
+.algolia-autocomplete .aa-dropdown-menu {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #999;
+  border-top: none;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion {
+  cursor: pointer;
+  padding: 5px 4px;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion.aa-cursor {
+  background-color: #b2d7ff;
+}
+.algolia-autocomplete .aa-dropdown-menu .aa-suggestion em {
+  font-weight: bold;
+  font-style: normal;
+}
+
+.table-fixed tbody {
+  height: 80vh;
+  overflow: auto;
+  display: block;
+}
+
+.table-fixed thead {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.table-fixed tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.table-smaller td {
+  font-size: 0.75em;
+}
+
+.list-smaller li {
+  font-size: 0.75em;
+}

@@ -2,6 +2,7 @@ window.jQuery = window.$ = $;
 
 require("font-awesome/css/font-awesome.css");
 require("bootstrap");
+require("jspanel4/dist/jspanel.min.css");
 require("./hivtrace.css");
 
 var hivtrace = require("./hivtrace.js");
