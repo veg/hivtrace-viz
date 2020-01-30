@@ -5159,7 +5159,7 @@ var hivtrace_cluster_network_graph = function(
       _.each(by_group, bgrp => {
         let button_group = handle_sort
           .append("div")
-          .classed("btn-group btn-group-xs", true)
+          .classed("btn-group btn-group-sm shiv-priority-set-view", true)
           .attr("style", "padding-left:0.5em");
         _.each(
           _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,

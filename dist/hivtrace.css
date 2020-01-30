@@ -3370,6 +3370,12 @@ circle.injected_object {
   font-size: 0.75em;
 }
 
+.shiv-priority-set-view {
+  display: block !important;
+  padding-top: 2px;
+  clear: both;
+}
+
 /*!
  * Bootstrap v3.4.1 (https://getbootstrap.com/)
  * Copyright 2011-2019 Twitter, Inc.
