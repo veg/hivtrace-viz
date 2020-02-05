@@ -2918,7 +2918,7 @@ var hivtrace_cluster_network_graph = function(
                 })
               )
             )
-            .on("input", function(e) {
+            .on("change", function(e) {
               //d3.event.preventDefault();
               var set_date = _defaultDateViewFormatSlider.parse(this.value);
               if (this.value) {
@@ -2932,6 +2932,9 @@ var hivtrace_cluster_network_graph = function(
                   .classed("has-success", false)
                   .classed("has-error", true);
               }
+            })
+            .on("click", function(e) {
+              d3.event.stopPropagation();
             });
         },
         null
@@ -5159,7 +5162,7 @@ var hivtrace_cluster_network_graph = function(
       _.each(by_group, bgrp => {
         let button_group = handle_sort
           .append("div")
-          .classed("btn-group btn-group-sm shiv-priority-set-view", true)
+          .classed("btn-group btn-group-xs", true)
           .attr("style", "padding-left:0.5em");
         _.each(
           _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,
@@ -5170,18 +5173,17 @@ var hivtrace_cluster_network_graph = function(
             if (b) {
               let this_button = button_group
                 .append("button")
-                .classed("btn btn-default", true);
+                .classed("btn btn-default btn-xs", true);
               if (b.icon) {
                 this_button.append("i").classed("fa " + b.icon, true);
               } else {
-                this_button.text(b.text);
+                this_button.text(b.text).style("font-size", "8px");
               }
 
               if (b.data) {
                 //let element = $(this_button.node());
                 _.each(b.data, (v, k) => {
                   this_button.attr("data-" + k, v);
-                  //console.log (element.data (k));
                 });
               }
 
@@ -6099,6 +6101,8 @@ var hivtrace_cluster_network_graph = function(
             return null;
           }
         ]);
+        this_row[0].actions = _.flatten(this_row[0].actions);
+        //console.log (this_row[0]);
         if (pg.not_in_network.length) {
           this_row[2]["actions"] = [
             {
