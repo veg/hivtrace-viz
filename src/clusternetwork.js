@@ -287,6 +287,9 @@ var hivtrace_cluster_network_graph = function(
 
   json[_networkGraphAttrbuteID] = new_schema;
 
+  // get attribute diversity to sort on later
+  let pa = _.map(json.Nodes, n => _.omit(n.patient_attributes, "_id"));
+
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
