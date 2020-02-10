@@ -277,6 +277,16 @@ var hivtrace_cluster_network_graph = function(
     json[_networkGraphAttrbuteID] = {};
   }
 
+  // Lower-case all keys in schema
+  const new_schema = Object.fromEntries(
+    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
+      k.toLowerCase(),
+      v
+    ])
+  );
+
+  json[_networkGraphAttrbuteID] = new_schema;
+
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
