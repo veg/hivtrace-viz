@@ -287,8 +287,18 @@ var hivtrace_cluster_network_graph = function(
 
   json[_networkGraphAttrbuteID] = new_schema;
 
+  let schema_keys = _.keys(new_schema);
+  let new_obj = {};
+  _.each(schema_keys, sk => (new_obj[sk] = []));
+
   // get attribute diversity to sort on later
   let pa = _.map(json.Nodes, n => _.omit(n.patient_attributes, "_id"));
+
+  _.each(pa, p => {
+    _.each(schema_keys, sk => {
+      new_obj[sk].push(p[sk]);
+    });
+  });
 
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
