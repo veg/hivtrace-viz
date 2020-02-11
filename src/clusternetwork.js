@@ -4584,7 +4584,7 @@ var hivtrace_cluster_network_graph = function(
               if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
                 htm =
                   htm +
-                  '<span class="badge pull-right">' +
+                  '<span title="Number of unique values" class="badge pull-right">' +
                   self.uniqs[d[1]] +
                   "</span>";
               }
@@ -4653,7 +4653,7 @@ var hivtrace_cluster_network_graph = function(
                 if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
                   htm =
                     htm +
-                    '<span class="badge pull-right">' +
+                    '<span title="Number of unique values" class="badge pull-right">' +
                     self.uniqs[d[1]] +
                     "</span>";
                 }
@@ -7275,7 +7275,10 @@ var hivtrace_cluster_network_graph = function(
       delete the_cluster["gradient"];
     });
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7401,7 +7404,10 @@ var hivtrace_cluster_network_graph = function(
 
     self.network_svg.selectAll("radialGradient").remove();
 
-    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
+    [
+      ["attributes", false],
+      ["attributes_cat", true]
+    ].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
