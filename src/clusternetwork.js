@@ -277,7 +277,7 @@ var hivtrace_cluster_network_graph = function(
     json[_networkGraphAttrbuteID] = {};
   }
 
-  // Lower-case all keys in schema
+  // Make attributes case-insensitive by LowerCasing all keys in schema
   const new_schema = Object.fromEntries(
     Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
       k.toLowerCase(),
@@ -287,18 +287,16 @@ var hivtrace_cluster_network_graph = function(
 
   json[_networkGraphAttrbuteID] = new_schema;
 
-  let schema_keys = _.keys(new_schema);
-  let new_obj = {};
-  _.each(schema_keys, sk => (new_obj[sk] = []));
+  // Make attributes case-insensitive by LowerCasing all keys in node attributes
+  _.each(json.Nodes, n => {
+    const new_attrs = Object.fromEntries(
+      Object.entries(n.patient_attributes).map(([k, v]) => [k.toLowerCase(), v])
+    );
 
-  // get attribute diversity to sort on later
-  let pa = _.map(json.Nodes, n => _.omit(n.patient_attributes, "_id"));
-
-  _.each(pa, p => {
-    _.each(schema_keys, sk => {
-      new_obj[sk].push(p[sk]);
-    });
+    n.patient_attributes = new_attrs;
   });
+
+  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
 
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
@@ -348,7 +346,10 @@ var hivtrace_cluster_network_graph = function(
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self._is_seguro = options && options["seguro"] ? true : false;
+
   self.json = json;
+  self.uniqs = uniqs;
+  self.schema = json[_networkGraphAttrbuteID];
 
   self.ww =
     options && options["width"]
@@ -4572,8 +4573,23 @@ var hivtrace_cluster_network_graph = function(
             })
             .enter()
             .append("a")
-            .text(function(d, i, j) {
-              return d[0];
+            .html(function(d, i, j) {
+              let htm = d[0];
+              let type = "unknown";
+
+              if (_.contains(_.keys(self.schema), d[1])) {
+                type = self.schema[d[1]].type;
+              }
+
+              if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                htm =
+                  htm +
+                  '<span class="badge pull-right">' +
+                  self.uniqs[d[1]] +
+                  "</span>";
+              }
+
+              return htm;
             })
             .attr("style", function(d, i, j) {
               if (d[1] == "heading") return "font-style: italic";
@@ -4626,8 +4642,23 @@ var hivtrace_cluster_network_graph = function(
               })
               .enter()
               .append("a")
-              .text(function(d, i, j) {
-                return d[0];
+              .html(function(d, i, j) {
+                let htm = d[0];
+                let type = "unknown";
+
+                if (_.contains(_.keys(self.schema), d[1])) {
+                  type = self.schema[d[1]].type;
+                }
+
+                if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                  htm =
+                    htm +
+                    '<span class="badge pull-right">' +
+                    self.uniqs[d[1]] +
+                    "</span>";
+                }
+
+                return htm;
               })
               .attr("style", function(d, i, j) {
                 if (j == 0) {
@@ -7244,10 +7275,7 @@ var hivtrace_cluster_network_graph = function(
       delete the_cluster["gradient"];
     });
 
-    [
-      ["attributes", false],
-      ["attributes_cat", true]
-    ].forEach(function(lbl) {
+    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
@@ -7373,10 +7401,7 @@ var hivtrace_cluster_network_graph = function(
 
     self.network_svg.selectAll("radialGradient").remove();
 
-    [
-      ["attributes", false],
-      ["attributes_cat", true]
-    ].forEach(function(lbl) {
+    [["attributes", false], ["attributes_cat", true]].forEach(function(lbl) {
       d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
         .selectAll("li")
         .selectAll("a")
