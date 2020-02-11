@@ -2,8 +2,6 @@ sudo: false
 notifications:
   email:
     recipients:
-      - spond@temple.edu
-      - jwertheim@ucsd.edu
       - steven@stevenweaver.org
     on_success: always
     on_failure: always
