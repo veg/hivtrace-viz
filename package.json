@@ -62,6 +62,7 @@
   "scripts": {
     "develop": "concurrently \"webpack --watch --mode=development\" \"http-server\"",
     "crear": "concurrently \"webpack --env.lang='es' --watch --mode=development\" \"http-server\"",
+    "build": "webpack && webpack --env.lang='es'",
     "lint": "eslint --ext .js ./",
     "format": "prettier 'src/*.js' --write",
     "precommit": "pretty-quick --staged"

@@ -56,7 +56,7 @@ module.exports = env => {
     },
     output: {
       path: path.resolve(__dirname, "dist/"),
-      filename: "[name].js"
+      filename: filename
     },
     externals: {
       jsdom: "window"
