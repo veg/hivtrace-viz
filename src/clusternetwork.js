@@ -277,6 +277,27 @@ var hivtrace_cluster_network_graph = function(
     json[_networkGraphAttrbuteID] = {};
   }
 
+  // Make attributes case-insensitive by LowerCasing all keys in schema
+  const new_schema = Object.fromEntries(
+    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
+      k.toLowerCase(),
+      v
+    ])
+  );
+
+  json[_networkGraphAttrbuteID] = new_schema;
+
+  // Make attributes case-insensitive by LowerCasing all keys in node attributes
+  _.each(json.Nodes, n => {
+    const new_attrs = Object.fromEntries(
+      Object.entries(n.patient_attributes).map(([k, v]) => [k.toLowerCase(), v])
+    );
+
+    n.patient_attributes = new_attrs;
+  });
+
+  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
+
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
@@ -325,7 +346,10 @@ var hivtrace_cluster_network_graph = function(
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self._is_seguro = options && options["seguro"] ? true : false;
+
   self.json = json;
+  self.uniqs = uniqs;
+  self.schema = json[_networkGraphAttrbuteID];
 
   self.ww =
     options && options["width"]
@@ -4549,8 +4573,23 @@ var hivtrace_cluster_network_graph = function(
             })
             .enter()
             .append("a")
-            .text(function(d, i, j) {
-              return d[0];
+            .html(function(d, i, j) {
+              let htm = d[0];
+              let type = "unknown";
+
+              if (_.contains(_.keys(self.schema), d[1])) {
+                type = self.schema[d[1]].type;
+              }
+
+              if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                htm =
+                  htm +
+                  '<span title="Number of unique values" class="badge pull-right">' +
+                  self.uniqs[d[1]] +
+                  "</span>";
+              }
+
+              return htm;
             })
             .attr("style", function(d, i, j) {
               if (d[1] == "heading") return "font-style: italic";
@@ -4603,8 +4642,23 @@ var hivtrace_cluster_network_graph = function(
               })
               .enter()
               .append("a")
-              .text(function(d, i, j) {
-                return d[0];
+              .html(function(d, i, j) {
+                let htm = d[0];
+                let type = "unknown";
+
+                if (_.contains(_.keys(self.schema), d[1])) {
+                  type = self.schema[d[1]].type;
+                }
+
+                if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                  htm =
+                    htm +
+                    '<span title="Number of unique values" class="badge pull-right">' +
+                    self.uniqs[d[1]] +
+                    "</span>";
+                }
+
+                return htm;
               })
               .attr("style", function(d, i, j) {
                 if (j == 0) {
