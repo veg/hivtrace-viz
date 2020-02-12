@@ -5026,6 +5026,8 @@ var hivtrace_cluster_network_graph = function(
     var current_value = table_get_cell_value(data);
     var handle_sort = this_sel;
 
+    handle_sort.selectAll("*").remove();
+
     if ("callback" in data) {
       handle_sort = data.callback(item, current_value);
     } else {
@@ -5037,6 +5039,34 @@ var hivtrace_cluster_network_graph = function(
     if ("filter" in data) {
       data.filter_term = "";
       data.column_id = index;
+
+      if (data.value == _networkNodeIDField) {
+        // this is an ugly hardcode.
+        let pse = self.has_priority_set_editor();
+        if (pse) {
+          //console.log ("Here");
+          var add_to_ps = handle_sort.append("a").property("href", "#");
+          add_to_ps
+            .append("i")
+            .classed("fa fa-plus", true)
+            .style("margin-left", "0.2em");
+
+          add_to_ps.on("click", function(d) {
+            let node_ids = [];
+            self.node_table.selectAll("tr").each(function(d, i) {
+              let this_row = d3.select(this);
+              if (this_row.style("display") != "none") {
+                this_row.selectAll("td").each(function(d, j) {
+                  if (j == data.column_id) {
+                    node_ids.push(d.value);
+                  }
+                });
+              }
+            });
+            pse.append_nodes(node_ids);
+          });
+        }
+      }
 
       var clicker = handle_sort.append("a").property("href", "#");
 
@@ -5641,7 +5671,7 @@ var hivtrace_cluster_network_graph = function(
     //container.node().dispatchEvent (event);
 
     container
-      .selectAll("td")
+      .selectAll("td, th")
       .filter(function(d) {
         return "volatile" in d;
       })
@@ -5702,6 +5732,7 @@ var hivtrace_cluster_network_graph = function(
           value: n.raw_attribute_key,
           sort: "value",
           filter: true,
+          volatile: true,
           help: "label" in n ? n.label : n.raw_attribute_key,
           //format: (d) => "label" in d ? d.label : d.raw_attribute_key,
           callback: function(element, payload) {
