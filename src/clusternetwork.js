@@ -1794,13 +1794,13 @@ var hivtrace_cluster_network_graph = function(
     date = date || self.today;
     var subcluster_enum = [
       "Subcluster", // 0
-      "12 months (on ar after " + // 1
+      "12 months (on or after " + // 1
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ")",
-      "12 months (on ar after " + // 2
+      "12 months (on or after " + // 2
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ") and R&R subcluster",
-      "36 months (on ar after " + // 3
+      "36 months (on or after " + // 3
         _defaultDateViewFormat(_n_months_ago(date, 36)) +
         ")",
       "Future node (after " + _defaultDateViewFormat(date) + ")", // 4
