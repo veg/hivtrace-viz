@@ -277,6 +277,27 @@ var hivtrace_cluster_network_graph = function(
     json[_networkGraphAttrbuteID] = {};
   }
 
+  // Make attributes case-insensitive by LowerCasing all keys in schema
+  const new_schema = Object.fromEntries(
+    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
+      k.toLowerCase(),
+      v
+    ])
+  );
+
+  json[_networkGraphAttrbuteID] = new_schema;
+
+  // Make attributes case-insensitive by LowerCasing all keys in node attributes
+  _.each(json.Nodes, n => {
+    const new_attrs = Object.fromEntries(
+      Object.entries(n.patient_attributes).map(([k, v]) => [k.toLowerCase(), v])
+    );
+
+    n.patient_attributes = new_attrs;
+  });
+
+  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
+
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
@@ -325,7 +346,10 @@ var hivtrace_cluster_network_graph = function(
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self._is_seguro = options && options["seguro"] ? true : false;
+
   self.json = json;
+  self.uniqs = uniqs;
+  self.schema = json[_networkGraphAttrbuteID];
 
   self.ww =
     options && options["width"]
@@ -1770,13 +1794,13 @@ var hivtrace_cluster_network_graph = function(
     date = date || self.today;
     var subcluster_enum = [
       "Subcluster", // 0
-      "12 months (on ar after " + // 1
+      "12 months (on or after " + // 1
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ")",
-      "12 months (on ar after " + // 2
+      "12 months (on or after " + // 2
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ") and R&R subcluster",
-      "36 months (on ar after " + // 3
+      "36 months (on or after " + // 3
         _defaultDateViewFormat(_n_months_ago(date, 36)) +
         ")",
       "Future node (after " + _defaultDateViewFormat(date) + ")", // 4
@@ -2918,7 +2942,7 @@ var hivtrace_cluster_network_graph = function(
                 })
               )
             )
-            .on("input", function(e) {
+            .on("change", function(e) {
               //d3.event.preventDefault();
               var set_date = _defaultDateViewFormatSlider.parse(this.value);
               if (this.value) {
@@ -2932,6 +2956,9 @@ var hivtrace_cluster_network_graph = function(
                   .classed("has-success", false)
                   .classed("has-error", true);
               }
+            })
+            .on("click", function(e) {
+              d3.event.stopPropagation();
             });
         },
         null
@@ -4546,8 +4573,23 @@ var hivtrace_cluster_network_graph = function(
             })
             .enter()
             .append("a")
-            .text(function(d, i, j) {
-              return d[0];
+            .html(function(d, i, j) {
+              let htm = d[0];
+              let type = "unknown";
+
+              if (_.contains(_.keys(self.schema), d[1])) {
+                type = self.schema[d[1]].type;
+              }
+
+              if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                htm =
+                  htm +
+                  '<span title="Number of unique values" class="badge pull-right">' +
+                  self.uniqs[d[1]] +
+                  "</span>";
+              }
+
+              return htm;
             })
             .attr("style", function(d, i, j) {
               if (d[1] == "heading") return "font-style: italic";
@@ -4600,8 +4642,23 @@ var hivtrace_cluster_network_graph = function(
               })
               .enter()
               .append("a")
-              .text(function(d, i, j) {
-                return d[0];
+              .html(function(d, i, j) {
+                let htm = d[0];
+                let type = "unknown";
+
+                if (_.contains(_.keys(self.schema), d[1])) {
+                  type = self.schema[d[1]].type;
+                }
+
+                if (_.contains(_.keys(self.uniqs), d[1]) && type == "String") {
+                  htm =
+                    htm +
+                    '<span title="Number of unique values" class="badge pull-right">' +
+                    self.uniqs[d[1]] +
+                    "</span>";
+                }
+
+                return htm;
               })
               .attr("style", function(d, i, j) {
                 if (j == 0) {
@@ -5189,7 +5246,7 @@ var hivtrace_cluster_network_graph = function(
       _.each(by_group, bgrp => {
         let button_group = handle_sort
           .append("div")
-          .classed("btn-group btn-group-sm shiv-priority-set-view", true)
+          .classed("btn-group btn-group-xs", true)
           .attr("style", "padding-left:0.5em");
         _.each(
           _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,
@@ -5200,18 +5257,17 @@ var hivtrace_cluster_network_graph = function(
             if (b) {
               let this_button = button_group
                 .append("button")
-                .classed("btn btn-default", true);
+                .classed("btn btn-default btn-xs", true);
               if (b.icon) {
                 this_button.append("i").classed("fa " + b.icon, true);
               } else {
-                this_button.text(b.text);
+                this_button.text(b.text).style("font-size", "8px");
               }
 
               if (b.data) {
                 //let element = $(this_button.node());
                 _.each(b.data, (v, k) => {
                   this_button.attr("data-" + k, v);
-                  //console.log (element.data (k));
                 });
               }
 
@@ -6130,6 +6186,8 @@ var hivtrace_cluster_network_graph = function(
             return null;
           }
         ]);
+        this_row[0].actions = _.flatten(this_row[0].actions);
+        //console.log (this_row[0]);
         if (pg.not_in_network.length) {
           this_row[2]["actions"] = [
             {
