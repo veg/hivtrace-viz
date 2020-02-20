@@ -400,6 +400,10 @@ function hivtrace_plot_cluster_dynamics(
 
   container.selectAll("*").remove(); // clean up previous plots
 
+  var svg = container
+    .append("g")
+    .attr("transform", "translate(" + options.left + "," + options.top + ")");
+
   var legend_area = container
     .append("g")
     .attr(
@@ -410,10 +414,6 @@ function hivtrace_plot_cluster_dynamics(
         (options.top + options.font_size) +
         ")"
     );
-
-  var svg = container
-    .append("g")
-    .attr("transform", "translate(" + options.left + "," + options.top + ")");
 
   /* set the domain for the codons */
 
