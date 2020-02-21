@@ -289,7 +289,7 @@ function hivtrace_plot_cluster_dynamics(
     .axis()
     .scale(x)
     .orient("bottom")
-    .ticks(8)
+    .ticks(d3.time.month, 3)
     .tickFormat(d3.time.format("%m/%Y"));
 
   if (x_tick_format) {
@@ -389,6 +389,11 @@ function hivtrace_plot_cluster_dynamics(
     var max_x2 = new Date();
     max_x2.setTime(max_x.getTime() + min_diff);
     max_x = max_x2;
+  }
+
+  let quarter_span = Math.floor((max_x - min_x) / 3600 / 24 / 1000 / 30);
+  if (quarter_span > 8) {
+    xAxis.ticks(d3.time.month, 3 * Math.ceil(quarter_span / 8));
   }
 
   x.domain([min_x, max_x]).clamp(true);
