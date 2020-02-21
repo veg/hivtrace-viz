@@ -208,6 +208,11 @@ function hivtrace_plot_cluster_dynamics(
     height: 600
   };
 
+  // Only accept time_series with time that is a date
+  time_series = _.filter(time_series, ts => {
+    return _.isDate(ts.time);
+  });
+
   if (time_series.length == 0) {
     return;
   }
