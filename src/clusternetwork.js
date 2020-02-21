@@ -8,6 +8,7 @@ var d3 = require("d3"),
   autocomplete = require("autocomplete.js");
 
 const _networkSubclusterSeparator = ".";
+const _networkNewNodeMarker = "[+]";
 var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
 var _networkNodeIDField = "hivtrace_node_id";
@@ -1794,13 +1795,13 @@ var hivtrace_cluster_network_graph = function(
     date = date || self.today;
     var subcluster_enum = [
       "Subcluster", // 0
-      "12 months (on ar after " + // 1
+      "12 months (on or after " + // 1
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ")",
-      "12 months (on ar after " + // 2
+      "12 months (on or after " + // 2
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
         ") and R&R subcluster",
-      "36 months (on ar after " + // 3
+      "36 months (on or after " + // 3
         _defaultDateViewFormat(_n_months_ago(date, 36)) +
         ")",
       "Future node (after " + _defaultDateViewFormat(date) + ")", // 4
@@ -3650,7 +3651,7 @@ var hivtrace_cluster_network_graph = function(
           _.map(column_names, function(c) {
             if (c.raw_attribute_key == _networkNodeIDField) {
               if (n.attributes.indexOf("new_node") >= 0) {
-                return n.id + "[+]";
+                return n.id + _networkNewNodeMarker;
               }
               return n.id;
             }
@@ -5112,7 +5113,12 @@ var hivtrace_cluster_network_graph = function(
               if (this_row.style("display") != "none") {
                 this_row.selectAll("td").each(function(d, j) {
                   if (j == data.column_id) {
-                    node_ids.push(d.value);
+                    let has_marker = d.value.indexOf(_networkNewNodeMarker);
+                    if (has_marker > 0) {
+                      node_ids.push(d.value.substring(0, has_marker));
+                    } else {
+                      node_ids.push(d.value);
+                    }
                   }
                 });
               }
