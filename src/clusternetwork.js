@@ -16,6 +16,8 @@ var _networkMissing = __("general")["missing"];
 var _networkMissingOpacity = "0.1";
 var _networkMissingColor = "#999";
 var _networkContinuousColorStops = 9;
+var _networkWarnExecutiveMode =
+  "This feature is not available in the executive mode.";
 var _networkTimeQuery = new RegExp("([0-9]{8}):([0-9]{8})", "i");
 var _networkShapeOrdering = [
   "circle",
@@ -347,6 +349,8 @@ var hivtrace_cluster_network_graph = function(
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self._is_seguro = options && options["seguro"] ? true : false;
+  self._is_CDC_executive_mode =
+    options && options["cdc-executive-mode"] ? true : false;
 
   self.json = json;
   self.uniqs = uniqs;
@@ -741,7 +745,7 @@ var hivtrace_cluster_network_graph = function(
                     [payload[2][0] ? "12 months" : "", payload[2][1]],
                     [
                       payload.length > 3 && payload[3][0]
-                        ? "Recent cluster ≥ 3"
+                        ? "Recent cluster � 3"
                         : "",
                       payload.length > 3 ? payload[3][1] : null
                     ]
@@ -1206,6 +1210,11 @@ var hivtrace_cluster_network_graph = function(
     if (self.priority_set_editor || !self.primary_graph) return;
     // only open one editor at a time
     // only primary network supports editor view
+
+    if (self._is_CDC_executive_mode) {
+      alert(_networkWarnExecutiveMode);
+      return;
+    }
 
     self.priority_set_editor = jsPanel.create({
       theme: "bootstrap-primary",
@@ -1853,11 +1862,11 @@ var hivtrace_cluster_network_graph = function(
     binned_vl_recent_value: {
       depends: ["vl_recent_value"],
       label: "binned_vl_recent_value",
-      enum: ["≤200", "200-10000", ">10000"],
+      enum: ["�200", "200-10000", ">10000"],
       color_scale: function() {
         return d3.scale
           .ordinal()
-          .domain(["≤200", "200-10000", ">10000", _networkMissing])
+          .domain(["�200", "200-10000", ">10000", _networkMissing])
           .range(_.union(_networkSequentialColor[3], [_networkMissingColor]));
       },
 
@@ -1869,7 +1878,7 @@ var hivtrace_cluster_network_graph = function(
         );
         if (vl_value != _networkMissing) {
           if (vl_value <= 200) {
-            return "≤200";
+            return "�200";
           }
           if (vl_value <= 10000) {
             return "200-10000";
@@ -1971,7 +1980,7 @@ var hivtrace_cluster_network_graph = function(
       depends: ["age"],
       overwrites: "age",
       label: "age_dx",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -1982,7 +1991,7 @@ var hivtrace_cluster_network_graph = function(
             "30-39",
             "40-49",
             "50-59",
-            "≥60",
+            "�60",
             _networkMissing
           ])
           .range([
@@ -1999,7 +2008,7 @@ var hivtrace_cluster_network_graph = function(
       map: function(node) {
         var vl_value = self.attribute_node_value_by_id(node, "age");
         if (vl_value == ">=60") {
-          return "≥60";
+          return "�60";
         }
         return vl_value;
       }
@@ -2447,8 +2456,9 @@ var hivtrace_cluster_network_graph = function(
       );
     }
 
-    var export_items = [
-      [
+    var export_items = [];
+    if (!self._is_CDC_executive_mode) {
+      export_items.push([
         "Export cluster to .CSV",
         function(network) {
           helpers.export_csv_button(
@@ -2458,8 +2468,8 @@ var hivtrace_cluster_network_graph = function(
             )
           );
         }
-      ]
-    ];
+      ]);
+    }
 
     //self._check_for_time_series(export_items);
 
@@ -2963,8 +2973,10 @@ var hivtrace_cluster_network_graph = function(
             });
         },
         null
-      ],
-      [
+      ]
+    ];
+    if (!self._is_CDC_executive_mode) {
+      extra_menu_items.push([
         "Export cluster to .CSV",
         function(network) {
           helpers.export_csv_button(
@@ -2974,8 +2986,8 @@ var hivtrace_cluster_network_graph = function(
             )
           );
         }
-      ]
-    ];
+      ]);
+    }
 
     options["type"] = "subcluster";
     options["cluster_id"] = cluster.cluster_id || "N/A";
@@ -3263,8 +3275,8 @@ var hivtrace_cluster_network_graph = function(
 
         /** now, for each subcluster, extract the recent and rapid part */
 
-        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx’d in the previous 36 months
-                and at least two cases dx’d in the previous 12 months; there is a path between all nodes in an R&R Cluster
+        /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx�d in the previous 36 months
+                and at least two cases dx�d in the previous 12 months; there is a path between all nodes in an R&R Cluster
 
                 20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters
                 per subclusters; for now we will add up all the cases for prioritization, and
@@ -3743,9 +3755,13 @@ var hivtrace_cluster_network_graph = function(
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
       ).on("click", function(d) {
-        helpers.export_csv_button(
-          self._extract_attributes_for_nodes(cluster_nodes, column_ids)
-        );
+        if (self._is_CDC_executive_mode) {
+          alert(_networkWarnExecutiveMode);
+        } else {
+          helpers.export_csv_button(
+            self._extract_attributes_for_nodes(cluster_nodes, column_ids)
+          );
+        }
       });
 
       if (group_by_attribute) {
@@ -6095,85 +6111,97 @@ var hivtrace_cluster_network_graph = function(
               ),
               priority_set: pg.name
             }
-          },
-          {
-            icon: "fa-clone",
-            help: "Clone this priority set in a new editor pane",
-            action: function(button, value) {
-              self.open_priority_set_editor(
-                _.clone(self.priority_groups_find_by_name(value).node_objects),
-                "Clone of " + value
-              );
-              self.redraw_tables();
-            }
-          },
-          {
-            icon: "fa-trash",
-            classed: { "btn-danger": true },
-            help: "Delete this priority node set",
-            action: function(button, value) {
-              if (confirm("This action cannon be undone. Proceed?")) {
-                self.priority_groups_remove_set(value, true);
+          }
+        ]);
+        if (!self._is_CDC_executive_mode) {
+          this_row[0].actions[this_row[0].actions.length - 1].splice(
+            -1,
+            0,
+            {
+              icon: "fa-clone",
+              help: "Clone this priority set in a new editor pane",
+              action: function(button, value) {
+                self.open_priority_set_editor(
+                  _.clone(
+                    self.priority_groups_find_by_name(value).node_objects
+                  ),
+                  "Clone of " + value
+                );
+                self.redraw_tables();
               }
-            }
-          },
-          {
-            icon: "fa-edit",
-            classed: { "btn-info": true },
-            help: "Edit description",
-            action: function(this_button, cv) {
-              this_button = $(this_button.node());
-              if (this_button.data("popover_shown") != "shown") {
-                let popover = this_button
-                  .popover({
-                    sanitize: false,
-                    placement: "right",
-                    container: "body",
-                    html: true,
-                    content: edit_form_generator,
-                    trigger: "manual"
-                  })
-                  .on("shown.bs.popover", function(e) {
-                    var clicked_object = d3.select(this);
-                    var popover_div = d3.select(
-                      "#" + clicked_object.attr("aria-describedby")
-                    );
-                    var textarea_element = popover_div.selectAll(
-                      self.get_ui_element_selector_by_role(
-                        "priority-description-form",
-                        true
-                      )
-                    );
-                    var button_element = popover_div.selectAll(
-                      self.get_ui_element_selector_by_role(
-                        "priority-description-save",
-                        true
-                      )
-                    );
-                    textarea_element.text(pg.description);
-                    button_element.on("click", function(d) {
-                      self.priority_groups_edit_set_description(
-                        pg.name,
-                        $(textarea_element.node()).val(),
-                        true
+            },
+            {
+              icon: "fa-trash",
+              classed: { "btn-danger": true },
+              help: "Delete this priority node set",
+              action: function(button, value) {
+                if (confirm("This action cannon be undone. Proceed?")) {
+                  self.priority_groups_remove_set(value, true);
+                }
+              }
+            },
+            {
+              icon: "fa-edit",
+              classed: { "btn-info": true },
+              help: "Edit description",
+              action: function(this_button, cv) {
+                this_button = $(this_button.node());
+                if (this_button.data("popover_shown") != "shown") {
+                  let popover = this_button
+                    .popover({
+                      sanitize: false,
+                      placement: "right",
+                      container: "body",
+                      html: true,
+                      content: edit_form_generator,
+                      trigger: "manual"
+                    })
+                    .on("shown.bs.popover", function(e) {
+                      var clicked_object = d3.select(this);
+                      var popover_div = d3.select(
+                        "#" + clicked_object.attr("aria-describedby")
                       );
-                      this_button.click();
+                      var textarea_element = popover_div.selectAll(
+                        self.get_ui_element_selector_by_role(
+                          "priority-description-form",
+                          true
+                        )
+                      );
+                      var button_element = popover_div.selectAll(
+                        self.get_ui_element_selector_by_role(
+                          "priority-description-save",
+                          true
+                        )
+                      );
+                      textarea_element.text(pg.description);
+                      button_element.on("click", function(d) {
+                        self.priority_groups_edit_set_description(
+                          pg.name,
+                          $(textarea_element.node()).val(),
+                          true
+                        );
+                        this_button.click();
+                      });
                     });
-                  });
 
-                popover.popover("show");
-                this_button.data("popover_shown", "shown");
-                this_button
-                  .off("hidden.bs.popover")
-                  .on("hidden.bs.popover", function() {
-                    $(this).data("popover_shown", "hidden");
-                  });
-              } else {
-                this_button.data("popover_shown", "hidden");
-                this_button.popover("destroy");
+                  popover.popover("show");
+                  this_button.data("popover_shown", "shown");
+                  this_button
+                    .off("hidden.bs.popover")
+                    .on("hidden.bs.popover", function() {
+                      $(this).data("popover_shown", "hidden");
+                    });
+                } else {
+                  this_button.data("popover_shown", "hidden");
+                  this_button.popover("destroy");
+                }
               }
             }
-          },
+          );
+        }
+        this_row[0].actions[this_row[0].actions.length - 1].splice(
+          -1,
+          0,
           function(button_group, value) {
             if (self.priority_set_editor) {
               return {
@@ -6191,7 +6219,7 @@ var hivtrace_cluster_network_graph = function(
             }
             return null;
           }
-        ]);
+        );
         this_row[0].actions = _.flatten(this_row[0].actions);
         //console.log (this_row[0]);
         if (pg.not_in_network.length) {
