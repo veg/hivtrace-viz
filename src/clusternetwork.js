@@ -292,11 +292,16 @@ var hivtrace_cluster_network_graph = function(
 
   // Make attributes case-insensitive by LowerCasing all keys in node attributes
   _.each(json.Nodes, n => {
-    const new_attrs = Object.fromEntries(
-      Object.entries(n.patient_attributes).map(([k, v]) => [k.toLowerCase(), v])
-    );
+    if ("patient_attributes" in n) {
+      const new_attrs = Object.fromEntries(
+        Object.entries(n.patient_attributes).map(([k, v]) => [
+          k.toLowerCase(),
+          v
+        ])
+      );
 
-    n.patient_attributes = new_attrs;
+      n.patient_attributes = new_attrs;
+    }
   });
 
   let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
@@ -745,7 +750,7 @@ var hivtrace_cluster_network_graph = function(
                     [payload[2][0] ? "12 months" : "", payload[2][1]],
                     [
                       payload.length > 3 && payload[3][0]
-                        ? "Recent cluster � 3"
+                        ? "Recent cluster >= 3"
                         : "",
                       payload.length > 3 ? payload[3][1] : null
                     ]
@@ -3276,7 +3281,7 @@ var hivtrace_cluster_network_graph = function(
         /** now, for each subcluster, extract the recent and rapid part */
 
         /** Recent & Rapid (R&R) Cluster: the part of the Sub-Cluster inferred using only cases dx�d in the previous 36 months
-                and at least two cases dx�d in the previous 12 months; there is a path between all nodes in an R&R Cluster
+                and at least two cases dx-ed in the previous 12 months; there is a path between all nodes in an R&R Cluster
 
                 20180406 SLKP: while unlikely, this definition could result in multiple R&R clusters
                 per subclusters; for now we will add up all the cases for prioritization, and
