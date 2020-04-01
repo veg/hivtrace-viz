@@ -304,8 +304,6 @@ var hivtrace_cluster_network_graph = function(
     }
   });
 
-  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
-
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
@@ -330,6 +328,8 @@ var hivtrace_cluster_network_graph = function(
       json[key] = expanded;
     });
   }
+
+  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
 
   // annotate each node with patient_attributes if does not exist
   json.Nodes.forEach(function(n) {
