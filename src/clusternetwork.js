@@ -369,7 +369,7 @@ var hivtrace_cluster_network_graph = function(
   self.nodes = [];
   self.edges = [];
   self.clusters = [];
-  self.cluster_sizes = json["Cluster sizes"];
+  self.cluster_sizes = [];
   self.cluster_mapping = {};
   self.percent_format = _defaultPercentFormat;
   self.missing = _networkMissing;
@@ -3632,9 +3632,14 @@ var hivtrace_cluster_network_graph = function(
     var total = 0;
     self.exclude_cluster_ids = {};
     self.has_hxb2_links = false;
-    self.cluster_sizes = json["Cluster sizes"];
+    self.cluster_sizes = [];
 
     graph_data.Nodes.forEach(function(d) {
+      if (typeof self.cluster_sizes[d.cluster - 1] === "undefined") {
+        self.cluster_sizes[d.cluster - 1] = 1;
+      } else {
+        self.cluster_sizes[d.cluster - 1]++;
+      }
       if ("is_lanl" in d) {
         d.is_lanl = d.is_lanl == "true";
       }
