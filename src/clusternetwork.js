@@ -275,35 +275,6 @@ var hivtrace_cluster_network_graph = function(
   // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
-  // if schema is not set, set to empty dictionary
-  if (!json[_networkGraphAttrbuteID]) {
-    json[_networkGraphAttrbuteID] = {};
-  }
-
-  // Make attributes case-insensitive by LowerCasing all keys in schema
-  const new_schema = Object.fromEntries(
-    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
-      k.toLowerCase(),
-      v
-    ])
-  );
-
-  json[_networkGraphAttrbuteID] = new_schema;
-
-  // Make attributes case-insensitive by LowerCasing all keys in node attributes
-  _.each(json.Nodes, n => {
-    if ("patient_attributes" in n) {
-      const new_attrs = Object.fromEntries(
-        Object.entries(n.patient_attributes).map(([k, v]) => [
-          k.toLowerCase(),
-          v
-        ])
-      );
-
-      n.patient_attributes = new_attrs;
-    }
-  });
-
   if (json.Settings && json.Settings.compact_json) {
     _.each(["Nodes", "Edges"], key => {
       var fields = _.keys(json[key]);
@@ -328,6 +299,54 @@ var hivtrace_cluster_network_graph = function(
       json[key] = expanded;
     });
   }
+
+  // if schema is not set, set to empty dictionary
+  if (!json[_networkGraphAttrbuteID]) {
+    json[_networkGraphAttrbuteID] = {};
+  }
+
+  // Make attributes case-insensitive by LowerCasing all keys in schema
+  const new_schema = Object.fromEntries(
+    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
+      k.toLowerCase(),
+      v
+    ])
+  );
+
+  json[_networkGraphAttrbuteID] = new_schema;
+
+  // Make attributes case-insensitive by LowerCasing all keys in node attributes
+  let label_key_map = _.object(
+    _.map(json.patient_attribute_schema, (d, k) => [d.label, k])
+  );
+
+  _.each(json.Nodes, n => {
+    if ("patient_attributes" in n) {
+      const new_attrs = Object.fromEntries(
+        Object.entries(n.patient_attributes).map(([k, v]) => [
+          k.toLowerCase(),
+          v
+        ])
+      );
+
+      // Map attributes from patient_schema labels to keys, if necessary
+      let unrecognizedKeys = _.difference(
+        _.keys(new_attrs),
+        _.keys(json.patient_attribute_schema)
+      );
+
+      if (unrecognizedKeys.length) {
+        _.each(unrecognizedKeys, k => {
+          if (_.contains(_.keys(label_key_map), k)) {
+            new_attrs[label_key_map[k]] = new_attrs[k];
+            delete new_attrs[k];
+          }
+        });
+      }
+
+      n.patient_attributes = new_attrs;
+    }
+  });
 
   let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
 
