@@ -1886,11 +1886,11 @@ var hivtrace_cluster_network_graph = function(
     binned_vl_recent_value: {
       depends: ["vl_recent_value"],
       label: "binned_vl_recent_value",
-      enum: ["�200", "200-10000", ">10000"],
+      enum: ["<200", "200-10000", ">10000"],
       color_scale: function() {
         return d3.scale
           .ordinal()
-          .domain(["�200", "200-10000", ">10000", _networkMissing])
+          .domain(["<200", "200-10000", ">10000", _networkMissing])
           .range(_.union(_networkSequentialColor[3], [_networkMissingColor]));
       },
 
@@ -1902,7 +1902,37 @@ var hivtrace_cluster_network_graph = function(
         );
         if (vl_value != _networkMissing) {
           if (vl_value <= 200) {
-            return "�200";
+            return "<200";
+          }
+          if (vl_value <= 10000) {
+            return "200-10000";
+          }
+          return ">10000";
+        }
+        return _networkMissing;
+      }
+    },
+
+    binned_vl_recent_value_adj: {
+      depends: ["vl_recent_value_adj"],
+      label: "binned_vl_recent_value_adj",
+      enum: ["<200", "200-10000", ">10000"],
+      color_scale: function() {
+        return d3.scale
+          .ordinal()
+          .domain(["<200", "200-10000", ">10000", _networkMissing])
+          .range(_.union(_networkSequentialColor[3], [_networkMissingColor]));
+      },
+
+      map: function(node) {
+        var vl_value = self.attribute_node_value_by_id(
+          node,
+          "vl_recent_value_adj",
+          true
+        );
+        if (vl_value != _networkMissing) {
+          if (vl_value <= 200) {
+            return "<200";
           }
           if (vl_value <= 10000) {
             return "200-10000";
