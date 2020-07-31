@@ -1351,7 +1351,9 @@ var hivtrace_cluster_network_graph = function(
       operation: operation,
       name: name,
       url: window.location.href,
-      sets: JSON.stringify(self.priority_groups_export())
+      sets: JSON.stringify(
+        self.priority_groups_export().filter(pg => pg.name == name)
+      )
     };
 
     if (self.priority_set_table_write) {
