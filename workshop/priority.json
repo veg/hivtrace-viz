@@ -1,21 +1,50 @@
 [
   {
-    "name": "Cluster 77.1",
-    "description": "6 nodes from Cluster 77.1",
+    "name": "KS_201705_77.1",
+    "description": "Automatically created priority set KS_201705_77.1",
     "nodes": [
-      "DummyID_928",
-      "DummyID_537",
-      "DummyID_523",
-      "DummyID_189",
-      "DummyID_472",
-      "DummyID_473"
+      {
+        "name": "DummyID_928",
+        "added": "2017-05-24T13:09:18.705Z",
+        "kind": "01 through analysis/notification"
+      },
+      {
+        "name": "DummyID_189",
+        "added": "2017-05-24T13:09:18.705Z",
+        "kind": "01 through analysis/notification"
+      },
+      {
+        "name": "DummyID_523",
+        "added": "2017-05-24T13:09:18.705Z",
+        "kind": "01 through analysis/notification"
+      }
     ],
-    "created": "2018-01-01T12:14:52.151Z"
+    "modified": "2017-05-24T09:09:18.705Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2017-01-15T09:09:18.705Z"
   },
   {
-    "name": "Subcluster 39.2",
-    "description": "",
-    "nodes": ["DummyID_695", "DummyID_998", "DummyID_993", "DummyID_878"],
-    "created": "2017-01-09T12:15:21.507Z"
+    "name": "Cluster63",
+    "description": "Test priority set",
+    "nodes": [
+      {
+        "name": "DummyID_711",
+        "added": "2020-07-31T01:16:00.931Z",
+        "kind": "01 through analysis/notification"
+      },
+      {
+        "name": "DummyID_629",
+        "added": "2020-07-31T01:16:00.931Z",
+        "kind": "01 through analysis/notification"
+      },
+      {
+        "name": "DummyID_239",
+        "added": "2020-07-31T01:16:00.931Z",
+        "kind": "01 through analysis/notification"
+      }
+    ],
+    "modified": "2020-07-30T21:16:42.378Z",
+    "kind": "03 state/local time-space cluster analysis",
+    "created": "2020-07-30T21:16:42.378Z"
   }
 ]
