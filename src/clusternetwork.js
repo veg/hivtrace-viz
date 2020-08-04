@@ -2588,7 +2588,7 @@ var hivtrace_cluster_network_graph = function(
 
     binned_vl_recent_value_adj: {
       depends: ["vl_recent_value_adj"],
-      label: "binned_vl_recent_value_adj",
+      label: "Most Recent Viral Load Category",
       enum: ["<200", "200-10000", ">10000"],
       color_scale: function() {
         return d3.scale
@@ -2752,7 +2752,7 @@ var hivtrace_cluster_network_graph = function(
 
     hiv_aids_dx_dt_year: {
       depends: [_networkCDCDateField],
-      label: "hiv_aids_dx_dt_year",
+      label: "HIV/AIDS Diagnosis Year",
       type: "Number",
       label_format: d3.format(".0f"),
       map: function(node) {
