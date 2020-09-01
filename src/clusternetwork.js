@@ -1512,7 +1512,7 @@ var hivtrace_cluster_network_graph = function(
   self.priority_set_view = function(priority_set, options) {
     options = options || {};
 
-    let nodes = priority_set.node_objects;
+    let nodes = priority_set.node_objects || priority_set.network_nodes;
     let current_time = new Date();
     let edge_length =
       options["priority-edge-length"] || self.subcluster_threshold;
@@ -1520,9 +1520,15 @@ var hivtrace_cluster_network_graph = function(
     let title = options["title"] || "Preview of priority set";
     let node_dates = {};
 
-    _.each(priority_set.nodes, nd => {
-      node_dates[nd.name] = nd.added;
-    });
+    if (priority_set.nodes) {
+      _.each(priority_set.nodes, nd => {
+        node_dates[nd.name] = nd.added;
+      });
+    } else {
+      _.each(priority_set.network_nodes, nd => {
+        node_dates[nd.id] = nd["_priority_set_date"];
+      });
+    }
 
     _.each(nodes, d => {
       d.priority_set = 1;
@@ -1539,6 +1545,8 @@ var hivtrace_cluster_network_graph = function(
         nodes
       )
     );
+
+    //console.log (_.keys (priority_set), node_set, priority_set.network_nodes);
 
     let subcluster_view = self
       .view_subcluster(
