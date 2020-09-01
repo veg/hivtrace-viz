@@ -142,6 +142,7 @@ var _networkPresetColorSchemes = {
     "American Indian/Alaska Native": "#2ca02c",
     "Native Hawaiian/Other Pacific Islander": "#17becf",
     "Multiple Races": "#e377c2",
+    "Multiple races": "#e377c2",
     "Unknown race": "#999",
     Missing: "#999",
     missing: "#999",
@@ -1467,6 +1468,10 @@ var hivtrace_cluster_network_graph = function(
     );
   };
 
+  self.priority_groups_is_new_node = function(group_set, node) {
+    return node.added.getTime() == self.today.getTime();
+  };
+
   self.priority_groups_export_nodes = function(group_set, include_unvalidated) {
     group_set = group_set || self.defined_priority_groups;
 
@@ -1474,7 +1479,10 @@ var hivtrace_cluster_network_graph = function(
       _.map(
         _.filter(group_set, g => include_unvalidated || g.validated),
         g => {
+          //const refTime = g.modified.getTime();
+          //console.log ("GROUP: ",g.name, " = ", g.modified);
           return _.map(g.nodes, gn => {
+            //console.log (gn.added);
             return {
               eHARS_uid: gn.name,
               cluster_uid: g.name,
@@ -1483,7 +1491,7 @@ var hivtrace_cluster_network_graph = function(
               person_ident_dt: gn.added
                 ? _defaultDateViewFormatMMDDYYY(gn.added)
                 : "N/A",
-              new_case: gn.added == gn.modified ? 1 : 0
+              new_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
             };
           });
         }
@@ -6779,11 +6787,17 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value: "Size",
-            sort: "value",
+            sort: function(c) {
+              c = c.value;
+              if (c) {
+                return c[0];
+              }
+              return 0;
+            },
             help: "Number of nodes in the priority set"
           },
           {
-            value: "New @1.5%",
+            value: "Connected @1.5%",
             sort: function(c) {
               c = c.value;
               if (c) {
@@ -6796,7 +6810,8 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value:
-              "New @" + _defaultPercentFormatShort(self.subcluster_threshold),
+              "Connected @" +
+              _defaultPercentFormatShort(self.subcluster_threshold),
             sort: function(c) {
               c = c.value;
               if (c) {
@@ -6876,7 +6891,27 @@ var hivtrace_cluster_network_graph = function(
             html: true
           },
           {
-            value: pg.node_objects.length
+            value: [
+              pg.node_objects.length,
+              _.filter(pg.nodes, g => self.priority_groups_is_new_node(pg, g))
+                .length
+            ],
+            format: function(v) {
+              //console.log (pg);
+              if (v) {
+                return (
+                  "" +
+                  v[0] +
+                  (v[1]
+                    ? ' <span title="Number of nodes added since the last network update" class="label label-default">' +
+                      v[1] +
+                      " new</span>"
+                    : "")
+                );
+              }
+              return "N/A";
+            },
+            html: true
           }
         ];
         _.each([0, 1], index => {
