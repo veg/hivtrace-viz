@@ -1698,7 +1698,7 @@ var hivtrace_cluster_network_graph = function(
       },
       contentSize: {
         width: function() {
-          return window.innerWidth / 2;
+          return window.innerWidth * 0.8;
         },
         height: function() {
           return window.innerHeight / 3;
@@ -1787,6 +1787,12 @@ var hivtrace_cluster_network_graph = function(
 
         if (!panel_object.can_edit_kind) {
           grp_kind_select.property("disabled", true);
+          grp_kind_select.attr(
+            "title",
+            "The method of cluster identification cannot be changed for auto-populated priority sets. However, after confirming this priority set, you can clone it and then change this field as needed"
+          );
+        } else {
+          grp_kind_select.attr("title", null);
         }
         if (!panel_object.can_edit_name) {
           grp_name_button.property("disabled", true);
@@ -2169,7 +2175,7 @@ var hivtrace_cluster_network_graph = function(
             {
               prepend: true,
               description: {
-                value: "Kind",
+                value: "Identification method",
                 help:
                   "How was this person identified as part of this priority set?"
               },
@@ -2183,13 +2189,13 @@ var hivtrace_cluster_network_graph = function(
                         {
                           //icon: "fa-caret-down",
                           classed: { "btn-default": true },
-                          text: value["_priority_set_kind"].split(" ")[0],
+                          text: value["_priority_set_kind"], //.split(" ")[0],
                           help: "How was this person identified?",
                           dropdown: _cdcPrioritySetNodeKind,
                           action: function(button, menu_value) {
                             value["_priority_set_kind"] = menu_value;
                             button.text(
-                              value["_priority_set_kind"].split(" ")[0]
+                              value["_priority_set_kind"] //.split(" ")[0]
                             );
                           }
                         }
@@ -2204,7 +2210,7 @@ var hivtrace_cluster_network_graph = function(
                       this_cell
                         .append("abbr")
                         .attr("title", payload["_priority_set_kind"])
-                        .text(payload["_priority_set_kind"].split(" ")[0]);
+                        .text(payload["_priority_set_kind"] /*.split(" ")[0]*/);
                     }
                     return this_cell;
                   }
@@ -6849,6 +6855,7 @@ var hivtrace_cluster_network_graph = function(
                             <textarea class="form-control input-sm" data-hivtrace-ui-role = "priority-description-form" cols = "40" rows = "3"></textarea>\
                             </div>\
                         </div>\
+                        <button data-hivtrace-ui-role = "priority-description-dismiss" class = "btn btn-sm btn-default">Dismiss</button>\
                         <button data-hivtrace-ui-role = "priority-description-save" class = "btn btn-sm btn-default">Save</button>\
                     </form>';
       };
@@ -7050,7 +7057,7 @@ var hivtrace_cluster_network_graph = function(
                 let ref_set = self.priority_groups_find_by_name(pg.name);
 
                 if (ref_set) {
-                  if (ref_set.modified > self.today) {
+                  if (ref_set.modified.getTime() > self.today.getTime()) {
                     alert(
                       "Cannot alter priority sets modified after the date at which this network was created"
                     );
@@ -7124,6 +7131,16 @@ var hivtrace_cluster_network_graph = function(
                           $(textarea_element.node()).val(),
                           true
                         );
+                        this_button.click();
+                      });
+                      button_element = popover_div.selectAll(
+                        self.get_ui_element_selector_by_role(
+                          "priority-description-dismiss",
+                          true
+                        )
+                      );
+                      button_element.on("click", function(d) {
+                        d3.event.preventDefault();
                         this_button.click();
                       });
                     });
