@@ -2149,14 +2149,14 @@ var hivtrace_cluster_network_graph = function(
                               payload["_priority_set_date"]
                             )
                           )
-                          .on("change", function(d) {
+                          .on("change", function(e, d) {
                             try {
-                              d[
+                              payload[
                                 "_priority_set_date"
                               ] = _defaultDateViewFormatSlider.parse(
                                 $(d3.event.target).val()
                               );
-                            } catch (e) {}
+                            } catch (err) {}
                           });
                       }
                     } else {
