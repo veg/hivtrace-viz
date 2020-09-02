@@ -2719,20 +2719,21 @@ var hivtrace_cluster_network_graph = function(
       }
     },
 
-    priority_sets: {
+    /*priority_sets: {
       depends: [_networkCDCDateField],
       label: "Priority sets",
       type: "String",
       map: function(node) {
+        //console.log (node);
         return "None";
       }
-    },
+    },*/
 
     age_dx: {
       depends: ["age"],
       overwrites: "age",
       label: "age_dx",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -2743,7 +2744,7 @@ var hivtrace_cluster_network_graph = function(
             "30-39",
             "40-49",
             "50-59",
-            "�60",
+            "≥60",
             _networkMissing
           ])
           .range([
@@ -2760,7 +2761,7 @@ var hivtrace_cluster_network_graph = function(
       map: function(node) {
         var vl_value = self.attribute_node_value_by_id(node, "age");
         if (vl_value == ">=60") {
-          return "�60";
+          return "≥60";
         }
         return vl_value;
       }
@@ -6958,8 +6959,8 @@ var hivtrace_cluster_network_graph = function(
           // pending user review
           this_row[0].actions = [
             {
-              icon: pg.pending ? "fa-check-circle" : "fa-plus-circle",
-              help: "Review and confirm this priority set",
+              icon: "fa-eye",
+              help: "Review and save this priority set",
               action: function(button, value) {
                 let nodeset = self.priority_groups_find_by_name(value);
                 if (nodeset) {
@@ -7179,13 +7180,24 @@ var hivtrace_cluster_network_graph = function(
         rows.push(this_row);
       });
 
-      let has_required_actions =
-        self.priority_groups_pending() + self.priority_groups_expanded();
-      if (has_required_actions) {
+      let has_pending = self.priority_groups_pending(),
+        has_expanded = self.priority_groups_expanded(),
+        has_required_actions;
+
+      if (has_pending + has_expanded) {
+        let labeler = (c, description, c2) => {
+          if (c) {
+            c2 = c2 ? " and " : "";
+            return c2 + c + " " + description;
+          }
+          return "";
+        };
+
         has_required_actions =
           '<div class="alert alert-danger">There are ' +
-          has_required_actions +
-          ' auto-generated or auto-modified priority sets that <b>require</b> you to confirm them, by clicking on the <i class = "fa fa-check-circle"></i>/<i class = "fa fa-plus-circle"></i> button next to their name</div>';
+          labeler(has_pending, "auto-generated") +
+          labeler(has_expanded, "auto-expanded", has_pending) +
+          ' priority sets. Click the <i class = "fa fa-eye"></i> button to review and confirm the newly added nodes for each such cluster</div>';
       } else {
         has_required_actions = "";
       }
@@ -8517,6 +8529,8 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["category_id"] = cat_id;
       self.colorizer["category_map"] =
         graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
+
+      console.log(self.colorizer);
 
       //console.log (cat_id, self.json[_networkGraphAttrbuteID][cat_id], graph_data[_networkGraphAttrbuteID][cat_id]["value_map"] (null, "lookup"));
       //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
