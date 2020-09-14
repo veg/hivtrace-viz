@@ -2739,7 +2739,7 @@ var hivtrace_cluster_network_graph = function(
       depends: ["age"],
       overwrites: "age",
       label: "age_dx",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -2750,7 +2750,7 @@ var hivtrace_cluster_network_graph = function(
             "30-39",
             "40-49",
             "50-59",
-            "≥60",
+            "�60",
             _networkMissing
           ])
           .range([
@@ -2767,7 +2767,7 @@ var hivtrace_cluster_network_graph = function(
       map: function(node) {
         var vl_value = self.attribute_node_value_by_id(node, "age");
         if (vl_value == ">=60") {
-          return "≥60";
+          return "�60";
         }
         return vl_value;
       }
@@ -6794,7 +6794,7 @@ var hivtrace_cluster_network_graph = function(
             help: "When was the priority last modified"
           },
           {
-            value: "Method",
+            value: "Cluster identification method",
             sort: function(c) {
               return c.value;
             },
@@ -6898,9 +6898,8 @@ var hivtrace_cluster_network_graph = function(
             value: pg.kind,
             format: function(v) {
               if (v) {
-                return (
-                  "<abbr title = '" + v + "'>" + v.split(" ")[0] + "</abbr>"
-                );
+                return v;
+                //"<abbr title = '" + v + "'>" + v.split(" ")[0] + "</abbr>"
               }
               return "N/A";
             },
@@ -7159,7 +7158,6 @@ var hivtrace_cluster_network_graph = function(
               }
             }
           );
-
           this_row[0].actions[this_row[0].actions.length - 1].splice(
             -1,
             0,
