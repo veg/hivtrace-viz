@@ -1542,9 +1542,24 @@ var hivtrace_cluster_network_graph = function(
       });
     }
 
+    let nodeDates = {};
+    if (options.priority_set && options.priority_set.nodes) {
+      _.each(options.priority_set.nodes, d => {
+        nodeDates[d.name] = d.added;
+      });
+    }
+
     _.each(nodes, d => {
+      //console.log (d);
       d.priority_set = 1;
+      d._added_date =
+        d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
+      if (d._added_date)
+        d._added_date = _defaultDateViewFormatSlider(d._added_date);
+      else d._added_date = null;
     });
+
+    let pgDates = _.sortBy(_.keys(_.groupBy(nodes, d => d._added_date)));
 
     let node_set = _.flatten(
       hivtrace_cluster_depthwise_traversal(
@@ -1557,6 +1572,43 @@ var hivtrace_cluster_network_graph = function(
         nodes
       )
     );
+
+    let refDate = _defaultDateViewFormat(reference_date);
+
+    let viewEnum = [];
+
+    let dateID = {};
+    _.each(pgDates, (d, i) => {
+      if (d) {
+        dateID[d] = viewEnum.length;
+        viewEnum.push("In priority set (added " + d + ")");
+      }
+    });
+
+    let priorityColorOffset = viewEnum.length;
+
+    viewEnum.push("Diagnosed and in network before " + refDate);
+    viewEnum.push(
+      "Diagnosed or in network on or after " +
+        refDate +
+        " [directly linked to priority set]"
+    );
+    viewEnum.push(
+      "Diagnosed or in network on or after " +
+        refDate +
+        " [indirectly linked to priority set]"
+    );
+    let viewEnumMissing = [...viewEnum, _networkMissing];
+
+    let defColors = d3.scale.category20();
+    let viewEnumMissingColors = _.map(viewEnumMissing, d => {
+      if (d != _networkMissing) {
+        return defColors(d);
+      }
+      return "gray";
+    });
+
+    console.log(viewEnumMissing, viewEnumMissingColors);
 
     //console.log (_.keys (priority_set), node_set, priority_set.network_nodes);
 
@@ -1596,16 +1648,14 @@ var hivtrace_cluster_network_graph = function(
             priority_set: {
               depends: [_networkCDCDateField],
               label: "Priority Set Status",
-              enum: [
-                "Priority Set",
-                "Existing",
-                "New [direct]",
-                "New [indirect]"
-              ],
+              enum: viewEnum,
               map: function(node) {
                 //console.log ("PS", node.id, node.priority_set);
                 if (node.priority_set == 1) {
-                  return "Priority Set";
+                  if (node._added_date) {
+                    return viewEnum[dateID[node._added_date]];
+                  }
+                  return viewEnum[0];
                 }
                 if (
                   self._filter_by_date(
@@ -1617,24 +1667,18 @@ var hivtrace_cluster_network_graph = function(
                   )
                 ) {
                   if (node.priority_set == 2) {
-                    return "New [direct]";
+                    return viewEnum[priorityColorOffset + 1];
                   } else {
-                    return "New [indirect]";
+                    return viewEnum[priorityColorOffset + 2];
                   }
                 }
-                return "Existing";
+                return viewEnum[priorityColorOffset];
               },
               color_scale: function() {
                 return d3.scale
                   .ordinal()
-                  .domain([
-                    "Priority Set",
-                    "Existing",
-                    "New [direct]",
-                    "New [indirect]",
-                    _networkMissing
-                  ])
-                  .range(["#7570b3", "white", "#d95f02", "#1b9e77", "gray"]);
+                  .domain(viewEnumMissing)
+                  .range(viewEnumMissingColors);
               }
             }
           }
@@ -2756,7 +2800,7 @@ var hivtrace_cluster_network_graph = function(
       depends: ["age"],
       overwrites: "age",
       label: "age_dx",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
       color_scale: function() {
         return d3.scale
           .ordinal()
@@ -2767,7 +2811,7 @@ var hivtrace_cluster_network_graph = function(
             "30-39",
             "40-49",
             "50-59",
-            "�60",
+            "≥60",
             _networkMissing
           ])
           .range([
@@ -2784,7 +2828,7 @@ var hivtrace_cluster_network_graph = function(
       map: function(node) {
         var vl_value = self.attribute_node_value_by_id(node, "age");
         if (vl_value == ">=60") {
-          return "�60";
+          return "≥60";
         }
         return vl_value;
       }
@@ -7018,6 +7062,7 @@ var hivtrace_cluster_network_graph = function(
                     action: function(button, value) {
                       self.priority_set_view(pg, {
                         timestamp: pg.modified || pg.created,
+                        priority_set: pg,
                         "priority-edge-length": threshold,
                         title: pg.name + " @" + _defaultPercentFormat(threshold)
                       });
