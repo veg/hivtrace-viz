@@ -553,6 +553,17 @@ var hivtrace_cluster_network_graph = function(
   self.primary_graph = options && "secondary" in options ? false : true;
   self.parent_graph_object =
     options && "parent_graph" in options ? options["parent_graph"] : null;
+  self.getCurrentDate = function() {
+    return new Date();
+    //let d = new Date();
+    //d.setYear(2019);
+    //return d;
+  };
+  self.getAncientDate = function() {
+    let d = new Date();
+    d.setYear(1900);
+    return d;
+  };
 
   self.get_ui_element_selector_by_role = function(role, not_nested) {
     if (not_nested && !self.primary_graph) {
@@ -569,7 +580,8 @@ var hivtrace_cluster_network_graph = function(
   if (json.Settings && json.Settings.created) {
     self.today = new Date(json.Settings.created);
   } else {
-    self.today = options && options["today"] ? options["today"] : new Date();
+    self.today =
+      options && options["today"] ? options["today"] : self.getCurrentDate();
   }
 
   self.get_reference_date = function() {
@@ -1295,7 +1307,7 @@ var hivtrace_cluster_network_graph = function(
                 let key = "";
                 if (
                   self._filter_by_date(
-                    pg.created,
+                    pg.modified || pg.created,
                     _networkCDCDateField,
                     current_time,
                     n,
@@ -1513,7 +1525,7 @@ var hivtrace_cluster_network_graph = function(
     options = options || {};
 
     let nodes = priority_set.node_objects || priority_set.network_nodes;
-    let current_time = new Date();
+    let current_time = self.getCurrentDate();
     let edge_length =
       options["priority-edge-length"] || self.subcluster_threshold;
     let reference_date = options["timestamp"] || self.today;
@@ -1566,7 +1578,7 @@ var hivtrace_cluster_network_graph = function(
                 }
               }
               if (other_node && other_node.priority_set != 1) {
-                other_node.priority_set = 2;
+                other_node.priority_set = 2; // directly linked to a priority set node
               }
             });
           },
@@ -1591,6 +1603,7 @@ var hivtrace_cluster_network_graph = function(
                 "New [indirect]"
               ],
               map: function(node) {
+                //console.log ("PS", node.id, node.priority_set);
                 if (node.priority_set == 1) {
                   return "Priority Set";
                 }
@@ -1845,6 +1858,14 @@ var hivtrace_cluster_network_graph = function(
           return !node["_priority_set_fixed"];
         }
 
+        let createdDate =
+          existing_set && validation_mode && validation_mode.length
+            ? existing_set.created
+            : self.getCurrentDate();
+
+        let modifiedDate =
+          validation_mode == "validate" ? self.today : self.getCurrentDate();
+
         function save_priority_set() {
           form_save.style("display", null);
 
@@ -1883,14 +1904,8 @@ var hivtrace_cluster_network_graph = function(
                     kind: d["_priority_set_kind"]
                   };
                 }),
-                created:
-                  existing_set && validation_mode && validation_mode.length
-                    ? _defaultDateFormats[0](existing_set.created)
-                    : _defaultDateFormats[0](new Date()),
-                modified:
-                  validation_mode == "validate"
-                    ? _defaultDateFormats[0](self.today)
-                    : _defaultDateFormats[0](new Date()),
+                created: _defaultDateFormats[0](createdDate),
+                modified: _defaultDateFormats[0](modifiedDate),
                 kind: kind
               };
               //console.log (set_description);
@@ -1929,7 +1944,8 @@ var hivtrace_cluster_network_graph = function(
           .text("Preview @1.5%")
           .on("click", function(e) {
             self.priority_set_view(self.priority_set_editor, {
-              "priority-edge-length": 0.015
+              "priority-edge-length": 0.015,
+              timestamp: createdDate
             });
           });
         form
@@ -1938,7 +1954,8 @@ var hivtrace_cluster_network_graph = function(
           .text("Preview @" + self.subcluster_threshold * 100 + "%")
           .on("click", function(e) {
             self.priority_set_view(self.priority_set_editor, {
-              "priority-edge-length": self.subcluster_threshold
+              "priority-edge-length": self.subcluster_threshold,
+              timestamp: createdDate
             });
           });
 
@@ -2010,7 +2027,7 @@ var hivtrace_cluster_network_graph = function(
 
         panel_object._append_node = function(node) {
           if (!("_priority_set_date" in node)) {
-            node["_priority_set_date"] = new Date();
+            node["_priority_set_date"] = self.getCurrentDate();
           }
           if (!("_priority_set_kind" in node)) {
             node["_priority_set_kind"] = _cdcPrioritySetDefaultNodeKind;
@@ -2500,7 +2517,7 @@ var hivtrace_cluster_network_graph = function(
       "Cluster sizes" in self.json &&
       self.json["Cluster sizes"].length > 250
     ) {
-      self.using_time_filter = new Date();
+      self.using_time_filter = self.getCurrentDate();
       self.warning_string +=
         "Only displaying clusters with nodes dates in the last 12 months [use the <i>Clusters</i> menu to change this]<br>";
       self.using_time_filter.setFullYear(
@@ -3868,7 +3885,7 @@ var hivtrace_cluster_network_graph = function(
       if (start_date == self.today) {
         node_iterator = self.nodes;
       } else {
-        var beginning_of_time = new Date();
+        var beginning_of_time = self.getCurrentDate();
         beginning_of_time.setYear(1900);
         node_iterator = [];
         _.each(self.nodes, function(node) {
@@ -7000,7 +7017,7 @@ var hivtrace_cluster_network_graph = function(
                       _defaultPercentFormatShort(threshold),
                     action: function(button, value) {
                       self.priority_set_view(pg, {
-                        timestamp: pg.modified,
+                        timestamp: pg.modified || pg.created,
                         "priority-edge-length": threshold,
                         title: pg.name + " @" + _defaultPercentFormat(threshold)
                       });
@@ -7058,7 +7075,7 @@ var hivtrace_cluster_network_graph = function(
                 if (ref_set) {
                   if (ref_set.modified.getTime() > self.today.getTime()) {
                     alert(
-                      "Cannot alter priority sets modified after the date at which this network was created"
+                      "Cannot alter priority sets modified after the point at which this network was created"
                     );
                   } else {
                     self.open_priority_set_editor(
@@ -7523,7 +7540,7 @@ var hivtrace_cluster_network_graph = function(
                   child =>
                     d3.time.months(
                       child.patient_attributes["sample_dt"],
-                      new Date()
+                      self.getCurrentDate()
                     ).length <= 2
                 ).length;
                 return "hi";
@@ -7538,7 +7555,7 @@ var hivtrace_cluster_network_graph = function(
                   child =>
                     d3.time.months(
                       child.patient_attributes["sample_dt"],
-                      new Date()
+                      self.getCurrentDate()
                     ).length <= 2
                 ).length;
                 return recent / Math.sqrt(d.children.length);
@@ -8545,7 +8562,7 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["category_map"] =
         graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
 
-      console.log(self.colorizer);
+      //console.log(self.colorizer);
 
       //console.log (cat_id, self.json[_networkGraphAttrbuteID][cat_id], graph_data[_networkGraphAttrbuteID][cat_id]["value_map"] (null, "lookup"));
       //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
@@ -10069,7 +10086,7 @@ var hivtrace_cluster_network_graph = function(
     if (self.using_time_filter) {
       self.using_time_filter = null;
     } else {
-      self.using_time_filter = new Date();
+      self.using_time_filter = self.getCurrentDate();
       self.using_time_filter.setFullYear(
         self.using_time_filter.getFullYear() - 1
       );
@@ -10489,7 +10506,7 @@ var hivtrace_cluster_network_graph = function(
           );
           //cv.annotate_priority_clusters(_networkCDCDateField, 36, 12);
           //cv.handle_attribute_categorical("recent_rapid");
-          cv._refresh_subcluster_view(self.today || new Date());
+          cv._refresh_subcluster_view(self.today || self.getCurrentDate());
         };
 
         var injected_column_subcluster = [
