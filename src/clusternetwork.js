@@ -1600,15 +1600,26 @@ var hivtrace_cluster_network_graph = function(
     );
     let viewEnumMissing = [...viewEnum, _networkMissing];
 
-    let defColors = d3.scale.category20();
-    let viewEnumMissingColors = _.map(viewEnumMissing, d => {
+    let dco = "fee8c8fdbb84e34a33";
+    let defColorsOther = d3.scale
+      .ordinal()
+      .range(_.map(_.range(0, dco.length, 6), d => "#" + dco.substr(d, 6)));
+    let dcpg = "edf8fbb2e2e266c2a42ca25f006d2c";
+    let defColorsPG = d3.scale
+      .ordinal()
+      .range(_.map(_.range(0, dcpg.length, 6), d => "#" + dcpg.substr(d, 6)));
+
+    let viewEnumMissingColors = _.map(viewEnumMissing, (d, i) => {
       if (d != _networkMissing) {
-        return defColors(d);
+        if (i < priorityColorOffset) {
+          return defColorsPG(d);
+        }
+        return defColorsOther(d);
       }
       return "gray";
     });
 
-    console.log(viewEnumMissing, viewEnumMissingColors);
+    //console.log(viewEnumMissing, viewEnumMissingColors);
 
     //console.log (_.keys (priority_set), node_set, priority_set.network_nodes);
 
