@@ -4514,7 +4514,9 @@ var hivtrace_cluster_network_graph = function(
           });
           var sorted_keys = _.keys(binned).sort();
           var attribute_record = the_list.append("li");
-          attribute_record.append("code").text(column.raw_attribute_key);
+          attribute_record
+            .append("code")
+            .text(column.label || column.raw_attribute_key);
           var attribute_list = attribute_record
             .append("dl")
             .classed("dl-horizontal", true);
@@ -4535,7 +4537,9 @@ var hivtrace_cluster_network_graph = function(
             .append("dl")
             .classed("dl-horizontal", true);
           _.each(column_ids, function(column) {
-            patient_list.append("dt").text(column.raw_attribute_key);
+            patient_list
+              .append("dt")
+              .text(column.label || column.raw_attribute_key);
             patient_list
               .append("dd")
               .text(
@@ -6625,7 +6629,12 @@ var hivtrace_cluster_network_graph = function(
               .attr("aria-expanded", "false")
               .attr("id", menu_id);
 
-            dropdown_button.text(payload);
+            function get_text_label(key) {
+              return key in json.patient_attribute_schema
+                ? json.patient_attribute_schema[key].label
+                : (key[0].toUpperCase() + key.substring(1)).replace(/_/g, " ");
+            }
+            dropdown_button.text(get_text_label(payload));
 
             dropdown_button.append("i").classed({
               fa: true,
@@ -6649,7 +6658,7 @@ var hivtrace_cluster_network_graph = function(
                 .append("a")
                 .attr("href", "#")
                 .text(function(data) {
-                  return data.raw_attribute_key;
+                  return get_text_label(data.raw_attribute_key);
                 });
               handle_change.on("click", function(d) {
                 self.displayed_node_subset[col_id] = d;
