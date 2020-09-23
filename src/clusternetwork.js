@@ -1118,7 +1118,7 @@ var hivtrace_cluster_network_graph = function(
                     let matched = _.countBy(
                       _.map(pg.nodes, pn => pn.name in node_set)
                     );
-                    return matched[true] > 0;
+                    return matched[true] == priority_score.length;
                   }
                 );
 
