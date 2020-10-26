@@ -598,6 +598,8 @@ var hivtrace_cluster_network_graph = function(
   if (self._is_CDC_) {
     // define various CDC settings
 
+    self._is_CDC_auto_mode = options && options["cdc-auto-priority-set-mode"];
+
     self._lookup_option = function(key, default_value) {
       if (self.json.Settings && self.json.Settings[key])
         return self.json.Settings[key];
@@ -1064,7 +1066,10 @@ var hivtrace_cluster_network_graph = function(
             } catch (e) {}
           });
         });
-        self.priority_groups_validate(self.defined_priority_groups, true);
+        self.priority_groups_validate(
+          self.defined_priority_groups,
+          self._is_CDC_auto_mode
+        );
 
         self.auto_create_priority_sets = [];
         // propose some
@@ -1096,51 +1101,56 @@ var hivtrace_cluster_network_graph = function(
           return id + suffix;
         }
 
-        _.each(self.clusters, (cluster_data, cluster_id) => {
-          _.each(cluster_data.subclusters, subcluster_data => {
-            _.each(subcluster_data.priority_score, priority_score => {
-              if (
-                priority_score.length >=
-                self.CDC_data["autocreate-priority-set-size"]
-              ) {
-                // only generate a new set if it doesn't match what is already there
-                let node_set = {};
-                _.each(priority_score, n => {
-                  node_set[n] = 1;
-                });
+        if (self._is_CDC_auto_mode) {
+          _.each(self.clusters, (cluster_data, cluster_id) => {
+            _.each(cluster_data.subclusters, subcluster_data => {
+              _.each(subcluster_data.priority_score, (priority_score, i) => {
+                if (
+                  priority_score.length >=
+                  self.CDC_data["autocreate-priority-set-size"]
+                ) {
+                  // only generate a new set if it doesn't match what is already there
+                  let node_set = {};
+                  _.each(subcluster_data.recent_nodes[i], n => {
+                    node_set[n] = 1;
+                  });
 
-                let matched_groups = _.filter(
-                  _.filter(
-                    self.defined_priority_groups,
-                    pg => pg.kind in _cdcPrioritySetKindAutoExpand
-                  ),
-                  pg => {
-                    let matched = _.countBy(
-                      _.map(pg.nodes, pn => pn.name in node_set)
-                    );
-                    return matched[true] == priority_score.length;
+                  let matched_groups = _.filter(
+                    _.filter(
+                      self.defined_priority_groups,
+                      pg => pg.kind in _cdcPrioritySetKindAutoExpand
+                    ),
+                    pg => {
+                      let matched = _.countBy(
+                        _.map(pg.nodes, pn => pn.name in node_set)
+                      );
+                      return (
+                        matched[true] == subcluster_data.recent_nodes[i].length
+                      );
+                    }
+                  );
+
+                  if (matched_groups.length == 1) {
+                    return;
                   }
-                );
 
-                if (matched_groups.length == 1) {
-                  return;
+                  let autoname = _generate_auto_id(subcluster_data.cluster_id);
+                  self.auto_create_priority_sets.push({
+                    name: autoname,
+                    description:
+                      "Automatically created priority set " + autoname,
+                    nodes: _.map(subcluster_data.recent_nodes[i], n =>
+                      self.priority_group_node_record(n, self.today)
+                    ),
+                    created: today_string,
+                    kind: _cdcPrioritySetKindAutomaticCreation,
+                    pending: true
+                  });
                 }
-
-                let autoname = _generate_auto_id(subcluster_data.cluster_id);
-                self.auto_create_priority_sets.push({
-                  name: autoname,
-                  description: "Automatically created priority set " + autoname,
-                  nodes: _.map(priority_score, n =>
-                    self.priority_group_node_record(n, self.today)
-                  ),
-                  created: today_string,
-                  kind: _cdcPrioritySetKindAutomaticCreation,
-                  pending: true
-                });
-              }
+              });
             });
           });
-        });
+        }
 
         if (
           self.auto_create_priority_sets.length +
@@ -2276,7 +2286,7 @@ var hivtrace_cluster_network_graph = function(
             panel.network_nodes.length ? null : "disabled"
           );
 
-          self.draw_extended_node_table(panel.network_nodes, table_container, [
+          let extra_columns = [
             {
               prepend: true,
               description: {
@@ -2440,7 +2450,15 @@ var hivtrace_cluster_network_graph = function(
                 };
               }
             }
-          ]);
+          ];
+          if (!self._is_CDC_auto_mode) {
+            extra_columns.splice(1, 1);
+          }
+          self.draw_extended_node_table(
+            panel.network_nodes,
+            table_container,
+            extra_columns
+          );
         };
 
         panel_object.content.style.padding = "5px";
@@ -6956,13 +6974,6 @@ var hivtrace_cluster_network_graph = function(
             help: "When was the priority last modified"
           },
           {
-            value: "Cluster identification method",
-            sort: function(c) {
-              return c.value;
-            },
-            help: "Method of cluster identification"
-          },
-          {
             value: "Size",
             presort: "desc",
             sort: function(c) {
@@ -6973,18 +6984,6 @@ var hivtrace_cluster_network_graph = function(
               return 0;
             },
             help: "Number of nodes in the priority set"
-          },
-          {
-            value: "Connected @1.5%",
-            sort: function(c) {
-              c = c.value;
-              if (c) {
-                return c["new_direct"].length + c["new_indirect"].length;
-              }
-              return 0;
-            },
-            help:
-              "Number of nodes connected to the nodes in the priority set: direct and indirect"
           },
           {
             value:
@@ -7000,6 +6999,18 @@ var hivtrace_cluster_network_graph = function(
             //presort: "desc",
             help:
               "Number of nodes connected to the nodes in the priority set: direct and indirect"
+          },
+          {
+            value: "Connected @1.5%",
+            sort: function(c) {
+              c = c.value;
+              if (c) {
+                return c["new_direct"].length + c["new_indirect"].length;
+              }
+              return 0;
+            },
+            help:
+              "Number of nodes connected to the nodes in the priority set: direct and indirect"
           }
 
           /*,
@@ -7010,6 +7021,16 @@ var hivtrace_cluster_network_graph = function(
             }*/
         ]
       ];
+
+      if (self._is_CDC_auto_mode) {
+        headers.splice(2, 0, {
+          value: "Cluster identification method",
+          sort: function(c) {
+            return c.value;
+          },
+          help: "Method of cluster identification"
+        });
+      }
 
       var edit_form_generator = function() {
         return '<form class="form"> \
@@ -7059,17 +7080,6 @@ var hivtrace_cluster_network_graph = function(
             }
           },
           {
-            value: pg.kind,
-            format: function(v) {
-              if (v) {
-                return v;
-                //"<abbr title = '" + v + "'>" + v.split(" ")[0] + "</abbr>"
-              }
-              return "N/A";
-            },
-            html: true
-          },
-          {
             value: [
               pg.node_objects.length,
               _.filter(pg.nodes, g => self.priority_groups_is_new_node(pg, g))
@@ -7093,7 +7103,7 @@ var hivtrace_cluster_network_graph = function(
             html: true
           }
         ];
-        _.each([0, 1], index => {
+        _.each([1, 0], index => {
           this_row.push({
             //html: false,
             value: pg.partitioned_nodes[index],
@@ -7124,6 +7134,20 @@ var hivtrace_cluster_network_graph = function(
             })
           });
         });
+
+        if (self._is_CDC_auto_mode) {
+          this_row.splice(2, 0, {
+            value: pg.kind,
+            format: function(v) {
+              if (v) {
+                return v;
+                //"<abbr title = '" + v + "'>" + v.split(" ")[0] + "</abbr>"
+              }
+              return "N/A";
+            },
+            html: true
+          });
+        }
 
         if (pg.pending || pg.expanded) {
           // pending user review
