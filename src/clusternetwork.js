@@ -724,8 +724,10 @@ var hivtrace_cluster_network_graph = function(
               v = v || [];
               if (v.length) {
                 var str = _.map(v, c => c.length).join(", ");
-                if (v[0].length >= 3) {
-                  var color = v[0].length >= 5 ? "red" : "orange";
+                if (
+                  v[0].length >= self.CDC_data["autocreate-priority-set-size"]
+                ) {
+                  var color = "red";
                   return "<span style='color:" + color + "'>" + str + "</span>";
                 }
                 return str;
