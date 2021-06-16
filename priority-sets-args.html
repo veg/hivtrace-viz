@@ -220,6 +220,97 @@
         </div>
       </div>
 
+      <div
+        class="modal fade"
+        data-hivtrace-ui-role="overlap_list"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div class="modal-content" data-hivtrace-ui-role="overlap_list_body">
+            <div class="modal-header">
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 class="modal-title">Listing overlap nodes</h4>
+
+              <button type="button" class="btn btn-default btn-small">
+                <i
+                  class="fa fa-download"
+                  data-hivtrace-ui-role="overlap_list_data_export"
+                ></i>
+              </button>
+            </div>
+            <table
+              class="table table-striped table-condensed table-hover table-smaller"
+              data-hivtrace-ui-role="overlap_list_data_table"
+            ></table>
+            <div class="modal-footer">
+              <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
+              <button
+                type="button"
+                class="btn btn-default"
+                data-dismiss="modal"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal fade"
+        data-hivtrace-ui-role="priority_set_merge"
+        tabindex="-1"
+        role="dialog"
+      >
+        <div class="modal-dialog" role="document">
+          <div
+            class="modal-content"
+            data-hivtrace-ui-role="priority_set_merge_body"
+          >
+            <div class="modal-header">
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 class="modal-title">Merge priority sets</h4>
+              <h5 class="modal-desc">Select priority sets from the list</h5>
+            </div>
+            <table
+              class="table table-striped table-condensed table-hover table-smaller"
+              data-hivtrace-ui-role="priority_set_merge_table"
+            ></table>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-primary"
+                data-hivtrace-ui-role="priority_set_merge_table_proceed"
+              >
+                Proceed
+              </button>
+              <button
+                type="button"
+                class="btn btn-default"
+                data-dismiss="modal"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="tabbable">
         <ul class="nav nav-tabs" id="top_level_tab_container">
           <li class="active" id="main-tab">
@@ -245,7 +336,13 @@
             <a href="#trace-nodes" data-toggle="tab">Nodes</a>
           </li>
           <li class="disabled" id="priority-set-tab">
-            <a href="#trace-priority-sets" data-toggle="tab">Priority Sets</a>
+            <a href="#trace-priority-sets" data-toggle="tab"
+              >Priority Sets
+              <span
+                class="badge"
+                data-hivtrace-ui-role="priority_set_counts"
+              ></span
+            ></a>
           </li>
           <li class="disabled" id="attributes-tab">
             <a href="#trace-attributes" data-toggle="tab">Attributes</a>
@@ -697,7 +794,13 @@
                 <p class="lead">
                   Priority Node Sets
                   <button
-                    class="btn btn-primary btn-small pull-right"
+                    class="btn btn-primary btn-xs pull-right"
+                    data-hivtrace-ui-role="merge_priority_sets"
+                  >
+                    Merge Priority Sets
+                  </button>
+                  <button
+                    class="btn btn-primary btn-xs pull-right"
                     data-hivtrace-ui-role="new_priority_set"
                   >
                     Create A Priority Set
@@ -799,6 +902,8 @@
     <script src="dist/hivtrace.js"></script>
 
     <script>
+      const urlParams = new URLSearchParams(window.location.search);
+
       var network_container = "#network_tag",
         network_status_string = "#network_status_string",
         network_warning = "#main-warning",
@@ -853,7 +958,8 @@
               "no-subcluster-compute": false,
               "subcluster-table": subcluster_table,
               "priority-table": priority_set_table,
-              "priority-sets-url": "test/fl-example.json"
+              "priority-sets-url": urlParams.get("PG"),
+              jurisdiction: urlParams.get("JR")
             }
           );
 
@@ -957,7 +1063,7 @@
 
       var initialize_cluster_network_graphs = function() {
         //Initialize clusternetworkgraph with json url
-        url = "test/fl-2020-linted.json";
+        url = urlParams.get("network");
 
         d3.json(url, function(error, results) {
           if (error) {
