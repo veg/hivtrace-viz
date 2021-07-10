@@ -1177,12 +1177,13 @@ var hivtrace_cluster_network_graph = function(
                       );
                       //if (pg.name == 'FL_201709_141.1') console.log (matched);
                       return (
-                        matched[true] == subcluster_data.recent_nodes[i].length
+                        //matched[true] == subcluster_data.recent_nodes[i].length
+                        matched[true] >= 1
                       );
                     }
                   );
 
-                  if (matched_groups.length == 1) {
+                  if (matched_groups.length >= 1) {
                     return;
                   }
 
@@ -1214,6 +1215,7 @@ var hivtrace_cluster_network_graph = function(
           // need to be auto-generated
           //console.log (self.auto_create_priority_sets);
           self.defined_priority_groups.push(...self.auto_create_priority_sets);
+
           self.warning_string +=
             "<br/>Automatically created <b>" +
             self.priority_groups_pending() +
@@ -1232,6 +1234,12 @@ var hivtrace_cluster_network_graph = function(
           );
         }
         self.priority_groups_validate(self.defined_priority_groups);
+        _.each(self.auto_create_priority_sets, pg =>
+          self.priority_groups_update_node_sets(pg.name, "insert")
+        );
+        _.each(self.priority_groups_expanded, pg =>
+          self.priority_groups_update_node_sets(pg.name, "update")
+        );
         self.draw_priority_set_table();
       }
     });
@@ -1617,6 +1625,7 @@ var hivtrace_cluster_network_graph = function(
               });
               pg.validated = false;
               pg.expanded = added_nodes.size;
+              pg.modified = self.today;
             }
           }
 
@@ -1626,7 +1635,16 @@ var hivtrace_cluster_network_graph = function(
               _.filter([...ps], psi => node_set.has(psi)).length == ps.size
             );
           });
-          //console.log (pg.name, pg.meets_priority_def);
+          const cutoff12 = _n_months_ago(self.get_reference_date(), 12);
+          pg.last12 = _.filter(pg.node_objects, n =>
+            self._filter_by_date(
+              cutoff12,
+              _networkCDCDateField,
+              self.today,
+              n,
+              false
+            )
+          ).length;
         }
       });
     }
@@ -7520,11 +7538,22 @@ var hivtrace_cluster_network_graph = function(
             sort: function(c) {
               c = c.value;
               if (c) {
-                return c[1] + (c[2] ? 1e6 : 0);
+                return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
               }
               return 0;
             },
             help: "Number of nodes in the priority set"
+          },
+          {
+            value: "Priority",
+            sort: "value",
+            help: "Does the priority set continue to meet priority criteria?"
+          },
+          {
+            value: "In last 12 mo.",
+            sort: "value",
+            help:
+              "The number of cases in the priority set diagnosed in the past 12 months"
           },
           {
             value: "Overlap",
@@ -7597,7 +7626,7 @@ var hivtrace_cluster_network_graph = function(
             format: value =>
               pg.pending || pg.expanded
                 ? (pg.expanded
-                    ? '<span class="label label-default">Growth</span>'
+                    ? '<span class="label label-default">Grew</span>'
                     : '<span class="label label-danger">New</span>') +
                   "&nbsp;<span style = 'font-weight: 900;'>" +
                   value +
@@ -7622,6 +7651,7 @@ var hivtrace_cluster_network_graph = function(
               pg.node_objects.length,
               _.filter(pg.nodes, g => self.priority_groups_is_new_node(pg, g))
                 .length,
+              pg.createdBy == _cdcCreatedBySystem && pg.pending,
               pg.meets_priority_def
             ],
             format: function(v) {
@@ -7633,15 +7663,18 @@ var hivtrace_cluster_network_graph = function(
                     ? ' <span title="Number of nodes added since the last network update" class="label label-default">' +
                       v[1] +
                       " new</span>"
-                    : "") +
-                  (v[2]
-                    ? '<i class="fa fa-2x fa-exclamation-triangle pull-right" title="Contains one or more national priority subclusters"></i>'
                     : "")
                 );
               }
               return "N/A";
             },
             html: true
+          },
+          {
+            value: pg.meets_priority_def ? "Yes" : "No"
+          },
+          {
+            value: pg.last12
           },
           {
             value: [pg.overlap.sets, pg.overlap.nodes],
@@ -9345,8 +9378,32 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.filter_parse = function(filter_value) {
-    return filter_value
-      .split(" ")
+    let search_terms = [];
+    let quote_state = 0;
+    let current_term = [];
+    _.each(filter_value, c => {
+      if (c == " ") {
+        if (quote_state == 0) {
+          if (current_term.length) {
+            search_terms.push(current_term.join(""));
+            current_term = [];
+          }
+        } else {
+          current_term.push(c);
+        }
+      } else {
+        if (c == '"') {
+          quote_state = 1 - quote_state;
+        }
+        current_term.push(c);
+      }
+    });
+
+    if (quote_state == 0) {
+      search_terms.push(current_term.join(""));
+    }
+
+    return search_terms
       .filter(function(d) {
         return d.length > 0;
       })
