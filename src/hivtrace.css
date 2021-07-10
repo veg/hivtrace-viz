@@ -263,6 +263,10 @@ circle.injected_object {
   font-size: 0.75em;
 }
 
+.table-smaller th {
+  font-size: 0.75em;
+}
+
 .list-smaller li {
   font-size: 0.75em;
 }
