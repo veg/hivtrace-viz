@@ -2820,12 +2820,9 @@ var hivtrace_cluster_network_graph = function(
     );
 
     if (merge_sets) {
-      d3.selectAll(merge_sets)
-        .attr("data-toggle", "modal")
-        .attr(
-          "data-target",
-          self.get_ui_element_selector_by_role("priority_set_merge", true)
-        );
+      d3.selectAll(merge_sets).on("click", function(e) {
+        $("#priority_set_merge_modal").modal();
+      });
     }
   }
 
