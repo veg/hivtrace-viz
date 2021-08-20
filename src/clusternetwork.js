@@ -1669,9 +1669,12 @@ var hivtrace_cluster_network_graph = function(
         .header("Content-Type", "application/json")
         .post(JSON.stringify(to_post), function(error, data) {
           if (error) {
+            console.log("received fatal error:", error);
+            /*
             $(".container").html(
               '<div class="alert alert-danger">FATAL ERROR. Please reload the page and contact help desk.</div>'
             );
+            */
           }
         });
     }
