@@ -2090,7 +2090,9 @@ var hivtrace_cluster_network_graph = function(
       return;
     }
 
-    created_by = created_by || _cdcCreatedByManual;
+    created_by = existing_set
+      ? existing_set.createdBy
+      : created_by || _cdcCreatedByManual;
 
     self.priority_set_editor = jsPanel.create({
       theme: "bootstrap-primary",
@@ -2278,6 +2280,10 @@ var hivtrace_cluster_network_graph = function(
 
         function is_node_editable(node) {
           return !node["_priority_set_fixed"];
+        }
+
+        function is_node_deletable(node, cm) {
+          return cm == _cdcCreatedByManual || !node["_priority_set_fixed"];
         }
 
         let createdDate =
@@ -2721,7 +2727,7 @@ var hivtrace_cluster_network_graph = function(
                   value: node,
                   callback: function(element, payload) {
                     var this_cell = d3.select(element);
-                    if (!is_node_editable(payload)) {
+                    if (!is_node_deletable(payload, created_by)) {
                       this_cell
                         .append("button")
                         .classed("btn btn-default btn-xs", true)
@@ -7825,19 +7831,19 @@ var hivtrace_cluster_network_graph = function(
               });
             }
             dropdown.push({
-              label: "Add nodes to this priority set",
+              label: "Modify this priority set",
               action: function(button, value) {
                 let ref_set = self.priority_groups_find_by_name(pg.name);
 
                 if (ref_set) {
-                  if (ref_set.modified.getTime() > self.today.getTime()) {
+                  /*if (ref_set.modified.getTime() > self.today.getTime()) {
                     if (
                       !confirm(
                         "Editing priority sets modified after the point at which this network was created is not recommended."
                       )
                     )
                       return;
-                  }
+                  }*/
                   self.open_priority_set_editor(
                     ref_set.node_objects,
                     ref_set.name,
