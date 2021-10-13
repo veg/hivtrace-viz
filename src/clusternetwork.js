@@ -4550,7 +4550,7 @@ var hivtrace_cluster_network_graph = function(
             cluster_nodes
           );
 
-          if (_.some(subcluster_json.Nodes, n => n.id == "FL00S004399674-7")) {
+          /*if (_.some(subcluster_json.Nodes, n => n.id == "FL00S004399674-7")) {
             console.log(
               date_field,
               _.map(subcluster_json.Nodes, node =>
@@ -4568,7 +4568,7 @@ var hivtrace_cluster_network_graph = function(
                 )
               )
             );
-          }
+          }*/
 
           var rr_cluster = _.filter(
             hivtrace_cluster_depthwise_traversal(
@@ -4592,14 +4592,8 @@ var hivtrace_cluster_network_graph = function(
           sub.recent_nodes = [];
 
           _.each(rr_cluster, function(recent_cluster) {
-            var priority_nodes = _.groupBy(
-              recent_cluster,
-              _.partial(
-                self._filter_by_date,
-                cutoff_short,
-                date_field,
-                start_date
-              )
+            var priority_nodes = _.groupBy(recent_cluster, n =>
+              self._filter_by_date(cutoff_short, date_field, start_date, n)
             );
 
             sub.recent_nodes.push(_.map(recent_cluster, n => n.id));
