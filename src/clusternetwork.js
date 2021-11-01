@@ -7894,14 +7894,16 @@ var hivtrace_cluster_network_graph = function(
                   self.redraw_tables();
                 }
               });
-              dropdown.push({
-                label: "Delete this priority node set",
-                action: function(button, value) {
-                  if (confirm("This action cannon be undone. Proceed?")) {
-                    self.priority_groups_remove_set(pg.name, true);
+              if (pg.createdBy != "System") {
+                dropdown.push({
+                  label: "Delete this priority node set",
+                  action: function(button, value) {
+                    if (confirm("This action cannon be undone. Proceed?")) {
+                      self.priority_groups_remove_set(pg.name, true);
+                    }
                   }
-                }
-              });
+                });
+              }
               dropdown.push({
                 label: "View nodes in this priority set",
                 data: {
