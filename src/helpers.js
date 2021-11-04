@@ -264,9 +264,17 @@ function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
   var extract_text = function(e) {
-    var plain_text = d3.select(e).node().firstChild;
+    const node = d3.select(e).node();
+    var plain_text = node.firstChild;
     if (plain_text) plain_text = plain_text.nodeValue;
     if (plain_text && plain_text.length) return plain_text;
+    if (table_id == "#priority_set_table") {
+      if (node.firstChild.tagName == "I") {
+        return node.firstChild.getAttribute("title");
+      } else if (node.firstChild.tagName == "SPAN") {
+        return node.children[1].innerHTML;
+      }
+    }
     var first_element = d3.select(e).selectAll("p, span, button, abbr, select");
     if (!first_element.empty()) {
       return d3.select(first_element.node()).text();

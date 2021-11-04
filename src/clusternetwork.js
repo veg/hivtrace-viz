@@ -201,6 +201,19 @@ var _cdcTrackingOptions = [
   "05. Do not add cases to this priority set. I do not want to monitor growth in this priority set over time."
 ];
 
+var _cdcConciseTrackingOptions = {
+  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.":
+    "3 years, 0.5% distance",
+  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.":
+    "0.5%",
+  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.":
+    "3 years, 1.5% distance",
+  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.":
+    "1.5% distance",
+  "05. Do not add cases to this priority set. I do not want to monitor growth in this priority set over time.":
+    "None"
+};
+
 var _cdcTrackingOptionsFilter = {
   "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.": (
     e,
@@ -7623,6 +7636,11 @@ var hivtrace_cluster_network_graph = function(
             help: "When was the priority created/last modified"
           },
           {
+            value: "Growth",
+            sort: "value",
+            help: "How growth is handled"
+          },
+          {
             value: "Size",
             presort: "desc",
             sort: function(c) {
@@ -7734,6 +7752,12 @@ var hivtrace_cluster_network_graph = function(
                 return vs[0] + " / " + vs[1];
               }
               return vs[0];
+            }
+          },
+          {
+            value: pg.tracking,
+            format: function(value) {
+              return _cdcConciseTrackingOptions[value];
             }
           },
           {
@@ -7937,7 +7961,8 @@ var hivtrace_cluster_network_graph = function(
                     ref_set.kind,
                     null,
                     "update",
-                    ref_set
+                    ref_set,
+                    ref_set.tracking
                   );
                   self.redraw_tables();
                 }
