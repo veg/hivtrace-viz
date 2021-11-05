@@ -312,7 +312,7 @@ var _cdcJurisdictionCodes = {
   "virgin islands": "vi",
   virginia: "va",
   washington: "wa",
-  "west virginia": "wv",
+  westvirginia: "wv",
   wisconsin: "wi",
   wyoming: "wy",
   chicago: "cx",
