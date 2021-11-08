@@ -2425,8 +2425,11 @@ var hivtrace_cluster_network_graph = function(
           [
             {
               source: function(query, callback) {
+                function escapeRegExp(string) {
+                  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+                }
                 var hits = [];
-                const pattern = new RegExp(query, "i");
+                const pattern = new RegExp(escapeRegExp(query), "i");
                 for (
                   var i = 0;
                   hits.length < 10 && i < json["Nodes"].length;
