@@ -2064,6 +2064,71 @@ var hivtrace_cluster_network_graph = function(
     });
   };
 
+  self.handle_inline_confirm = function(
+    this_button,
+    generator,
+    text,
+    action,
+    disabled
+  ) {
+    this_button = $(this_button.node());
+    if (this_button.data("popover_shown") != "shown") {
+      let popover = this_button
+        .popover({
+          sanitize: false,
+          placement: "right",
+          container: "body",
+          html: true,
+          content: generator,
+          trigger: "manual"
+        })
+        .on("shown.bs.popover", function(e) {
+          var clicked_object = d3.select(this);
+          var popover_div = d3.select(
+            "#" + clicked_object.attr("aria-describedby")
+          );
+          var textarea_element = popover_div.selectAll(
+            self.get_ui_element_selector_by_role(
+              "priority-description-form",
+              true
+            )
+          );
+          var button_element = popover_div.selectAll(
+            self.get_ui_element_selector_by_role(
+              "priority-description-save",
+              true
+            )
+          );
+          textarea_element.text(text);
+          if (disabled) textarea_element.attr("disabled", true);
+          button_element.on("click", function(d) {
+            action($(textarea_element.node()).val());
+            d3.event.preventDefault();
+            this_button.click();
+          });
+          button_element = popover_div.selectAll(
+            self.get_ui_element_selector_by_role(
+              "priority-description-dismiss",
+              true
+            )
+          );
+          button_element.on("click", function(d) {
+            d3.event.preventDefault();
+            this_button.click();
+          });
+        });
+
+      popover.popover("show");
+      this_button.data("popover_shown", "shown");
+      this_button.off("hidden.bs.popover").on("hidden.bs.popover", function() {
+        $(this).data("popover_shown", "hidden");
+      });
+    } else {
+      this_button.data("popover_shown", "hidden");
+      this_button.popover("destroy");
+    }
+  };
+
   self.open_priority_set_editor = function(
     node_set,
     name,
@@ -2591,6 +2656,18 @@ var hivtrace_cluster_network_graph = function(
             panel.network_nodes.length ? null : "disabled"
           );
 
+          var del_form_generator = function() {
+            return '<form class="form"> \
+                            <div class="form-group"> \
+                                <div class="input-group">\
+                                <textarea class="form-control input-sm" data-hivtrace-ui-role = "priority-description-form" cols = "40" rows = "3"></textarea>\
+                                </div>\
+                            </div>\
+                            <button data-hivtrace-ui-role = "priority-description-dismiss" class = "btn btn-sm btn-default">Cancel</button>\
+                            <button data-hivtrace-ui-role = "priority-description-save" class = "btn btn-sm btn-default">Delete</button>\
+                        </form>';
+          };
+
           let extra_columns = [
             {
               prepend: true,
@@ -2746,7 +2823,17 @@ var hivtrace_cluster_network_graph = function(
                         .style("margin-left", "1em")
                         .datum(payload)
                         .on("click", function() {
-                          panel_object.remove_node(payload);
+                          self.handle_inline_confirm(
+                            d3.select(this),
+                            del_form_generator,
+                            "Are you sure you wish to permanently delete this node from the priority set?",
+                            function(d) {
+                              panel_object.remove_node(payload);
+                            },
+                            true
+                          );
+                          d3.event.preventDefault();
+                          //panel_object.remove_node(payload);
                         })
                         .append("i")
                         .classed("fa fa-trash", true);
@@ -7875,66 +7962,14 @@ var hivtrace_cluster_network_graph = function(
               classed: { "btn-info": true },
               help: "Edit description",
               action: function(this_button, cv) {
-                this_button = $(this_button.node());
-                if (this_button.data("popover_shown") != "shown") {
-                  let popover = this_button
-                    .popover({
-                      sanitize: false,
-                      placement: "right",
-                      container: "body",
-                      html: true,
-                      content: edit_form_generator,
-                      trigger: "manual"
-                    })
-                    .on("shown.bs.popover", function(e) {
-                      var clicked_object = d3.select(this);
-                      var popover_div = d3.select(
-                        "#" + clicked_object.attr("aria-describedby")
-                      );
-                      var textarea_element = popover_div.selectAll(
-                        self.get_ui_element_selector_by_role(
-                          "priority-description-form",
-                          true
-                        )
-                      );
-                      var button_element = popover_div.selectAll(
-                        self.get_ui_element_selector_by_role(
-                          "priority-description-save",
-                          true
-                        )
-                      );
-                      textarea_element.text(pg.description);
-                      button_element.on("click", function(d) {
-                        self.priority_groups_edit_set_description(
-                          pg.name,
-                          $(textarea_element.node()).val(),
-                          true
-                        );
-                        this_button.click();
-                      });
-                      button_element = popover_div.selectAll(
-                        self.get_ui_element_selector_by_role(
-                          "priority-description-dismiss",
-                          true
-                        )
-                      );
-                      button_element.on("click", function(d) {
-                        d3.event.preventDefault();
-                        this_button.click();
-                      });
-                    });
-
-                  popover.popover("show");
-                  this_button.data("popover_shown", "shown");
-                  this_button
-                    .off("hidden.bs.popover")
-                    .on("hidden.bs.popover", function() {
-                      $(this).data("popover_shown", "hidden");
-                    });
-                } else {
-                  this_button.data("popover_shown", "hidden");
-                  this_button.popover("destroy");
-                }
+                self.handle_inline_confirm(
+                  this_button,
+                  edit_form_generator,
+                  pg.description,
+                  function(d) {
+                    self.priority_groups_edit_set_description(pg.name, d, true);
+                  }
+                );
               }
             }
           );
