@@ -5296,7 +5296,9 @@ var hivtrace_cluster_network_graph = function(
           ];
 
           var rows = [];
-          var rows_for_export = [["Node", "Other Priority Sets"]];
+          var rows_for_export = [
+            ["Overlapping Set", "Node", "Other Priority Sets"]
+          ];
           _.each(ps.nodes, n => {
             let overlap = self.priority_node_overlap[n.name];
             let other_sets = "None";
@@ -5306,7 +5308,7 @@ var hivtrace_cluster_network_graph = function(
               ).join("; ");
             }
             rows.push([{ value: n.name }, { value: other_sets }]);
-            rows_for_export.push([n.name, other_sets]);
+            rows_for_export.push([ps.name, n.name, other_sets]);
           });
 
           d3.select(
@@ -5315,7 +5317,7 @@ var hivtrace_cluster_network_graph = function(
               true
             )
           ).on("click", function(d) {
-            helpers.export_csv_button(rows_for_export);
+            helpers.export_csv_button(rows_for_export, "overlap");
           });
 
           add_a_sortable_table(
@@ -8133,7 +8135,10 @@ var hivtrace_cluster_network_graph = function(
           true
         )
       ).on("click", function(d) {
-        helpers.export_csv_button(self.priority_groups_export_nodes());
+        helpers.export_csv_button(
+          self.priority_groups_export_nodes(),
+          "priority-groups"
+        );
       });
     }
   };
