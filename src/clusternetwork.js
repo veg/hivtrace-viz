@@ -1726,17 +1726,21 @@ var hivtrace_cluster_network_graph = function(
       let my_nodes = new Set(_.map(nodeset.nodes, d => d.name));
       return _.some(self.defined_priority_groups, d => {
         if (d.nodes.length == my_nodes.size) {
-          if (
-            d.nodes.filter(x => my_nodes.has(x.name)).length ==
-              d.nodes.length &&
-            d.tracking == nodeset.tracking
-          ) {
+          const same_nodes =
+            d.nodes.filter(x => my_nodes.has(x.name)).length == d.nodes.length;
+          if (same_nodes && d.tracking == nodeset.tracking) {
             alert(
               "Priority set " +
                 d.name +
-                " has the same set of nodes and the same tracking mode. Secure HIV-TRACE does not allow creating exact duplicates of priority sets"
+                " has the same set of nodes and the same tracking mode as an existing set. Secure HIV-TRACE does not allow creating exact duplicates of priority sets."
             );
             return true;
+          } else if (same_nodes) {
+            alert(
+              "Warning! Priority set " +
+                d.name +
+                " has the same set of nodes as an existing, but a different tracking mode."
+            );
           }
         }
         return false;
