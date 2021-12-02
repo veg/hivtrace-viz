@@ -6,6 +6,7 @@ import { scatterPlot } from "./scatterplot.js";
 
 let misc = require("./misc.js");
 let helpers = require("./helpers.js");
+let colorPicker = require("./colorPicker.js");
 let graphSummary = hivtrace_cluster_graph_summary;
 
 export {
@@ -15,5 +16,6 @@ export {
   histogramDistances,
   helpers,
   misc,
+  colorPicker,
   scatterPlot
 };
