@@ -5270,7 +5270,7 @@ var hivtrace_cluster_network_graph = function(
                     // invalid scale
                     return {};
                   }
-                  console.log("updating");
+
                   determine_scaling(d, values, [d3.time.scale()]);
                 }
               }
