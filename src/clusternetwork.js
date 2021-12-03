@@ -7964,10 +7964,11 @@ var hivtrace_cluster_network_graph = function(
       });
     };
 
-    let renderColorPickerContinuous = function(cat_id) {
+    let renderColorPickerContinuous = function(cat_id, color_stops) {
       // For each unique value, render item.
       // Min and max range for continuous values
       let items = [
+        colorPicker.colorStops("Scale", color_stops),
         colorPicker.colorPickerInputContinuous(
           "Min",
           self.uniqValues[cat_id]["min"]
@@ -8000,12 +8001,26 @@ var hivtrace_cluster_network_graph = function(
         ] = color;
         self.handle_attribute_continuous(cat_id);
       });
+
+      // Set onchange event for items
+      $(".hivtrace-color-stops").change(e => {
+        let num = e.target.value;
+        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+          "color_stops"
+        ] = num;
+        self.handle_attribute_continuous(cat_id);
+      });
     };
 
     if (type == "categorical") {
       renderColorPickerCategorical(cat_id);
     } else if (type == "continuous") {
-      renderColorPickerContinuous(cat_id);
+      renderColorPickerContinuous(
+        cat_id,
+        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+          "color_stops"
+        ]
+      );
     } else {
       console.log("Error: type not recognized");
     }
@@ -8448,14 +8463,15 @@ var hivtrace_cluster_network_graph = function(
       .classed("btn-default", true);
 
     if (cat_id) {
+      // map values to inverted scale
+      let color_stops =
+        graph_data[_networkGraphAttrbuteID][cat_id]["color_stops"] ||
+        _networkContinuousColorStops;
+
       if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
         self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
           cat_id
         ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
-
-        let color_stops =
-          graph_data[_networkGraphAttrbuteID][cat_id]["color_stops"] ||
-          _networkContinuousColorStops;
 
         self.uniqValues[cat_id]["min"] = self.colorizer["category"](
           color_stops
@@ -8501,13 +8517,13 @@ var hivtrace_cluster_network_graph = function(
         self.colorizer["category"] = _.wrap(
           d3.scale
             .linear()
-            .domain(_.range(_networkContinuousColorStops))
+            .domain(_.range(color_stops))
             .range([min, max])
             .interpolate(d3.interpolateRgb),
           function(func, arg) {
             return func(
               graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg) *
-                (1 / _networkContinuousColorStops)
+                (1 / color_stops)
             );
           }
         );
@@ -8571,11 +8587,6 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["category_pairwise"] = null;
       self.colorizer["category_map"] = null;
     }
-
-    // map values to inverted scale
-    let color_stops =
-      graph_data[_networkGraphAttrbuteID][cat_id]["color_stops"] ||
-      _networkContinuousColorStops;
 
     // Draw color picker for manual override
     self.renderColorPicker(cat_id, "continuous");
