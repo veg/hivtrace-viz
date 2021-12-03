@@ -5176,6 +5176,15 @@ var hivtrace_cluster_network_graph = function(
           _.each(list, self._aux_process_category_values);
         });
 
+        let color_stops = _networkContinuousColorStops;
+
+        try {
+          color_stops =
+            graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+              "color_stops"
+            ] || _networkContinuousColorStops;
+        } catch (err) {}
+
         var valid_scales = _.filter(
           _.map(graph_data[_networkGraphAttrbuteID], function(d, k) {
             function determine_scaling(d, values, scales) {
@@ -5183,20 +5192,15 @@ var hivtrace_cluster_network_graph = function(
 
               _.each(scales, function(scl) {
                 d["value_range"] = d3.extent(values);
-                var bins = _.map(
-                  _.range(_networkContinuousColorStops),
-                  function() {
-                    return 0;
-                  }
-                );
-                scl
-                  .range([0, _networkContinuousColorStops - 1])
-                  .domain(d["value_range"]);
+                var bins = _.map(_.range(color_stops), function() {
+                  return 0;
+                });
+                scl.range([0, color_stops - 1]).domain(d["value_range"]);
                 _.each(values, function(v) {
                   bins[Math.floor(scl(v))]++;
                 });
 
-                var mean = values.length / _networkContinuousColorStops;
+                var mean = values.length / color_stops;
                 var vrnc = _.reduce(bins, function(p, c) {
                   return p + (c - mean) * (c - mean);
                 });
@@ -5211,7 +5215,8 @@ var hivtrace_cluster_network_graph = function(
             }
 
             d["raw_attribute_key"] = k;
-            if (!("scale" in d)) {
+
+            if (true) {
               if (d.type == "Number" || d.type == "Number-categories") {
                 var values = _.filter(
                   _.map(graph_data.Nodes, function(nd) {
@@ -5265,6 +5270,7 @@ var hivtrace_cluster_network_graph = function(
                     // invalid scale
                     return {};
                   }
+                  console.log("updating");
                   determine_scaling(d, values, [d3.time.scale()]);
                 }
               }
@@ -8004,11 +8010,14 @@ var hivtrace_cluster_network_graph = function(
 
       // Set onchange event for items
       $(".hivtrace-color-stops").change(e => {
-        let num = e.target.value;
+        let num = parseInt(e.target.value);
         graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
           "color_stops"
         ] = num;
+
+        self._aux_populate_category_menus();
         self.handle_attribute_continuous(cat_id);
+        self.update();
       });
     };
 
