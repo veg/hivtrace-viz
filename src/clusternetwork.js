@@ -8033,6 +8033,12 @@ var hivtrace_cluster_network_graph = function(
     } else {
       console.log("Error: type not recognized");
     }
+
+    if (cat_id != null) {
+      $("#colorPickerOption").show();
+    } else {
+      $("#colorPickerOption").hide();
+    }
   };
 
   self.draw_attribute_labels = function() {

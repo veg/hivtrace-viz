@@ -266,3 +266,12 @@ circle.injected_object {
 .list-smaller li {
   font-size: 0.75em;
 }
+
+#colorPickerRow {
+  background-color: beige;
+  padding: 10px;
+}
+
+#colorPickerOption {
+  display: none;
+}
