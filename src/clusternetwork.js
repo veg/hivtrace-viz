@@ -7974,7 +7974,7 @@ var hivtrace_cluster_network_graph = function(
       // For each unique value, render item.
       // Min and max range for continuous values
       let items = [
-        colorPicker.colorStops("Scale", color_stops),
+        colorPicker.colorStops("Color Stops", color_stops),
         colorPicker.colorPickerInputContinuous(
           "Min",
           self.uniqValues[cat_id]["min"]

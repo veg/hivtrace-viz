@@ -274,4 +274,9 @@ circle.injected_object {
 
 #colorPickerOption {
   display: none;
+  padding-top: 10px;
+}
+
+.color-picker-toggle {
+  color: green;
 }
