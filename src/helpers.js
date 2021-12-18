@@ -323,6 +323,25 @@ function get_unique_count(nodes, schema) {
   return _.mapObject(new_obj, val => _.uniq(val).length);
 }
 
+function getUniqueValues(nodes, schema) {
+  let schema_keys = _.keys(schema);
+
+  let new_obj = {};
+  _.each(schema_keys, sk => (new_obj[sk] = []));
+
+  // get attribute diversity to sort on later
+  let pa = _.map(nodes, n => _.omit(n.patient_attributes, "_id"));
+
+  _.each(pa, p => {
+    _.each(schema_keys, sk => {
+      new_obj[sk].push(p[sk]);
+    });
+  });
+
+  // Get uniques across all keys
+  return _.mapObject(new_obj, val => _.uniq(val));
+}
+
 module.exports.export_csv_button = datamonkey_export_csv_button;
 module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
@@ -330,3 +349,4 @@ module.exports.describe_vector = datamonkey_describe_vector;
 module.exports.table_to_text = datamonkey_table_to_text;
 module.exports.export_handler = datamonkey_export_handler;
 module.exports.get_unique_count = get_unique_count;
+module.exports.getUniqueValues = getUniqueValues;

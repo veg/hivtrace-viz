@@ -323,6 +323,18 @@
                           <button
                             type="button"
                             class="btn btn-default"
+                            data-toggle="collapse"
+                            href="#colorPickerRow"
+                            title="Select Color Palette"
+                          >
+                            <i
+                              class="fa fa-circle color-picker-toggle"
+                              aria-hidden="true"
+                            ></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-default"
                             style="display:none"
                             data-hivtrace-ui-role="attributes_invert"
                           >
@@ -539,6 +551,10 @@
                     Use the <code>Show small clusters</code> checkbox to display
                     small clusters that may have been hidden for clarity
                   </div>
+                </div>
+
+                <div id="colorPickerOption">
+                  <div id="colorPickerRow" class="row collapse"></div>
                 </div>
 
                 <!-- Main SVG -->
