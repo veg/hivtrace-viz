@@ -1250,7 +1250,10 @@ var hivtrace_cluster_network_graph = function(
         _.each(self.auto_create_priority_sets, pg =>
           self.priority_groups_update_node_sets(pg.name, "insert")
         );
-        _.each(self.priority_groups_expanded, pg =>
+        const groups_that_expanded = self.defined_priority_groups.filter(
+          pg => pg.expanded
+        );
+        _.each(groups_that_expanded, pg =>
           self.priority_groups_update_node_sets(pg.name, "update")
         );
         self.draw_priority_set_table();
@@ -1812,7 +1815,9 @@ var hivtrace_cluster_network_graph = function(
           kind: g.kind,
           created: _defaultDateFormats[0](g.created),
           createdBy: g.createdBy,
-          tracking: g.tracking
+          tracking: g.tracking,
+          expanded: g.expanded,
+          pending: g.pending
         };
       }
     );
@@ -2419,7 +2424,9 @@ var hivtrace_cluster_network_graph = function(
                 modified: _defaultDateFormats[0](modifiedDate),
                 kind: kind,
                 tracking: tracking,
-                createdBy: created_by
+                createdBy: created_by,
+                expanded: false,
+                pending: false
               };
               res = self.priority_groups_add_set(
                 set_description,
