@@ -7714,14 +7714,16 @@ var hivtrace_cluster_network_graph = function(
                 : ""),
             volatile: true,
             format: value =>
-              pg.pending || pg.expanded
+              "<span style = 'white-space: nowrap'>" +
+              (pg.pending || pg.expanded
                 ? (pg.expanded
                     ? '<span class="label label-default">Grew</span>'
                     : '<span class="label label-danger">New</span>') +
                   "&nbsp;<span style = 'font-weight: 900;'>" +
                   value +
                   "</span>"
-                : value,
+                : value) +
+              "</span>",
             html: true,
             actions: []
           },
