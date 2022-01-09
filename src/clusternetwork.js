@@ -6986,6 +6986,19 @@ var hivtrace_cluster_network_graph = function(
     var thead = container.selectAll("thead");
     var tbody = container.selectAll("tbody");
 
+    const set_table_elements = (d, cell) => {
+      if (d.width || d.text_wrap) {
+        cell = d3.select(cell);
+        if (d.width) cell.style("width", "" + d.width + "px");
+        if (d.text_wrap) {
+          cell
+            .style("overflow", "hidden")
+            .style("white-space", "nowrap")
+            .style("text-overflow", "ellipsis");
+        }
+      }
+    };
+
     if (tbody.empty() || overwrite) {
       tbody.remove();
       tbody = d3.select(document.createElement("tbody"));
@@ -7002,7 +7015,7 @@ var hivtrace_cluster_network_graph = function(
         .append("td")
         .call(function(selection) {
           return selection.each(function(d, i) {
-            //handle_cluster_click;
+            set_table_elements(d, this);
             format_a_cell(d, i, this);
           });
         });
@@ -7026,6 +7039,7 @@ var hivtrace_cluster_network_graph = function(
         .append("th")
         .call(function(selection) {
           return selection.each(function(d, i) {
+            set_table_elements(d, this);
             format_a_cell(d, i, this);
           });
         });
@@ -7627,16 +7641,19 @@ var hivtrace_cluster_network_graph = function(
             sort: function(c) {
               return c.value;
             },
-            help: "How was this priority set created"
+            help: "How was this priority set created",
+            width: 50
           },
           {
             value: "Name",
             sort: "value",
             filter: true,
+            width: 325,
             help: "Priority set name"
           },
           {
             value: "Modified/created",
+            width: 200,
             sort: function(c) {
               return c.value[0];
             },
@@ -7645,7 +7662,9 @@ var hivtrace_cluster_network_graph = function(
           {
             value: "Growth",
             sort: "value",
-            help: "How growth is handled"
+            help: "How growth is handled",
+            width: 75
+            //text_wrap: true
           },
           {
             value: "Size",
@@ -7661,17 +7680,20 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value: "Priority",
+            width: 50,
             sort: "value",
             help: "Does the priority set continue to meet priority criteria?"
           },
           {
             value: "In last 12 mo.",
+            width: 50,
             sort: "value",
             help:
               "The number of cases in the priority set diagnosed in the past 12 months"
           },
           {
             value: "Overlap",
+            width: 150,
             sort: function(c) {
               c = c.value;
               if (c) {
@@ -7694,6 +7716,7 @@ var hivtrace_cluster_network_graph = function(
       if (self._is_CDC_auto_mode) {
         headers[0].splice(3, 0, {
           value: "Identification method",
+          width: 100,
           sort: function(c) {
             return c.value;
           },
@@ -7720,6 +7743,7 @@ var hivtrace_cluster_network_graph = function(
           {
             value: pg.createdBy,
             html: true,
+            width: 50,
             format: value =>
               pg.createdBy == _cdcCreatedBySystem
                 ? '<i class="fa fa-2x fa-desktop" title="' +
@@ -7731,6 +7755,7 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value: pg.name,
+            width: 325,
             help:
               pg.description +
               (pg.pending ? " (new, pending confirmation)" : "") +
@@ -7753,6 +7778,7 @@ var hivtrace_cluster_network_graph = function(
             actions: []
           },
           {
+            width: 200,
             value: [pg.modified, pg.created],
             format: function(value) {
               let vs = _.map(value, v => _defaultDateViewFormat(v));
@@ -7764,6 +7790,8 @@ var hivtrace_cluster_network_graph = function(
             }
           },
           {
+            width: 75,
+            //text_wrap: true,
             value: pg.tracking,
             format: function(value) {
               return _cdcConciseTrackingOptions[value];
@@ -7794,12 +7822,15 @@ var hivtrace_cluster_network_graph = function(
             html: true
           },
           {
+            width: 50,
             value: pg.meets_priority_def ? "Yes" : "No"
           },
           {
+            width: 50,
             value: pg.last12
           },
           {
+            width: 150,
             value: [pg.overlap.sets, pg.overlap.nodes],
             format: function(v) {
               if (v) {
@@ -7843,6 +7874,7 @@ var hivtrace_cluster_network_graph = function(
         if (self._is_CDC_auto_mode) {
           this_row.splice(3, 0, {
             value: pg.kind,
+            width: 100,
             format: function(v) {
               if (v) {
                 return v;
