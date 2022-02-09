@@ -268,14 +268,21 @@ function datamonkey_table_to_text(table_id, sep) {
     var plain_text = node.firstChild;
     if (plain_text) plain_text = plain_text.nodeValue;
     if (plain_text && plain_text.length) return plain_text;
-    if (table_id == "#priority_set_table") {
+
+    var first_element = d3.select(e).selectAll("[data-text-export]");
+    if (!first_element.empty()) {
+      return d3.select(first_element.node()).attr("data-text-export");
+    }
+
+    /*if (table_id == "#priority_set_table") {
       if (node.firstChild.tagName == "I") {
         return node.firstChild.getAttribute("title");
       } else if (node.firstChild.tagName == "SPAN") {
         return node.children[1].innerHTML;
       }
-    }
-    var first_element = d3.select(e).selectAll("p, span, button, abbr, select");
+    }*/
+
+    first_element = d3.select(e).selectAll("p, span, button, abbr, select");
     if (!first_element.empty()) {
       return d3.select(first_element.node()).text();
     }

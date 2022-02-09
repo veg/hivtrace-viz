@@ -7748,10 +7748,14 @@ var hivtrace_cluster_network_graph = function(
               pg.createdBy == _cdcCreatedBySystem
                 ? '<i class="fa fa-2x fa-desktop" title="' +
                   _cdcCreatedBySystem +
-                  '"></i>'
+                  '" data-text-export=' +
+                  _cdcCreatedBySystem +
+                  "></i>"
                 : '<i class="fa fa-2x fa-user" title="' +
                   _cdcCreatedByManual +
-                  '"></i>'
+                  '" data-text-export=' +
+                  _cdcCreatedByManual +
+                  "></i>"
           },
           {
             value: pg.name,
@@ -7769,7 +7773,9 @@ var hivtrace_cluster_network_graph = function(
                 ? (pg.expanded
                     ? '<span class="label label-default">Grew</span>'
                     : '<span class="label label-danger">New</span>') +
-                  "&nbsp;<span style = 'font-weight: 900;'>" +
+                  "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" +
+                  value +
+                  "'>" +
                   value +
                   "</span>"
                 : value) +
