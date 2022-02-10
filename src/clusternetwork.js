@@ -1730,17 +1730,19 @@ var hivtrace_cluster_network_graph = function(
             d.nodes.filter(x => my_nodes.has(x.name)).length == d.nodes.length;
           if (same_nodes && d.tracking == nodeset.tracking) {
             alert(
-              "Priority set " +
+              "Priority set '" +
                 d.name +
-                " has the same set of nodes and the same tracking mode as an existing set. Secure HIV-TRACE does not allow creating exact duplicates of priority sets."
+                "' has the same set of nodes and the same tracking mode as this new set. Secure HIV-TRACE does not allow creating exact duplicates of priority sets."
             );
             return true;
           } else if (same_nodes) {
-            alert(
-              "Warning! Priority set " +
+            let keep_duplicate = confirm(
+              "Warning! Priority set '" +
                 d.name +
-                " has the same set of nodes as an existing, but a different tracking mode."
+                "' has the same set of nodes as this set, but a different tracking mode. Click OK to create, or cancel to abort."
             );
+            let is_duplicate = !keep_duplicate;
+            return is_duplicate;
           }
         }
         return false;
