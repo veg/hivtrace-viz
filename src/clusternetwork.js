@@ -1726,17 +1726,23 @@ var hivtrace_cluster_network_graph = function(
       let my_nodes = new Set(_.map(nodeset.nodes, d => d.name));
       return _.some(self.defined_priority_groups, d => {
         if (d.nodes.length == my_nodes.size) {
-          if (
-            d.nodes.filter(x => my_nodes.has(x.name)).length ==
-              d.nodes.length &&
-            d.tracking == nodeset.tracking
-          ) {
+          const same_nodes =
+            d.nodes.filter(x => my_nodes.has(x.name)).length == d.nodes.length;
+          if (same_nodes && d.tracking == nodeset.tracking) {
             alert(
-              "Priority set " +
+              "Priority set '" +
                 d.name +
-                " has the same set of nodes and the same tracking mode. Secure HIV-TRACE does not allow creating exact duplicates of priority sets"
+                "' has the same set of nodes and the same tracking mode as this new set. Secure HIV-TRACE does not allow creating exact duplicates of priority sets."
             );
             return true;
+          } else if (same_nodes) {
+            let keep_duplicate = confirm(
+              "Warning! Priority set '" +
+                d.name +
+                "' has the same set of nodes as this set, but a different tracking mode. Click OK to create, or cancel to abort."
+            );
+            let is_duplicate = !keep_duplicate;
+            return is_duplicate;
           }
         }
         return false;
@@ -5296,7 +5302,9 @@ var hivtrace_cluster_network_graph = function(
           ];
 
           var rows = [];
-          var rows_for_export = [["Node", "Other Priority Sets"]];
+          var rows_for_export = [
+            ["Overlapping Set", "Node", "Other Priority Sets"]
+          ];
           _.each(ps.nodes, n => {
             let overlap = self.priority_node_overlap[n.name];
             let other_sets = "None";
@@ -5306,7 +5314,7 @@ var hivtrace_cluster_network_graph = function(
               ).join("; ");
             }
             rows.push([{ value: n.name }, { value: other_sets }]);
-            rows_for_export.push([n.name, other_sets]);
+            rows_for_export.push([ps.name, n.name, other_sets]);
           });
 
           d3.select(
@@ -5315,7 +5323,7 @@ var hivtrace_cluster_network_graph = function(
               true
             )
           ).on("click", function(d) {
-            helpers.export_csv_button(rows_for_export);
+            helpers.export_csv_button(rows_for_export, "overlap");
           });
 
           add_a_sortable_table(
@@ -8135,7 +8143,10 @@ var hivtrace_cluster_network_graph = function(
           true
         )
       ).on("click", function(d) {
-        helpers.export_csv_button(self.priority_groups_export_nodes());
+        helpers.export_csv_button(
+          self.priority_groups_export_nodes(),
+          "priority-groups"
+        );
       });
     }
   };

@@ -27,15 +27,16 @@ function b64toBlob(b64, onsuccess, onerror) {
   img.src = b64;
 }
 
-var datamonkey_export_csv_button = function(data) {
+var datamonkey_export_csv_button = function(data, name) {
   data = d3.csv.format(data);
   if (data !== null) {
+    name = name ? name + ".csv" : "export.csv";
     var pom = document.createElement("a");
     pom.setAttribute(
       "href",
       "data:text/csv;charset=utf-8," + encodeURIComponent(data)
     );
-    pom.setAttribute("download", "export.csv");
+    pom.setAttribute("download", name);
     pom.className = "btn btn-default btn-sm";
     pom.innerHTML =
       '<span class="glyphicon glyphicon-floppy-save"></span> Download CSV';
