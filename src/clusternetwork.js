@@ -1824,7 +1824,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.priority_groups_is_new_node = function(group_set, node) {
-    return node.added.getTime() == self.today.getTime();
+    return node.added && node.added.getTime() == self.today.getTime();
   };
 
   self.priority_groups_export_nodes = function(group_set, include_unvalidated) {
@@ -8075,9 +8075,11 @@ var hivtrace_cluster_network_graph = function(
         if (pg.not_in_network.length) {
           this_row[2]["actions"] = [
             {
-              text: "" + pg.not_in_network.length + " missing",
+              text: "" + pg.not_in_network.length + " removed",
               classed: { "btn-danger": true, disabled: true },
-              help: "Missing nodes: " + pg.not_in_network.join(", ")
+              help:
+                "Nodes removed from the network: " +
+                pg.not_in_network.join(", ")
             }
           ];
         }
