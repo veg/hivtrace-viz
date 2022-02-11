@@ -7258,6 +7258,11 @@ var hivtrace_cluster_network_graph = function(
                 null,
                 cluster_id => "Cluster " + cluster_id + " [changes view]",
                 self._social_view_options(link_class, shown_types, e => {
+                  if (_.isObject(e.source) && self._is_new_node(e.source))
+                    return "Newly added";
+                  if (_.isObject(e.target) && self._is_new_node(e.target))
+                    return "Newly added";
+
                   return e.attributes.indexOf("added-to-prior") >= 0
                     ? "Newly added"
                     : "Existing";
