@@ -205,7 +205,7 @@ var _cdcConciseTrackingOptions = {
   "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.":
     "3 years, 0.5% distance",
   "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.":
-    "0.5%",
+    "0.5% distance",
   "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.":
     "3 years, 1.5% distance",
   "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.":
@@ -1323,6 +1323,70 @@ var hivtrace_cluster_network_graph = function(
     });
   };
 
+  self.auto_expand_pg_handler = function(pg, nodeID2idx) {
+    if (!nodeID2idx) {
+      let nodeset = {};
+      nodeID2idx = {};
+      _.each(self.json.Nodes, (n, i) => {
+        nodeset[n.id] = n;
+        nodeID2idx[n.id] = i;
+      });
+    }
+
+    let core_node_set = new Set(_.map(pg.nodes, n => nodeID2idx[n.name]));
+    let added_nodes = new Set();
+    let filter = _cdcTrackingOptionsFilter[pg.tracking];
+
+    if (filter) {
+      let time_cutoff = _n_months_ago(
+        self.get_reference_date(),
+        _cdcTrackingOptionsCutoff[pg.tracking]
+      );
+      const expansion_test = hivtrace_cluster_depthwise_traversal(
+        self.json.Nodes,
+        self.json.Edges,
+        e => {
+          let pass = filter(e);
+          if (pass) {
+            if (!core_node_set.has(e.source))
+              pass =
+                pass &&
+                self._filter_by_date(
+                  time_cutoff,
+                  _networkCDCDateField,
+                  self.get_reference_date(),
+                  self.json.Nodes[e.source]
+                );
+            if (!core_node_set.has(e.target))
+              pass =
+                pass &&
+                self._filter_by_date(
+                  time_cutoff,
+                  _networkCDCDateField,
+                  self.get_reference_date(),
+                  self.json.Nodes[e.target]
+                );
+          }
+          return pass;
+        },
+        false,
+        _.filter(
+          _.map([...core_node_set], d => self.json.Nodes[d]),
+          d => d
+        )
+      );
+
+      _.each(expansion_test, c => {
+        _.each(c, n => {
+          if (!core_node_set.has(nodeID2idx[n.id])) {
+            added_nodes.add(nodeID2idx[n.id]);
+          }
+        });
+      });
+    }
+    return added_nodes;
+  };
+
   self.priority_groups_validate = function(groups, auto_extend) {
     /**
       groups is a list of priority groups
@@ -1556,77 +1620,7 @@ var hivtrace_cluster_network_graph = function(
           );
 
           if (auto_extend && pg.tracking != _cdcTrackingNone) {
-            let core_node_set = new Set(
-              _.map(pg.nodes, n => nodeID2idx[n.name])
-            );
-            let added_nodes = new Set();
-            let filter = _cdcTrackingOptionsFilter[pg.tracking];
-
-            if (filter) {
-              let time_cutoff = _n_months_ago(
-                self.get_reference_date(),
-                _cdcTrackingOptionsCutoff[pg.tracking]
-              );
-              const expansion_test = hivtrace_cluster_depthwise_traversal(
-                self.json.Nodes,
-                self.json.Edges,
-                e => {
-                  let pass = filter(e);
-                  if (pass) {
-                    if (!core_node_set.has(e.source))
-                      pass =
-                        pass &&
-                        self._filter_by_date(
-                          time_cutoff,
-                          _networkCDCDateField,
-                          self.get_reference_date(),
-                          self.json.Nodes[e.source]
-                        );
-                    if (!core_node_set.has(e.target))
-                      pass =
-                        pass &&
-                        self._filter_by_date(
-                          time_cutoff,
-                          _networkCDCDateField,
-                          self.get_reference_date(),
-                          self.json.Nodes[e.target]
-                        );
-                  }
-                  return pass;
-                },
-                false,
-                _.filter(
-                  _.map([...core_node_set], d => self.json.Nodes[d]),
-                  d => d
-                )
-              );
-
-              /*if (pg.name == 'FL_201709_141.1') {
-                    console.log ( _n_months_ago(self.get_reference_date(), _cdcTrackingOptionsCutoff[pg.tracking]), self.get_reference_date());
-                    let retest = hivtrace_cluster_depthwise_traversal (self.json.Nodes, self.json.Edges, (e)=>
-                    {
-                        let pass = filter (e);
-                        if (pass) {
-                            if (!core_node_set.has (e.source))
-                                pass = pass && self._filter_by_date  (time_cutoff, _networkCDCDateField, self.get_reference_date(), self.json.Nodes[e.source]);
-                            if (!core_node_set.has (e.target))
-                                pass = pass && self._filter_by_date  (time_cutoff, _networkCDCDateField, self.get_reference_date(), self.json.Nodes[e.target]);
-                        }
-                        return pass;
-                    },
-                    false,
-                    _.filter (self.json.Nodes, (d)=>d.id == 'FL00S004399674-7'));
-                    console.log (retest); 
-                }*/
-
-              _.each(expansion_test, c => {
-                _.each(c, n => {
-                  if (!core_node_set.has(nodeID2idx[n.id])) {
-                    added_nodes.add(nodeID2idx[n.id]);
-                  }
-                });
-              });
-            }
+            let added_nodes = self.auto_expand_pg_handler(pg, nodeID2idx);
 
             if (added_nodes.size) {
               _.each([...added_nodes], nid => {
@@ -2386,11 +2380,14 @@ var hivtrace_cluster_network_graph = function(
             : self.getCurrentDate();
 
         function save_priority_set() {
+          /**
+            handler for priority set save requests
+        */
           form_save.style("display", null);
 
           let res = true;
 
-          // check if can save
+          // check if can save (name set etc)
           if (panel_object.network_nodes.length) {
             let name, desc, kind, tracking;
 
@@ -2408,9 +2405,6 @@ var hivtrace_cluster_network_graph = function(
                     .node()
                 ).val()
             );
-
-            //console.log (name, desc, kind);
-            //console.log (self.priority_groups_check_name(name));
 
             if (
               !panel_object.first_save &&
@@ -2434,6 +2428,33 @@ var hivtrace_cluster_network_graph = function(
                 expanded: false,
                 pending: false
               };
+
+              if (tracking != _cdcTrackingNone) {
+                let added_nodes = self.auto_expand_pg_handler(set_description);
+                if (added_nodes.size) {
+                  if (
+                    confirm(
+                      "This priority set does not include all the nodes in the current network that are eligible for membership by '" +
+                        tracking +
+                        "' These " +
+                        added_nodes.size +
+                        " additional nodes will be automatically added to this priority set when you save it. If you don’t want to add these nodes to the priority set, please select 'Cancel' and change the growth criteria for the priority set."
+                    )
+                  ) {
+                    _.each([...added_nodes], nid => {
+                      let n = self.json.Nodes[nid];
+                      set_description.nodes.push({
+                        name: n.id,
+                        added: self.getCurrentDate(),
+                        kind: _cdcPrioritySetDefaultNodeKind
+                      });
+                    });
+                  } else {
+                    return false;
+                  }
+                }
+              }
+
               res = self.priority_groups_add_set(
                 set_description,
                 true,
