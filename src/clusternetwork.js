@@ -2591,7 +2591,21 @@ var hivtrace_cluster_network_graph = function(
           panel_object.network_nodes.push(node);
         };
 
+        panel_object.can_add_nodes = function() {
+          if (created_by != _cdcCreatedByManual) {
+            alert(
+              "Cannot add nodes to system generated priority sets. You may clone this priority set and then add nodes to it manually if necessary."
+            );
+            return false;
+          }
+          return true;
+        };
+
         panel_object.append_node = function(id, skip_ui) {
+          if (!panel_object.can_add_nodes()) {
+            return;
+          }
+
           var node_to_add = panel_object.validate_input(id, skip_ui);
           if (node_to_add) {
             panel_object._append_node(node_to_add);
@@ -2604,6 +2618,9 @@ var hivtrace_cluster_network_graph = function(
           nodes_to_add,
           existing_attributes
         ) {
+          if (!panel_object.can_add_nodes()) {
+            return;
+          }
           let existing_ids = {};
 
           _.each(panel_object.network_nodes, n => {
@@ -2636,6 +2653,10 @@ var hivtrace_cluster_network_graph = function(
         };
 
         panel_object.append_node_objects = function(nodes_to_add) {
+          if (!panel_object.can_add_nodes()) {
+            return;
+          }
+
           let existing_ids = {};
 
           _.each(panel_object.network_nodes, n => {
