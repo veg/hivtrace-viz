@@ -194,51 +194,31 @@ var _cdcPrioritySetKind = [
 ];
 
 var _cdcTrackingOptions = [
-  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.",
-  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.",
-  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.",
-  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.",
-  "05. Do not add cases to this priority set. I do not want to monitor growth in this priority set over time."
+  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this cluster of interest",
+  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this cluster of interest",
+  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this cluster of interest",
+  "05. Do not add cases to this cluster of interest. I do not want to monitor growth in this cluster of interest over time."
 ];
 
-var _cdcConciseTrackingOptions = {
-  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.":
-    "3 years, 0.5% distance",
-  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.":
-    "0.5% distance",
-  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.":
-    "3 years, 1.5% distance",
-  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.":
-    "1.5% distance",
-  "05. Do not add cases to this priority set. I do not want to monitor growth in this priority set over time.":
-    "None"
-};
+var _cdcConciseTrackingOptions = {};
+_cdcConciseTrackingOptions[_cdcTrackingOptions[0]] = "3 years, 0.5% distance";
+_cdcConciseTrackingOptions[_cdcTrackingOptions[1]] = "0.5% distance";
+_cdcConciseTrackingOptions[_cdcTrackingOptions[2]] = "3 years, 1.5% distance";
+_cdcConciseTrackingOptions[_cdcTrackingOptions[3]] = "1.5% distance";
+_cdcConciseTrackingOptions[_cdcTrackingOptions[4]] = "None";
 
-var _cdcTrackingOptionsFilter = {
-  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.": (
-    e,
-    d
-  ) => e.length < 0.005,
-  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.": (
-    e,
-    d
-  ) => e.length < 0.005,
-  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.": (
-    e,
-    d
-  ) => e.length < 0.015,
-  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.": (
-    e,
-    d
-  ) => e.length < 0.015
-};
+var _cdcTrackingOptionsFilter = {};
+_cdcTrackingOptionsFilter[_cdcTrackingOptions[0]] = (e, d) => e.length < 0.005;
+_cdcTrackingOptionsFilter[_cdcTrackingOptions[1]] = (e, d) => e.length < 0.005;
+_cdcTrackingOptionsFilter[_cdcTrackingOptions[2]] = (e, d) => e.length < 0.015;
+_cdcTrackingOptionsFilter[_cdcTrackingOptions[3]] = (e, d) => e.length < 0.015;
 
-var _cdcTrackingOptionsCutoff = {
-  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this priority set.": 36,
-  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this priority set.": 100000,
-  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this priority set.": 36,
-  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this priority set.": 100000
-};
+var _cdcTrackingOptionsCutoff = {};
+_cdcTrackingOptionsCutoff[_cdcTrackingOptions[0]] = 36;
+_cdcTrackingOptionsCutoff[_cdcTrackingOptions[1]] = 100000;
+_cdcTrackingOptionsCutoff[_cdcTrackingOptions[2]] = 36;
+_cdcTrackingOptionsCutoff[_cdcTrackingOptions[3]] = 100000;
 
 var _cdcTrackingOptionsDefault = _cdcTrackingOptions[0];
 var _cdcTrackingNone = _cdcTrackingOptions[4];
@@ -747,7 +727,7 @@ var hivtrace_cluster_network_graph = function(
                       }
                       return false;
                     },
-                    help: "Add to priority set"
+                    help: "Add to cluster of interest"
                   };
                 });
               }
@@ -799,7 +779,7 @@ var hivtrace_cluster_network_graph = function(
                     help:
                       "Do some of these " +
                       c.length +
-                      " nodes belong to a priority set?",
+                      " nodes belong to a cluster of interest?",
                     action: function(this_button, cv) {
                       let nodeset = new Set(c);
                       this_button = $(this_button.node());
@@ -849,7 +829,7 @@ var hivtrace_cluster_network_graph = function(
                             if (check_membership.length == 0) {
                               check_membership = [
                                 [
-                                  "No nodes belong to any priority set or are linked to any of the priority sets."
+                                  "No nodes belong to any cluster of interest or are linked to any of the clusters of interest."
                                 ]
                               ];
                             } else {
@@ -878,7 +858,9 @@ var hivtrace_cluster_network_graph = function(
                                 }
 
                                 description +=
-                                  " to priority set <code>" + m[0] + "</code>";
+                                  " to cluster of interest <code>" +
+                                  m[0] +
+                                  "</code>";
                                 return description;
                               });
                             }
@@ -927,7 +909,7 @@ var hivtrace_cluster_network_graph = function(
                       }
                       return false;
                     },
-                    help: "Add to priority set"
+                    help: "Add to cluster of interest"
                   };
                 })
               );
@@ -1116,7 +1098,7 @@ var hivtrace_cluster_network_graph = function(
   self.load_priority_sets = function(url) {
     d3.json(url, function(error, results) {
       if (error) {
-        throw "Failed loading priority set file " + error.responseURL;
+        throw "Failed loading cluster of interest file " + error.responseURL;
       } else {
         self.defined_priority_groups = _.clone(results);
         _.each(self.defined_priority_groups, pg => {
@@ -1204,7 +1186,7 @@ var hivtrace_cluster_network_graph = function(
                   self.auto_create_priority_sets.push({
                     name: autoname,
                     description:
-                      "Automatically created priority set " + autoname,
+                      "Automatically created cluster of interest" + autoname,
                     nodes: _.map(subcluster_data.recent_nodes[i], n =>
                       self.priority_group_node_record(n, self.today)
                     ),
@@ -1234,7 +1216,7 @@ var hivtrace_cluster_network_graph = function(
             self.priority_groups_pending() +
             "</b> and expanded <b>" +
             self.priority_groups_expanded() +
-            "</b> priority sets. <b>Please review and confirm in the <code>Priority Sets</code> tab<br>";
+            "</b> clusters of interest. <b>Please review and confirm in the <code>Clusters of Interest</code> tab<br>";
           self.display_warning(self.warning_string, true);
         }
         let tab_pill = self.get_ui_element_selector_by_role(
@@ -1724,16 +1706,16 @@ var hivtrace_cluster_network_graph = function(
             d.nodes.filter(x => my_nodes.has(x.name)).length == d.nodes.length;
           if (same_nodes && d.tracking == nodeset.tracking) {
             alert(
-              "Priority set '" +
+              "Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes and the same tracking mode as this new set. Secure HIV-TRACE does not allow creating exact duplicates of priority sets."
+                "' has the same set of nodes and the same tracking mode as this new CoI. Secure HIV-TRACE does not allow creating exact duplicates of CoI."
             );
             return true;
           } else if (same_nodes) {
             let keep_duplicate = confirm(
-              "Warning! Priority set '" +
+              "Warning! Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes as this set, but a different tracking mode. Click OK to create, or cancel to abort."
+                "' has the same set of nodes as this CoI, but a different tracking mode. Click OK to create, or cancel to abort."
             );
             let is_duplicate = !keep_duplicate;
             return is_duplicate;
@@ -1872,7 +1854,7 @@ var hivtrace_cluster_network_graph = function(
     let edge_length =
       options["priority-edge-length"] || self.subcluster_threshold;
     let reference_date = options["timestamp"] || self.today;
-    let title = options["title"] || "PS " + priority_set.prior_name;
+    let title = options["title"] || "CoI " + priority_set.prior_name;
     let node_dates = {};
 
     if (priority_set.nodes) {
@@ -1940,13 +1922,15 @@ var hivtrace_cluster_network_graph = function(
           } else {
             if (i == pgDates.length - maxColors) {
               dateID[d] = viewEnum.length;
-              viewEnum.push("In priority set (added on or before " + d + ")");
+              viewEnum.push(
+                "In cluster of interest (added on or before " + d + ")"
+              );
               return;
             }
           }
         }
         dateID[d] = viewEnum.length;
-        viewEnum.push("In priority set (added " + d + ")");
+        viewEnum.push("In cluster of interest (added " + d + ")");
       }
     });
 
@@ -1956,12 +1940,12 @@ var hivtrace_cluster_network_graph = function(
     viewEnum.push(
       "Diagnosed or in network on or after " +
         refDate +
-        " [directly linked to priority set]"
+        " [directly linked to cluster of interest]"
     );
     viewEnum.push(
       "Diagnosed or in network on or after " +
         refDate +
-        " [indirectly linked to priority set]"
+        " [indirectly linked to cluster of interest]"
     );
     let viewEnumMissing = [...viewEnum, _networkMissing];
 
@@ -2000,7 +1984,7 @@ var hivtrace_cluster_network_graph = function(
           "computed-attributes": {
             date_added: {
               depends: [_networkCDCDateField],
-              label: "Date added to priority set",
+              label: "Date added to cluster of interest",
               type: "Date",
               map: function(node) {
                 return node.id in node_dates
@@ -2010,7 +1994,7 @@ var hivtrace_cluster_network_graph = function(
             },
             priority_set: {
               depends: [_networkCDCDateField],
-              label: "Priority Set Status",
+              label: "Cluster of Interest Status",
               enum: viewEnum,
               map: function(node) {
                 //console.log ("PS", node.id, node.priority_set);
@@ -2257,13 +2241,13 @@ var hivtrace_cluster_network_graph = function(
         var grp_name_button = grp_name
           .append("input")
           .classed("form-control input-sm", true)
-          .attr("placeholder", "Name priority set")
+          .attr("placeholder", "Name this cluster of interest")
           .attr("data-hivtrace-ui-role", "priority-panel-name");
 
         grp_name
           .append("p")
           .classed("help-block", true)
-          .text("Name this priority set");
+          .text("Name this cluster of interest");
 
         var grp_kind = form_save.append("div").classed("form-group", true);
 
@@ -2276,7 +2260,7 @@ var hivtrace_cluster_network_graph = function(
           grp_kind_select.property("disabled", true);
           grp_kind_select.attr(
             "title",
-            "The method of cluster identification cannot be changed for system generated priority sets. However, after confirming this priority set, you can clone it and then change this field as needed"
+            "The method of cluster identification cannot be changed for system generated CoI. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
           );
         } else {
           grp_kind_select.attr("title", null);
@@ -2310,7 +2294,7 @@ var hivtrace_cluster_network_graph = function(
           grp_tracking_select.property("disabled", true);
           grp_tracking_select.attr(
             "title",
-            "The method of priority set tracking cannot be changed for system generated priority sets. However, you can clone it and then change this field as needed"
+            "The method of tracking cannot be changed for system generated CoI. However, you can clone this cluster of interest and then change this field as needed"
           );
         } else {
           grp_tracking_select.attr("title", null);
@@ -2329,20 +2313,20 @@ var hivtrace_cluster_network_graph = function(
         grp_tracking
           .append("p")
           .classed("help-block", true)
-          .text("Method of tracking priority set growth");
+          .text("Method of tracking CoI growth");
 
         var grp_desc = form_save.append("div").classed("form-group", true);
 
         grp_desc
           .append("textarea")
           .classed("form-control input-sm", true)
-          .attr("placeholder", "Priority Set Description")
+          .attr("placeholder", "Cluster of Interest Description")
           .attr("data-hivtrace-ui-role", "priority-panel-description")
           .text(description);
         grp_desc
           .append("p")
           .classed("help-block", true)
-          .text("Describe this priority set");
+          .text("Describe this cluster of interest");
 
         panel_object.first_save = true;
         panel_object.cleanup_attributes = this.cleanup_attributes = function() {
@@ -2434,11 +2418,11 @@ var hivtrace_cluster_network_graph = function(
                 if (added_nodes.size) {
                   if (
                     confirm(
-                      "This priority set does not include all the nodes in the current network that are eligible for membership by '" +
+                      "This cluster of interest does not include all the nodes in the current network that are eligible for membership by '" +
                         tracking +
                         "' These " +
                         added_nodes.size +
-                        " additional nodes will be automatically added to this priority set when you save it. If you don’t want to add these nodes to the priority set, please select 'Cancel' and change the growth criteria for the priority set."
+                        " additional nodes will be automatically added to this CoI when you save it. If you don’t want to add these nodes to the CoI please select 'Cancel' and change the growth criterion."
                     )
                   ) {
                     _.each([...added_nodes], nid => {
@@ -2594,7 +2578,7 @@ var hivtrace_cluster_network_graph = function(
         panel_object.can_add_nodes = function() {
           if (created_by != _cdcCreatedByManual) {
             alert(
-              "Cannot add nodes to system generated priority sets. You may clone this priority set and then add nodes to it manually if necessary."
+              "Cannot add nodes to system generated clusters of interest. You may clone this cluster of interest and then add nodes to it manually if necessary."
             );
             return false;
           }
@@ -2713,7 +2697,7 @@ var hivtrace_cluster_network_graph = function(
           );
 
           panel.setHeaderTitle(
-            "Priority set editor (" +
+            "CoI editor (" +
               panel.network_nodes.length +
               " nodes)" +
               (validation_mode ? " [automatically created review] " : "")
@@ -2741,7 +2725,7 @@ var hivtrace_cluster_network_graph = function(
               prepend: true,
               description: {
                 value: "Added",
-                help: "When was this person added to the priority set?"
+                help: "When was this person added to the cluster of interest?"
               },
               generator: function(node) {
                 return {
@@ -2790,7 +2774,7 @@ var hivtrace_cluster_network_graph = function(
               description: {
                 value: "Identification method",
                 help:
-                  "How was this person identified as part of this priority set?"
+                  "How was this person identified as part of this cluster of interest?"
               },
               generator: function(node) {
                 return {
@@ -2894,7 +2878,7 @@ var hivtrace_cluster_network_graph = function(
                           self.handle_inline_confirm(
                             d3.select(this),
                             del_form_generator,
-                            "Are you sure you wish to permanently delete this node from the priority set?",
+                            "Are you sure you wish to permanently delete this node from the cluster of interest?",
                             function(d) {
                               panel_object.remove_node(payload);
                             },
@@ -2944,7 +2928,7 @@ var hivtrace_cluster_network_graph = function(
       },
       onbeforeclose: function() {
         if (!this.saved) {
-          if (confirm("Close priority set editor?")) {
+          if (confirm("Close cluster of interest editor?")) {
             //console.log ("Closing...");
             this.cleanup_attributes();
             return true;
@@ -2970,7 +2954,7 @@ var hivtrace_cluster_network_graph = function(
         if (self.priority_groups_pending() > 0) {
           e.preventDefault();
           e.returnValue =
-            "There are priority sets that have not been confirmed. Closing the window now will not finalize their creation.";
+            "There are cluster of interest that have not been confirmed. Closing the window now will not finalize their creation.";
         }
         delete e["returnValue"];
       });
@@ -2988,7 +2972,9 @@ var hivtrace_cluster_network_graph = function(
 
     if (merge_sets) {
       d3.selectAll(merge_sets).on("click", function(e) {
-        $("#priority_set_merge_modal").modal();
+        $(
+          self.get_ui_element_selector_by_role("priority_set_merge", true)
+        ).modal();
       });
     }
   }
@@ -3369,7 +3355,7 @@ var hivtrace_cluster_network_graph = function(
 
     priority_sets: {
       depends: [_networkCDCDateField],
-      label: "Priority sets",
+      label: "Clusters of interest",
       type: "String",
       map: function(node) {
         //console.log (node);
@@ -3609,7 +3595,7 @@ var hivtrace_cluster_network_graph = function(
           .append("a")
           .attr("tabindex", "-1")
           .text(function(d) {
-            return "Add this cluster to priority set";
+            return "Add this cluster to the cluster of interest";
           })
           .on("click", function(d) {
             self
@@ -4122,7 +4108,7 @@ var hivtrace_cluster_network_graph = function(
           .append("a")
           .attr("tabindex", "-1")
           .text(function(d) {
-            return "Add this node to priority set";
+            return "Add this node to the cluster of interest";
           })
           .on("click", function(d) {
             self.has_priority_set_editor().append_node(node.id, true);
@@ -5270,7 +5256,7 @@ var hivtrace_cluster_network_graph = function(
             .text(
               __("clusters_tab")["listing_nodes"] +
                 (priority_list
-                  ? " in priority set " + priority_list
+                  ? " in cluster of interest " + priority_list
                   : " " + __("general")["cluster"] + " " + cluster_id)
             );
 
@@ -5318,9 +5304,9 @@ var hivtrace_cluster_network_graph = function(
           modal
             .selectAll(".modal-title")
             .text(
-              "View how nodes in priority set " +
+              "View how nodes in cluster of interest " +
                 priority_list +
-                " overlap with other priority sets"
+                " overlap with other CoI"
             );
 
           let ps = self.priority_groups_find_by_name(priority_list);
@@ -5330,23 +5316,19 @@ var hivtrace_cluster_network_graph = function(
             [
               {
                 value: "Node",
-                help:
-                  "EHARS_ID of the node that overlaps with other priority sets",
+                help: "EHARS_ID of the node that overlaps with other CoI",
                 sort: "value"
               },
               {
                 value: "Other Priority Set (s)",
-                help:
-                  "Names of other priority sets where this node is included",
+                help: "Names of other CoI where this node is included",
                 sort: "value"
               }
             ]
           ];
 
           var rows = [];
-          var rows_for_export = [
-            ["Overlapping Set", "Node", "Other Priority Sets"]
-          ];
+          var rows_for_export = [["Overlapping Set", "Node", "Other CoI"]];
           _.each(ps.nodes, n => {
             let overlap = self.priority_node_overlap[n.name];
             let other_sets = "None";
@@ -5404,7 +5386,7 @@ var hivtrace_cluster_network_graph = function(
           self.defined_priority_groups &&
           self.defined_priority_groups.length > 1
         ) {
-          desc.text("Select two or more priority sets to merge");
+          desc.text("Select two or more clusters of interest to merge");
 
           var headers = [
             [
@@ -5412,13 +5394,13 @@ var hivtrace_cluster_network_graph = function(
                 value: "Select"
               },
               {
-                value: "Priority Set",
-                help: "Priority Set Name",
+                value: "Cluster of interest",
+                help: "Cluster of interest Name",
                 sort: "value"
               },
               {
                 value: "Nodes",
-                help: "How many nodes are in this priority set",
+                help: "How many nodes are in this cluster of interest",
                 sort: "value"
               },
               {
@@ -5458,15 +5440,15 @@ var hivtrace_cluster_network_graph = function(
               desc.html(
                 "Merge " +
                   current_selection.size +
-                  " priority sets with " +
+                  " CoI with " +
                   total +
                   " nodes, creating a new set with " +
                   current_node_set.size +
-                  " nodes. <br><small>Note that the priority sets being merged will <b>not</b> be automatically deleted</small>"
+                  " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
               );
               proceed_btn.attr("disabled", null);
             } else {
-              desc.text("Select two or more priority sets to merge");
+              desc.text("Select two or more clusters of interest to merge");
               proceed_btn.attr("disabled", "disabled");
             }
           }
@@ -5751,7 +5733,7 @@ var hivtrace_cluster_network_graph = function(
         ]);
       } else {
         cluster_commands.push([
-          "Add filtered objects to priority set",
+          "Add filtered objects to cluster of interest",
           function(item) {
             let editor_panel = self.has_priority_set_editor();
             if (editor_panel)
@@ -7696,7 +7678,7 @@ var hivtrace_cluster_network_graph = function(
             sort: function(c) {
               return c.value;
             },
-            help: "How was this priority set created",
+            help: "How was this cluster of interest created",
             width: 50
           },
           {
@@ -7704,7 +7686,7 @@ var hivtrace_cluster_network_graph = function(
             sort: "value",
             filter: true,
             width: 325,
-            help: "Priority set name"
+            help: "Cluster of interest name"
           },
           {
             value: "Modified/created",
@@ -7712,7 +7694,7 @@ var hivtrace_cluster_network_graph = function(
             sort: function(c) {
               return c.value[0];
             },
-            help: "When was the priority created/last modified"
+            help: "When was the cluster of interest created/last modified"
           },
           {
             value: "Growth",
@@ -7731,20 +7713,21 @@ var hivtrace_cluster_network_graph = function(
               }
               return 0;
             },
-            help: "Number of nodes in the priority set"
+            help: "Number of nodes in the cluster of interest"
           },
           {
             value: "Priority",
             width: 50,
             sort: "value",
-            help: "Does the priority set continue to meet priority criteria?"
+            help:
+              "Does the cluster of interest continue to meet priority criteria?"
           },
           {
             value: "In last 12 mo.",
             width: 50,
             sort: "value",
             help:
-              "The number of cases in the priority set diagnosed in the past 12 months"
+              "The number of cases in the cluster of interest diagnosed in the past 12 months"
           },
           {
             value: "Overlap",
@@ -7757,7 +7740,7 @@ var hivtrace_cluster_network_graph = function(
               return 0;
             },
             help:
-              "How many nodes in this priority set overlap with nodes in other priority sets?"
+              "How many nodes in this cluster of interest overlap with nodes in other CoI?"
           }
           /*,
             {
@@ -7952,13 +7935,13 @@ var hivtrace_cluster_network_graph = function(
           this_row[1].actions = [
             {
               icon: "fa-eye",
-              help: "Review and adjust this priority set",
+              help: "Review and adjust this cluster of interest",
               action: function(button, value) {
                 let nodeset = self.priority_groups_find_by_name(value);
                 if (nodeset) {
                   if (self.priority_set_editor) {
                     alert(
-                      "Cannot confirm a priority set while an editor window is open"
+                      "Cannot confirm a cluster of interest while an editor window is open"
                     );
                   } else {
                     self.open_priority_set_editor(
@@ -7985,7 +7968,7 @@ var hivtrace_cluster_network_graph = function(
                 _.map([self.subcluster_threshold, 0.015], threshold => {
                   return {
                     label:
-                      "View this priority set at link distance of " +
+                      "View this cluster of interest at link distance of " +
                       _defaultPercentFormatShort(threshold),
                     action: function(button, value) {
                       self.priority_set_view(pg, {
@@ -8003,7 +7986,7 @@ var hivtrace_cluster_network_graph = function(
 
             if (!self._is_CDC_executive_mode) {
               dropdown.push({
-                label: "Clone this priority set in a new editor pane",
+                label: "Clone this cluster of interest in a new editor pane",
                 action: function(button, value) {
                   let ref_set = self.priority_groups_find_by_name(pg.name);
                   let copied_node_objects = _.clone(ref_set.node_objects);
@@ -8031,7 +8014,7 @@ var hivtrace_cluster_network_graph = function(
                 });
               }
               dropdown.push({
-                label: "View nodes in this priority set",
+                label: "View nodes in this cluster of interest",
                 data: {
                   toggle: "modal",
                   target: self.get_ui_element_selector_by_role(
@@ -8043,7 +8026,7 @@ var hivtrace_cluster_network_graph = function(
               });
             }
             dropdown.push({
-              label: "Modify this priority set",
+              label: "Modify this cluster of interest",
               action: function(button, value) {
                 let ref_set = self.priority_groups_find_by_name(pg.name);
 
@@ -8080,7 +8063,7 @@ var hivtrace_cluster_network_graph = function(
             0,
             {
               icon: "fa-info-circle",
-              help: "View/edit this priority set",
+              help: "View/edit this cluster of interest",
               dropdown: _action_drop_down()
               /*action: function (button, menu_value) {
                   console.log (menu_value);
@@ -8110,7 +8093,7 @@ var hivtrace_cluster_network_graph = function(
                 return {
                   icon: "fa-plus",
                   help:
-                    "Add nodes in this priority set to the new priority set",
+                    "Add nodes in this cluster of interest to the new cluster of interest",
                   action: function(button, value) {
                     let nodeset = self.priority_groups_find_by_name(value);
                     if (nodeset) {
@@ -8170,7 +8153,7 @@ var hivtrace_cluster_network_graph = function(
         rows,
         true,
         has_required_actions +
-          'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> priority sets.\
+          'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> clusters of interest.\
             <button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>\
             <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv">Export to CSV</button>\
             '
@@ -8457,7 +8440,7 @@ var hivtrace_cluster_network_graph = function(
                       }
                       return false;
                     },
-                    help: "Add to priority set"
+                    help: "Add to cluster of interest"
                   }
                 ];
               }
