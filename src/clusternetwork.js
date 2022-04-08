@@ -1186,7 +1186,7 @@ var hivtrace_cluster_network_graph = function(
                   self.auto_create_priority_sets.push({
                     name: autoname,
                     description:
-                      "Automatically created cluster of interest" + autoname,
+                      "Automatically created cluster of interest " + autoname,
                     nodes: _.map(subcluster_data.recent_nodes[i], n =>
                       self.priority_group_node_record(n, self.today)
                     ),
@@ -1194,6 +1194,8 @@ var hivtrace_cluster_network_graph = function(
                     kind: _cdcPrioritySetKindAutomaticCreation,
                     tracking: _cdcTrackingOptions[0],
                     createdBy: _cdcCreatedBySystem,
+                    autocreated: true,
+                    autoexpanded: false,
                     pending: true
                   });
                 }
@@ -1202,31 +1204,40 @@ var hivtrace_cluster_network_graph = function(
           });
         }
 
-        if (
-          self.auto_create_priority_sets.length +
-          self.priority_groups_expanded()
-        ) {
+        if (self.auto_create_priority_sets.length) {
           // SLKP 20200727 now check to see if any of the priority sets
           // need to be auto-generated
           //console.log (self.auto_create_priority_sets);
           self.defined_priority_groups.push(...self.auto_create_priority_sets);
+        }
+        const autocreated = self.defined_priority_groups.filter(
+            pg => pg.autocreated
+          ).length,
+          autoexpanded = self.defined_priority_groups.filter(
+            pg => pg.autoexpanded
+          ).length,
+          automatic_action_taken = autocreated + autoexpanded > 0,
+          left_to_review = self.defined_priority_groups.filter(pg => pg.pending)
+            .length;
 
+        if (automatic_action_taken) {
           self.warning_string +=
             "<br/>Automatically created <b>" +
-            self.priority_groups_pending() +
+            autocreated +
             "</b> and expanded <b>" +
-            self.priority_groups_expanded() +
-            "</b> clusters of interest. <b>Please review and confirm in the <code>Clusters of Interest</code> tab<br>";
+            autoexpanded +
+            "</b> clusters of interest." +
+            (left_to_review > 0
+              ? " <b>Please review and confirm in the <code>Clusters of Interest</code> tab<br>"
+              : "");
           self.display_warning(self.warning_string, true);
         }
         let tab_pill = self.get_ui_element_selector_by_role(
           "priority_set_counts",
           true
         );
-        if (tab_pill) {
-          d3.select(tab_pill).text(
-            self.priority_groups_pending() + self.priority_groups_expanded()
-          );
+        if (tab_pill && left_to_review > 0) {
+          d3.select(tab_pill).text(left_to_review);
         }
         self.priority_groups_validate(self.defined_priority_groups);
         _.each(self.auto_create_priority_sets, pg =>
@@ -1616,6 +1627,7 @@ var hivtrace_cluster_network_graph = function(
                 pg.node_objects.push(n);
               });
               pg.validated = false;
+              pg.autoexpanded = true;
               pg.expanded = added_nodes.size;
               pg.modified = self.today;
             }
@@ -1647,13 +1659,12 @@ var hivtrace_cluster_network_graph = function(
     // operation: one of
     // "insert" , "delete", "update"
 
+    const sets = self.priority_groups_export().filter(pg => pg.name == name);
     let to_post = {
       operation: operation,
       name: name,
       url: window.location.href,
-      sets: JSON.stringify(
-        self.priority_groups_export().filter(pg => pg.name == name)
-      )
+      sets: JSON.stringify(sets)
     };
 
     if (self.priority_set_table_write) {
@@ -7807,8 +7818,8 @@ var hivtrace_cluster_network_graph = function(
             volatile: true,
             format: value =>
               "<span style = 'white-space: nowrap'>" +
-              (pg.pending || pg.expanded
-                ? (pg.expanded
+              (pg.autocreated || pg.autoexpanded
+                ? (pg.autoexpanded
                     ? '<span class="label label-default">Grew</span>'
                     : '<span class="label label-danger">New</span>') +
                   "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" +
@@ -7930,7 +7941,7 @@ var hivtrace_cluster_network_graph = function(
           });
         }
 
-        if (pg.pending || pg.expanded || pg.automatic) {
+        if (pg.pending) {
           // pending user review
           this_row[1].actions = [
             {
