@@ -1628,6 +1628,7 @@ var hivtrace_cluster_network_graph = function(
               });
               pg.validated = false;
               pg.autoexpanded = true;
+              pg.pending = true;
               pg.expanded = added_nodes.size;
               pg.modified = self.today;
             }
@@ -1809,7 +1810,8 @@ var hivtrace_cluster_network_graph = function(
           created: _defaultDateFormats[0](g.created),
           createdBy: g.createdBy,
           tracking: g.tracking,
-          expanded: g.expanded,
+          autocreated: g.autocreated,
+          autoexpanded: g.autoexpanded,
           pending: g.pending
         };
       }
@@ -2421,6 +2423,8 @@ var hivtrace_cluster_network_graph = function(
                 tracking: tracking,
                 createdBy: created_by,
                 expanded: false,
+                autocreated: existing_set.autocreated,
+                autoexpanded: existing_set.autoexpanded,
                 pending: false
               };
 
