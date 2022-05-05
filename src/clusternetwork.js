@@ -2469,6 +2469,15 @@ var hivtrace_cluster_network_graph = function(
               panel_object.saved = true;
               panel_object.cleanup_attributes();
               panel_object.close();
+              if (validation_mode) {
+                let tab_pill = self.get_ui_element_selector_by_role(
+                    "priority_set_counts",
+                    true
+                  ),
+                  tab_pill_select = d3.select(tab_pill),
+                  remaining_sets = +tab_pill_select.text();
+                tab_pill_select.text(remaining_sets - 1);
+              }
             }
             panel_object.first_save = false;
           }
