@@ -2423,8 +2423,8 @@ var hivtrace_cluster_network_graph = function(
                 tracking: tracking,
                 createdBy: created_by,
                 expanded: false,
-                autocreated: existing_set.autocreated,
-                autoexpanded: existing_set.autoexpanded,
+                autocreated: existing_set ? existing_set.autocreated : false,
+                autoexpanded: existing_set ? existing_set.autoexpanded : false,
                 pending: false
               };
 
