@@ -260,13 +260,13 @@ circle.injected_object {
 }
 
 .table-smaller td {
-  font-size: max(0.75em, 11px);
+  font-size: max(0.75em, 10pt);
 }
 
 .table-smaller th {
-  font-size: max(0.75em, 11px);
+  font-size: max(0.75em, 10pt);
 }
 
 .list-smaller li {
-  font-size: max(0.75em, 11px);
+  font-size: max(0.75em, 10pt);
 }

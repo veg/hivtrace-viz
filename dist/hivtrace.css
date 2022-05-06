@@ -3363,15 +3363,15 @@ circle.injected_object {
 }
 
 .table-smaller td {
-  font-size: 0.75em;
+  font-size: max(0.75em, 10pt);
 }
 
 .table-smaller th {
-  font-size: 0.75em;
+  font-size: max(0.75em, 10pt);
 }
 
 .list-smaller li {
-  font-size: 0.75em;
+  font-size: max(0.75em, 10pt);
 }
 
 /*!
