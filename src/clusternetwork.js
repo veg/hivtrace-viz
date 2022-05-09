@@ -1841,7 +1841,7 @@ var hivtrace_cluster_network_graph = function(
               person_ident_dt: gn.added
                 ? _defaultDateViewFormatMMDDYYY(gn.added)
                 : "N/A",
-              new_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
+              new_linked_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
             };
           });
         }
@@ -8029,7 +8029,7 @@ var hivtrace_cluster_network_graph = function(
               });
               if (pg.createdBy != "System") {
                 dropdown.push({
-                  label: "Delete this priority node set",
+                  label: "Delete this cluster of interest",
                   action: function(button, value) {
                     if (confirm("This action cannon be undone. Proceed?")) {
                       self.priority_groups_remove_set(pg.name, true);
