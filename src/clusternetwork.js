@@ -1228,7 +1228,7 @@ var hivtrace_cluster_network_graph = function(
             autoexpanded +
             "</b> clusters of interest." +
             (left_to_review > 0
-              ? " <b>Please review and confirm in the <code>Clusters of Interest</code> tab<br>"
+              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab<br>"
               : "");
           self.display_warning(self.warning_string, true);
         }
@@ -1238,6 +1238,7 @@ var hivtrace_cluster_network_graph = function(
         );
         if (tab_pill && left_to_review > 0) {
           d3.select(tab_pill).text(left_to_review);
+          d3.select("#banner_coi_counts").text(left_to_review);
         }
         self.priority_groups_validate(self.defined_priority_groups);
         _.each(self.auto_create_priority_sets, pg =>
@@ -2204,9 +2205,11 @@ var hivtrace_cluster_network_graph = function(
             : null;
 
         panel_object.can_edit_kind = existing_set
-          ? existing_set.expanded == 0
+          ? existing_set.expanded == 0 && existing_set.createdBy != "System"
           : true;
-        panel_object.can_edit_name = existing_set ? existing_set.pending : true;
+        panel_object.can_edit_name = existing_set
+          ? existing_set.pending && existing_set.createdBy != "System"
+          : true;
 
         panel_object.can_add = function(id) {
           return !_.some(panel_object.network_nodes, d => d.id == id);
@@ -2477,6 +2480,7 @@ var hivtrace_cluster_network_graph = function(
                   tab_pill_select = d3.select(tab_pill),
                   remaining_sets = +tab_pill_select.text();
                 tab_pill_select.text(remaining_sets - 1);
+                d3.select("#banner_coi_counts").text(remaining_sets - 1);
               }
             }
             panel_object.first_save = false;
