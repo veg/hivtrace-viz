@@ -2948,7 +2948,7 @@ var hivtrace_cluster_network_graph = function(
         panel_object.table_handler(this);
       },
       dragit: {
-        containment: [50, 0, 0, 0]
+        containment: [50, 50, 50, 50]
       },
       onbeforeclose: function() {
         if (!this.saved) {
@@ -5344,7 +5344,7 @@ var hivtrace_cluster_network_graph = function(
                 sort: "value"
               },
               {
-                value: "Other Priority Set (s)",
+                value: "Other Cluster(s) of Interest",
                 help: "Names of other CoI where this node is included",
                 sort: "value"
               }
@@ -5352,7 +5352,9 @@ var hivtrace_cluster_network_graph = function(
           ];
 
           var rows = [];
-          var rows_for_export = [["Overlapping Set", "Node", "Other CoI"]];
+          var rows_for_export = [
+            ["Overlapping Cluster of Interest", "Node", "Other CoI"]
+          ];
           _.each(ps.nodes, n => {
             let overlap = self.priority_node_overlap[n.name];
             let other_sets = "None";
