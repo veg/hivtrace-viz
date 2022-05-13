@@ -251,6 +251,7 @@ var _cdcJurisdictionCodes = {
   georgia: "ga",
   guam: "gu",
   hawaii: "hi",
+  houston: "hx",
   idaho: "id",
   illinois: "il",
   indiana: "in",
@@ -275,7 +276,7 @@ var _cdcJurisdictionCodes = {
   newyorkstate: "ny",
   nyc: "nx",
   northcarolina: "nc",
-  northdakota: "nd",
+  north_dakota: "nd",
   northernmarianaislands: "mp",
   ohio: "oh",
   oklahoma: "ok",
@@ -293,6 +294,7 @@ var _cdcJurisdictionCodes = {
   virginislands: "vi",
   virginia: "va",
   washington: "wa",
+  washingtondc: "dc",
   westvirginia: "wv",
   wisconsin: "wi",
   wyoming: "wy",
@@ -1229,7 +1231,7 @@ var hivtrace_cluster_network_graph = function(
             autoexpanded +
             "</b> clusters of interest." +
             (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab<br>"
+              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.<br>"
               : "");
           self.display_warning(self.warning_string, true);
         }
@@ -2181,8 +2183,8 @@ var hivtrace_cluster_network_graph = function(
       headerTitle: "Priority node set editor",
       headerControls: { size: "lg", maximize: "remove" },
       position: {
-        my: "left-bottom",
-        at: "left-bottom",
+        my: "center",
+        at: "center",
         offsetX: 0,
         offsetY: 0
       },
@@ -2953,7 +2955,10 @@ var hivtrace_cluster_network_graph = function(
         panel_object.table_handler(this);
       },
       dragit: {
-        containment: [50, 50, 50, 50]
+        containment: [50, 50, 300, 50]
+      },
+      resizeit: {
+        containment: [50, 50, 100, 50]
       },
       onbeforeclose: function() {
         if (!this.saved) {
