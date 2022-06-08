@@ -437,12 +437,16 @@ var hivtrace_cluster_network_graph = function(
 
   _.each(json.Nodes, n => {
     if ("patient_attributes" in n) {
-      const new_attrs = Object.fromEntries(
-        Object.entries(n.patient_attributes).map(([k, v]) => [
-          k.toLowerCase(),
-          v
-        ])
-      );
+      let new_attrs = {};
+      if (n["patient_attributes"] != null) {
+        console.log(n["patient_attributes"]);
+        new_attrs = Object.fromEntries(
+          Object.entries(n.patient_attributes).map(([k, v]) => [
+            k.toLowerCase(),
+            v
+          ])
+        );
+      }
 
       // Map attributes from patient_schema labels to keys, if necessary
       let unrecognizedKeys = _.difference(
