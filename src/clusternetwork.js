@@ -1269,7 +1269,8 @@ var hivtrace_cluster_network_graph = function(
     return {
       name: node_id,
       added: date || self.today,
-      kind: kind || _cdcPrioritySetDefaultNodeKind
+      kind: kind || _cdcPrioritySetDefaultNodeKind,
+      autoadded: true
     };
   };
 
@@ -1823,7 +1824,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.priority_groups_is_new_node = function(group_set, node) {
-    return node.added && node.added.getTime() == self.today.getTime();
+    return node.autoadded;
   };
 
   self.priority_groups_export_nodes = function(group_set, include_unvalidated) {
