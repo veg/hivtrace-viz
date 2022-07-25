@@ -2476,7 +2476,7 @@ var hivtrace_cluster_network_graph = function(
               panel_object.saved = true;
               panel_object.cleanup_attributes();
               panel_object.close();
-              if (validation_mode) {
+              if (validation_mode == "validate") {
                 let tab_pill = self.get_ui_element_selector_by_role(
                     "priority_set_counts",
                     true
