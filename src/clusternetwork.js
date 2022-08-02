@@ -2421,7 +2421,8 @@ var hivtrace_cluster_network_graph = function(
                   return {
                     name: d.id,
                     added: d["_priority_set_date"],
-                    kind: d["_priority_set_kind"]
+                    kind: d["_priority_set_kind"],
+                    autoadded: d["_priority_set_autoadded"]
                   };
                 }),
                 created: _defaultDateFormats[0](createdDate),
