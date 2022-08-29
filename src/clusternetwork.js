@@ -7798,7 +7798,7 @@ var hivtrace_cluster_network_graph = function(
               return 0;
             },
             help:
-              "How many nodes in this cluster of interest overlap with nodes in other CoI?"
+              "How many other CoI have overlapping nodes with this CoI, and (if the overlap is non-empty) how many nodes in this CoI overlap with ANY other CoI?"
           }
           /*,
             {
