@@ -7031,7 +7031,7 @@ var hivtrace_cluster_network_graph = function(
               if (b.icon) {
                 this_button.append("i").classed("fa " + b.icon, true);
               } else {
-                this_button.text(b.text).style("font-size", "8px");
+                this_button.text(b.text).style("font-size", "12px");
               }
 
               if (b.data) {
