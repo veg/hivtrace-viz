@@ -479,7 +479,7 @@ var hivtrace_cluster_network_graph = function(
     if ("patient_attributes" in n) {
       let new_attrs = {};
       if (n["patient_attributes"] != null) {
-        console.log(n["patient_attributes"]);
+        //console.log(n["patient_attributes"]);
         new_attrs = Object.fromEntries(
           Object.entries(n.patient_attributes).map(([k, v]) => [
             k.toLowerCase(),
@@ -7743,6 +7743,7 @@ var hivtrace_cluster_network_graph = function(
             sort: "value",
             filter: true,
             width: 325,
+            text_wrap: true,
             help: "Cluster of interest name"
           },
           {
@@ -7774,7 +7775,7 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value: "Priority",
-            width: 50,
+            width: 60,
             sort: "value",
             help:
               "Does the cluster of interest continue to meet priority criteria?"
@@ -7788,7 +7789,7 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             value: "Overlap",
-            width: 150,
+            width: 140,
             sort: function(c) {
               c = c.value;
               if (c) {
@@ -7855,6 +7856,7 @@ var hivtrace_cluster_network_graph = function(
           {
             value: pg.name,
             width: 325,
+            text_wrap: true,
             help:
               pg.description +
               (pg.pending ? " (new, pending confirmation)" : "") +
@@ -7923,7 +7925,7 @@ var hivtrace_cluster_network_graph = function(
             html: true
           },
           {
-            width: 50,
+            width: 60,
             value: pg.meets_priority_def ? "Yes" : "No"
           },
           {
@@ -7931,7 +7933,7 @@ var hivtrace_cluster_network_graph = function(
             value: pg.last12
           },
           {
-            width: 150,
+            width: 140,
             value: [pg.overlap.sets, pg.overlap.nodes],
             format: function(v) {
               if (v) {
