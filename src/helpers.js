@@ -310,13 +310,15 @@ function datamonkey_table_to_text(table_id, sep) {
     });
 
   return (
-    header_row.join(sep) +
+    (sep == "," ? d3.csv.format([header_row]) : d3.tsv.format([header_row])) +
     "\n" +
-    data_rows
+    (sep == "," ? d3.csv.format(data_rows) : d3.tsv.format(data_rows))
+    /*data_rows
       .map(function(d) {
         return d.join(sep);
       })
       .join("\n")
+      */
   );
 }
 

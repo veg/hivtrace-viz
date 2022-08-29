@@ -994,19 +994,23 @@
 
             hivtrace.misc.export_table_to_text(
               "#cluster-table-export",
-              cluster_table
+              cluster_table,
+              true
             );
             hivtrace.misc.export_table_to_text(
               "#subcluster-table-export",
-              subcluster_table
+              subcluster_table,
+              true
             );
             hivtrace.misc.export_table_to_text(
               "#node-table-export",
-              node_table
+              node_table,
+              true
             );
             hivtrace.misc.export_table_to_text(
               "#priority-table-export",
-              priority_set_table
+              priority_set_table,
+              true
             );
 
             $("#main-tab a[data-toggle='tab']").on("shown.bs.tab", function(e) {
