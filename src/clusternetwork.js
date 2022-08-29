@@ -2,6 +2,7 @@ var d3 = require("d3"),
   _ = require("underscore"),
   misc = require("./misc"),
   helpers = require("./helpers"),
+  colorPicker = require("./colorPicker"),
   scatterPlot = require("./scatterplot"),
   topojson = require("topojson"),
   jsPanel = require("jspanel4").jsPanel,
@@ -476,12 +477,16 @@ var hivtrace_cluster_network_graph = function(
 
   _.each(json.Nodes, n => {
     if ("patient_attributes" in n) {
-      const new_attrs = Object.fromEntries(
-        Object.entries(n.patient_attributes).map(([k, v]) => [
-          k.toLowerCase(),
-          v
-        ])
-      );
+      let new_attrs = {};
+      if (n["patient_attributes"] != null) {
+        console.log(n["patient_attributes"]);
+        new_attrs = Object.fromEntries(
+          Object.entries(n.patient_attributes).map(([k, v]) => [
+            k.toLowerCase(),
+            v
+          ])
+        );
+      }
 
       // Map attributes from patient_schema labels to keys, if necessary
       let unrecognizedKeys = _.difference(
@@ -503,6 +508,7 @@ var hivtrace_cluster_network_graph = function(
   });
 
   let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
+  let uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
 
   // annotate each node with patient_attributes if does not exist
   json.Nodes.forEach(function(n) {
@@ -532,7 +538,10 @@ var hivtrace_cluster_network_graph = function(
 
   self.json = json;
   self.uniqs = uniqs;
+  self.uniqValues = uniqValues;
   self.schema = json[_networkGraphAttrbuteID];
+  // set initial color schemes
+  self.networkColorScheme = _networkPresetColorSchemes;
 
   self.ww =
     options && options["width"]
@@ -6077,6 +6086,15 @@ var hivtrace_cluster_network_graph = function(
           _.each(list, self._aux_process_category_values);
         });
 
+        let color_stops = _networkContinuousColorStops;
+
+        try {
+          color_stops =
+            graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+              "color_stops"
+            ] || _networkContinuousColorStops;
+        } catch (err) {}
+
         var valid_scales = _.filter(
           _.map(graph_data[_networkGraphAttrbuteID], function(d, k) {
             function determine_scaling(d, values, scales) {
@@ -6084,20 +6102,15 @@ var hivtrace_cluster_network_graph = function(
 
               _.each(scales, function(scl) {
                 d["value_range"] = d3.extent(values);
-                var bins = _.map(
-                  _.range(_networkContinuousColorStops),
-                  function() {
-                    return 0;
-                  }
-                );
-                scl
-                  .range([0, _networkContinuousColorStops - 1])
-                  .domain(d["value_range"]);
+                var bins = _.map(_.range(color_stops), function() {
+                  return 0;
+                });
+                scl.range([0, color_stops - 1]).domain(d["value_range"]);
                 _.each(values, function(v) {
                   bins[Math.floor(scl(v))]++;
                 });
 
-                var mean = values.length / _networkContinuousColorStops;
+                var mean = values.length / color_stops;
                 var vrnc = _.reduce(bins, function(p, c) {
                   return p + (c - mean) * (c - mean);
                 });
@@ -6112,7 +6125,8 @@ var hivtrace_cluster_network_graph = function(
             }
 
             d["raw_attribute_key"] = k;
-            if (!("scale" in d)) {
+
+            if (true) {
               if (d.type == "Number" || d.type == "Number-categories") {
                 var values = _.filter(
                   _.map(graph_data.Nodes, function(nd) {
@@ -6166,6 +6180,7 @@ var hivtrace_cluster_network_graph = function(
                     // invalid scale
                     return {};
                   }
+
                   determine_scaling(d, values, [d3.time.scale()]);
                 }
               }
@@ -6530,6 +6545,10 @@ var hivtrace_cluster_network_graph = function(
               computed["map"](node, self)
             );
           });
+
+          // add unique values
+          self.uniqValues[key] = computed.enum;
+
           if (computed["overwrites"]) {
             if (
               _.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])
@@ -8497,7 +8516,6 @@ var hivtrace_cluster_network_graph = function(
                       self.getCurrentDate()
                     ).length <= 2
                 ).length;
-                return "hi";
               }
             });
 
@@ -8894,6 +8912,108 @@ var hivtrace_cluster_network_graph = function(
     d3.event.preventDefault();
   };
 
+  self.renderColorPicker = function(cat_id, type) {
+    let renderColorPickerCategorical = function(cat_id) {
+      // For each unique value, render item.
+      let colorizer = self.colorizer;
+      let items = _.map(_.filter(self.uniqValues[cat_id]), d =>
+        colorPicker.colorPickerInput(d, colorizer)
+      );
+
+      $("#colorPickerRow").html(items.join(""));
+
+      // Set onchange event for items
+      $(".hivtrace-color-picker").change(e => {
+        let color = e.target.value;
+        let name = e.target.name;
+
+        // Set color in user-defined colorizer
+        if (
+          _.isUndefined(
+            graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+          )
+        ) {
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"] = {};
+        }
+
+        graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"][
+          name
+        ] = color;
+        self.handle_attribute_categorical(cat_id);
+      });
+    };
+
+    let renderColorPickerContinuous = function(cat_id, color_stops) {
+      // For each unique value, render item.
+      // Min and max range for continuous values
+      let items = [
+        colorPicker.colorStops("Color Stops", color_stops),
+        colorPicker.colorPickerInputContinuous(
+          "Min",
+          self.uniqValues[cat_id]["min"]
+        ),
+        colorPicker.colorPickerInputContinuous(
+          "Max",
+          self.uniqValues[cat_id]["max"]
+        )
+      ];
+
+      $("#colorPickerRow").html(items.join(""));
+
+      // Set onchange event for items
+      $(".hivtrace-color-picker").change(e => {
+        let color = e.target.value;
+        let name = e.target.name;
+
+        // Set color in user-defined colorizer
+        if (
+          _.isUndefined(
+            graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+          )
+        ) {
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"] = {};
+        }
+
+        // get both for user-defined
+        graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"][
+          name
+        ] = color;
+        self.handle_attribute_continuous(cat_id);
+      });
+
+      // Set onchange event for items
+      $(".hivtrace-color-stops").change(e => {
+        let num = parseInt(e.target.value);
+        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+          "color_stops"
+        ] = num;
+
+        self._aux_populate_category_menus();
+        self.handle_attribute_continuous(cat_id);
+        self.update();
+      });
+    };
+
+    if (type == "categorical") {
+      renderColorPickerCategorical(cat_id);
+    } else if (type == "continuous") {
+      renderColorPickerContinuous(
+        cat_id,
+        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
+          "color_stops"
+        ]
+      );
+    } else {
+      console.log("Error: type not recognized");
+    }
+
+    if (cat_id != null) {
+      $("#colorPickerOption").show();
+    } else {
+      $("#colorPickerOption").hide();
+    }
+  };
+
   self.draw_attribute_labels = function() {
     // draw color legend in the network SVG
 
@@ -8958,7 +9078,6 @@ var hivtrace_cluster_network_graph = function(
     }
 
     if (self.colorizer["category_id"]) {
-      //console.log (self.colorizer);
       //_.each (self.colorizer["category_map"](null, "map"), function (v){ console.log (v); });
 
       self.legend_svg
@@ -9007,7 +9126,6 @@ var hivtrace_cluster_network_graph = function(
             .attr("r", "8")
             .classed("legend", true)
             .style("fill", self.colorizer["category"](x));
-
           offset += 18;
         });
 
@@ -9333,36 +9451,71 @@ var hivtrace_cluster_network_graph = function(
       .classed("btn-default", true);
 
     if (cat_id) {
-      //console.log (graph_data [_networkGraphAttrbuteID][cat_id]);
+      // map values to inverted scale
+      let color_stops =
+        graph_data[_networkGraphAttrbuteID][cat_id]["color_stops"] ||
+        _networkContinuousColorStops;
+
       if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
         self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
           cat_id
         ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
+
+        self.uniqValues[cat_id]["min"] = self.colorizer["category"](
+          color_stops
+        );
+        self.uniqValues[cat_id]["max"] = self.colorizer["category"](
+          color_stops
+        );
       } else {
         self.colorizer["category"] = _.wrap(
           d3.scale
             .linear()
-            .range([
-              "#fff7ec",
-              "#fee8c8",
-              "#fdd49e",
-              "#fdbb84",
-              "#fc8d59",
-              "#ef6548",
-              "#d7301f",
-              "#b30000",
-              "#7f0000"
-            ])
-            .domain(_.range(_networkContinuousColorStops)),
+            .domain(_.range(_networkContinuousColorStops))
+            .range(["#fff7ec", "#7f0000"])
+            .interpolate(d3.interpolateRgb),
           function(func, arg) {
+            self.uniqValues[cat_id]["min"] = "#fff7ec";
+            self.uniqValues[cat_id]["max"] = "#7f0000";
+
             return func(
-              graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg)
+              graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg) *
+                (1 / _networkContinuousColorStops)
             );
           }
-        ); //console.log (self.colorizer['category'].exponent ());
+        );
       }
 
-      //console.log (self.colorizer['category'] (graph_data [_networkGraphAttrbuteID][cat_id]['value_range'][0]), self.colorizer['category'] (d['value_range'][1]));
+      if (graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]) {
+        // get min and max
+        let min =
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["min"] ||
+          self.uniqValues[cat_id]["min"];
+        let max =
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["max"] ||
+          self.uniqValues[cat_id]["max"];
+
+        self.uniqValues[cat_id]["min"] =
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["min"] ||
+          self.uniqValues[cat_id]["min"];
+        self.uniqValues[cat_id]["max"] =
+          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["max"] ||
+          self.uniqValues[cat_id]["max"];
+
+        self.colorizer["category"] = _.wrap(
+          d3.scale
+            .linear()
+            .domain(_.range(color_stops))
+            .range([min, max])
+            .interpolate(d3.interpolateRgb),
+          function(func, arg) {
+            return func(
+              graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg) *
+                (1 / color_stops)
+            );
+          }
+        );
+      }
 
       self.colorizer["category_id"] = cat_id;
       self.colorizer["continuous"] = true;
@@ -9423,13 +9576,20 @@ var hivtrace_cluster_network_graph = function(
       self.colorizer["category_map"] = null;
     }
 
+    // Draw color picker for manual override
+    self.renderColorPicker(cat_id, "continuous");
+
     self.draw_attribute_labels();
     self.update(true);
-    d3.event.preventDefault();
+
+    if (d3.event) {
+      d3.event.preventDefault();
+    }
   };
 
   self.handle_attribute_categorical = function(cat_id, skip_update) {
     var set_attr = "None";
+
     d3.select(self.get_ui_element_selector_by_role("attributes_invert")).style(
       "display",
       "none"
@@ -9465,11 +9625,13 @@ var hivtrace_cluster_network_graph = function(
 
     self.colorizer["continuous"] = false;
 
+    //TODO -- if preset color scheme does not exist, create one and always use the logic here.
+
     if (cat_id) {
-      if (cat_id in _networkPresetColorSchemes) {
+      if (cat_id in self.networkColorScheme) {
         var domain = [],
           range = [];
-        _.each(_networkPresetColorSchemes[cat_id], function(value, key) {
+        _.each(self.networkColorScheme[cat_id], function(value, key) {
           domain.push(key);
           range.push(value);
         });
@@ -9486,12 +9648,14 @@ var hivtrace_cluster_network_graph = function(
           self.colorizer["category"] = d3.scale
             .ordinal()
             .range(_networkCategorical);
+
           var extended_range = _.clone(self.colorizer["category"].range());
           extended_range.push(_networkMissingColor);
 
           self.colorizer["category"].domain(
             _.range(_maximumValuesInCategories + 1)
           );
+
           self.colorizer["category"].range(extended_range);
 
           if (graph_data[_networkGraphAttrbuteID][cat_id]["stable-ish order"]) {
@@ -9512,11 +9676,27 @@ var hivtrace_cluster_network_graph = function(
           }
         }
       }
+
+      if (graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]) {
+        self.colorizer["category"] = _.wrap(
+          self.colorizer["category"],
+          function(func, arg) {
+            if (
+              arg in graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+            ) {
+              return graph_data[_networkGraphAttrbuteID][cat_id][
+                "user-defined"
+              ][arg];
+            } else {
+              return func(arg);
+            }
+          }
+        );
+      }
+
       self.colorizer["category_id"] = cat_id;
       self.colorizer["category_map"] =
         graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
-
-      //console.log(self.colorizer);
 
       //console.log (cat_id, self.json[_networkGraphAttrbuteID][cat_id], graph_data[_networkGraphAttrbuteID][cat_id]["value_map"] (null, "lookup"));
       //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
@@ -9559,6 +9739,9 @@ var hivtrace_cluster_network_graph = function(
     if (d3.event) {
       d3.event.preventDefault();
     }
+
+    // Draw color picker for manual override
+    self.renderColorPicker(cat_id, "categorical");
   };
 
   self.filter_visibility = function() {

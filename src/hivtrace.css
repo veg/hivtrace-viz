@@ -270,3 +270,17 @@ circle.injected_object {
 .list-smaller li {
   font-size: max(0.75em, 10pt);
 }
+
+#colorPickerRow {
+  background-color: beige;
+  padding: 10px;
+}
+
+#colorPickerOption {
+  display: none;
+  padding-top: 10px;
+}
+
+.color-picker-toggle {
+  color: green;
+}
