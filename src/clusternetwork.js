@@ -2274,7 +2274,7 @@ var hivtrace_cluster_network_graph = function(
           .attr("placeholder", "Name this cluster of interest")
           .attr("data-hivtrace-ui-role", "priority-panel-name");
 
-        grp_name
+        var grp_name_box_label = grp_name
           .append("p")
           .classed("help-block", true)
           .text("Name this cluster of interest");
@@ -2544,11 +2544,15 @@ var hivtrace_cluster_network_graph = function(
               )
             ) {
               grp_name.classed({ "has-success": true, "has-error": false });
+              grp_name_box_label.text("Name this cluster of interest");
               if (panel_object.network_nodes.length) {
                 save_set_button.attr("disabled", null);
               }
             } else {
               grp_name.classed({ "has-success": false, "has-error": true });
+              grp_name_box_label.text(
+                "Name this cluster of interest (MUST be unique)"
+              );
               save_set_button.attr("disabled", "disabled");
             }
           });
