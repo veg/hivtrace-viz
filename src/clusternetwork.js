@@ -7856,7 +7856,6 @@ var hivtrace_cluster_network_graph = function(
           {
             value: pg.name,
             width: 325,
-            text_wrap: true,
             help:
               pg.description +
               (pg.pending ? " (new, pending confirmation)" : "") +
@@ -7865,7 +7864,7 @@ var hivtrace_cluster_network_graph = function(
                 : ""),
             volatile: true,
             format: value =>
-              "<span style = 'white-space: nowrap'>" +
+              "<div style = 'white-space: nowrap; overflow: hidden; text-overflow : ellipsis;'>" +
               (pg.autocreated || pg.autoexpanded
                 ? (pg.autoexpanded
                     ? '<span class="label label-default">Grew</span>'
@@ -7876,7 +7875,7 @@ var hivtrace_cluster_network_graph = function(
                   value +
                   "</span>"
                 : value) +
-              "</span>",
+              "</div>",
             html: true,
             actions: []
           },
@@ -8066,7 +8065,7 @@ var hivtrace_cluster_network_graph = function(
                 dropdown.push({
                   label: "Delete this cluster of interest",
                   action: function(button, value) {
-                    if (confirm("This action cannon be undone. Proceed?")) {
+                    if (confirm("This action cannot be undone. Proceed?")) {
                       self.priority_groups_remove_set(pg.name, true);
                     }
                   }
