@@ -7781,7 +7781,7 @@ var hivtrace_cluster_network_graph = function(
               "Does the cluster of interest continue to meet priority criteria?"
           },
           {
-            value: "In last 12 mo.",
+            value: "DXs in last 12 mo.",
             width: 50,
             sort: "value",
             help:
@@ -7811,7 +7811,7 @@ var hivtrace_cluster_network_graph = function(
 
       if (self._is_CDC_auto_mode) {
         headers[0].splice(3, 0, {
-          value: "Identification method",
+          value: "CoI identification method",
           width: 100,
           sort: function(c) {
             return c.value;
