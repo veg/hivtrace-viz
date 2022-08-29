@@ -45,6 +45,7 @@ var _defaultDateViewFormatShort = d3.time.format("%B %Y");
 var _defaultDateViewFormatSlider = d3.time.format("%Y-%m-%d");
 var _networkDotFormatPadder = d3.format("08d");
 var _defaultDateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
+var _defaultDateViewFormatExport = d3.time.format("%m/%d/%Y");
 var _defaultDateViewFormatClusterCreate = d3.time.format("%Y%m");
 
 var _networkCategoricalBase = [
@@ -1853,7 +1854,7 @@ var hivtrace_cluster_network_graph = function(
               cluster_ident_method: g.kind,
               person_ident_method: gn.kind,
               person_ident_dt: gn.added
-                ? _defaultDateViewFormatMMDDYYY(gn.added)
+                ? _defaultDateViewFormatExport(gn.added)
                 : "N/A",
               new_linked_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
             };
