@@ -4985,16 +4985,43 @@ var hivtrace_cluster_network_graph = function(
             .classed("fa fa-line-chart", true);
         }
 
-        button_group
-          .append("button")
-          .classed("btn btn-default btn-sm", true)
-          .attr("title", __("network_tab")["save_image"])
-          //.attr("id", "hivtrace-export-image")
+        let buttonGroupDropdown = d3
+          .select("#network_ui_bar")
+          .insert("div", ":first-child")
+          .classed("input-group-btn dropdown-img", true);
+
+        let dropdownList = buttonGroupDropdown
+          .append("ul")
+          .classed("dropdown-menu", true)
+          .attr("aria-labelledby", "dropdownImg");
+
+        dropdownList
+          .append("li")
+          .classed("dropdown-item export-img-item", true)
+          .text("SVG")
+          .on("click", function(d) {
+            helpers.save_image("svg", "#" + self.dom_prefix + "-network-svg");
+          });
+
+        dropdownList
+          .append("li")
+          .classed("dropdown-item export-img-item", true)
+          .text("PNG")
           .on("click", function(d) {
             helpers.save_image("png", "#" + self.dom_prefix + "-network-svg");
-          })
-          .append("i")
-          .classed("fa fa-image", true);
+          });
+
+        let imgBtn = buttonGroupDropdown
+          .append("button")
+          .attr("id", "dropdownImg")
+          .attr("data-toggle", "dropdown")
+          .classed("btn btn-default btn-sm dropdown-toggle", true)
+          .attr("title", __("network_tab")["save_image"])
+          .attr("id", "hivtrace-export-image");
+
+        imgBtn.append("i").classed("fa fa-image", true);
+
+        imgBtn.append("span").classed("caret", true);
       }
 
       $(self.get_ui_element_selector_by_role("filter"))
@@ -5029,6 +5056,16 @@ var hivtrace_cluster_network_graph = function(
               self.cluster_filtering_functions["size"] = self.filter_by_size;
             }
 
+            self.update(false);
+          }, 250)
+        );
+
+      $(self.get_ui_element_selector_by_role("set_min_cluster_size"))
+        .off("change")
+        .on(
+          "change",
+          _.throttle(function(e) {
+            self.minimum_cluster_size = e.target.value;
             self.update(false);
           }, 250)
         );
