@@ -1,9 +1,9 @@
 {
   "name": "hivtrace-viz",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
-    "node": "==12"
+    "node": ">=12"
   },
   "main": [
     "dist/hivtrace.js",

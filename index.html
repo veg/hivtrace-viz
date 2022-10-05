@@ -432,13 +432,15 @@
                               data-hivtrace-ui-role="hide_filter"
                             />
                           </span>
-                          <span
-                            class="input-group-addon show-small-clusters-button"
-                          >
-                            Show small clusters
+                          <span class="input-group-addon set-min-cluster-size">
+                            Min cluster size
                             <input
-                              type="checkbox"
-                              data-hivtrace-ui-role="show_small_clusters"
+                              id="min_cluster_size_input"
+                              type="number"
+                              data-hivtrace-ui-role="set_min_cluster_size"
+                              placeholder="2"
+                              min="0"
+                              max="9999"
                             />
                           </span>
                           <span
@@ -946,6 +948,9 @@
               );
             }
           }
+          document
+            .getElementById("min_cluster_size_input")
+            .setAttribute("placeholder", user_graph.minimum_cluster_size);
         } catch (e) {
           console.log(e);
           HandleAppError(
@@ -1105,7 +1110,7 @@
         </svg><p/> \
         Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms\
         <p/>\
-        Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity\
+        Change the <code>the minimum cluster size</code> field to display or hide clusters for clarity\
         </div>\
      "
         });
