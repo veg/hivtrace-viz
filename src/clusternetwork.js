@@ -1742,7 +1742,7 @@ var hivtrace_cluster_network_graph = function(
             let keep_duplicate = confirm(
               "Warning! Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes as this CoI, but a different tracking mode. Click OK to create, or cancel to abort."
+                "' has the same set of nodes as this CoI, but a different tracking mode. Click 'OK' to create, or 'Cancel' to abort."
             );
             let is_duplicate = !keep_duplicate;
             return is_duplicate;
