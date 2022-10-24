@@ -4985,43 +4985,54 @@ var hivtrace_cluster_network_graph = function(
             .classed("fa fa-line-chart", true);
         }
 
-        let buttonGroupDropdown = d3
-          .select("#network_ui_bar")
-          .insert("div", ":first-child")
-          .classed("input-group-btn dropdown-img", true);
+        var export_image = d3.select(
+          self.get_ui_element_selector_by_role("export_image")
+        );
 
-        let dropdownList = buttonGroupDropdown
-          .append("ul")
-          .classed("dropdown-menu", true)
-          .attr("aria-labelledby", "dropdownImg");
+        if (!export_image.empty()) {
+          export_image.selectAll("div").remove();
 
-        dropdownList
-          .append("li")
-          .classed("dropdown-item export-img-item", true)
-          .text("SVG")
-          .on("click", function(d) {
-            helpers.save_image("svg", "#" + self.dom_prefix + "-network-svg");
-          });
+          let buttonGroupDropdown = export_image
+            .insert("div", ":first-child")
+            .classed("input-group-btn dropdown-img", true);
 
-        dropdownList
-          .append("li")
-          .classed("dropdown-item export-img-item", true)
-          .text("PNG")
-          .on("click", function(d) {
-            helpers.save_image("png", "#" + self.dom_prefix + "-network-svg");
-          });
+          let dropdownList = buttonGroupDropdown
+            .append("ul")
+            .classed("dropdown-menu", true)
+            .attr("aria-labelledby", "dropdownImg");
 
-        let imgBtn = buttonGroupDropdown
-          .append("button")
-          .attr("id", "dropdownImg")
-          .attr("data-toggle", "dropdown")
-          .classed("btn btn-default btn-sm dropdown-toggle", true)
-          .attr("title", __("network_tab")["save_image"])
-          .attr("id", "hivtrace-export-image");
+          dropdownList
+            .append("li")
+            .classed("dropdown-item export-img-item", true)
+            .append("a")
+            .attr("href", "#")
+            .text("SVG")
+            .on("click", function(d) {
+              helpers.save_image("svg", "#" + self.dom_prefix + "-network-svg");
+            });
 
-        imgBtn.append("i").classed("fa fa-image", true);
+          dropdownList
+            .append("li")
+            .classed("dropdown-item export-img-item", true)
+            .append("a")
+            .attr("href", "#")
+            .text("PNG")
+            .on("click", function(d) {
+              helpers.save_image("png", "#" + self.dom_prefix + "-network-svg");
+            });
 
-        imgBtn.append("span").classed("caret", true);
+          let imgBtn = buttonGroupDropdown
+            .append("button")
+            .attr("id", "dropdownImg")
+            .attr("data-toggle", "dropdown")
+            .classed("btn btn-default btn-sm dropdown-toggle", true)
+            .attr("title", __("network_tab")["save_image"])
+            .attr("id", "hivtrace-export-image");
+
+          imgBtn.append("i").classed("fa fa-image", true);
+
+          imgBtn.append("span").classed("caret", true);
+        }
       }
 
       $(self.get_ui_element_selector_by_role("filter"))
