@@ -1760,14 +1760,14 @@ var hivtrace_cluster_network_graph = function(
             alert(
               "Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes and the same tracking mode as this new CoI. Secure HIV-TRACE does not allow creating exact duplicates of CoI."
+                "' has the same set of nodes and the same growth criterion as this new CoI. Secure HIV-TRACE does not allow creating exact duplicates of CoI."
             );
             return true;
           } else if (same_nodes) {
             let keep_duplicate = confirm(
               "Warning! Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes as this CoI, but a different tracking mode. Click 'OK' to create, or 'Cancel' to abort."
+                "' has the same set of nodes as this CoI, but a different growth criterion'. Click 'OK' to create, or 'Cancel' to abort."
             );
             let is_duplicate = !keep_duplicate;
             return is_duplicate;
