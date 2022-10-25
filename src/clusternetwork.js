@@ -1118,6 +1118,7 @@ var hivtrace_cluster_network_graph = function(
           _.each(pg.nodes, n => {
             try {
               n.added = _defaultDateFormats[0].parse(n.added);
+              n.autoadded = false;
             } catch (e) {}
           });
         });
@@ -1301,7 +1302,9 @@ var hivtrace_cluster_network_graph = function(
     
     */
     self.priority_node_overlap = {};
+    let size_by_pg = {};
     _.each(groups, pg => {
+      size_by_pg[pg.name] = pg.nodes.length;
       _.each(pg.nodes, n => {
         if (n.name in self.priority_node_overlap == false) {
           self.priority_node_overlap[n.name] = new Set();
@@ -1313,20 +1316,42 @@ var hivtrace_cluster_network_graph = function(
     _.each(groups, pg => {
       let overlap = {
         sets: new Set(),
-        nodes: 0
+        nodes: 0,
+        supersets: [],
+        duplicates: []
       };
+
+      let by_set_count = {};
       _.each(pg.nodes, n => {
         if (self.priority_node_overlap[n.name].size > 1) {
           overlap.nodes++;
           self.priority_node_overlap[n.name].forEach(pgn => {
+            if (pgn != pg.name) {
+              if (!(pgn in by_set_count)) {
+                by_set_count[pgn] = [];
+              }
+              by_set_count[pgn].push(n.name);
+            }
             overlap.sets.add(pgn);
           });
         }
       });
 
+      _.each(by_set_count, (nodes, name) => {
+        if (nodes.length == pg.nodes.length) {
+          if (size_by_pg[name] == pg.nodes.length) {
+            overlap.duplicates.push(name);
+          } else {
+            overlap.supersets.push(name);
+          }
+        }
+      });
+
       pg.overlap = {
         nodes: overlap.nodes,
-        sets: Math.max(0, overlap.sets.size - 1)
+        sets: Math.max(0, overlap.sets.size - 1),
+        superset: overlap.supersets,
+        duplicate: overlap.duplicates
       };
     });
   };
@@ -1846,19 +1871,25 @@ var hivtrace_cluster_network_graph = function(
         g => {
           //const refTime = g.modified.getTime();
           //console.log ("GROUP: ",g.name, " = ", g.modified);
-          return _.map(g.nodes, gn => {
-            //console.log (gn.added);
-            return {
-              eHARS_uid: gn.name,
-              cluster_uid: g.name,
-              cluster_ident_method: g.kind,
-              person_ident_method: gn.kind,
-              person_ident_dt: gn.added
-                ? _defaultDateViewFormatExport(gn.added)
-                : "N/A",
-              new_linked_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
-            };
-          });
+
+          const exclude_nodes = new Set(g.not_in_network);
+
+          return _.map(
+            _.filter(g.nodes, gn => !exclude_nodes.has(gn.name)),
+            gn => {
+              //console.log (gn.added);
+              return {
+                eHARS_uid: gn.name,
+                cluster_uid: g.name,
+                cluster_ident_method: g.kind,
+                person_ident_method: gn.kind,
+                person_ident_dt: gn.added
+                  ? _defaultDateViewFormatExport(gn.added)
+                  : "N/A",
+                new_linked_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
+              };
+            }
+          );
         }
       )
     );
@@ -7975,7 +8006,12 @@ var hivtrace_cluster_network_graph = function(
           },
           {
             width: 140,
-            value: [pg.overlap.sets, pg.overlap.nodes],
+            value: [
+              pg.overlap.sets,
+              pg.overlap.nodes,
+              pg.overlap.duplicate,
+              pg.overlap.superset
+            ],
             format: function(v) {
               if (v) {
                 return (
@@ -7985,6 +8021,20 @@ var hivtrace_cluster_network_graph = function(
                     ? ' <span title="Number of nodes in the overlap" class="label label-default pull-right">' +
                       v[1] +
                       " nodes</span>"
+                    : "") +
+                  (v[2].length
+                    ? ' <span title="CoIs which are exact duplicates of this CoI: ' +
+                      v[2].join(", ") +
+                      '" class="label label-danger pull-right">' +
+                      v[2].length +
+                      " duplicate CoI</span>"
+                    : "") +
+                  (v[3].length
+                    ? ' <span title="CoIs which contain this CoI: ' +
+                      v[3].join(", ") +
+                      '" class="label label-warning pull-right">' +
+                      v[3].length +
+                      " superset CoI</span>"
                     : "")
                 );
               }
