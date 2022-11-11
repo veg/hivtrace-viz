@@ -6172,8 +6172,7 @@ var hivtrace_cluster_network_graph = function(
           _.map(graph_data[_networkGraphAttrbuteID], function(d, k) {
             function determine_scaling(d, values, scales) {
               var low_var = Infinity;
-
-              _.each(scales, function(scl) {
+              _.each(scales, function(scl, i) {
                 d["value_range"] = d3.extent(values);
                 var bins = _.map(_.range(color_stops), function() {
                   return 0;
@@ -6187,8 +6186,6 @@ var hivtrace_cluster_network_graph = function(
                 var vrnc = _.reduce(bins, function(p, c) {
                   return p + (c - mean) * (c - mean);
                 });
-
-                //console.log (d['value_range'], bins);
 
                 if (vrnc < low_var) {
                   low_var = vrnc;
@@ -6214,15 +6211,20 @@ var hivtrace_cluster_network_graph = function(
                   }
                 );
                 // automatically determine the scale and see what spaces the values most evenly
-                determine_scaling(d, values, [
-                  d3.scale.linear(),
-                  d3.scale.log(),
-                  d3.scale.pow().exponent(1 / 3),
-                  d3.scale.pow().exponent(0.25),
-                  d3.scale.pow().exponent(0.5),
-                  d3.scale.pow().exponent(1 / 8),
-                  d3.scale.pow().exponent(1 / 16)
-                ]);
+
+                const range = d3.extent(values);
+                let scales_to_consider = [d3.scale.linear()];
+                if (range[0] > 0) {
+                  scales_to_consider.push(d3.scale.log());
+                }
+                if (range[0] >= 0) {
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
+                }
+                determine_scaling(d, values, scales_to_consider);
               } else {
                 if (d.type == "Date") {
                   var values = _.filter(
@@ -12284,116 +12286,5 @@ var hivtrace_cluster_network_graph = function(
   return self;
 };
 
-var hivtrace_cluster_graph_summary = function(graph, tag) {
-  var summary_table = d3.select(tag);
-
-  summary_table = d3.select(tag).select("tbody");
-  if (summary_table.empty()) {
-    summary_table = d3.select(tag).append("tbody");
-  }
-
-  var table_data = [];
-
-  if (!summary_table.empty()) {
-    _.each(graph["Network Summary"], function(value, key) {
-      if (self._is_CDC_ && key == "Edges") {
-        key = "Links";
-      }
-      if (_.isNumber(value)) {
-        table_data.push([
-          __("statistics")[key.replace(/ /g, "_").toLowerCase()],
-          value
-        ]);
-      }
-    });
-  }
-
-  var degrees = [];
-  _.each(graph["Degrees"], function(value, index) {
-    for (var k = 0; k < value; k++) {
-      degrees.push(index + 1);
-    }
-  });
-  degrees = helpers.describe_vector(degrees);
-  table_data.push([__("statistics")["links_per_node"], ""]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-    _defaultFloatFormat(degrees["mean"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-    _defaultFloatFormat(degrees["median"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
-    degrees["min"] + " - " + degrees["max"]
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "</i>",
-    degrees["Q1"] + " - " + degrees["Q3"]
-  ]);
-
-  degrees = helpers.describe_vector(graph["Cluster sizes"]);
-  table_data.push([__("statistics")["cluster_sizes"], ""]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-    _defaultFloatFormat(degrees["mean"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-    _defaultFloatFormat(degrees["median"])
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
-    degrees["min"] + " - " + degrees["max"]
-  ]);
-  table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
-    degrees["Q1"] + " - " + degrees["Q3"]
-  ]);
-
-  if (self._is_CDC_) {
-    degrees = helpers.describe_vector(
-      _.map(graph["Edges"], function(e) {
-        return e.length;
-      })
-    );
-    table_data.push(["Genetic distances (links only)", ""]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-      _defaultPercentFormat(degrees["mean"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-      _defaultPercentFormat(degrees["median"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
-      _defaultPercentFormat(degrees["min"]) +
-        " - " +
-        _defaultPercentFormat(degrees["max"])
-    ]);
-    table_data.push([
-      "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
-      _defaultPercentFormat(degrees["Q1"]) +
-        " - " +
-        _defaultPercentFormat(degrees["Q3"])
-    ]);
-  }
-
-  var rows = summary_table.selectAll("tr").data(table_data);
-  rows.enter().append("tr");
-  rows.exit().remove();
-  var columns = rows.selectAll("td").data(function(d) {
-    return d;
-  });
-  columns.enter().append("td");
-  columns.exit();
-  columns.html(function(d) {
-    return d;
-  });
-};
-
 module.exports.computeCluster = hivtrace_cluster_depthwise_traversal;
 module.exports.clusterNetwork = hivtrace_cluster_network_graph;
-module.exports.graphSummary = hivtrace_cluster_graph_summary;
