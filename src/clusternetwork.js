@@ -439,7 +439,7 @@ var hivtrace_cluster_network_graph = function(
     if ("patient_attributes" in n) {
       let new_attrs = {};
       if (n["patient_attributes"] != null) {
-        console.log(n["patient_attributes"]);
+        //console.log(n["patient_attributes"]);
         new_attrs = Object.fromEntries(
           Object.entries(n.patient_attributes).map(([k, v]) => [
             k.toLowerCase(),
@@ -5248,18 +5248,22 @@ var hivtrace_cluster_network_graph = function(
                   return 0;
                 });
                 scl.range([0, color_stops - 1]).domain(d["value_range"]);
+
                 _.each(values, function(v) {
                   bins[Math.floor(scl(v))]++;
                 });
 
                 var mean = values.length / color_stops;
+
                 var vrnc = _.reduce(bins, function(p, c) {
                   return p + (c - mean) * (c - mean);
                 });
 
-                //console.log (d['value_range'], bins);
+                // Ensure that all bins are numbers
+                let allNumbers = _.every(bins, _.isNumber);
+                let anyGreaterThanZero = _.some(bins, d => d > 0);
 
-                if (vrnc < low_var) {
+                if (vrnc < low_var && allNumbers && anyGreaterThanZero) {
                   low_var = vrnc;
                   d["scale"] = scl;
                 }
@@ -8189,6 +8193,7 @@ var hivtrace_cluster_network_graph = function(
 
         _.each(_.range(color_stops), function(value) {
           var x = scale.invert(value);
+
           self.legend_svg
             .append("g")
             .classed("hiv-trace-legend", true)
