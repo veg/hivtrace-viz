@@ -5283,15 +5283,19 @@ var hivtrace_cluster_network_graph = function(
                   }
                 );
                 // automatically determine the scale and see what spaces the values most evenly
-                determine_scaling(d, values, [
-                  d3.scale.linear(),
-                  d3.scale.log(),
-                  d3.scale.pow().exponent(1 / 3),
-                  d3.scale.pow().exponent(0.25),
-                  d3.scale.pow().exponent(0.5),
-                  d3.scale.pow().exponent(1 / 8),
-                  d3.scale.pow().exponent(1 / 16)
-                ]);
+                const range = d3.extent(values);
+                let scales_to_consider = [d3.scale.linear()];
+                if (range[0] > 0) {
+                  scales_to_consider.push(d3.scale.log());
+                }
+                if (range[0] >= 0) {
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
+                }
+                determine_scaling(d, values, scales_to_consider);
               } else {
                 if (d.type == "Date") {
                   var values = _.filter(
