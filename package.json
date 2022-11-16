@@ -3,7 +3,7 @@
   "version": "0.7.4",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
-    "node": ">=12"
+    "node": ">=12 <=16"
   },
   "main": [
     "dist/hivtrace.js",

@@ -6142,13 +6142,6 @@ npm-user-validate@~0.1.5:
   resolved "https://registry.yarnpkg.com/npm-user-validate/-/npm-user-validate-0.1.5.tgz#52465d50c2d20294a57125b996baedbf56c5004b"
   integrity sha1-UkZdUMLSApSlcSW5lrrtv1bFAEs=
 
-npm-version@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/npm-version/-/npm-version-1.1.0.tgz#2960c00d1885a94b95435152ebac3a8b9fcbf5b5"
-  integrity sha1-KWDADRiFqUuVQ1FS66w6i5/L9bU=
-  dependencies:
-    semver "^3.0.1"
-
 npm@^2.5.1:
   version "2.15.12"
   resolved "https://registry.yarnpkg.com/npm/-/npm-2.15.12.tgz#df7c3ed5a277c3f9d4b5d819b05311d10a200ae6"
@@ -8271,11 +8264,6 @@ semver@7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.0.0.tgz#5f3ca35761e47e05b206c6daff2cf814f0316b8e"
   integrity sha512-+GB6zVA9LWh6zovYQLALHwv5rb2PHGlJi3lfiqIHxR0uuwCgefcOJc59v9fv1w8GbStwxuuqqAjI9NMAOOgq1A==
-
-semver@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-3.0.1.tgz#720ac012515a252f91fb0dd2e99a56a70d6cf078"
-  integrity sha1-cgrAElFaJS+R+w3S6ZpWpw1s8Hg=
 
 semver@^6.0.0, semver@^6.1.1, semver@^6.1.2, semver@^6.3.0:
   version "6.3.0"
