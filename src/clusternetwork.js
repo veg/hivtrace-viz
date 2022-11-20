@@ -1915,7 +1915,10 @@ var hivtrace_cluster_network_graph = function(
                 person_ident_dt: gn.added
                   ? _defaultDateViewFormatExport(gn.added)
                   : "N/A",
-                new_linked_case: self.priority_groups_is_new_node(g, gn) ? 1 : 0
+                new_linked_case: self.priority_groups_is_new_node(g, gn)
+                  ? 1
+                  : 0,
+                network_date: _defaultDateViewFormatExport(self.today)
               };
             }
           );
