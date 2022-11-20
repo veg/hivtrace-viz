@@ -337,6 +337,14 @@ const _cdcPrioritySetDefaultNodeKind = _cdcPrioritySetNodeKind[0];
 
 // Constants for the map.
 
+var hivtrace_date_or_na_if_missing = (date, formatter) => {
+  formatter = formatter || _defaultDateViewFormatExport;
+  if (date) {
+    return formatter(date);
+  }
+  return "N/A";
+};
+
 // TODO: convert and save this data rather than do it each time.
 
 var hivtrace_cluster_depthwise_traversal = function(
@@ -1912,13 +1920,12 @@ var hivtrace_cluster_network_graph = function(
                 cluster_uid: g.name,
                 cluster_ident_method: g.kind,
                 person_ident_method: gn.kind,
-                person_ident_dt: gn.added
-                  ? _defaultDateViewFormatExport(gn.added)
-                  : "N/A",
+                person_ident_dt: hivtrace_date_or_na_if_missing(gn.added),
                 new_linked_case: self.priority_groups_is_new_node(g, gn)
                   ? 1
                   : 0,
-                network_date: _defaultDateViewFormatExport(self.today)
+                cluster_created: hivtrace_date_or_na_if_missing(g.created),
+                network_date: hivtrace_date_or_na_if_missing(self.today)
               };
             }
           );
@@ -2514,9 +2521,9 @@ var hivtrace_cluster_network_graph = function(
                 if (added_nodes.size) {
                   if (
                     confirm(
-                      "This cluster of interest does not include all the nodes in the current network that are eligible for membership by '" +
+                      'This cluster of interest does not include all the nodes in the current network that are eligible for membership by growth criterion  "' +
                         tracking +
-                        "' These " +
+                        '". These ' +
                         added_nodes.size +
                         " additional nodes will be automatically added to this CoI when you save it. If you don’t want to add these nodes to the CoI please select 'Cancel' and change the growth criterion."
                     )
