@@ -3021,6 +3021,7 @@ var hivtrace_cluster_network_graph = function(
             n["_priority_set_fixed"] = true;
           });
         }
+
         if (existing_set) {
           self.priority_set_inject_node_attibutes(
             panel_object.network_nodes,
@@ -3040,6 +3041,15 @@ var hivtrace_cluster_network_graph = function(
         if (!this.saved) {
           if (confirm("Close cluster of interest editor?")) {
             //console.log ("Closing...");
+            if (existing_set) {
+              const existing_nodes = new Set(
+                _.map(existing_set.nodes, n => n.name)
+              );
+              existing_set.node_objects = _.filter(
+                existing_set.node_objects,
+                n => existing_nodes.has(n.id)
+              );
+            }
             this.cleanup_attributes();
             return true;
           }
