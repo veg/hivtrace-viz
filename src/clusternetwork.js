@@ -7989,7 +7989,11 @@ var hivtrace_cluster_network_graph = function(
                   "'>" +
                   value +
                   "</span>"
-                : value) +
+                : '<span data-text-export = "' +
+                  value +
+                  '">' +
+                  value +
+                  "</span>") +
               "</div>",
             html: true,
             actions: []
