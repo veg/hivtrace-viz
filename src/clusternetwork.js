@@ -1824,6 +1824,10 @@ var hivtrace_cluster_network_graph = function(
         d => d.name == prior_name
       );
       if (prior_index >= 0) {
+        if (prior_name != nodeset.name) {
+          self.priority_groups_update_node_sets(prior_name, "delete");
+          op_code = "insert";
+        }
         self.defined_priority_groups[prior_index] = nodeset;
       } else {
         if (check_dup()) return false;
@@ -2289,10 +2293,11 @@ var hivtrace_cluster_network_graph = function(
             : null;
 
         panel_object.can_edit_kind = existing_set
-          ? existing_set.expanded == 0 && existing_set.createdBy != "System"
+          ? existing_set.createdBy != "System"
           : true;
+
         panel_object.can_edit_name = existing_set
-          ? existing_set.pending && existing_set.createdBy != "System"
+          ? existing_set.createdBy != "System"
           : true;
 
         panel_object.can_add = function(id) {
@@ -2368,6 +2373,12 @@ var hivtrace_cluster_network_graph = function(
 
         if (!panel_object.can_edit_name) {
           grp_name_button.property("disabled", true);
+          grp_name_button.attr(
+            "title",
+            "The name cannot be changed for system generated CoI. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
+          );
+        } else {
+          grp_name_button.attr("title", null);
         }
 
         grp_kind_select
