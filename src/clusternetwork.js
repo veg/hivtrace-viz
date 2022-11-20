@@ -1264,6 +1264,7 @@ var hivtrace_cluster_network_graph = function(
         _.each(groups_that_expanded, pg =>
           self.priority_groups_update_node_sets(pg.name, "update")
         );
+
         self.draw_priority_set_table();
       }
     });
@@ -1725,7 +1726,7 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.priority_groups_compute_node_membership = function() {
-    _.each(self.json.Nodes, n => {
+    /*_.each(self.json.Nodes, n => {
       n["priority_sets"] = [];
     });
     _.each(self.defined_priority_groups, pg => {
@@ -1737,10 +1738,38 @@ var hivtrace_cluster_network_graph = function(
       inject_attribute_node_value_by_id(
         n,
         "priority_sets",
-        n["priority_sets"].length ? n["priority_sets"].join(", ") : "-"
+        n["priority_sets"].length ? n["priority_sets"].join(", ") : "None"
       );
       delete n["priority_sets"];
+    });*/
+    let pg_nodesets = [];
+
+    _.each(self.defined_priority_groups, g => {
+      pg_nodesets.push([g.name, new Set(_.map(g.nodes, n => n.name))]);
     });
+
+    _.each(
+      {
+        priority_sets: {
+          depends: [_networkCDCDateField],
+          label: "Clusters of interest",
+          type: "String",
+          map: function(node) {
+            const memberships = _.filter(pg_nodesets, d => d[1].has(node.id));
+            if (memberships.length == 1) {
+              return memberships[0][0];
+            } else {
+              if (memberships.length > 1) {
+                return "Multiple";
+              }
+            }
+            return "None";
+          }
+        }
+      },
+      self._aux_populated_predefined_attribute
+    );
+    self._aux_populate_category_menus();
   };
 
   self.priority_groups_add_set = function(
@@ -3431,16 +3460,6 @@ var hivtrace_cluster_network_graph = function(
 
       map: function(node) {
         return node.subcluster_label;
-      }
-    },
-
-    priority_sets: {
-      depends: [_networkCDCDateField],
-      label: "Clusters of interest",
-      type: "String",
-      map: function(node) {
-        //console.log (node);
-        return "None";
       }
     },
 
@@ -6557,6 +6576,44 @@ var hivtrace_cluster_network_graph = function(
       }
     };
 
+    self._aux_populated_predefined_attribute = function(computed, key) {
+      if (_.isFunction(computed)) {
+        computed = computed(self);
+      }
+
+      if (
+        !computed["depends"] ||
+        _.every(computed["depends"], d =>
+          _.has(graph_data[_networkGraphAttrbuteID], d)
+        )
+      ) {
+        var extension = {};
+        extension[key] = computed;
+        _.extend(graph_data[_networkGraphAttrbuteID], extension);
+        self.inject_attribute_description(key, computed);
+        _.each(graph_data.Nodes, function(node) {
+          inject_attribute_node_value_by_id(
+            node,
+            key,
+            computed["map"](node, self)
+          );
+        });
+
+        // add unique values
+        self.uniqValues[key] = computed.enum;
+
+        if (computed["overwrites"]) {
+          if (
+            _.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])
+          ) {
+            graph_data[_networkGraphAttrbuteID][computed["overwrites"]][
+              "_hidden_"
+            ] = true;
+          }
+        }
+      }
+    };
+
     if (attributes) {
       /*
          map attributes into nodes and into the graph object itself using
@@ -6605,47 +6662,10 @@ var hivtrace_cluster_network_graph = function(
         }
       }
 
-      _.each(self._networkPredefinedAttributeTransforms, function(
-        computed,
-        key
-      ) {
-        if (_.isFunction(computed)) {
-          computed = computed(self);
-        }
-
-        if (
-          !computed["depends"] ||
-          _.every(computed["depends"], d =>
-            _.has(graph_data[_networkGraphAttrbuteID], d)
-          )
-        ) {
-          var extension = {};
-          extension[key] = computed;
-          _.extend(graph_data[_networkGraphAttrbuteID], extension);
-          self.inject_attribute_description(key, computed);
-          _.each(graph_data.Nodes, function(node) {
-            inject_attribute_node_value_by_id(
-              node,
-              key,
-              computed["map"](node, self)
-            );
-          });
-
-          // add unique values
-          self.uniqValues[key] = computed.enum;
-
-          if (computed["overwrites"]) {
-            if (
-              _.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])
-            ) {
-              graph_data[_networkGraphAttrbuteID][computed["overwrites"]][
-                "_hidden_"
-              ] = true;
-            }
-          }
-        }
-      });
-
+      _.each(
+        self._networkPredefinedAttributeTransforms,
+        self._aux_populated_predefined_attribute
+      );
       self._aux_populate_category_menus();
 
       // populate the UI elements
