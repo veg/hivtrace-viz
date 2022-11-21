@@ -1734,22 +1734,6 @@ var hivtrace_cluster_network_graph = function(
   };
 
   self.priority_groups_compute_node_membership = function() {
-    /*_.each(self.json.Nodes, n => {
-      n["priority_sets"] = [];
-    });
-    _.each(self.defined_priority_groups, pg => {
-      if (pg.validated) {
-        _.each(pg.node_objects, pn => pn["priority_sets"].push(pg.name));
-      }
-    });
-    _.each(self.json.Nodes, n => {
-      inject_attribute_node_value_by_id(
-        n,
-        "priority_sets",
-        n["priority_sets"].length ? n["priority_sets"].join(", ") : "None"
-      );
-      delete n["priority_sets"];
-    });*/
     let pg_nodesets = [];
 
     _.each(self.defined_priority_groups, g => {
@@ -1758,9 +1742,9 @@ var hivtrace_cluster_network_graph = function(
 
     _.each(
       {
-        priority_sets: {
+        cluster_uid: {
           depends: [_networkCDCDateField],
-          label: "Clusters of interest",
+          label: "Clusters of Interest",
           type: "String",
           map: function(node) {
             const memberships = _.filter(pg_nodesets, d => d[1].has(node.id));
@@ -3482,7 +3466,7 @@ var hivtrace_cluster_network_graph = function(
       }
     },
 
-    recent_rapid: self.recent_rapid_definition,
+    subcluster_or_priority_node: self.recent_rapid_definition,
 
     subcluster_index: {
       depends: [_networkCDCDateField],
@@ -4398,11 +4382,17 @@ var hivtrace_cluster_network_graph = function(
     var field_def = self.recent_rapid_definition(self, set_date);
 
     if (field_def) {
-      self.inject_attribute_description("recent_rapid", field_def);
-      self._aux_process_category_values(
-        self._aux_populate_category_fields(field_def, "recent_rapid")
+      self.inject_attribute_description(
+        "subcluster_or_priority_node",
+        field_def
       );
-      self.handle_attribute_categorical("recent_rapid");
+      self._aux_process_category_values(
+        self._aux_populate_category_fields(
+          field_def,
+          "subcluster_or_priority_node"
+        )
+      );
+      self.handle_attribute_categorical("subcluster_or_priority_node");
     }
   };
 
@@ -4529,7 +4519,7 @@ var hivtrace_cluster_network_graph = function(
       options
     );
     if (!options.skip_recent_rapid)
-      cluster_view.handle_attribute_categorical("recent_rapid");
+      cluster_view.handle_attribute_categorical("subcluster_or_priority_node");
     return cluster_view;
 
     /*var selector =
@@ -10307,11 +10297,13 @@ var hivtrace_cluster_network_graph = function(
 
         try {
           graph_data[_networkGraphAttrbuteID][
-            "recent_rapid"
+            "subcluster_or_priority_node"
           ] = self._aux_process_category_values(
             self._aux_populate_category_fields(
-              graph_data[_networkGraphAttrbuteID]["recent_rapid"],
-              "recent_rapid"
+              graph_data[_networkGraphAttrbuteID][
+                "subcluster_or_priority_node"
+              ],
+              "subcluster_or_priority_node"
             )
           );
         } catch (err) {
@@ -12329,8 +12321,9 @@ var hivtrace_cluster_network_graph = function(
 
     if (self.showing_diff) {
       self.handle_attribute_categorical(
-        self._is_CDC_ && self.has_network_attribute("recent_rapid")
-          ? "recent_rapid"
+        self._is_CDC_ &&
+          self.has_network_attribute("subcluster_or_priority_node")
+          ? "subcluster_or_priority_node"
           : "_newly_added"
       );
     } else {
