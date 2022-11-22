@@ -1781,14 +1781,14 @@ var hivtrace_cluster_network_graph = function(
             alert(
               "Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes and the same growth criterion as this new CoI. Secure HIV-TRACE does not allow creating exact duplicates of CoI."
+                "' has the same set of nodes and the same growth criterion as this new cluster of interest. Secure HIV-TRACE does not allow creating exact duplicates of clusters of interest."
             );
             return true;
           } else if (same_nodes) {
             let keep_duplicate = confirm(
               "Warning! Cluster of interest '" +
                 d.name +
-                "' has the same set of nodes as this CoI, but a different growth criterion'. Click 'OK' to create, or 'Cancel' to abort."
+                "' has the same set of nodes as this cluster of interest, but a different growth criterion'. Click 'OK' to create, or 'Cancel' to abort."
             );
             let is_duplicate = !keep_duplicate;
             return is_duplicate;
@@ -1940,7 +1940,7 @@ var hivtrace_cluster_network_graph = function(
     let edge_length =
       options["priority-edge-length"] || self.subcluster_threshold;
     let reference_date = options["timestamp"] || self.today;
-    let title = options["title"] || "CoI " + priority_set.prior_name;
+    let title = options["title"] || "clusterOI " + priority_set.prior_name;
     let node_dates = {};
 
     if (priority_set.nodes) {
@@ -2349,7 +2349,7 @@ var hivtrace_cluster_network_graph = function(
           grp_kind_select.property("disabled", true);
           grp_kind_select.attr(
             "title",
-            "The method of cluster identification cannot be changed for system generated CoI. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
+            "The method of cluster identification cannot be changed for system generated cluster of interest. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
           );
         } else {
           grp_kind_select.attr("title", null);
@@ -2359,7 +2359,7 @@ var hivtrace_cluster_network_graph = function(
           grp_name_button.property("disabled", true);
           grp_name_button.attr(
             "title",
-            "The name cannot be changed for system generated CoI. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
+            "The name cannot be changed for system generated cluster of interest. However, after confirming this cluster of interest, you can clone it and then change this field as needed"
           );
         } else {
           grp_name_button.attr("title", null);
@@ -2389,7 +2389,7 @@ var hivtrace_cluster_network_graph = function(
           grp_tracking_select.property("disabled", true);
           grp_tracking_select.attr(
             "title",
-            "The method of tracking cannot be changed for system generated CoI. However, you can clone this cluster of interest and then change this field as needed"
+            "The method of tracking cannot be changed for system generated cluster of interest. However, you can clone this cluster of interest and then change this field as needed"
           );
         } else {
           grp_tracking_select.attr("title", null);
@@ -2408,7 +2408,7 @@ var hivtrace_cluster_network_graph = function(
         grp_tracking
           .append("p")
           .classed("help-block", true)
-          .text("Method of tracking CoI growth");
+          .text("Method of tracking cluster of interest growth");
 
         var grp_desc = form_save.append("div").classed("form-group", true);
 
@@ -2520,7 +2520,7 @@ var hivtrace_cluster_network_graph = function(
                         tracking +
                         '". These ' +
                         added_nodes.size +
-                        " additional nodes will be automatically added to this CoI when you save it. If you don’t want to add these nodes to the CoI please select 'Cancel' and change the growth criterion."
+                        " additional nodes will be automatically added to this cluster of interest when you save it. If you don’t want to add these nodes to the cluster of interest please select 'Cancel' and change the growth criterion."
                     )
                   ) {
                     _.each([...added_nodes], nid => {
@@ -2809,7 +2809,7 @@ var hivtrace_cluster_network_graph = function(
           );
 
           panel.setHeaderTitle(
-            "CoI editor (" +
+            "clusterOI editor (" +
               panel.network_nodes.length +
               " nodes)" +
               (validation_mode ? " [automatically created review] " : "")
@@ -5427,7 +5427,7 @@ var hivtrace_cluster_network_graph = function(
             .text(
               "View how nodes in cluster of interest " +
                 priority_list +
-                " overlap with other CoI"
+                " overlap with other clusterOI"
             );
 
           let ps = self.priority_groups_find_by_name(priority_list);
@@ -5437,12 +5437,12 @@ var hivtrace_cluster_network_graph = function(
             [
               {
                 value: "Node",
-                help: "EHARS_ID of the node that overlaps with other CoI",
+                help: "EHARS_ID of the node that overlaps with other clusterOI",
                 sort: "value"
               },
               {
                 value: "Other Cluster(s) of Interest",
-                help: "Names of other CoI where this node is included",
+                help: "Names of other clusterOI where this node is included",
                 sort: "value"
               }
             ]
@@ -5450,7 +5450,7 @@ var hivtrace_cluster_network_graph = function(
 
           var rows = [];
           var rows_for_export = [
-            ["Overlapping Cluster of Interest", "Node", "Other CoI"]
+            ["Overlapping Cluster of Interest", "Node", "Other clusterOI"]
           ];
           _.each(ps.nodes, n => {
             let overlap = self.priority_node_overlap[n.name];
@@ -5563,9 +5563,9 @@ var hivtrace_cluster_network_graph = function(
               desc.html(
                 "Merge " +
                   current_selection.size +
-                  " CoI with " +
+                  " clusterOI with " +
                   total +
-                  " nodes, creating a new set with " +
+                  " nodes, creating a new clusterOI with " +
                   current_node_set.size +
                   " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
               );
@@ -7924,7 +7924,7 @@ var hivtrace_cluster_network_graph = function(
               return 0;
             },
             help:
-              "How many other CoI have overlapping nodes with this CoI, and (if the overlap is non-empty) how many nodes in this CoI overlap with ANY other CoI?"
+              "How many other clusterOI have overlapping nodes with this clusterOI, and (if the overlap is non-empty) how many nodes in this clusterOI overlap with ANY other clusterOI?"
           }
           /*,
             {
@@ -7937,7 +7937,7 @@ var hivtrace_cluster_network_graph = function(
 
       if (self._is_CDC_auto_mode) {
         headers[0].splice(3, 0, {
-          value: "CoI identification method",
+          value: "clusterOI identification method",
           width: 100,
           sort: function(c) {
             return c.value;
@@ -8080,18 +8080,18 @@ var hivtrace_cluster_network_graph = function(
                       " nodes</span>"
                     : "") +
                   (v[2].length
-                    ? ' <span title="CoIs which are exact duplicates of this CoI: ' +
+                    ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                       v[2].join(", ") +
                       '" class="label label-danger pull-right">' +
                       v[2].length +
-                      " duplicate CoI</span>"
+                      " duplicate clusterOI</span>"
                     : "") +
                   (v[3].length
-                    ? ' <span title="CoIs which contain this CoI: ' +
+                    ? ' <span title="clusterOIs which contain this clusterOI: ' +
                       v[3].join(", ") +
                       '" class="label label-warning pull-right">' +
                       v[3].length +
-                      " superset CoI</span>"
+                      " superset clusterOI</span>"
                     : "")
                 );
               }
