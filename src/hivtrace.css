@@ -284,3 +284,7 @@ circle.injected_object {
 .color-picker-toggle {
   color: green;
 }
+
+.main-content-panel {
+  padding-top: 10px;
+}

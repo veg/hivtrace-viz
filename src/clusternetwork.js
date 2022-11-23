@@ -1,5 +1,6 @@
 var d3 = require("d3"),
   _ = require("underscore"),
+  jsConvert = require("js-convert-case"),
   misc = require("./misc"),
   helpers = require("./helpers"),
   colorPicker = require("./colorPicker"),
@@ -7718,11 +7719,31 @@ var hivtrace_cluster_network_graph = function(
               .attr("aria-expanded", "false")
               .attr("id", menu_id);
 
+            function format_key(key) {
+              let formattedKey = jsConvert.toHeaderCase(key);
+              let words = formattedKey.split(" ");
+              let mappedWords = _.map(words, word => {
+                if (word.toLowerCase() == "hivtrace") {
+                  return "HIV-TRACE";
+                }
+                if (word.toLowerCase() == "id") {
+                  return "ID";
+                }
+
+                return word;
+              });
+
+              return mappedWords.join(" ");
+            }
+
             function get_text_label(key) {
               return key in json.patient_attribute_schema
                 ? json.patient_attribute_schema[key].label
-                : (key[0].toUpperCase() + key.substring(1)).replace(/_/g, " ");
+                : format_key(key);
             }
+
+            console.log(get_text_label(payload));
+
             dropdown_button.text(get_text_label(payload));
 
             dropdown_button.append("i").classed({
