@@ -6,7 +6,7 @@ var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 
 // The function for creating the "Network Statistics" table that is displayed on the "Statistics" tab.
-var hivtrace_cluster_graph_summary = function(graph, tag) {
+var hivtrace_cluster_graph_summary = function(graph, tag, not_CDC) {
   var summary_table = d3.select(tag);
 
   summary_table = d3.select(tag).select("tbody");
@@ -18,11 +18,15 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
 
   if (!summary_table.empty()) {
     _.each(graph["Network Summary"], function(value, key) {
-      if (self._is_CDC_ && key == "Edges") {
-        key = "Links";
+      if (key == "Clusters") {
+        value = _.size(graph["Cluster description"]);
       }
+
       if (_.isNumber(value)) {
-        table_data.push([key, value]);
+        table_data.push([
+          __("statistics")[key.replace(/ /g, "_").toLowerCase()],
+          value
+        ]);
       }
     });
   }
@@ -34,44 +38,44 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     }
   });
   degrees = helpers.describe_vector(degrees);
-  table_data.push(["Links/node", ""]);
+  table_data.push([__("statistics")["links_per_node"], ""]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
     _defaultFloatFormat(degrees["mean"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
     _defaultFloatFormat(degrees["median"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
     degrees["min"] + " - " + degrees["max"]
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "</i>",
     degrees["Q1"] + " - " + degrees["Q3"]
   ]);
 
   degrees = helpers.describe_vector(graph["Cluster sizes"]);
-  table_data.push(["Cluster sizes", ""]);
+  table_data.push([__("statistics")["cluster_sizes"], ""]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Mean</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
     _defaultFloatFormat(degrees["mean"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Median</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
     _defaultFloatFormat(degrees["median"])
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
     degrees["min"] + " - " + degrees["max"]
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>Interquartile range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
     degrees["Q1"] + " - " + degrees["Q3"]
   ]);
 
-  if (self._is_CDC_) {
+  if (!not_CDC) {
     degrees = helpers.describe_vector(
       _.map(graph["Edges"], function(e) {
         return e.length;
@@ -79,21 +83,21 @@ var hivtrace_cluster_graph_summary = function(graph, tag) {
     );
     table_data.push(["Genetic distances (links only)", ""]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Mean</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
       _defaultPercentFormat(degrees["mean"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Median</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
       _defaultPercentFormat(degrees["median"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Range</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
       _defaultPercentFormat(degrees["min"]) +
         " - " +
         _defaultPercentFormat(degrees["max"])
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>Interquartile range</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
       _defaultPercentFormat(degrees["Q1"]) +
         " - " +
         _defaultPercentFormat(degrees["Q3"])

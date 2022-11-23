@@ -1,9 +1,9 @@
 {
   "name": "hivtrace-viz",
-  "version": "0.7.6",
+  "version": "1.0.0",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
-    "node": ">=12"
+    "node": ">=12 <=16"
   },
   "main": [
     "dist/hivtrace.js",
@@ -22,6 +22,7 @@
     "i18n-webpack-plugin": "1.0.0",
     "i18next": "^17.0.18",
     "jquery": "^3.3.1",
+    "js-convert-case": "^4.2.0",
     "jspanel4": "4.9.1",
     "latest": "^0.2.0",
     "topojson": "3.x",
@@ -49,7 +50,6 @@
     "imports-loader": "^0.6.5",
     "mini-css-extract-plugin": "^0.9.0",
     "node-sass": "^6.0.1",
-    "npm-version": "^1.1.0",
     "postcss-loader": "^3.0.0",
     "prettier": "^1.14.3",
     "pretty-quick": "^1.7.0",

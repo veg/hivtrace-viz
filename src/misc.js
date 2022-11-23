@@ -145,7 +145,7 @@ function hivtrace_compute_node_degrees(obj) {
   }
 }
 
-function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
+function hiv_trace_export_table_to_text(parent_id, table_id, csv) {
   var the_button = d3.select(parent_id);
   the_button.selectAll("[data-type='download-button']").remove();
 
@@ -156,12 +156,20 @@ function hiv_trace_export_table_to_text(parent_id, table_id, sep) {
     .on("click", function(data, element) {
       d3.event.preventDefault();
       var table_tag = d3.select(this).attr("data-table");
-      var table_text = helpers.table_to_text(table_tag);
-      helpers.export_handler(
-        table_text,
-        table_tag.substring(1) + ".tsv",
-        "text/tab-separated-values"
-      );
+      var table_text = helpers.table_to_text(table_tag, csv ? "," : "\t");
+      if (!csv) {
+        helpers.export_handler(
+          table_text,
+          table_tag.substring(1) + ".tsv",
+          "text/tab-separated-values"
+        );
+      } else {
+        helpers.export_handler(
+          table_text,
+          table_tag.substring(1) + ".csv",
+          "text/comma-separated-values"
+        );
+      }
     })
     .attr("data-table", table_id);
 

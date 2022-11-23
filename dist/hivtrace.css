@@ -3363,11 +3363,15 @@ circle.injected_object {
 }
 
 .table-smaller td {
-  font-size: 0.75em;
+  font-size: max(0.75em, 10pt);
+}
+
+.table-smaller th {
+  font-size: max(0.75em, 10pt);
 }
 
 .list-smaller li {
-  font-size: 0.75em;
+  font-size: max(0.75em, 10pt);
 }
 
 #colorPickerRow {
@@ -3382,6 +3386,18 @@ circle.injected_object {
 
 .color-picker-toggle {
   color: green;
+}
+
+.main-content-panel {
+  padding-top: 10px;
+}
+
+.fa-caret-down {
+  padding-left: 5px;
+}
+
+.dropdown button {
+  padding: 5px 10px 5px 10px;
 }
 
 /*!

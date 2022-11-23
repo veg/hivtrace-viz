@@ -27,15 +27,16 @@ function b64toBlob(b64, onsuccess, onerror) {
   img.src = b64;
 }
 
-var datamonkey_export_csv_button = function(data) {
+var datamonkey_export_csv_button = function(data, name) {
   data = d3.csv.format(data);
   if (data !== null) {
+    name = name ? name + ".csv" : "export.csv";
     var pom = document.createElement("a");
     pom.setAttribute(
       "href",
       "data:text/csv;charset=utf-8," + encodeURIComponent(data)
     );
-    pom.setAttribute("download", "export.csv");
+    pom.setAttribute("download", name);
     pom.className = "btn btn-default btn-sm";
     pom.innerHTML =
       '<span class="glyphicon glyphicon-floppy-save"></span> Download CSV';
@@ -264,10 +265,25 @@ function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
   var extract_text = function(e) {
-    var plain_text = d3.select(e).node().firstChild;
+    const node = d3.select(e).node();
+    var plain_text = node.firstChild;
     if (plain_text) plain_text = plain_text.nodeValue;
     if (plain_text && plain_text.length) return plain_text;
-    var first_element = d3.select(e).selectAll("p, span, button, abbr, select");
+
+    var first_element = d3.select(e).selectAll("[data-text-export]");
+    if (!first_element.empty()) {
+      return d3.select(first_element.node()).attr("data-text-export");
+    }
+
+    /*if (table_id == "#priority_set_table") {
+      if (node.firstChild.tagName == "I") {
+        return node.firstChild.getAttribute("title");
+      } else if (node.firstChild.tagName == "SPAN") {
+        return node.children[1].innerHTML;
+      }
+    }*/
+
+    first_element = d3.select(e).selectAll("p, span, button, abbr, select");
     if (!first_element.empty()) {
       return d3.select(first_element.node()).text();
     }
@@ -294,13 +310,15 @@ function datamonkey_table_to_text(table_id, sep) {
     });
 
   return (
-    header_row.join(sep) +
+    (sep == "," ? d3.csv.format([header_row]) : d3.tsv.format([header_row])) +
     "\n" +
-    data_rows
+    (sep == "," ? d3.csv.format(data_rows) : d3.tsv.format(data_rows))
+    /*data_rows
       .map(function(d) {
         return d.join(sep);
       })
       .join("\n")
+      */
   );
 }
 
