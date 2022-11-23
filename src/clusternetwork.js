@@ -7732,7 +7732,6 @@ var hivtrace_cluster_network_graph = function(
 
                 return word;
               });
-
               return mappedWords.join(" ");
             }
 
@@ -7741,8 +7740,6 @@ var hivtrace_cluster_network_graph = function(
                 ? json.patient_attribute_schema[key].label
                 : format_key(key);
             }
-
-            console.log(get_text_label(payload));
 
             dropdown_button.text(get_text_label(payload));
 

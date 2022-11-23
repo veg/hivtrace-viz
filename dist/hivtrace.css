@@ -3392,6 +3392,14 @@ circle.injected_object {
   padding-top: 10px;
 }
 
+.fa-caret-down {
+  padding-left: 5px;
+}
+
+.dropdown button {
+  padding: 5px 10px 5px 10px;
+}
+
 /*!
  * Bootstrap v3.4.1 (https://getbootstrap.com/)
  * Copyright 2011-2019 Twitter, Inc.
