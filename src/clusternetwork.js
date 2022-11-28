@@ -517,9 +517,6 @@ var hivtrace_cluster_network_graph = function(
     }
   });
 
-  let uniqs = helpers.get_unique_count(json.Nodes, new_schema);
-  let uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
-
   // annotate each node with patient_attributes if does not exist
   json.Nodes.forEach(function(n) {
     if (!n["attributes"]) {
@@ -547,8 +544,8 @@ var hivtrace_cluster_network_graph = function(
     options && options["cdc-executive-mode"] ? true : false;
 
   self.json = json;
-  self.uniqs = uniqs;
-  self.uniqValues = uniqValues;
+  self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
+  self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
   self.schema = json[_networkGraphAttrbuteID];
   // set initial color schemes
   self.networkColorScheme = _networkPresetColorSchemes;
@@ -3273,6 +3270,45 @@ var hivtrace_cluster_network_graph = function(
   self.initial_packed =
     options && options["initial_layout"] == "tiled" ? false : true;
 
+  self.recent_rapid_definition_simple = function(network, date) {
+    date = date || self.get_reference_date();
+
+    var subcluster_enum_simple = [
+      "Not a member of national priority clusterOI", // 1,4,5,6
+      "12 months and in national priority clusterOI", // 2
+      "36 months and in national priority clusterOI", // 3
+      ">36 months and in national priority clusterOI" // 0
+    ];
+
+    return {
+      depends: [_networkCDCDateField],
+      label: "Subcluster or Priority Node",
+      enum: subcluster_enum_simple,
+      type: "String",
+      volatile: true,
+      color_scale: function() {
+        return d3.scale
+          .ordinal()
+          .domain(subcluster_enum_simple.concat([_networkMissing]))
+          .range(
+            _.union(
+              ["#CCCCCC", "red", "blue", "#9A4EAE"],
+              [_networkMissingColor]
+            )
+          );
+      },
+
+      map: function(node) {
+        if (node.subcluster_label) {
+          if (node.nationalCOI) {
+            return subcluster_enum_simple[node.nationalCOI];
+          }
+        }
+        return subcluster_enum_simple[0];
+      }
+    };
+  };
+
   self.recent_rapid_definition = function(network, date) {
     date = date || self.get_reference_date();
     var subcluster_enum = [
@@ -3282,7 +3318,7 @@ var hivtrace_cluster_network_graph = function(
         ")",
       "12 months (on or after " + // 2
         _defaultDateViewFormat(_n_months_ago(date, 12)) +
-        ") and National Priority subcluster",
+        ") and national priority clusterOI",
       "36 months (on or after " + // 3
         _defaultDateViewFormat(_n_months_ago(date, 36)) +
         ")",
@@ -3293,7 +3329,7 @@ var hivtrace_cluster_network_graph = function(
 
     return {
       depends: [_networkCDCDateField],
-      label: "Subcluster or Priority Node",
+      label: "Extended Subcluster or Priority Node",
       enum: subcluster_enum,
       type: "String",
       volatile: true,
@@ -3467,6 +3503,7 @@ var hivtrace_cluster_network_graph = function(
       }
     },
 
+    subcluster_or_priority_node_simple: self.recent_rapid_definition_simple,
     subcluster_or_priority_node: self.recent_rapid_definition,
 
     subcluster_index: {
@@ -3514,6 +3551,50 @@ var hivtrace_cluster_network_graph = function(
           return "≥60";
         }
         return vl_value;
+      }
+    },
+
+    years_since_dx: {
+      depends: [_networkCDCDateField],
+      label: "Years since HIV/AIDS diagnosis",
+      type: "Number",
+      label_format: d3.format(".2f"),
+      map: function(node) {
+        try {
+          var value = self._parse_dates(
+            self.attribute_node_value_by_id(node, _networkCDCDateField)
+          );
+          if (value) {
+            value = (self.today - value) / 31536000000;
+          } else {
+            value = _networkMissing;
+          }
+          return value;
+        } catch (err) {
+          return _networkMissing;
+        }
+      },
+      color_scale: function(attr) {
+        var range_without_missing = _.without(
+          attr.value_range,
+          _networkMissing
+        );
+        var color_scale = _.compose(
+          d3.interpolateRgb("#ffffcc", "#800026"),
+          d3.scale
+            .linear()
+            .domain([
+              range_without_missing[0],
+              range_without_missing[range_without_missing.length - 1]
+            ])
+            .range([0, 1])
+        );
+        return function(v) {
+          if (v == _networkMissing) {
+            return _networkMissingColor;
+          }
+          return color_scale(v);
+        };
       }
     },
 
@@ -4607,6 +4688,27 @@ var hivtrace_cluster_network_graph = function(
     recent_months,
     start_date
   ) {
+    /* 
+        values for priority_flag
+            0: 0.5% subcluster
+            1: last 12 months NOT in a priority cluster
+            2: last 12 month IN priority cluster
+            3: in priority cluster but not in 12 months
+            4-6 is only computed for start dates different from the network date
+            4: date present but is in the FUTURE compared to start_date
+            5: date present but is between 1900 and start_date
+            6: date missing
+            
+            
+        SLKP 20221128:
+            Add a calculation for simple classification of priority clusters
+            
+            0: not in a national priority CoI
+            1: IN a national priority CoI ≤12 months
+            2: IN a national priority CoI 12 - 36 months
+            3: IN a national priority CoI >36 months
+    */
+
     try {
       start_date = start_date || self.get_reference_date();
 
@@ -4650,6 +4752,7 @@ var hivtrace_cluster_network_graph = function(
       // reset all annotations
 
       _.each(node_iterator, function(node) {
+        node.nationalCOI = 0;
         if (node.cluster) {
           if (!(node.cluster in split_clusters)) {
             split_clusters[node.cluster] = { Nodes: [], Edges: [] };
@@ -4664,8 +4767,8 @@ var hivtrace_cluster_network_graph = function(
         if (edge.length <= self.subcluster_threshold) {
           var edge_cluster = self.nodes[edge.source].cluster;
 
-          var source_id = self.nodes[edge.source].id,
-            target_id = self.nodes[edge.target].id;
+          var source_id = self.nodes[edge.source].id;
+          var target_id = self.nodes[edge.target].id;
 
           if (
             source_id in node_id_to_local_cluster &&
@@ -4697,9 +4800,9 @@ var hivtrace_cluster_network_graph = function(
 
         self.clusters[array_index].priority_score = 0;
 
-        /** all clusters with more than one member connected at 'threshold' edge length */
         var edges = [];
 
+        /** all clusters with more than one member connected at 'threshold' edge length */
         var subclusters = _.filter(
           hivtrace_cluster_depthwise_traversal(
             cluster_nodes.Nodes,
@@ -4712,6 +4815,7 @@ var hivtrace_cluster_network_graph = function(
           }
         );
 
+        /** all edge sets with more than one edge */
         edges = _.filter(edges, function(es) {
           return es.length > 1;
         });
@@ -4798,10 +4902,10 @@ var hivtrace_cluster_network_graph = function(
         /** Recent & Rapid (National Priority) Cluster: the part of the Sub-Cluster inferred using only cases diagnosed in the previous 36 months
                 and at least two cases dx-ed in the previous 12 months; there is a path between all nodes in a National Priority Cluster
 
-                20180406 SLKP: while unlikely, this definition could result in multiple National Priority clusters
-                per subclusters; for now we will add up all the cases for prioritization, and
-                display the largest National Priority cluster if there is more than one
-            */
+            20180406 SLKP: while unlikely, this definition could result in multiple National Priority clusters
+            per subclusters; for now we will add up all the cases for prioritization, and
+            display the largest National Priority cluster if there is more than one
+        */
 
         _.each(subclusters, function(sub) {
           // extract nodes based on dates
@@ -4816,26 +4920,6 @@ var hivtrace_cluster_network_graph = function(
             cluster_nodes
           );
 
-          /*if (_.some(subcluster_json.Nodes, n => n.id == "FL00S004399674-7")) {
-            console.log(
-              date_field,
-              _.map(subcluster_json.Nodes, node =>
-                self.attribute_node_value_by_id(node, date_field)
-              )
-            );
-            console.log(
-              _.filter(
-                sub.children,
-                _.partial(
-                  self._filter_by_date,
-                  cutoff_long,
-                  date_field,
-                  start_date
-                )
-              )
-            );
-          }*/
-
           var rr_cluster = _.filter(
             hivtrace_cluster_depthwise_traversal(
               subcluster_json.Nodes,
@@ -4843,9 +4927,7 @@ var hivtrace_cluster_network_graph = function(
                 return e.length <= self.subcluster_threshold;
               })
             ),
-            function(cc) {
-              return cc.length > 1;
-            }
+            cc => cc.length > 1
           );
 
           sub.rr_count = rr_cluster.length;
@@ -4857,12 +4939,20 @@ var hivtrace_cluster_network_graph = function(
           sub.priority_score = [];
           sub.recent_nodes = [];
 
+          const future_date = new Date(start_date.getTime() + 1e13);
+
           _.each(rr_cluster, function(recent_cluster) {
             var priority_nodes = _.groupBy(recent_cluster, n =>
               self._filter_by_date(cutoff_short, date_field, start_date, n)
             );
 
             sub.recent_nodes.push(_.map(recent_cluster, n => n.id));
+            const meets_priority_def =
+              true in priority_nodes &&
+              priority_nodes[true].length >=
+                (self.CDC_data
+                  ? self.CDC_data["autocreate-priority-set-size"]
+                  : 3);
 
             if (true in priority_nodes) {
               // recent
@@ -4871,22 +4961,35 @@ var hivtrace_cluster_network_graph = function(
                 n.priority_flag = self._filter_by_date(
                   start_date,
                   date_field,
-                  start_date,
+                  future_date,
                   n
                 )
                   ? 4
                   : 1;
-                if (priority_nodes[true].length >= 3) {
+
+                if (meets_priority_def) {
                   if (n.priority_flag == 1) {
                     n.priority_flag = 2;
                   }
+                  n.nationalCOI = 1;
                 }
               });
             }
+
             if (false in priority_nodes) {
               // not recent
               _.each(priority_nodes[false], function(n) {
                 n.priority_flag = 3;
+
+                if (meets_priority_def) {
+                  if (
+                    self._filter_by_date(cutoff_long, date_field, start_date, n)
+                  ) {
+                    n.nationalCOI = 2;
+                  } else {
+                    n.nationalCOI = 3;
+                  }
+                }
               });
             }
           });
@@ -6622,7 +6725,17 @@ var hivtrace_cluster_network_graph = function(
         });
 
         // add unique values
-        self.uniqValues[key] = computed.enum;
+        if (computed.enum) {
+          self.uniqValues[key] = computed.enum;
+        } else {
+          self.uniqValues[key] = _.uniq(
+            _.map(graph_data.Nodes, n =>
+              self.attribute_node_value_by_id(n, key, computed.Type == "Number")
+            )
+          );
+        }
+
+        console.log(self.uniqValues[key]);
 
         if (computed["overwrites"]) {
           if (
