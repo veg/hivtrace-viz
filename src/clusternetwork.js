@@ -6735,8 +6735,6 @@ var hivtrace_cluster_network_graph = function(
           );
         }
 
-        console.log(self.uniqValues[key]);
-
         if (computed["overwrites"]) {
           if (
             _.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])
