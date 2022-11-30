@@ -8046,7 +8046,7 @@ var hivtrace_cluster_network_graph = function (
               }
               return 0;
             },
-            help: "How many other clusterOI have overlapping nodes with this clusterOI, and (if the overlap is non-empty) how many nodes in this clusterOI overlap with ANY other clusterOI?",
+            help: "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
           },
           /*,
             {
