@@ -1,16 +1,16 @@
 var path = require("path"),
   webpack = require("webpack"),
   _ = require("underscore"),
-  I18nPlugin = require("i18n-webpack-plugin");
+  I18nPlugin = require("@zainulbr/i18n-webpack-plugin");
 
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 var languages = {
   en: require("./locales/en.json"),
-  es: require("./locales/es.json")
+  es: require("./locales/es.json"),
 };
 
-module.exports = env => {
+module.exports = (env) => {
   var language = "en";
 
   if (!_.isUndefined(env)) {
@@ -29,7 +29,7 @@ module.exports = env => {
     devtool: "source-map",
     mode: "development",
     entry: {
-      hivtrace: ["./src/entry.js"]
+      hivtrace: ["./src/entry.js"],
     },
     optimization: {
       splitChunks: {
@@ -40,119 +40,105 @@ module.exports = env => {
         maxAsyncRequests: 6,
         maxInitialRequests: 4,
         automaticNameDelimiter: "~",
-        automaticNameMaxLength: 30,
         cacheGroups: {
           defaultVendors: {
             test: /[\\/]node_modules[\\/]/,
-            priority: -10
+            priority: -10,
           },
           default: {
             minChunks: 2,
             priority: -20,
-            reuseExistingChunk: true
-          }
-        }
-      }
+            reuseExistingChunk: true,
+          },
+        },
+      },
     },
     output: {
       path: path.resolve(__dirname, "dist/"),
-      filename: filename
+      filename: filename,
     },
     externals: {
-      jsdom: "window"
+      jsdom: "window",
     },
     module: {
       rules: [
         {
           test: /\.css$/i,
-          use: [
-            "style-loader",
-            {
-              loader: MiniCssExtractPlugin.loader,
-              options: { publicPath: "/dist/", minimize: false }
-            },
-
-            "css-loader"
-          ]
+          use: [MiniCssExtractPlugin.loader, "css-loader"],
+          //options: { publicPath: "/dist/", minimize: false }
         },
         {
-          test: /\.js?$/,
-          exclude: /node_modules/,
-          loader: "babel-loader",
-          query: {
-            presets: ["@babel/preset-env"]
-          }
+          test: /\.(js|jsx)?$/,
+          include: [path.resolve(__dirname, "src")],
+          use: {
+            loader: "babel-loader",
+          },
         },
         {
           test: require.resolve("jquery"),
-          use: [
-            {
-              loader: "expose-loader",
-              query: "jQuery"
+          loader: "expose-loader",
+          options: {
+            exposes: {
+              globalName: ["jQuery", "$"],
+              override: false,
             },
-            {
-              loader: "expose-loader",
-              query: "$"
-            }
-          ]
+          },
         },
         {
           test: require.resolve("d3"),
-          use: [
-            {
-              loader: "expose-loader",
-              query: "d3"
-            }
-          ]
+          loader: "expose-loader",
+          options: {
+            exposes: {
+              globalName: "d3",
+              override: true,
+            },
+          },
         },
         {
           test: require.resolve("underscore"),
-          use: [
-            {
-              loader: "expose-loader",
-              query: "_"
-            }
-          ]
+          loader: "expose-loader",
+          options: {
+            exposes: {
+              globalName: "_",
+              override: true,
+            },
+          },
         },
         {
           test: require.resolve("jspanel4"),
-          use: [
-            {
-              loader: "expose-loader",
-              query: "jsPanel"
-            }
-          ]
+          loader: "expose-loader",
+          options: {
+            exposes: {
+              globalName: "jsPanel",
+              override: true,
+            },
+          },
         },
         {
-          test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-          loader: "url-loader?limit=10000&mimetype=application/font-woff"
+          test: /\.(jpe?g|svg|png|gif|ico|eot|ttf|woff2?)(\?v=\d+\.\d+\.\d+)?$/i,
+          type: "asset/resource",
         },
-        {
-          test: /\.(eot|woff|woff2|ttf|svg)(\?\S*)?$/,
-          use: [
-            {
-              loader: "file-loader"
-            }
-          ]
-        }
-      ]
+      ],
     },
     plugins: [
+      new webpack.ProvidePlugin({
+        process: "process/browser",
+      }),
       new MiniCssExtractPlugin({
         // Options similar to the same options in webpackOptions.output
         // both options are optional
         filename: "[name].css",
-        chunkFilename: "[id].css"
+        chunkFilename: "[id].css",
       }),
       new webpack.ProvidePlugin({
         $: "jquery",
         jQuery: "jquery",
         d3: "d3",
-        _: "underscore"
+        _: "underscore",
       }),
       new I18nPlugin(languages[language]),
-      new webpack.IgnorePlugin(/jsdom$/)
-    ]
+      new webpack.IgnorePlugin({ resourceRegExp: /jsdom$/ }),
+    ],
   };
 
   return config;
