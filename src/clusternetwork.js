@@ -2285,6 +2285,8 @@ var hivtrace_cluster_network_graph = function (
           ? existing_set.createdBy != "System"
           : true;
 
+        panel_object.can_edit_tracking = !existing_set;
+
         panel_object.can_add = function (id) {
           return !_.some(panel_object.network_nodes, (d) => d.id == id);
         };
@@ -2386,11 +2388,11 @@ var hivtrace_cluster_network_graph = function (
           .classed("form-control input-sm", true)
           .attr("data-hivtrace-ui-role", "priority-panel-tracking");
 
-        if (!panel_object.can_edit_kind) {
+        if (!panel_object.can_edit_tracking) {
           grp_tracking_select.property("disabled", true);
           grp_tracking_select.attr(
             "title",
-            "The method of tracking cannot be changed for system generated cluster of interest. However, you can clone this cluster of interest and then change this field as needed"
+            "The method of tracking cannot be changed for existing clusters (system generated or manual). However, you can clone this cluster of interest and then change this field as needed"
           );
         } else {
           grp_tracking_select.attr("title", null);
