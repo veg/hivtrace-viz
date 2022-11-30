@@ -115,24 +115,8 @@ module.exports = (env) => {
           },
         },
         {
-          test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-          use: [
-            {
-              loader: "url-loader",
-              options: {
-                limit: 10000,
-                mimetype: "application/font-woff",
-              },
-            },
-          ],
-        },
-        {
-          test: /\.(eot|woff|woff2|ttf|svg|png|jpg|gif)(\?\S*)?$/,
-          use: [
-            {
-              loader: "file-loader",
-            },
-          ],
+          test: /\.(jpe?g|svg|png|gif|ico|eot|ttf|woff2?)(\?v=\d+\.\d+\.\d+)?$/i,
+          type: "asset/resource",
         },
       ],
     },
