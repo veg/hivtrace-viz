@@ -782,6 +782,208 @@ var hivtrace_cluster_depthwise_traversal = function (
   return clusters;
 };
 
+function hivtrace_coi_timeseries(cluster, element, plot_width) {
+  const margin = { top: 30, right: 60, bottom: 10, left: 120 };
+  const formatTime = d3.time.format("%Y-%m-%d");
+  let data = _.sortBy(
+    _.map(cluster.node_info, (d) => [d[0], formatTime.parse(d[1])]),
+    (d) => d[1]
+  );
+  const barHeight = 15;
+  const height =
+    Math.ceil((data.length + 0.1) * barHeight) + margin.top + margin.bottom;
+  const events = _.map(cluster.event_info, (d, i) => [i, formatTime.parse(i)]);
+  const x_range = d3.extent(
+    _.map(data, (d) => d[1]).concat(_.map(events, (d) => d[1]))
+  );
+
+  plot_width = plot_width || 1000;
+
+  let x = d3.time
+    .scale()
+    .domain(x_range)
+    .rangeRound([margin.left, plot_width - margin.right]);
+
+  let y = d3.scale
+    .ordinal()
+    .domain(d3.range(data.length + 1))
+    .rangeRoundPoints([margin.top, height - margin.bottom], 0.1);
+
+  let x_axis_object = d3.svg
+    .axis()
+    .scale(x)
+    .orient("top")
+    .ticks(plot_width / 80)
+    .tickFormat(d3.time.format("%m/%y"));
+
+  /*let xAxis = g => g
+    .attr("transform", "translate(0," + margin.top +")")
+    .call(x_axis_object)
+    .call(g => g.select(".domain").remove());*/
+
+  element.selectAll("svg").remove();
+
+  const svg = element
+    .append("svg")
+    .attr("width", plot_width)
+    .attr("height", height)
+    .attr("viewBox", [0, 0, plot_width, height]);
+
+  svg
+    .append("g")
+    .attr("transform", "translate(0," + 0.6 * margin.top + ")")
+    .attr("class", "y time_axis")
+    //.style ("shape-rendering","crispEdges").style ("font-family", "sans-serif").style ("font-size","8").style ("fill", "none").style("stroke","black")
+    .call(x_axis_object)
+    .call((g) => g.select(".domain").remove());
+
+  svg
+    .append("g")
+    .attr("stroke", "#ddd")
+    .attr("stroke-width", 2)
+    .attr("opacity", 0.8)
+    .selectAll("line")
+    .data(events)
+    .enter()
+    .append("line")
+    .attr("x1", (d) => x(d[1]))
+    .attr("x2", (d) => x(d[1]))
+    .attr("y1", (d, i) => y(0))
+    .attr("y2", (d, i) => y(data.length));
+
+  let lines = svg
+    .append("g")
+    .selectAll("line")
+    .data(data)
+    .enter()
+    .append("line")
+    .attr("stroke", "#aaa")
+    .attr("stroke-width", 2)
+    .attr("x1", (d) => x(x_range[1]))
+    .attr("x2", (d) => x(d[1]))
+    .attr("y1", (d, i) => y(i))
+    .attr("y2", (d, i) => y(i));
+
+  let time_boxes = [null, null];
+  let highlight_nodes = new Set();
+
+  let titles = data.concat([["Nat'l priority", x_range[0]]]);
+  let text_labels = svg
+    .append("g")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", 10)
+    .attr("font-weight", 700)
+    .selectAll("text")
+    .data(titles)
+    .enter()
+    .append("text")
+    .attr("text-anchor", "end")
+    .attr("x", (d) => x(d[1]))
+    .attr("y", (d, i) => y(i) + y.rangeBand() / 2)
+    .attr("dy", "0.35em")
+    .attr("dx", "-0.25em")
+    .attr("fill", "black")
+    .text((d) => d[0]);
+
+  svg
+    .append("g")
+    .selectAll("circle")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("fill", "black")
+    .attr("stroke", "black")
+    .attr("cx", (d) => x(d[1]))
+    .attr("cy", (d, i) => y(i))
+    .attr("r", 1);
+
+  svg
+    .append("g")
+    .selectAll("circle")
+    .data(events)
+    .enter()
+    .append("circle")
+    .attr("fill", (d, i) =>
+      _.some(cluster.event_info[d[0]].national_priority)
+        ? "firebrick"
+        : "steelblue"
+    )
+    .attr("stroke", "black")
+    .attr("cx", (d) => x(d[1]))
+    .attr("cy", (d, i) => y(data.length))
+    .attr(
+      "r",
+      (d) => 2 + Math.sqrt(d3.sum(cluster.event_info[d[0]].connected_componets))
+    )
+    .on("mouseover", (d, e) => {
+      const ed = cluster.event_info[d[0]];
+      _.each(ed.national_priority, (d, i) => {
+        if (d) {
+          _.each(ed.priority_nodes[i], (n) => highlight_nodes.add(n));
+        }
+      });
+      //console.log (highlight_nodes);
+      let years_ago = _.map([1, 3], (ya) => {
+        let some_years_ago = new Date(d[1]);
+        some_years_ago.setFullYear(d[1].getFullYear() - ya);
+        if (some_years_ago < x_range[0]) some_years_ago = x_range[0];
+        return some_years_ago;
+      });
+
+      let fills = ["firebrick", "grey"];
+      time_boxes = _.map(years_ago, (sya, i) => {
+        return svg
+          .append("g")
+          .selectAll("rect")
+          .data([d])
+          .enter()
+          .append("rect")
+          .attr("fill", fills[i])
+          .attr("x", (d) => x(sya))
+          .attr("y", (d) => y(0))
+          .attr("width", x(d[1]) - x(sya))
+          .attr("height", (d) => -y(0) + y(data.length - 1))
+          .attr("opacity", 0.25);
+      });
+
+      lines
+        .attr("stroke-width", (d) => (highlight_nodes.has(d[0]) ? 5 : 2))
+        .attr("stroke", (d) => (highlight_nodes.has(d[0]) ? "black" : "#aaa"));
+      text_labels.attr("fill", (d) =>
+        highlight_nodes.has(d[0]) ? "firebrick" : "black"
+      );
+    })
+    .on("mouseout", (e, d) => {
+      lines.attr("stroke-width", 2).attr("stroke", "#aaa");
+      text_labels.attr("fill", "black");
+      highlight_nodes = new Set();
+      _.each(time_boxes, (box) => (box ? box.remove() : 0));
+      time_boxes = [null, null];
+    })
+    .append("title")
+    .text((d) => {
+      const ed = cluster.event_info[d[0]];
+      let text = d[0] + ". ";
+      if (_.some(ed.national_priority)) {
+        text += "National priority clusterOI. ";
+      }
+      text +=
+        "" +
+        d3.sum(ed.connected_componets) +
+        " nodes in " +
+        ed.connected_componets.length +
+        " components. ";
+      text +=
+        "A total of " +
+        d3.sum(ed.priority_nodes, (d) => d.length) +
+        " nodes dx'ed in the previous 12 months; maximum of " +
+        d3.max(ed.priority_nodes, (d) => d.length) +
+        " in a subcluster";
+      return text;
+    });
+}
+
+module.exports.coi_timeseries = hivtrace_coi_timeseries;
 module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
 module.exports.export_table_to_text = hiv_trace_export_table_to_text;
 module.exports.undefined = {};
