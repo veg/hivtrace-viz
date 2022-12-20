@@ -1270,7 +1270,7 @@ var hivtrace_cluster_network_graph = function (
 
         if (!self.priority_set_table_writeable) {
           self.warning_string +=
-            "<br>READ-ONLY mode for Clusters of Interest is enabled because the network is <b>older</b> than some of the Clusters of Interest<br>";
+            '<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because the network is <b>older</b> than some of the Clusters of Interest. None of the changes to clustersOI made during this session will be recorded.</p>';
           self.display_warning(self.warning_string, true);
           if (tab_pill) {
             d3.select(tab_pill).text("Read-only");
