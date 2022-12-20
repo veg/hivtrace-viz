@@ -230,6 +230,8 @@ var _cdcPrioritySetNodeKind = [
   "02 through investigation",
 ];
 
+var _cdcPOImember = "Member of current or past national priority clusterOI";
+
 var _cdcJurisdictionCodes = {
   alabama: "al",
   alaska: "ak",
@@ -1293,6 +1295,13 @@ var hivtrace_cluster_network_graph = function (
         );
 
         self.draw_priority_set_table();
+        if (
+          self.showing_diff &&
+          self.has_network_attribute("subcluster_or_priority_node")
+        ) {
+          self.handle_attribute_categorical("subcluster_or_priority_node");
+        }
+        //self.update();
       }
     });
   };
@@ -1769,17 +1778,61 @@ var hivtrace_cluster_network_graph = function (
     let pg_nodesets = [];
 
     _.each(self.defined_priority_groups, (g) => {
-      pg_nodesets.push([g.name, new Set(_.map(g.nodes, (n) => n.name))]);
+      pg_nodesets.push([
+        g.name,
+        g.createdBy == _cdcCreatedBySystem,
+        new Set(_.map(g.nodes, (n) => n.name)),
+      ]);
     });
+
+    const pg_enum = [
+      "Yes (dx ≤12 months)",
+      "Yes (dx 12-36 months)",
+      "Yes (dx >36 months)",
+      "No",
+    ];
 
     _.each(
       {
+        subcluster_or_priority_node: {
+          depends: [_networkCDCDateField],
+          label: _cdcPOImember,
+          enum: pg_enum,
+          type: "String",
+          volatile: true,
+          color_scale: function () {
+            return d3.scale
+              .ordinal()
+              .domain(pg_enum.concat([_networkMissing]))
+              .range([
+                "red",
+                "orange",
+                "yellow",
+                "steelblue",
+                _networkMissingColor,
+              ]);
+          },
+          map: function (node) {
+            const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
+            if (npcoi) {
+              const ysd = self.attribute_node_value_by_id(
+                node,
+                "years_since_dx"
+              );
+              if (ysd <= 1) return pg_enum[0];
+              if (ysd <= 3) return pg_enum[1];
+              return pg_enum[2];
+            }
+            return pg_enum[3];
+          },
+        },
         cluster_uid: {
           depends: [_networkCDCDateField],
           label: "Clusters of Interest",
           type: "String",
+          volatile: true,
           map: function (node) {
-            const memberships = _.filter(pg_nodesets, (d) => d[1].has(node.id));
+            const memberships = _.filter(pg_nodesets, (d) => d[2].has(node.id));
             if (memberships.length == 1) {
               return memberships[0][0];
             } else {
@@ -2124,6 +2177,7 @@ var hivtrace_cluster_network_graph = function (
               depends: [_networkCDCDateField],
               label: "Cluster of Interest Status",
               enum: viewEnum,
+              type: "String",
               map: function (node) {
                 //console.log ("PS", node.id, node.priority_set);
                 if (node.priority_set == 1) {
@@ -3332,7 +3386,6 @@ var hivtrace_cluster_network_graph = function (
       label: "Subcluster or Priority Node",
       enum: subcluster_enum_simple,
       type: "String",
-      volatile: true,
       color_scale: function () {
         return d3.scale
           .ordinal()
@@ -3419,6 +3472,7 @@ var hivtrace_cluster_network_graph = function (
       depends: ["vl_recent_value"],
       label: "binned_vl_recent_value",
       enum: ["<200", "200-10000", ">10000"],
+      type: "String",
       color_scale: function () {
         return d3.scale
           .ordinal()
@@ -3449,6 +3503,7 @@ var hivtrace_cluster_network_graph = function (
       depends: ["vl_recent_value_adj"],
       label: "Most Recent Viral Load Category",
       enum: ["<200", "200-10000", ">10000"],
+      type: "String",
       color_scale: function () {
         return d3.scale
           .ordinal()
@@ -3547,10 +3602,10 @@ var hivtrace_cluster_network_graph = function (
       },
     },
 
-    subcluster_or_priority_node_simple: self.recent_rapid_definition_simple,
-    subcluster_or_priority_node: self.recent_rapid_definition,
+    //subcluster_or_priority_node_simple: self.recent_rapid_definition_simple,
+    //subcluster_or_priority_node: self.recent_rapid_definition,
 
-    subcluster_index: {
+    /*subcluster_index: {
       depends: [_networkCDCDateField],
       label: "Subcluster ID",
       type: "String",
@@ -3558,13 +3613,14 @@ var hivtrace_cluster_network_graph = function (
       map: function (node) {
         return node.subcluster_label;
       },
-    },
+    },*/
 
     age_dx: {
       depends: ["age"],
       overwrites: "age",
       label: "age_dx",
       enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      type: "String",
       color_scale: function () {
         return d3.scale
           .ordinal()
@@ -3613,6 +3669,7 @@ var hivtrace_cluster_network_graph = function (
           } else {
             value = _networkMissing;
           }
+
           return value;
         } catch (err) {
           return _networkMissing;
@@ -3691,6 +3748,7 @@ var hivtrace_cluster_network_graph = function (
     self._networkPredefinedAttributeTransforms["_newly_added"] = {
       label: "Compared to previous network",
       enum: ["Existing", "New", "Moved clusters"],
+      type: "String",
       map: function (node) {
         if (node.attributes.indexOf("new_node") >= 0) {
           return "New";
@@ -4264,6 +4322,8 @@ var hivtrace_cluster_network_graph = function (
           };
         }
       }
+
+      cluster_options["today"] = self.today;
 
       cluster_view = hivtrace.clusterNetwork(
         filtered_json,
@@ -10629,17 +10689,11 @@ var hivtrace_cluster_network_graph = function (
         self.annotate_priority_clusters(_networkCDCDateField, 36, 12);
 
         try {
-          graph_data[_networkGraphAttrbuteID]["subcluster_or_priority_node"] =
-            self._aux_process_category_values(
-              self._aux_populate_category_fields(
-                graph_data[_networkGraphAttrbuteID][
-                  "subcluster_or_priority_node"
-                ],
-                "subcluster_or_priority_node"
-              )
-            );
+          if (self.primary_graph) {
+            self.priority_groups_compute_node_membership();
+          }
         } catch (err) {
-          //console.log(err);
+          console.log(err);
         }
       }
 
@@ -10927,7 +10981,6 @@ var hivtrace_cluster_network_graph = function (
   };
 
   function inject_attribute_node_value_by_id(d, id, value) {
-    //console.log ("Injecting " + id + " with value " + value);
     if (_networkNodeAttributeID in d && id) {
       d[_networkNodeAttributeID][id] = value;
     }
@@ -12645,23 +12698,16 @@ var hivtrace_cluster_network_graph = function (
       );
     }
 
+    if (options["priority-sets-url"]) {
+      self.load_priority_sets(options["priority-sets-url"]);
+    }
+
     if (self.showing_diff) {
-      self.handle_attribute_categorical(
-        self._is_CDC_ &&
-          self.has_network_attribute("subcluster_or_priority_node")
-          ? "subcluster_or_priority_node"
-          : "_newly_added"
-      );
-    } else {
+      self.handle_attribute_categorical("_newly_added");
     }
   }
 
   self.draw_attribute_labels();
-
-  if (options && options["priority-sets-url"]) {
-    self.load_priority_sets(options["priority-sets-url"]);
-  }
-
   d3.select(self.container).selectAll(".my_progress").style("display", "none");
   network_layout.start();
 
