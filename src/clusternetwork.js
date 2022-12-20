@@ -36,10 +36,7 @@ var _networkShapeOrdering = [
 var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 var _defaultPercentFormatShort = d3.format(".2p");
-var _defaultDateFormats = [
-  d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"),
-  d3.time.format("%Y-%m-%dT%H:%M:%S.%LZ"),
-];
+var _defaultDateFormats = [d3.time.format.iso];
 
 var _defaultDateViewFormat = d3.time.format("%b %d, %Y");
 var _defaultDateViewFormatShort = d3.time.format("%B %Y");
@@ -1122,6 +1119,8 @@ var hivtrace_cluster_network_graph = function (
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
       } else {
+        let latest_date = new Date();
+        latest_date.setFullYear(1900);
         self.defined_priority_groups = _.clone(results);
         _.each(self.defined_priority_groups, (pg) => {
           pg.autocreated = false;
@@ -1129,10 +1128,15 @@ var hivtrace_cluster_network_graph = function (
           _.each(pg.nodes, (n) => {
             try {
               n.added = _defaultDateFormats[0].parse(n.added);
+              if (n.added > latest_date) {
+                latest_date = n.added;
+              }
               n.autoadded = false;
             } catch (e) {}
           });
         });
+
+        self.priority_set_table_writeable = self.today >= latest_date;
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -1258,13 +1262,24 @@ var hivtrace_cluster_network_graph = function (
               : "");
           self.display_warning(self.warning_string, true);
         }
+
         let tab_pill = self.get_ui_element_selector_by_role(
           "priority_set_counts",
           true
         );
-        if (tab_pill && left_to_review > 0) {
-          d3.select(tab_pill).text(left_to_review);
-          d3.select("#banner_coi_counts").text(left_to_review);
+
+        if (!self.priority_set_table_writeable) {
+          self.warning_string +=
+            "<br>READ-ONLY mode for Clusters of Interest is enabled because the network is <b>older</b> than some of the Clusters of Interest<br>";
+          self.display_warning(self.warning_string, true);
+          if (tab_pill) {
+            d3.select(tab_pill).text("Read-only");
+          }
+        } else {
+          if (tab_pill && left_to_review > 0) {
+            d3.select(tab_pill).text(left_to_review);
+            d3.select("#banner_coi_counts").text(left_to_review);
+          }
         }
         self.priority_groups_validate(self.defined_priority_groups);
         _.each(self.auto_create_priority_sets, (pg) =>
@@ -1734,7 +1749,7 @@ var hivtrace_cluster_network_graph = function (
       sets: JSON.stringify(sets),
     };
 
-    if (self.priority_set_table_write) {
+    if (self.priority_set_table_write && self.priority_set_table_writeable) {
       d3.text(self.priority_set_table_write)
         .header("Content-Type", "application/json")
         .post(JSON.stringify(to_post), function (error, data) {
@@ -2583,14 +2598,16 @@ var hivtrace_cluster_network_graph = function (
               panel_object.cleanup_attributes();
               panel_object.close();
               if (validation_mode == "validate") {
-                let tab_pill = self.get_ui_element_selector_by_role(
-                    "priority_set_counts",
-                    true
-                  ),
-                  tab_pill_select = d3.select(tab_pill),
-                  remaining_sets = +tab_pill_select.text();
-                tab_pill_select.text(remaining_sets - 1);
-                d3.select("#banner_coi_counts").text(remaining_sets - 1);
+                if (self.priority_set_table_writeable) {
+                  let tab_pill = self.get_ui_element_selector_by_role(
+                      "priority_set_counts",
+                      true
+                    ),
+                    tab_pill_select = d3.select(tab_pill),
+                    remaining_sets = +tab_pill_select.text();
+                  tab_pill_select.text(remaining_sets - 1);
+                  d3.select("#banner_coi_counts").text(remaining_sets - 1);
+                }
               }
             }
             panel_object.first_save = false;
@@ -3168,6 +3185,8 @@ var hivtrace_cluster_network_graph = function (
     (self.hide_unselected = false),
     (self.show_percent_in_pairwise_table = false),
     (self.gradient_id = 0);
+
+  self.priority_set_table_writeable = true;
 
   self._calc_country_nodes = function (options) {
     if (options && "country-centers" in options) {
