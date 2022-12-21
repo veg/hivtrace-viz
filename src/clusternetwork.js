@@ -230,7 +230,7 @@ var _cdcPrioritySetNodeKind = [
   "02 through investigation",
 ];
 
-var _cdcPOImember = "Member of current or past national priority clusterOI";
+var _cdcPOImember = "Ever in national priority clusterOI?";
 
 var _cdcJurisdictionCodes = {
   alabama: "al",
@@ -1786,9 +1786,9 @@ var hivtrace_cluster_network_graph = function (
     });
 
     const pg_enum = [
-      "Yes (dx ≤12 months)",
-      "Yes (dx 12-36 months)",
-      "Yes (dx >36 months)",
+      "Yes (dx≤12 months)",
+      "Yes (12<dx≤ 36 months)",
+      "Yes (dx>36 months)",
       "No",
     ];
 
