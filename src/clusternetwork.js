@@ -8331,9 +8331,9 @@ var hivtrace_cluster_network_graph = function (
                   (v[3].length
                     ? ' <span title="clusterOIs which contain this clusterOI: ' +
                       v[3].join(", ") +
-                      '" class="label label-warning pull-right">' +
+                      '" class="label label-warning pull-right">Fully contained in ' +
                       v[3].length +
-                      " superset clusterOI</span>"
+                      " clusterOI</span>"
                     : "")
                 );
               }
