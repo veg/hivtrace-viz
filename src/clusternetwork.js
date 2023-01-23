@@ -8526,7 +8526,7 @@ var hivtrace_cluster_network_graph = function (
               },
             });
 
-            dropdown.push({
+            /*dropdown.push({
               label: "View history over time",
               action: function (button, value) {
                 let ref_set = self.priority_groups_find_by_name(pg.name);
@@ -8542,7 +8542,7 @@ var hivtrace_cluster_network_graph = function (
                   1000
                 );
               },
-            });
+            });*/
 
             return dropdown;
           }
