@@ -1843,6 +1843,18 @@ var hivtrace_cluster_network_graph = function (
             return "None";
           },
         },
+        subcluster_id: {
+          depends: [_networkCDCDateField],
+          label: "Subcluster ID",
+          type: "String",
+          //label_format: d3.format(".2f"),
+          map: function (node) {
+            try {
+              return node.subcluster_label ? node.subcluster_label : "None";
+            } catch (err) {}
+            return _networkMissing;
+          },
+        },
       },
       self._aux_populated_predefined_attribute
     );
@@ -3116,6 +3128,7 @@ var hivtrace_cluster_network_graph = function (
           if (!self._is_CDC_auto_mode) {
             extra_columns.splice(1, 1);
           }
+
           self.draw_extended_node_table(
             panel.network_nodes,
             table_container,
