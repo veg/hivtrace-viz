@@ -2400,6 +2400,7 @@ var hivtrace_cluster_network_graph = function (
           .classed("form-control input-sm", true)
           .attr("placeholder", "Add node by ID")
           .attr("data-hivtrace-ui-role", "priority-panel-nodeids");
+
         var submit_button = form
           .append("button")
           .classed("btn btn-primary btn-sm", true)
@@ -2409,6 +2410,14 @@ var hivtrace_cluster_network_graph = function (
           });
 
         submit_button.append("i").classed("fa fa-plus", true);
+
+        form
+          .append("p")
+          .classed("alert alert-warning", true)
+          .style("display", "inline")
+          .text(
+            "At this time, only nodes that cluster in the network at the 1.5% or 0.5% genetic distance threshold level are available for selection."
+          );
         //var preview_grp = form.append ("div").classed ("form-group", true);
 
         var form_save = panel_content
