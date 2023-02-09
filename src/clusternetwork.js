@@ -1125,8 +1125,6 @@ var hivtrace_cluster_network_graph = function (
         latest_date.setFullYear(1900);
         self.defined_priority_groups = _.clone(results);
         _.each(self.defined_priority_groups, (pg) => {
-          pg.autocreated = false;
-          pg.autoexpanded = false;
           _.each(pg.nodes, (n) => {
             try {
               n.added = _defaultDateFormats[0].parse(n.added);
