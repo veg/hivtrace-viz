@@ -1116,27 +1116,22 @@ var hivtrace_cluster_network_graph = function (
     return false;
   };
 
-  self.load_priority_sets = function (url) {
+  self.load_priority_sets = function (url, is_writeable) {
     d3.json(url, function (error, results) {
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
       } else {
-        let latest_date = new Date();
-        latest_date.setFullYear(1900);
         self.defined_priority_groups = _.clone(results);
         _.each(self.defined_priority_groups, (pg) => {
           _.each(pg.nodes, (n) => {
             try {
               n.added = _defaultDateFormats[0].parse(n.added);
-              if (n.added > latest_date) {
-                latest_date = n.added;
-              }
               n.autoadded = false;
             } catch (e) {}
           });
         });
 
-        self.priority_set_table_writeable = self.today >= latest_date;
+        self.priority_set_table_writeable = is_writeable;
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -12717,7 +12712,8 @@ var hivtrace_cluster_network_graph = function (
     }
 
     if (options["priority-sets-url"]) {
-      self.load_priority_sets(options["priority-sets-url"]);
+      let is_writeable = options["is-latest"];
+      self.load_priority_sets(options["priority-sets-url"], is_writeable);
     }
 
     if (self.showing_diff) {
