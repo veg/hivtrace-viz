@@ -1429,7 +1429,7 @@ var hivtrace_cluster_network_graph = function (
         (e) => {
           let pass = filter(e);
           if (pass) {
-            if (!core_node_set.has(e.source))
+            if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
               pass =
                 pass &&
                 self._filter_by_date(
@@ -1437,16 +1437,14 @@ var hivtrace_cluster_network_graph = function (
                   _networkCDCDateField,
                   self.get_reference_date(),
                   self.json.Nodes[e.source]
-                );
-            if (!core_node_set.has(e.target))
-              pass =
-                pass &&
+                ) &&
                 self._filter_by_date(
                   time_cutoff,
                   _networkCDCDateField,
                   self.get_reference_date(),
                   self.json.Nodes[e.target]
                 );
+            }
           }
           return pass;
         },
