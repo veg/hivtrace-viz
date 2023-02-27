@@ -1423,14 +1423,13 @@ var hivtrace_cluster_network_graph = function (
         self.get_reference_date(),
         _cdcTrackingOptionsCutoff[pg.tracking]
       );
-
       const expansion_test = hivtrace_cluster_depthwise_traversal(
         self.json.Nodes,
         self.json.Edges,
         (e) => {
           let pass = filter(e);
           if (pass) {
-            if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
+            if (!core_node_set.has(e.source))
               pass =
                 pass &&
                 self._filter_by_date(
@@ -1438,14 +1437,16 @@ var hivtrace_cluster_network_graph = function (
                   _networkCDCDateField,
                   self.get_reference_date(),
                   self.json.Nodes[e.source]
-                ) &&
+                );
+            if (!core_node_set.has(e.target))
+              pass =
+                pass &&
                 self._filter_by_date(
                   time_cutoff,
                   _networkCDCDateField,
                   self.get_reference_date(),
                   self.json.Nodes[e.target]
                 );
-            }
           }
           return pass;
         },
@@ -4799,7 +4800,6 @@ var hivtrace_cluster_network_graph = function (
     }
     var node_dx = self.attribute_node_value_by_id(node, date_field);
     if (node_dx instanceof Date) {
-      //console.log (node.id, node_dx, cutoff, node_dx >= cutoff && node_dx <= start_date);
       return node_dx >= cutoff && node_dx <= start_date;
     } else {
       try {
