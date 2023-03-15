@@ -1806,12 +1806,36 @@ var hivtrace_cluster_network_graph = function (
           map: function (node) {
             const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
             if (npcoi) {
-              const ysd = self.attribute_node_value_by_id(
-                node,
-                "years_since_dx"
-              );
-              if (ysd <= 1) return pg_enum[0];
-              if (ysd <= 3) return pg_enum[1];
+              const cutoffs = [
+                _n_months_ago(self.get_reference_date(), 12),
+                _n_months_ago(self.get_reference_date(), 36),
+              ];
+
+              //const ysd = self.attribute_node_value_by_id(
+              //  node,
+              //  "years_since_dx"
+              //);
+
+              if (
+                self._filter_by_date(
+                  cutoffs[0],
+                  _networkCDCDateField,
+                  self.get_reference_date(),
+                  node,
+                  false
+                )
+              )
+                return pg_enum[0];
+              if (
+                self._filter_by_date(
+                  cutoffs[1],
+                  _networkCDCDateField,
+                  self.get_reference_date(),
+                  node,
+                  false
+                )
+              )
+                return pg_enum[1];
               return pg_enum[2];
             }
             return pg_enum[3];
@@ -3677,6 +3701,7 @@ var hivtrace_cluster_network_graph = function (
           var value = self._parse_dates(
             self.attribute_node_value_by_id(node, _networkCDCDateField)
           );
+
           if (value) {
             value = (self.today - value) / 31536000000;
           } else {
