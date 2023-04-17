@@ -1121,17 +1121,23 @@ var hivtrace_cluster_network_graph = function (
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
       } else {
+        let latest_date = new Date();
+        latest_date.setFullYear(1900);
         self.defined_priority_groups = _.clone(results);
         _.each(self.defined_priority_groups, (pg) => {
           _.each(pg.nodes, (n) => {
             try {
               n.added = _defaultDateFormats[0].parse(n.added);
+              if (n.added > latest_date) {
+                latest_date = n.added;
+              }
               n.autoadded = false;
             } catch (e) {}
           });
         });
 
-        self.priority_set_table_writeable = is_writeable;
+        self.priority_set_table_writeable =
+          is_writeable || self.today >= latest_date;
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -7208,8 +7214,12 @@ var hivtrace_cluster_network_graph = function (
           var add_to_ps = handle_sort.append("a").property("href", "#");
           add_to_ps
             .append("i")
-            .classed("fa fa-plus", true)
-            .style("margin-left", "0.2em");
+            .classed("fa fa-plus-square fa-lg", true)
+            .style("margin-left", "0.2em")
+            .attr(
+              "title",
+              "Add currently visible nodes to the Cluster of Interest"
+            );
 
           add_to_ps.on("click", function (d) {
             let node_ids = [];
