@@ -2516,7 +2516,7 @@ var hivtrace_cluster_network_graph = function (
         grp_kind
           .append("p")
           .classed("help-block", true)
-          .text("Method of identification");
+          .text("Cluster identification method");
 
         var grp_tracking = form_save.append("div").classed("form-group", true);
 
@@ -3024,7 +3024,7 @@ var hivtrace_cluster_network_graph = function (
             {
               prepend: true,
               description: {
-                value: "Identification method",
+                value: "Person identification method",
                 help: "How was this person identified as part of this cluster of interest?",
               },
               generator: function (node) {
