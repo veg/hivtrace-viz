@@ -1116,7 +1116,7 @@ var hivtrace_cluster_network_graph = function (
     return false;
   };
 
-  self.load_priority_sets = function (url, is_writeable) {
+  self.load_priority_sets = function (url, is_writeable, use_date_driven) {
     d3.json(url, function (error, results) {
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
@@ -1137,7 +1137,7 @@ var hivtrace_cluster_network_graph = function (
         });
 
         self.priority_set_table_writeable =
-          is_writeable || self.today >= latest_date;
+          is_writeable || (use_date_driven && self.today >= latest_date);
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -3544,7 +3544,7 @@ var hivtrace_cluster_network_graph = function (
 
     binned_vl_recent_value_adj: {
       depends: ["vl_recent_value_adj"],
-      label: "Most Recent Viral Load Category",
+      label: "Most Recent Viral Load Category Binned",
       enum: ["<200", "200-10000", ">10000"],
       type: "String",
       color_scale: function () {
@@ -10381,8 +10381,8 @@ var hivtrace_cluster_network_graph = function (
         return d.length > 0;
       })
       .map(function (d) {
-        if (d.length > 2) {
-          if (d[0] == '"' && d[d.length - 1] == '"') {
+        if (d.length >= 2) {
+          if (d[0] == '"' && d[d.length - 1] == '"' && d.length > 2) {
             return {
               type: "re",
               value: new RegExp("^" + d.substr(1, d.length - 2) + "$", "i"),
@@ -12748,7 +12748,11 @@ var hivtrace_cluster_network_graph = function (
 
     if (options["priority-sets-url"]) {
       let is_writeable = options["is-latest"];
-      self.load_priority_sets(options["priority-sets-url"], is_writeable);
+      self.load_priority_sets(
+        options["priority-sets-url"],
+        is_writeable,
+        options["date-driven-writeable"]
+      );
     }
 
     if (self.showing_diff) {
