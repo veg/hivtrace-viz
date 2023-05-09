@@ -3699,7 +3699,7 @@ var hivtrace_cluster_network_graph = function (
 
     years_since_dx: {
       depends: [_networkCDCDateField],
-      label: "Years since HIV/AIDS diagnosis",
+      label: "Years since diagnosis",
       type: "Number",
       label_format: d3.format(".2f"),
       map: function (node) {
@@ -3745,7 +3745,7 @@ var hivtrace_cluster_network_graph = function (
 
     hiv_aids_dx_dt_year: {
       depends: [_networkCDCDateField],
-      label: "HIV/AIDS Diagnosis Year",
+      label: "Diagnosis Year",
       type: "Number",
       label_format: d3.format(".0f"),
       map: function (node) {
