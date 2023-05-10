@@ -27,7 +27,7 @@ function b64toBlob(b64, onsuccess, onerror) {
   img.src = b64;
 }
 
-var datamonkey_export_csv_button = function(data, name) {
+var datamonkey_export_csv_button = function (data, name) {
   data = d3.csv.format(data);
   if (data !== null) {
     name = name ? name + ".csv" : "export.csv";
@@ -46,14 +46,15 @@ var datamonkey_export_csv_button = function(data, name) {
   }
 };
 
-var datamonkey_export_json_button = function(data) {
+var datamonkey_export_json_button = function (data, title) {
   if (data !== null) {
+    title = title || "export";
     var pom = document.createElement("a");
     pom.setAttribute(
       "href",
       "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data))
     );
-    pom.setAttribute("download", "export.json");
+    pom.setAttribute("download", title + ".json");
     pom.className = "btn btn-default btn-sm";
     pom.innerHTML =
       '<span class="glyphicon glyphicon-floppy-save"></span> Download JSON';
@@ -63,11 +64,11 @@ var datamonkey_export_json_button = function(data) {
   }
 };
 
-var datamonkey_save_image = function(type, container) {
+var datamonkey_save_image = function (type, container) {
   var prefix = {
     xmlns: "http://www.w3.org/2000/xmlns/",
     xlink: "http://www.w3.org/1999/xlink",
-    svg: "http://www.w3.org/2000/svg"
+    svg: "http://www.w3.org/2000/svg",
   };
 
   function get_styles(doc) {
@@ -150,7 +151,7 @@ var datamonkey_save_image = function(type, container) {
   } else if (type == "png") {
     b64toBlob(
       image_string,
-      function(blob) {
+      function (blob) {
         var url = window.URL.createObjectURL(blob);
         var pom = document.createElement("a");
         pom.setAttribute("download", "image.png");
@@ -159,7 +160,7 @@ var datamonkey_save_image = function(type, container) {
         pom.click();
         pom.remove();
       },
-      function(error) {
+      function (error) {
         console.log(error); // eslint-disable-line
       }
     );
@@ -185,7 +186,7 @@ function datamonkey_describe_vector(vector, as_list) {
       median: d3.median(vector),
       Q1: d3.quantile(vector, 0.25),
       Q3: d3.quantile(vector, 0.75),
-      mean: d3.mean(vector)
+      mean: d3.mean(vector),
     };
   } else {
     d = {
@@ -194,7 +195,7 @@ function datamonkey_describe_vector(vector, as_list) {
       median: null,
       Q1: null,
       Q3: null,
-      mean: null
+      mean: null,
     };
   }
 
@@ -264,7 +265,7 @@ function datamonkey_export_handler(data, filename, mimeType) {
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
   var header_row = [];
-  var extract_text = function(e) {
+  var extract_text = function (e) {
     const node = d3.select(e).node();
     var plain_text = node.firstChild;
     if (plain_text) plain_text = plain_text.nodeValue;
@@ -290,20 +291,20 @@ function datamonkey_table_to_text(table_id, sep) {
     return "";
   };
 
-  d3.selectAll(table_id + " thead th").each(function() {
+  d3.selectAll(table_id + " thead th").each(function () {
     header_row.push(extract_text(this));
   });
   var data_rows = [];
   d3.select(table_id + " tbody")
     .selectAll("tr")
-    .each(function(d) {
+    .each(function (d) {
       var this_row = d3.select(this);
       if (this_row.style("display") != "none") {
         var write_to = data_rows.length;
         data_rows.push([]);
         d3.select(this)
           .selectAll("td")
-          .each(function() {
+          .each(function () {
             data_rows[write_to].push(extract_text(this));
           });
       }
@@ -326,38 +327,38 @@ function get_unique_count(nodes, schema) {
   let schema_keys = _.keys(schema);
 
   let new_obj = {};
-  _.each(schema_keys, sk => (new_obj[sk] = []));
+  _.each(schema_keys, (sk) => (new_obj[sk] = []));
 
   // get attribute diversity to sort on later
-  let pa = _.map(nodes, n => _.omit(n.patient_attributes, "_id"));
+  let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
 
-  _.each(pa, p => {
-    _.each(schema_keys, sk => {
+  _.each(pa, (p) => {
+    _.each(schema_keys, (sk) => {
       new_obj[sk].push(p[sk]);
     });
   });
 
   // Get uniques across all keys
-  return _.mapObject(new_obj, val => _.uniq(val).length);
+  return _.mapObject(new_obj, (val) => _.uniq(val).length);
 }
 
 function getUniqueValues(nodes, schema) {
   let schema_keys = _.keys(schema);
 
   let new_obj = {};
-  _.each(schema_keys, sk => (new_obj[sk] = []));
+  _.each(schema_keys, (sk) => (new_obj[sk] = []));
 
   // get attribute diversity to sort on later
-  let pa = _.map(nodes, n => _.omit(n.patient_attributes, "_id"));
+  let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
 
-  _.each(pa, p => {
-    _.each(schema_keys, sk => {
+  _.each(pa, (p) => {
+    _.each(schema_keys, (sk) => {
       new_obj[sk].push(p[sk]);
     });
   });
 
   // Get uniques across all keys
-  return _.mapObject(new_obj, val => _.uniq(val));
+  return _.mapObject(new_obj, (val) => _.uniq(val));
 }
 
 module.exports.export_csv_button = datamonkey_export_csv_button;
