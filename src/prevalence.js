@@ -20,7 +20,7 @@ function hivtrace_render_prevalence(
       top: base_line * 2,
       right: base_line * 1.5,
       bottom: 3 * base_line,
-      left: 5 * base_line
+      left: 5 * base_line,
     },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom,
@@ -33,10 +33,7 @@ function hivtrace_render_prevalence(
 
   y.range([height, 0]);
 
-  var xAxis = d3.svg
-    .axis()
-    .scale(x)
-    .orient("bottom"); //.ticks (5, y.tickFormat(5, ".0f"));
+  var xAxis = d3.svg.axis().scale(x).orient("bottom"); //.ticks (5, y.tickFormat(5, ".0f"));
 
   var yAxis = d3.svg
     .axis()
@@ -45,23 +42,23 @@ function hivtrace_render_prevalence(
     .ticks(8, fractions ? "p" : "f");
 
   x.domain(
-    d3.extent(plot_data, function(d) {
+    d3.extent(plot_data, function (d) {
       return d["x"];
     })
   ).clamp(true);
 
-  var extents = d3.extent(plot_data, function(d) {
+  var extents = d3.extent(plot_data, function (d) {
     return _.max(d["y"]);
   });
 
   var year_range = [
     plot_data[0]["x"].getFullYear(),
-    plot_data[plot_data.length - 1]["x"].getFullYear()
+    plot_data[plot_data.length - 1]["x"].getFullYear(),
   ];
 
-  _.each(annual, function(v, year) {
+  _.each(annual, function (v, year) {
     if (year >= year_range[0] && year <= year_range[1]) {
-      var my_f = _.max(v, function(f) {
+      var my_f = _.max(v, function (f) {
         return f[1] / (fractions ? 1 : f[0]);
       });
       extents[1] = Math.max(extents[1], my_f[1]);
@@ -94,7 +91,7 @@ function hivtrace_render_prevalence(
 
   var color_scale = d3.scale.category10();
 
-  var plot_types = _.map(plot_data[0]["y"], function(v, k) {
+  var plot_types = _.map(plot_data[0]["y"], function (v, k) {
     return k;
   });
 
@@ -102,19 +99,16 @@ function hivtrace_render_prevalence(
 
   var legend_lines = legend_area.selectAll("g").data(plot_types);
 
-  legend_lines
-    .enter()
-    .append("g")
-    .attr("class", "annotation-text");
+  legend_lines.enter().append("g").attr("class", "annotation-text");
 
   legend_lines
     .selectAll("text")
-    .data(function(d) {
+    .data(function (d) {
       return [d];
     })
     .enter()
     .append("text")
-    .attr("transform", function(d, i, j) {
+    .attr("transform", function (d, i, j) {
       return (
         "translate(" +
         rect_size +
@@ -124,7 +118,7 @@ function hivtrace_render_prevalence(
       );
     })
     .attr("dx", "0.2em")
-    .text(function(d) {
+    .text(function (d) {
       return d;
     });
 
@@ -132,26 +126,26 @@ function hivtrace_render_prevalence(
 
   legend_lines
     .selectAll("rect")
-    .data(function(d) {
+    .data(function (d) {
       return [d];
     })
     .enter()
     .append("rect")
     .attr("x", 0)
-    .attr("y", function(d, i, j) {
+    .attr("y", function (d, i, j) {
       return rect_size * (plot_types.length - 2 - j);
     })
     .attr("width", rect_size)
     .attr("height", rect_size)
     .attr("class", "area")
-    .style("fill", function(d, i, j) {
+    .style("fill", function (d, i, j) {
       return color_scale(d);
     });
 
-  _.each(plot_types, function(plot_key, idx) {
+  _.each(plot_types, function (plot_key, idx) {
     var plot_color = color_scale(plot_key);
 
-    var y_accessor = function(d) {
+    var y_accessor = function (d) {
       return d["y"][plot_key];
     };
     var year_points = [];
@@ -166,10 +160,10 @@ function hivtrace_render_prevalence(
 
     var line = d3.svg
       .line()
-      .x(function(d) {
+      .x(function (d) {
         return x(d["x"]);
       })
-      .y(function(d) {
+      .y(function (d) {
         return y(d["y"]);
       })
       .interpolate("basis");
@@ -192,7 +186,7 @@ function hivtrace_render_prevalence(
                   .style ("stroke", plot_color)
                   .attr("d", curve_year); */
 
-    year_points.forEach(function(d) {
+    year_points.forEach(function (d) {
       svg
         .append("circle")
         .attr("cx", x(d["x"]))
@@ -203,7 +197,7 @@ function hivtrace_render_prevalence(
         .style("stroke", plot_color);
     });
 
-    year_points.forEach(function(d) {
+    year_points.forEach(function (d) {
       svg
         .append("text")
         .attr("x", x(d["x"]) + 5)
@@ -214,13 +208,13 @@ function hivtrace_render_prevalence(
 
     var curve = d3.svg
       .area()
-      .x(function(d) {
+      .x(function (d) {
         return x(d["x"]);
       })
-      .y1(function(d) {
+      .y1(function (d) {
         return y(y_accessor(d));
       })
-      .y0(function(d) {
+      .y0(function (d) {
         return y(0);
       })
       .interpolate("line");

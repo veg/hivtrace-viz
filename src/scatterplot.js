@@ -8,14 +8,14 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
       top: 10,
       right: 10,
       bottom: 100,
-      left: 100
+      left: 100,
     },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 
   var x = (dates ? d3.time.scale() : d3.scale.linear())
     .domain(
-      d3.extent(points, function(p) {
+      d3.extent(points, function (p) {
         return p.x;
       })
     )
@@ -23,7 +23,7 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
 
   var y = (dates ? d3.time.scale() : d3.scale.linear())
     .domain(
-      d3.extent(points, function(p) {
+      d3.extent(points, function (p) {
         return p.y;
       })
     )
@@ -59,20 +59,18 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   points.enter().append("circle");
 
   points
-    .attr("cx", function(d) {
+    .attr("cx", function (d) {
       return x(d.x);
     })
-    .attr("cy", function(d) {
+    .attr("cy", function (d) {
       return y(d.y);
     })
     .attr("r", 3)
     .classed("node scatter", true);
 
-  points.each(function(d) {
+  points.each(function (d) {
     if ("title" in d) {
-      d3.select(this)
-        .append("title")
-        .text(d.title);
+      d3.select(this).append("title").text(d.title);
     }
   });
 
