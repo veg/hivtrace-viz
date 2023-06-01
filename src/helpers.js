@@ -1,6 +1,6 @@
 var download = require("downloadjs");
 
-const _other = __("general")["other"];
+const _OTHER = __("general")["other"];
 const CATEGORY_UNIQUE_VALUE_LIMIT = 15;
 
 function b64toBlob(b64, onsuccess, onerror) {
@@ -360,8 +360,6 @@ function getUniqueValues(nodes, schema) {
     });
   });
 
-  console.log(new_obj);
-
   // Get uniques across all keys
   return _.mapObject(new_obj, (val) => _.uniq(val));
 }
@@ -398,7 +396,7 @@ function collapseLargeCategories(nodes, schema) {
       // Now take the entries in others and map to "Other"
       _.each(nodes, (n) => {
         if (_.contains(others, n["patient_attributes"][sk])) {
-          n["patient_attributes"][sk] = _other;
+          n["patient_attributes"][sk] = _OTHER;
         }
       });
     }
