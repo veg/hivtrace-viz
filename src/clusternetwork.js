@@ -6455,11 +6455,6 @@ var hivtrace_cluster_network_graph = function (
           }
         );
 
-        // For categories that have too many values, condense them to 10
-
-        console.log(valid_cats);
-        console.log(graph_data[_networkGraphAttrbuteID]);
-
         var valid_shapes = _.filter(valid_cats, function (d) {
           return (
             (d.discrete && d.dimension <= 7) ||
