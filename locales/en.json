@@ -36,7 +36,8 @@
     "subcluster": "Sub-Cluster",
     "nodes": "Nodes",
     "attributes": "Attributes",
-    "missing": "Missing"
+    "missing": "Missing",
+    "other": "Other"
   },
   "network_tab": {
     "color": "Color",
@@ -66,7 +67,8 @@
     "fix_all_objects_in_place": "Fix all objects in place",
     "allow_all_objects_to_float": "Allow all objects to float",
     "collapse_cluster": "Collapse cluster",
-    "reset_layout": "Reset layout"
+    "reset_layout": "Reset layout",
+    "category_limit": "Category Limit"
   },
   "statistics": {
     "network_statistics": "Network Statistics",
