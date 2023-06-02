@@ -1,5 +1,8 @@
 var download = require("downloadjs");
 
+const _OTHER = __("general")["other"];
+const CATEGORY_UNIQUE_VALUE_LIMIT = 12;
+
 function b64toBlob(b64, onsuccess, onerror) {
   var img = new Image();
 
@@ -379,6 +382,47 @@ function copyToClipboard(text) {
   );
 }
 
+function collapseLargeCategories(nodes, schema) {
+  let schema_keys = _.keys(schema);
+  let new_obj = {};
+  _.each(schema_keys, (sk) => (new_obj[sk] = []));
+
+  // get attribute diversity to sort on later
+  let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
+
+  _.each(pa, (p) => {
+    _.each(schema_keys, (sk) => {
+      new_obj[sk].push(p[sk]);
+    });
+  });
+
+  let counts = _.mapObject(new_obj, (d) => _.countBy(d));
+
+  // Sort and place everything after 15 entries in 'Other'
+  // map object to counts
+  _.each(schema_keys, (sk) => {
+    let entries = Object.entries(counts[sk]);
+    let sorted = _.sortBy(entries, (d) => -d[1]);
+
+    if (sorted.length > CATEGORY_UNIQUE_VALUE_LIMIT) {
+      let count = sorted[CATEGORY_UNIQUE_VALUE_LIMIT][1];
+
+      // drop entries until we reach that value in sorted
+      let others = _.map(_.partition(sorted, (d) => d[1] <= count)[0], _.first);
+
+      // Remap all entries to "Other"
+      // Now take the entries in others and map to "Other"
+      _.each(nodes, (n) => {
+        if (_.contains(others, n["patient_attributes"][sk])) {
+          n["patient_attributes"][sk] = _OTHER;
+        }
+      });
+    }
+  });
+
+  return true;
+}
+
 module.exports.export_csv_button = datamonkey_export_csv_button;
 module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
@@ -389,3 +433,4 @@ module.exports.get_unique_count = get_unique_count;
 module.exports.getUniqueValues = getUniqueValues;
 module.exports.exportColorScheme = exportColorScheme;
 module.exports.copyToClipboard = copyToClipboard;
+module.exports.collapseLargeCategories = collapseLargeCategories;
