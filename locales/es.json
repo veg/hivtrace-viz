@@ -66,6 +66,7 @@
     "collapse_filtered": "Colapsar Filtrados",
     "fix_all_objects_in_place": "Fijar Todos los Objetos en su Lugar",
     "allow_all_objects_to_float": "Permitir que los Objetos Floten",
+    "export_colors": "Exportar esquema de color",
     "collapse_cluster": "Colapsar de Agrupamiento",
     "reset_layout": "Restablecer Diseño"
   },

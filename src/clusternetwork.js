@@ -5946,6 +5946,20 @@ var hivtrace_cluster_network_graph = function (
 
       var cluster_commands = [
         [
+          __("clusters_main")["export_colors"],
+          () => {
+            let colorScheme = helpers.exportColorScheme(
+              self.uniqValues,
+              self.colorizer
+            );
+
+            //TODO: If using database backend, use api instead
+            helpers.copyToClipboard(JSON.stringify(colorScheme));
+          },
+          true,
+          "hivtrace-export-color-scheme",
+        ],
+        [
           __("clusters_main")["expand_all"],
           function () {
             return self.expand_some_clusters();

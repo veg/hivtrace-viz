@@ -361,6 +361,24 @@ function getUniqueValues(nodes, schema) {
   return _.mapObject(new_obj, (val) => _.uniq(val));
 }
 
+function exportColorScheme(uniqValues, colorizer) {
+  let colors = _.map(uniqValues[colorizer.category_id], (d) =>
+    colorizer.category(d)
+  );
+  return _.object(uniqValues[colorizer.category_id], colors);
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(
+    function () {
+      console.log("Copying to clipboard was successful!");
+    },
+    function (err) {
+      console.error("Could not copy text: ", err);
+    }
+  );
+}
+
 module.exports.export_csv_button = datamonkey_export_csv_button;
 module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
@@ -369,3 +387,5 @@ module.exports.table_to_text = datamonkey_table_to_text;
 module.exports.export_handler = datamonkey_export_handler;
 module.exports.get_unique_count = get_unique_count;
 module.exports.getUniqueValues = getUniqueValues;
+module.exports.exportColorScheme = exportColorScheme;
+module.exports.copyToClipboard = copyToClipboard;
