@@ -38,11 +38,13 @@
     "minimum_overlap_desc": "Only sequences who overlap by at least this many non-gap characters will be included in distance calculations. Be sure to adjust this based on the length of the input sequences. You should aim to have at least 2/(distance threshold) aligned characters.",
     "handle_ambiguities": "Handle Ambiguities",
     "handle_ambiguities_desc": "<dl><dt>Resolve</dt><dd>count any resolutions that match as a perfect match</dd><dt>Average</dt><dd>average all possible resolutions</dd></dl>",
+    "ambiguity_fraction": "Ambiguity Fraction",
     "remove_drams": "Remove DRAMS",
     "remove_drams_desc": "How to handle analyses of proteins (HIV-1 pr and/or RT only) which include drug resistance associated positions.",
     "resolve": "Resolve",
     "average": "Average",
-    "warning": "Warning : The specified parameter is invalid! The parameter only accepts values between 50 and 5000",
+    "warning": "Warning: The specified parameter is invalid! The parameter only accepts values within the range",
+    "no_file_provided": "Warning : No file was provided.",
     "notice": "Notice : The specified parameter is valid, but different from the recommended default."
   },
   "validation": {
@@ -52,6 +54,7 @@
     "error_note": "<p>There was an error with the comma-delimited file provided.</p><p>Please review that your file is a well-formed CSV with at least the following fields.</p>",
     "id_error": "The file needs a UID field.",
     "sequence_error": "The file needs a Genetic Sequences field.",
+    "fewer_records": "The uploaded file has fewer records than the most recently completed analysis.",
     "ignore_and_continue": "Ignore and Continue",
     "go_back": "Go back"
   },
@@ -81,6 +84,7 @@
     "cancel": "Cancel",
     "other": "Other",
     "caution": "Caution",
+    "warning": "Warning",
     "yes": "Yes",
     "no": "No",
     "next": "Next",
@@ -173,6 +177,9 @@
     "chord_diagram_help": "This panel will show either a <a href = 'https://en.wikipedia.org/wiki/Chord_diagram'><b>chord diagram</b></a> (for category values) or a <b>scatterplot</b> (for continous values). They are useful to display the pairings for node attributes across links. Mouse over a particular color to display what attribute it corresponds to in <b>chord diagrams</b>. Mouse over a particular point to display what link corresponds to in <b>histograms</b>. <p/> To better understand a <b>chord diagram</b>, consider a network with 100 links. 40 of these links connect males to males, 10 of the links connect females to females, and 50 - males to females. Males will be allocated (40 x 2 + 50) / 200 = .65, of the total circumference (pie slice size). The connection between males and females (with the males as the focus) will be given 50 / (50+40) = 5/9 of the weight. The connection between females and males (with the females as the focus) will be given 50 / (50+10) = 5/6 of the weight."
   },
   "admin": {
+    "manage_users": "Manage Users",
+    "manage_variables": "Manage Variables",
+    "send_bulk_mail": "Send Bulk Mail",
     "users": "Users",
     "sites": "Sites",
     "email_address": "E-Mail Address",
