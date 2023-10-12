@@ -2984,6 +2984,11 @@ he@^1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz"
 
+hivtrace-locales@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/hivtrace-locales/-/hivtrace-locales-1.0.0.tgz#c087c4586b05f36297e50c20779ec2ea3653d206"
+  integrity sha512-ZCOOGGm9CsliNkzgWDbq8qGegHMYr7JtB27YpwPCVFAFHIo+o9vAwFge7yVBvcFgLGDQRXE80yTkNfLxb0h3ew==
+
 hoek@2.x.x:
   version "2.16.3"
   resolved "https://registry.npmjs.org/hoek/-/hoek-2.16.3.tgz"
@@ -4101,7 +4106,6 @@ npm@^2.5.1:
   dependencies:
     abbrev "~1.0.9"
     ansi "~0.3.1"
-    ansi-regex "*"
     ansicolors "~0.3.2"
     ansistyles "~0.1.3"
     archy "~1.0.0"
@@ -4124,7 +4128,6 @@ npm@^2.5.1:
     glob "~7.0.6"
     graceful-fs "~4.1.6"
     hosted-git-info "~2.1.5"
-    imurmurhash "*"
     inflight "~1.0.4"
     inherits "~2.0.3"
     ini "~1.3.4"

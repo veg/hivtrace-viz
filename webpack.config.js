@@ -6,8 +6,18 @@ var path = require("path"),
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 var languages = {
-  en: require("./locales/en.json"),
-  es: require("./locales/es.json"),
+  en: require(path.join(
+    __dirname,
+    "node_modules",
+    "hivtrace-locales",
+    "en.json"
+  )),
+  es: require(path.join(
+    __dirname,
+    "node_modules",
+    "hivtrace-locales",
+    "es.json"
+  )),
 };
 
 module.exports = (env) => {
