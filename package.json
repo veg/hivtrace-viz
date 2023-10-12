@@ -1,6 +1,6 @@
 {
   "name": "hivtrace-viz",
-  "version": "1.1.0",
+  "version": "1.1.0-alpha.1",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
     "node": ">=17"
@@ -47,6 +47,7 @@
     "file-loader": "^6.2.0",
     "font-awesome-webpack": "^0.0.5-beta.2",
     "font-awesome-webpack-4": "^1.0.0",
+    "hivtrace-locales": "^1.0.0",
     "http-server": "^14.1.1",
     "husky": "^8.0.2",
     "imports-loader": "^4.0.1",
