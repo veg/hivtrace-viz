@@ -110,7 +110,7 @@ var _networkSequentialColor = {
 };
 
 var _networkPresetColorSchemes = {
-  trans_categ: {
+  sex_trans: {
     "MSM-Male": "#1f78b4",
     "MSM-Unknown sex": "#1f78b4",
     "Heterosexual Contact-Male": "#e31a1c",
@@ -131,7 +131,7 @@ var _networkPresetColorSchemes = {
     "Other/Unknown-Child": "#ff7f00",
     "Other-Child": "#ff7f00",
   },
-  race: {
+  race_cat: {
     Asian: "#1f77b4",
     "Black/African American": "#bcbd22",
     "Hispanic/Latino": "#9467bd",
@@ -154,7 +154,7 @@ var _networkPresetShapeSchemes = {
     missing: "diamond",
     Unknown: "diamond",
   },
-  race: {
+  race_cat: {
     Asian: "hexagon",
     "Black/African American": "square",
     "Hispanic/Latino": "triangle",
@@ -666,8 +666,8 @@ var hivtrace_cluster_network_graph = function (
         ? options["node-attributes"]
         : [
             _networkNodeIDField,
-            "trans_categ",
-            "race",
+            "sex_trans",
+            "race_cat",
             "hiv_aids_dx_dt",
             "cur_city_name",
           ];
@@ -3658,10 +3658,10 @@ var hivtrace_cluster_network_graph = function (
       },
     },*/
 
-    age_dx: {
-      depends: ["age"],
-      overwrites: "age",
-      label: "age_dx",
+    age_dx_normalized: {
+      depends: ["age_dx"],
+      overwrites: "age_dx",
+      label: "Age at Diagnosis",
       enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
       type: "String",
       color_scale: function () {
@@ -3689,8 +3689,14 @@ var hivtrace_cluster_network_graph = function (
           ]);
       },
       map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(node, "age");
+        var vl_value = self.attribute_node_value_by_id(node, "age_dx");
         if (vl_value == ">=60") {
+          return "≥60";
+        }
+        if (vl_value == "\ufffd60") {
+          return "≥60";
+        }
+        if (+vl_value >= 60) {
           return "≥60";
         }
         return vl_value;
@@ -8552,7 +8558,7 @@ var hivtrace_cluster_network_graph = function (
               },
             });
 
-            /*dropdown.push({
+            dropdown.push({
               label: "View history over time",
               action: function (button, value) {
                 let ref_set = self.priority_groups_find_by_name(pg.name);
@@ -8568,7 +8574,7 @@ var hivtrace_cluster_network_graph = function (
                   1000
                 );
               },
-            });*/
+            });
 
             return dropdown;
           }
