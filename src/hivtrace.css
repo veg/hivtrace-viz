@@ -140,6 +140,23 @@ circle.cluster {
   margin-top: 5px;
 }
 
+#network_ui_bar > .input-group-btn {
+  padding-bottom: 5px;
+  height: 36px !important;
+}
+
+#network_ui_bar > .input-group-btn > .btn {
+  height: 36px !important;
+}
+
+#hivtrace-export-image {
+  height: 36px;
+}
+
+input.form-control {
+  height: 36px !important;
+}
+
 .hivtrace-download-button {
   margin-left: 5px;
   margin-bottom: 5px;

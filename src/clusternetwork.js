@@ -484,6 +484,12 @@ var hivtrace_cluster_network_graph = function (
 
   json[_networkGraphAttrbuteID] = new_schema;
 
+  // Attempt Translations
+  $("#filter_input")
+    .val("")
+    .attr("placeholder", __("network_tab")["text_in_attributes"]);
+  $("#show_as").html(__("attributes_tab")["show_as"]);
+
   // Make attributes case-insensitive by LowerCasing all keys in node attributes
   let label_key_map = _.object(
     _.map(json.patient_attribute_schema, (d, k) => [d.label, k])
@@ -548,8 +554,13 @@ var hivtrace_cluster_network_graph = function (
     options && options["cdc-executive-mode"] ? true : false;
 
   self.json = json;
+  self.collapsedCategories = helpers.collapseLargeCategories(
+    json.Nodes,
+    new_schema
+  );
   self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
   self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
+
   self.schema = json[_networkGraphAttrbuteID];
   // set initial color schemes
   self.networkColorScheme = _networkPresetColorSchemes;
@@ -3384,8 +3395,7 @@ var hivtrace_cluster_network_graph = function (
   }
 
   if (self.cluster_attributes) {
-    self.warning_string +=
-      "Only displaying clusters added/changed since the last update [use the <i>Clusters</i> menu to change this]<br>";
+    self.warning_string += __("network_tab")["cluster_display_info"];
     self.showing_diff = true;
     self.cluster_filtering_functions["new"] = self.filter_if_added;
   } else {
@@ -3396,8 +3406,7 @@ var hivtrace_cluster_network_graph = function (
       self.json["Cluster sizes"].length > 250
     ) {
       self.using_time_filter = self.getCurrentDate();
-      self.warning_string +=
-        "Only displaying clusters with nodes dates in the last 12 months [use the <i>Clusters</i> menu to change this]<br>";
+      self.warning_string += __("network_tab")["cluster_display_info"];
       self.using_time_filter.setFullYear(
         self.using_time_filter.getFullYear() - 1
       );
@@ -5952,6 +5961,20 @@ var hivtrace_cluster_network_graph = function (
 
       var cluster_commands = [
         [
+          __("clusters_main")["export_colors"],
+          () => {
+            let colorScheme = helpers.exportColorScheme(
+              self.uniqValues,
+              self.colorizer
+            );
+
+            //TODO: If using database backend, use api instead
+            helpers.copyToClipboard(JSON.stringify(colorScheme));
+          },
+          true,
+          "hivtrace-export-color-scheme",
+        ],
+        [
           __("clusters_main")["expand_all"],
           function () {
             return self.expand_some_clusters();
@@ -6217,7 +6240,7 @@ var hivtrace_cluster_network_graph = function (
           button_group
             .append("button")
             .classed("btn btn-default btn-sm", true)
-            .attr("title", "Toggle epi-curve")
+            .attr("title", __("network_tab")["toggle_epicurve"])
             .attr("id", "hivtrace-toggle-epi-curve")
             .on("click", function (d) {
               self._check_for_time_series();
@@ -6612,7 +6635,7 @@ var hivtrace_cluster_network_graph = function (
                 _.partial(self.handle_attribute_categorical, null),
               ],
             ],
-            [["Categorical", "heading", null]],
+            [[__("network_tab")["categorical"], "heading", null]],
           ].concat(
             valid_cats.map(function (d, i) {
               return [
@@ -6630,7 +6653,7 @@ var hivtrace_cluster_network_graph = function (
 
           if (valid_scales.length) {
             menu_items = menu_items
-              .concat([[["Continuous", "heading", null]]])
+              .concat([[[__("network_tab")["continuous"], "heading", null]]])
               .concat(
                 valid_scales.map(function (d, i) {
                   return [

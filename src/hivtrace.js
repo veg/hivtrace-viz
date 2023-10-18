@@ -17,5 +17,5 @@ export {
   helpers,
   misc,
   colorPicker,
-  scatterPlot
+  scatterPlot,
 };

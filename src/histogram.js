@@ -36,7 +36,7 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
   var histogram_w = 300,
     histogram_h = 300;
 
-  var edge_lengths = _.map(graph["Edges"], function(edge) {
+  var edge_lengths = _.map(graph["Edges"], function (edge) {
     return edge.length;
   });
 
@@ -56,7 +56,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       top: 10,
       right: 30,
       bottom: 50,
-      left: 10
+      left: 10,
     },
     width = w - margin.right,
     height = h - margin.top - margin.bottom;
@@ -79,10 +79,10 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .domain([
         0,
         d3.max(
-          _.map(histogram_data, function(b) {
+          _.map(histogram_data, function (b) {
             return b.y;
           })
-        )
+        ),
       ])
       .range([height, 0]);
 
@@ -92,25 +92,19 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
     width -= margin.left;
     x.range([0, width]);
 
-    var xAxis = d3.svg
-      .axis()
-      .scale(x)
-      .orient("bottom");
+    var xAxis = d3.svg.axis().scale(x).orient("bottom");
 
-    var yAxis = d3.svg
-      .axis()
-      .scale(y)
-      .orient("left");
+    var yAxis = d3.svg.axis().scale(y).orient("left");
 
     histogram_data.splice(0, 0, {
       x: x.domain()[0],
       y: 0,
-      dx: 0
+      dx: 0,
     });
     histogram_data.splice(histogram_data.length, 0, {
       x: x.domain()[1],
       y: 0,
-      dx: 0
+      dx: 0,
     });
 
     histogram_svg = d3
@@ -124,10 +118,10 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
 
     var histogram_line = d3.svg
       .line()
-      .x(function(d) {
+      .x(function (d) {
         return x(d.x + d.dx);
       })
-      .y(function(d) {
+      .y(function (d) {
         return y(d.y);
       })
       .interpolate("step-before");
@@ -135,7 +129,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
     histogram_svg.selectAll("path").remove();
     histogram_svg
       .append("path")
-      .attr("d", function(d) {
+      .attr("d", function (d) {
         return histogram_line(d) + "Z";
       })
       .attr("class", "histogram");
@@ -182,7 +176,7 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
       top: 10,
       right: 30,
       bottom: 50,
-      left: 30
+      left: 30,
     },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
@@ -199,10 +193,7 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
 
   var total = d3.sum(counts);
 
-  var xAxis = d3.svg
-    .axis()
-    .scale(x)
-    .orient("bottom");
+  var xAxis = d3.svg.axis().scale(x).orient("bottom");
 
   var histogram_svg = d3.select(id).selectAll("svg");
 
@@ -210,23 +201,23 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
     histogram_svg.remove();
   }
 
-  var data_to_plot = counts.map(function(d, i) {
+  var data_to_plot = counts.map(function (d, i) {
     return {
       x: i + 1,
-      y: d + 1
+      y: d + 1,
     };
   });
   data_to_plot.push({
     x: counts.length + 1,
-    y: 1
+    y: 1,
   });
   data_to_plot.push({
     x: 0,
-    y: 1
+    y: 1,
   });
   data_to_plot.push({
     x: 0,
-    y: counts[0] + 1
+    y: counts[0] + 1,
   });
 
   histogram_svg = d3
@@ -240,10 +231,10 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
 
   var histogram_line = d3.svg
     .line()
-    .x(function(d) {
+    .x(function (d) {
       return x(d.x);
     })
-    .y(function(d) {
+    .y(function (d) {
       return y(d.y);
     })
     .interpolate("step-before");
@@ -251,7 +242,7 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
   histogram_svg.selectAll("path").remove();
   histogram_svg
     .append("path")
-    .attr("d", function(d) {
+    .attr("d", function (d) {
       return histogram_line(d) + "Z";
     })
     .attr("class", "histogram");
@@ -260,17 +251,17 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
     var fit_line = d3.svg
       .line()
       .interpolate("linear")
-      .x(function(d, i) {
+      .x(function (d, i) {
         return x(i + 1) + (x(i + 1) - x(i)) / 2;
       })
-      .y(function(d) {
+      .y(function (d) {
         return y(1 + d * total);
       });
     histogram_svg
       .append("path")
       .datum(fit)
       .attr("class", "line")
-      .attr("d", function(d) {
+      .attr("d", function (d) {
         return fit_line(d);
       });
   }
