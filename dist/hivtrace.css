@@ -16378,7 +16378,7 @@ body {
     stroke: #ccc;
   }
 }
-
+/*
 path.selected_object,
 circle.selected_object,
 g.selected_object {
@@ -16386,6 +16386,7 @@ g.selected_object {
   animation-name: selected_object_animation;
   animation-iteration-count: infinite;
 }
+*/
 
 circle.node,
 rect.node,
@@ -16540,6 +16541,7 @@ input.form-control {
   }
 }
 
+g.selected_object,
 path.selected_object,
 circle.selected_object {
   stroke-width: 5px;

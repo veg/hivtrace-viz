@@ -61,6 +61,8 @@ var _networkCategoricalBase = [
   "#b15928",
 ];
 
+var _networkEdgeColorBase = ["#000000", "#aaaaaa"];
+
 var _networkCategorical = [];
 
 _.each([0, -0.5, 0.5], function (k) {
@@ -110,7 +112,7 @@ var _networkSequentialColor = {
 };
 
 var _networkPresetColorSchemes = {
-  trans_categ: {
+  sex_trans: {
     "MSM-Male": "#1f78b4",
     "MSM-Unknown sex": "#1f78b4",
     "Heterosexual Contact-Male": "#e31a1c",
@@ -131,7 +133,7 @@ var _networkPresetColorSchemes = {
     "Other/Unknown-Child": "#ff7f00",
     "Other-Child": "#ff7f00",
   },
-  race: {
+  race_cat: {
     Asian: "#1f77b4",
     "Black/African American": "#bcbd22",
     "Hispanic/Latino": "#9467bd",
@@ -154,7 +156,7 @@ var _networkPresetShapeSchemes = {
     missing: "diamond",
     Unknown: "diamond",
   },
-  race: {
+  race_cat: {
     Asian: "hexagon",
     "Black/African American": "square",
     "Hispanic/Latino": "triangle",
@@ -677,8 +679,8 @@ var hivtrace_cluster_network_graph = function (
         ? options["node-attributes"]
         : [
             _networkNodeIDField,
-            "trans_categ",
-            "race",
+            "sex_trans",
+            "race_cat",
             "hiv_aids_dx_dt",
             "cur_city_name",
           ];
@@ -3667,10 +3669,10 @@ var hivtrace_cluster_network_graph = function (
       },
     },*/
 
-    age_dx: {
-      depends: ["age"],
-      overwrites: "age",
-      label: "age_dx",
+    age_dx_normalized: {
+      depends: ["age_dx"],
+      overwrites: "age_dx",
+      label: "Age at Diagnosis",
       enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
       type: "String",
       color_scale: function () {
@@ -3698,8 +3700,14 @@ var hivtrace_cluster_network_graph = function (
           ]);
       },
       map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(node, "age");
+        var vl_value = self.attribute_node_value_by_id(node, "age_dx");
         if (vl_value == ">=60") {
+          return "≥60";
+        }
+        if (vl_value == "\ufffd60") {
+          return "≥60";
+        }
+        if (+vl_value >= 60) {
           return "≥60";
         }
         return vl_value;
@@ -3935,7 +3943,12 @@ var hivtrace_cluster_network_graph = function (
             return "Show this cluster in separate tab";
           })
           .on("click", function (d) {
-            self.open_exclusive_tab_view(cluster.cluster_id);
+            self.open_exclusive_tab_view(
+              cluster.cluster_id,
+              null,
+              null,
+              self._distance_gate_options()
+            );
             menu_object.style("display", "none");
           });
       }
@@ -4618,6 +4631,7 @@ var hivtrace_cluster_network_graph = function (
 
           y.source = drawnNodes[x.source];
           y.target = drawnNodes[x.target];
+          y.ref = x;
           graphMe.edges.push(y);
         }
       }
@@ -8575,7 +8589,7 @@ var hivtrace_cluster_network_graph = function (
               },
             });
 
-            /*dropdown.push({
+            dropdown.push({
               label: "View history over time",
               action: function (button, value) {
                 let ref_set = self.priority_groups_find_by_name(pg.name);
@@ -8591,7 +8605,7 @@ var hivtrace_cluster_network_graph = function (
                   1000
                 );
               },
-            });*/
+            });
 
             return dropdown;
           }
@@ -10455,7 +10469,7 @@ var hivtrace_cluster_network_graph = function (
           return v.type == cnd;
         }),
         function (v) {
-          return v.value;
+          return cnd == "distance" ? v : v.value;
         }
       );
     });
@@ -10467,17 +10481,21 @@ var hivtrace_cluster_network_graph = function (
 
       _.each(self.edges, function (e) {
         var did_match = _.some(conditions[1], function (d) {
-          return e.length <= d;
+          return d.greater_than ? e.length >= d.value : e.length < d.value;
         });
 
         if (did_match) {
           self.nodes[e.source].length_filter = true;
           self.nodes[e.target].length_filter = true;
         }
+        e.length_filter = did_match;
       });
     } else {
       self.nodes.forEach(function (n) {
         n.length_filter = false;
+      });
+      self.edges.forEach(function (e) {
+        e.length_filter = false;
       });
     }
 
@@ -10499,6 +10517,12 @@ var hivtrace_cluster_network_graph = function (
 
     self.clusters.forEach(function (c) {
       c.match_filter = 0;
+    });
+
+    self.edges.forEach(function (e) {
+      if (e.length_filter) {
+        anything_changed = true;
+      }
     });
 
     self.nodes.forEach(function (n) {
@@ -10913,12 +10937,16 @@ var hivtrace_cluster_network_graph = function (
       });
     }
 
-    link.style("display", function (d) {
-      if (d.target.is_hidden || d.source.is_hidden || d.is_hidden) {
-        return "none";
-      }
-      return null;
-    });
+    link
+      .style("display", function (d) {
+        if (d.target.is_hidden || d.source.is_hidden || d.is_hidden) {
+          return "none";
+        }
+        return null;
+      })
+      .classed("selected_object", function (d) {
+        return d.ref.length_filter && !self.hide_unselected;
+      });
 
     if (!soft) {
       currently_displayed_objects =
@@ -11891,6 +11919,120 @@ var hivtrace_cluster_network_graph = function (
   self.is_edge_injected = function (e) {
     //console.log (e, "edge_type" in e);
     return "edge_type" in e;
+  };
+
+  self._distance_gate_options = function (threshold) {
+    threshold = threshold || 0.005;
+
+    edge_typer = (e, edge_types, T) => {
+      return edge_types[e.length <= T ? 0 : 1];
+    };
+
+    return {
+      "edge-styler": function (element, d, network) {
+        var e_type = edge_typer(
+          d,
+          network.edge_types,
+          network.edge_cluster_threshold
+        );
+        if (e_type != "") {
+          d3.select(element).style(
+            "stroke",
+            network._edge_colorizer(
+              edge_typer(d, network.edge_types, network.edge_cluster_threshold)
+            )
+          ); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
+        }
+        d.is_hidden = !network.shown_types[e_type];
+        d3.select(element).style("stroke-width", "4px");
+      },
+
+      init_code: function (network) {
+        function style_edge(type) {
+          this.style("stroke-width", "5px");
+          if (type.length) {
+            this.style("stroke", network._edge_colorizer(type)); //.style ("stroke-dasharray", network._edge_dasher (type));
+          } else {
+            this.classed("link", true);
+            var def_color = this.style("stroke");
+            this.classed("link", null);
+            this.style("stroke", def_color);
+          }
+        }
+
+        network.update_cluster_threshold_display = (T) => {
+          network.edge_cluster_threshold = T;
+          network.edge_types = [
+            "≤" + network.edge_cluster_threshold,
+            ">" + network.edge_cluster_threshold,
+          ];
+
+          network._edge_colorizer = d3.scale
+            .ordinal()
+            .range(_networkEdgeColorBase)
+            .domain(network.edge_types);
+          //network._edge_dasher   = _edge_dasher;
+          network.shown_types = _.object(
+            _.map(network.edge_types, (d) => [d, 1])
+          );
+          network.edge_legend = {
+            caption: "Links by distance",
+            types: {},
+          };
+
+          _.each(network.shown_types, function (ignore, t) {
+            if (t.length) {
+              network.edge_legend.types[t] = _.partial(style_edge, t);
+            }
+          });
+        };
+
+        network.update_cluster_threshold_display(threshold);
+      },
+
+      extra_menu: {
+        title: "Additional options",
+        items: [
+          [
+            function (network, item) {
+              console.log(network.edge_cluster_threshold);
+              var enclosure = item.append("div").classed("form-group", true);
+              var label = enclosure
+                .append("label")
+                .text("Genetic distance threshold ")
+                .classed("control-label", true);
+              var distance = enclosure
+                .append("input")
+                .classed("form-control", true)
+                .attr("value", "" + network.edge_cluster_threshold)
+                .on("change", function (e) {
+                  //d3.event.preventDefault();
+                  if (this.value) {
+                    let newT = parseFloat(this.value);
+                    if (_.isNumber(newT) && newT > 0.0 && newT < 1) {
+                      network.update_cluster_threshold_display(newT);
+                      network.draw_attribute_labels();
+                      network.update(true);
+                      enclosure
+                        .classed("has-success", true)
+                        .classed("has-error", false);
+                      return;
+                    }
+                  }
+
+                  enclosure
+                    .classed("has-success", false)
+                    .classed("has-error", true);
+                })
+                .on("click", function (e) {
+                  d3.event.stopPropagation();
+                });
+            },
+            null,
+          ],
+        ],
+      },
+    };
   };
 
   self._social_view_options = function (
