@@ -8,7 +8,7 @@ RUN yum -y update && \
     source ~/.bashrc && \
     nvm install 18.18.2 && \
     nvm alias default 18.18.2 && \
-    npm install --global yarn
+    npm install --global webpack yarn
 
 # To compile HIV-TRACE Viz within the development environment:
 #   yarn
