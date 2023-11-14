@@ -12,4 +12,4 @@ RUN yum -y update && \
 
 # To compile HIV-TRACE Viz within the development environment:
 #   yarn
-#   yarn build
+#   yarn develop
