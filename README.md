@@ -12,7 +12,6 @@ This repository contains the visualization code for HIV-TRACE.
 git clone https://github.com/veg/hivtrace-viz.git
 cd hivtrace-viz
 yarn
-webpack
 yarn develop
 ```
 
