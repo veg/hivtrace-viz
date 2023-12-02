@@ -2037,7 +2037,10 @@ var hivtrace_cluster_network_graph = function (
           //console.log ("GROUP: ",g.name, " = ", g.modified);
 
           const exclude_nodes = new Set(g.not_in_network);
-
+          let cluster_detect_size = 0;
+          g.nodes.forEach((node) => {
+            if (node.added <= g.created) cluster_detect_size++;
+          });
           return _.map(
             _.filter(g.nodes, (gn) => !exclude_nodes.has(gn.name)),
             (gn) => {
@@ -2051,11 +2054,41 @@ var hivtrace_cluster_network_graph = function (
                 new_linked_case: self.priority_groups_is_new_node(g, gn)
                   ? 1
                   : 0,
-                cluster_created: hivtrace_date_or_na_if_missing(g.created),
+                cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
                 network_date: hivtrace_date_or_na_if_missing(self.today),
+                cluster_detect_size: cluster_detect_size,
+                cluster_type: g.createdBy,
+                cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
+                cluster_growth: _cdcConciseTrackingOptions[g.tracking],
+                national_priority: g.meets_priority_def,
+                cluster_current_size: g.nodes.length,
+                cluster_dx_recent12_mo: g.last12,
+                cluster_overlap: g.overlap.sets,
               };
             }
           );
+        }
+      )
+    );
+  };
+
+  self.priority_groups_export_sets = function () {
+    return _.flatten(
+      _.map(
+        _.filter(self.defined_priority_groups, (g) => g.validated),
+        (g) => {
+          return {
+            cluster_type: g.createdBy,
+            cluster_uid: g.name,
+            cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
+            cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
+            cluster_ident_method: g.kind,
+            cluster_growth: _cdcConciseTrackingOptions[g.tracking],
+            cluster_current_size: g.nodes.length,
+            national_priority: g.meets_priority_def,
+            cluster_dx_recent12_mo: g.last12,
+            cluster_overlap: g.overlap.sets,
+          };
         }
       )
     );
@@ -8740,6 +8773,12 @@ var hivtrace_cluster_network_graph = function (
         helpers.export_csv_button(
           self.priority_groups_export_nodes(),
           "clusters-of-interest"
+        );
+      });
+      d3.select("#priority_set_table_download").on("click", function (d) {
+        helpers.export_csv_button(
+          self.priority_groups_export_sets(),
+          "priority_set_table"
         );
       });
     }

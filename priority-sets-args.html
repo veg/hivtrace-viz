@@ -791,6 +791,9 @@
                   id="priority-table-export"
                   style="margin-left: 1em"
                 >
+                  <a target="_blank" id="priority_set_table_download">
+                    <i class="fa fa-download fa-2x"></i>
+                  </a>
                 </span>
                 <p class="lead">
                   Priority Node Sets
@@ -1002,11 +1005,6 @@
             hivtrace.misc.export_table_to_text(
               "#node-table-export",
               node_table,
-              true
-            );
-            hivtrace.misc.export_table_to_text(
-              "#priority-table-export",
-              priority_set_table,
               true
             );
 
