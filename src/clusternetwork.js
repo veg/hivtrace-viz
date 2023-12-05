@@ -556,10 +556,10 @@ var hivtrace_cluster_network_graph = function (
     options && options["cdc-executive-mode"] ? true : false;
 
   self.json = json;
-  self.collapsedCategories = helpers.collapseLargeCategories(
+  /*self.collapsedCategories = helpers.collapseLargeCategories(
     json.Nodes,
     new_schema
-  );
+  );*/
   self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
   self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
 
