@@ -1119,6 +1119,7 @@ var hivtrace_cluster_network_graph = function (
 
   self.priority_groups_check_name = function (string, prior_name) {
     if (string.length) {
+      if (string.length == 35) return false;
       return !_.some(
         self.defined_priority_groups,
         (d) => d.name == string && d.name != prior_name
@@ -2515,12 +2516,20 @@ var hivtrace_cluster_network_graph = function (
           .append("input")
           .classed("form-control input-sm", true)
           .attr("placeholder", "Name this cluster of interest")
-          .attr("data-hivtrace-ui-role", "priority-panel-name");
+          .attr("data-hivtrace-ui-role", "priority-panel-name")
+          .attr("maxlength", 35);
 
         var grp_name_box_label = grp_name
           .append("p")
           .classed("help-block", true)
           .text("Name this cluster of interest");
+
+        grp_name_button.on("input", function () {
+          if (this.value.length == 35);
+          {
+            grp_name.classed("form-group has-error");
+          }
+        });
 
         var grp_kind = form_save.append("div").classed("form-group", true);
 
@@ -2795,15 +2804,27 @@ var hivtrace_cluster_network_graph = function (
                 panel_object.prior_name
               )
             ) {
-              grp_name.classed({ "has-success": true, "has-error": false });
+              grp_name.classed({
+                "has-success": true,
+                "has-error": false,
+                "has-warning": false,
+              });
               grp_name_box_label.text("Name this cluster of interest");
               if (panel_object.network_nodes.length) {
                 save_set_button.attr("disabled", null);
               }
             } else {
-              grp_name.classed({ "has-success": false, "has-error": true });
+              let too_long = current_text.length == 35;
+              grp_name.classed({
+                "has-success": false,
+                "has-error": !too_long,
+                "has-warning": too_long,
+              });
+              let error_message = too_long
+                ? "MUST be shorter than 36 characters"
+                : "MUST be unique";
               grp_name_box_label.text(
-                "Name this cluster of interest (MUST be unique)"
+                "Name this cluster of interest " + error_message
               );
               save_set_button.attr("disabled", "disabled");
             }
