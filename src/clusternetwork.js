@@ -2761,6 +2761,11 @@ var hivtrace_cluster_network_graph = function (
             }
             panel_object.first_save = false;
           }
+          document
+            .querySelector(
+              self.get_ui_element_selector_by_role("priority-panel-name", true)
+            )
+            .focus();
           return res;
         }
 
@@ -8594,8 +8599,8 @@ var hivtrace_cluster_network_graph = function (
                   );
                   self.open_priority_set_editor(
                     copied_node_objects,
+                    "",
                     "Clone of " + pg.name,
-                    ref_set.description,
                     ref_set.kind
                   );
                   self.redraw_tables();
