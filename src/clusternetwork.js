@@ -15,6 +15,7 @@ var _networkGraphAttrbuteID = "patient_attribute_schema";
 var _networkNodeAttributeID = "patient_attributes";
 var _networkNodeIDField = "hivtrace_node_id";
 var _networkMissing = __("general")["missing"];
+var _networkReducedValue = "Different (other) value";
 var _networkMissingOpacity = "0.1";
 var _networkMissingColor = "#999";
 var _networkContinuousColorStops = 9;
@@ -65,7 +66,7 @@ var _networkEdgeColorBase = ["#000000", "#aaaaaa"];
 
 var _networkCategorical = [];
 
-_.each([0, -0.5, 0.5], function (k) {
+_.each([0, -0.8], function (k) {
   _.each(_networkCategoricalBase, function (s) {
     _networkCategorical.push(d3.rgb(s).darker(k).toString());
   });
@@ -501,7 +502,6 @@ var hivtrace_cluster_network_graph = function (
     if ("patient_attributes" in n) {
       let new_attrs = {};
       if (n["patient_attributes"] != null) {
-        //console.log(n["patient_attributes"]);
         new_attrs = Object.fromEntries(
           Object.entries(n.patient_attributes).map(([k, v]) => [
             k.toLowerCase(),
@@ -556,10 +556,7 @@ var hivtrace_cluster_network_graph = function (
     options && options["cdc-executive-mode"] ? true : false;
 
   self.json = json;
-  /*self.collapsedCategories = helpers.collapseLargeCategories(
-    json.Nodes,
-    new_schema
-  );*/
+
   self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
   self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
 
@@ -1106,6 +1103,7 @@ var hivtrace_cluster_network_graph = function (
          'kind' : 'text'
      }
   */
+
   self.priority_groups_pending = function () {
     return _.filter(self.defined_priority_groups, (pg) => pg.pending).length;
   };
@@ -3190,7 +3188,7 @@ var hivtrace_cluster_network_graph = function (
         panel_object.table_handler(this);
       },
       dragit: {
-        containment: [50, 50, 300, 50],
+        containment: [50, 50, 100, 50],
       },
       resizeit: {
         containment: [50, 50, 100, 50],
@@ -3466,26 +3464,21 @@ var hivtrace_cluster_network_graph = function (
   self.recent_rapid_definition = function (network, date) {
     date = date || self.get_reference_date();
     var subcluster_enum = [
-      "Subcluster", // 0
-      "12 months (on or after " + // 1
-        _defaultDateViewFormat(_n_months_ago(date, 12)) +
-        ")",
-      "12 months (on or after " + // 2
-        _defaultDateViewFormat(_n_months_ago(date, 12)) +
-        ") and national priority clusterOI",
-      "36 months (on or after " + // 3
-        _defaultDateViewFormat(_n_months_ago(date, 36)) +
-        ")",
-      "Future node (after " + _defaultDateViewFormat(date) + ")", // 4
-      "Not a member of subcluster (as of " + _defaultDateViewFormat(date) + ")", // 5
+      "No, dx>36 months", // 0
+      "No, but dx≤12 months",
+      "Yes (dx≤12 months)",
+      "Yes (12<dx≤ 36 months)",
+      "Future node", // 4
+      "Not a member of subcluster", // 5
       "Not in a subcluster",
+      "No, but 12<dx≤ 36 months",
     ];
 
     return {
       depends: [_networkCDCDateField],
-      label: "Extended Subcluster or Priority Node",
+      label: "ClusterOI membership as of " + _defaultDateViewFormat(date),
       enum: subcluster_enum,
-      type: "String",
+      //type: "String",
       volatile: true,
       color_scale: function () {
         return d3.scale
@@ -3494,13 +3487,14 @@ var hivtrace_cluster_network_graph = function (
           .range(
             _.union(
               [
-                "#CCCCCC",
+                "steelblue",
                 "pink",
                 "red",
-                "blue",
+                "#FF8C00",
                 "#9A4EAE",
                 "yellow",
                 "#FFFFFF",
+                "#FFD580",
               ],
               [_networkMissingColor]
             )
@@ -4645,18 +4639,26 @@ var hivtrace_cluster_network_graph = function (
 
     var field_def = self.recent_rapid_definition(self, set_date);
 
+    //console.log (field_def.dimension);
+
     if (field_def) {
-      self.inject_attribute_description(
-        "subcluster_or_priority_node",
-        field_def
-      );
+      _.each(self.nodes, function (node) {
+        const attr_v = field_def["map"](node, self);
+        inject_attribute_node_value_by_id(
+          node,
+          "subcluster_temporal_view",
+          attr_v
+        );
+      });
+
+      self.inject_attribute_description("subcluster_temporal_view", field_def);
       self._aux_process_category_values(
         self._aux_populate_category_fields(
           field_def,
-          "subcluster_or_priority_node"
+          "subcluster_temporal_view"
         )
       );
-      self.handle_attribute_categorical("subcluster_or_priority_node");
+      self.handle_attribute_categorical("subcluster_temporal_view");
     }
   };
 
@@ -4875,10 +4877,11 @@ var hivtrace_cluster_network_graph = function (
             1: last 12 months NOT in a priority cluster
             2: last 12 month IN priority cluster
             3: in priority cluster but not in 12 months
-            4-6 is only computed for start dates different from the network date
+            4-7 is only computed for start dates different from the network date
             4: date present but is in the FUTURE compared to start_date
             5: date present but is between 1900 and start_date
             6: date missing
+            7: in 0.5% cluster 12<dx<36 months but not a CoI
             
             
         SLKP 20221128:
@@ -4925,7 +4928,7 @@ var hivtrace_cluster_network_graph = function (
         });
       }
 
-      // extract all clusters at once to avoid inefficiencies of multiple edge-set traverals
+      // extract all clusters at once to avoid inefficiencies of multiple edge-set traversals
 
       var split_clusters = {};
       var node_id_to_local_cluster = {};
@@ -5170,6 +5173,8 @@ var hivtrace_cluster_network_graph = function (
                   } else {
                     n.nationalCOI = 3;
                   }
+                } else {
+                  n.priority_flag = 7;
                 }
               });
             }
@@ -6477,11 +6482,13 @@ var hivtrace_cluster_network_graph = function (
             self._aux_populate_category_fields
           ),
           function (d) {
-            //console.log (d);
+            /*if (d.discrete) {
+                console.log (d["value_range"].length);
+            }*/
             return (
               d.discrete &&
               "value_range" in d &&
-              d["value_range"].length <= _maximumValuesInCategories &&
+              /*d["value_range"].length <= _maximumValuesInCategories &&*/
               !d["_hidden_"]
             );
           }
@@ -6572,7 +6579,9 @@ var hivtrace_cluster_network_graph = function (
                     _.map(graph_data.Nodes, function (nd) {
                       try {
                         var a_date = self.attribute_node_value_by_id(nd, k);
-                        //console.log (k, a_date);
+                        if (d.raw_attribute_key == "hiv_aids_dx_dt") {
+                          //console.log (nd, k, a_date);
+                        }
                         inject_attribute_node_value_by_id(
                           nd,
                           k,
@@ -10299,11 +10308,16 @@ var hivtrace_cluster_network_graph = function (
                 if (arg == _networkMissing) {
                   return func(_maximumValuesInCategories);
                 }
-                return func(
-                  graph_data[_networkGraphAttrbuteID][cat_id][
-                    "stable-ish order"
-                  ][arg]
-                );
+
+                const ci = graph_data[_networkGraphAttrbuteID][cat_id];
+
+                if (ci["reduced_value_range"]) {
+                  if (!(arg in ci["reduced_value_range"])) {
+                    arg = _networkReducedValue;
+                  }
+                }
+
+                return func(ci["stable-ish order"][arg]);
               }
             );
             //console.log (graph_data[_networkGraphAttrbuteID][cat_id]['stable-ish order']);
@@ -10339,7 +10353,7 @@ var hivtrace_cluster_network_graph = function (
       //console.log (self.colorizer["category_map"]);
       self.colorizer["category_pairwise"] = attribute_pairwise_distribution(
         cat_id,
-        graph_data[_networkGraphAttrbuteID][cat_id].dimension,
+        self._aux_get_attribute_dimension(cat_id),
         self.colorizer["category_map"]
       );
       //} catch (err) {
@@ -11580,75 +11594,139 @@ var hivtrace_cluster_network_graph = function (
     return d;
   };
 
+  self._aux_get_attribute_dimension = function (cat_id) {
+    if (cat_id in graph_data[_networkGraphAttrbuteID]) {
+      const cinfo = graph_data[_networkGraphAttrbuteID][cat_id];
+      if ("reduced_value_range" in cinfo) {
+        return _.size(cinfo["reduced_value_range"]);
+      }
+      return cinfo.dimension;
+    }
+    return 0;
+  };
+
   self._aux_process_category_values = function (d) {
-    var values;
+    var values,
+      reduced_range = null;
+
+    delete d["reduced_value_range"];
     if (d["no-sort"]) {
       values = d["value_range"];
     } else {
       if (d["type"] == "String") {
         values = d["value_range"].sort();
 
-        if (d.dimension <= _maximumValuesInCategories) {
-          var string_hash = function (str) {
-            var hash = 5801;
-            for (var ci = 0; ci < str.length; ci++) {
-              var charCode = str.charCodeAt(ci);
-              hash = (hash << (5 + hash)) + charCode;
+        if (d.dimension > _maximumValuesInCategories) {
+          let compressed_values = _.chain(self.nodes)
+            .countBy((node) => {
+              return self.attribute_node_value_by_id(
+                node,
+                d["raw_attribute_key"]
+              );
+            })
+            .pairs()
+            .sortBy((d) => -d[1])
+            .value();
+
+          reduced_range = [];
+          let i = 0;
+          while (
+            reduced_range.length < _maximumValuesInCategories - 1 &&
+            i < compressed_values.length
+          ) {
+            if (compressed_values[i][0] != _networkMissing) {
+              reduced_range.push(compressed_values[i][0]);
             }
-            return hash;
-          };
+            i++;
+          }
+          reduced_range = reduced_range.sort();
+          reduced_range.push(_networkReducedValue);
+        }
 
-          var hashed = _.map(values, string_hash);
-          var available_keys = {};
-          var reindexed = {};
+        var string_hash = function (str) {
+          var hash = 5801;
+          for (var ci = 0; ci < str.length; ci++) {
+            var charCode = str.charCodeAt(ci);
+            hash = (hash << (5 + hash)) + charCode;
+          }
+          return hash;
+        };
 
-          for (var i = 0; i < _maximumValuesInCategories; i++) {
-            available_keys[i] = true;
+        let use_these_values = reduced_range || values;
+
+        var hashed = _.map(use_these_values, string_hash);
+        var available_keys = {};
+        var reindexed = {};
+
+        for (var i = 0; i < _maximumValuesInCategories; i++) {
+          available_keys[i] = true;
+        }
+
+        _.each(hashed, function (value, index) {
+          if (value < 0) {
+            value = -value;
           }
 
-          _.each(hashed, function (value, index) {
-            if (value < 0) {
-              value = -value;
-            }
+          var first_try = value % _maximumValuesInCategories;
+          if (first_try in available_keys) {
+            reindexed[use_these_values[index]] = first_try;
+            delete available_keys[first_try];
+            return;
+          }
 
-            var first_try = value % _maximumValuesInCategories;
-            if (first_try in available_keys) {
-              reindexed[values[index]] = first_try;
-              delete available_keys[first_try];
-              return;
-            }
+          var second_try =
+            Math.floor(value / _maximumValuesInCategories) %
+            _maximumValuesInCategories;
+          if (second_try in available_keys) {
+            reindexed[use_these_values[index]] = second_try;
+            delete available_keys[second_try];
+            return;
+          }
 
-            var second_try =
-              Math.floor(value / _maximumValuesInCategories) %
-              _maximumValuesInCategories;
-            if (second_try in available_keys) {
-              reindexed[values[index]] = second_try;
-              delete available_keys[second_try];
-              return;
-            }
+          var last_resort = parseInt(_.keys(available_keys).sort()[0]);
+          reindexed[use_these_values[index]] = last_resort;
+          delete available_keys[last_resort];
+        });
 
-            var last_resort = parseInt(_.keys(available_keys).sort()[0]);
-            reindexed[values[index]] = last_resort;
-            delete available_keys[last_resort];
-          });
-
-          d["stable-ish order"] = reindexed;
-        }
-        //values = _.unzip(_.zip (d['value_range'], ordering_map).sort (function (a,b) { if (a[1] < b[1]) return -1; if (a[1] > b[1]) return 1; return 0}))[0]; //d['value_range'].sort ();
-      } else {
-        values = d["value_range"].sort();
+        d["stable-ish order"] = reindexed;
       }
     }
 
     var map = new Object();
 
-    _.each(values, function (d2, i) {
-      map[d2] = i;
-    });
+    if (reduced_range) {
+      let rrl = _.object(_.map(_.pairs(reduced_range), (d) => [d[1], d[0]]));
 
-    d["value_map"] = function (v, key) {
-      return key ? (key == "lookup" ? _.invert(map) : map) : map[v];
-    };
+      _.each(values, function (d2, i) {
+        if (d2 in rrl) {
+          map[d2] = rrl[d2];
+        } else {
+          map[d2] = rrl[_networkReducedValue];
+        }
+      });
+
+      d["reduced_value_range"] = rrl;
+      //console.log (rrl, map);
+      d["value_map"] = function (v, key) {
+        if (key) {
+          //console.log (key, map);
+          return key == "lookup" ? _.invert(rrl) : rrl;
+        }
+        return map[v];
+      };
+    } else {
+      _.each(values, function (d2, i) {
+        map[d2] = i;
+      });
+      d["value_map"] = function (v, key) {
+        if (key) {
+          //console.log (key, map);
+          return key == "lookup" ? _.invert(map) : map;
+        }
+        return map[v];
+      };
+    }
+
     return d;
   };
 
@@ -11995,7 +12073,7 @@ var hivtrace_cluster_network_graph = function (
         items: [
           [
             function (network, item) {
-              console.log(network.edge_cluster_threshold);
+              //console.log(network.edge_cluster_threshold);
               var enclosure = item.append("div").classed("form-group", true);
               var label = enclosure
                 .append("label")
