@@ -3188,7 +3188,7 @@ var hivtrace_cluster_network_graph = function (
         panel_object.table_handler(this);
       },
       dragit: {
-        containment: [50, 50, 300, 50],
+        containment: [50, 50, 100, 50],
       },
       resizeit: {
         containment: [50, 50, 100, 50],
