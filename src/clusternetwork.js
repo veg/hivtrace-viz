@@ -1128,7 +1128,7 @@ var hivtrace_cluster_network_graph = function (
     return false;
   };
 
-  self.load_priority_sets = function (url, is_writeable, use_date_driven) {
+  self.load_priority_sets = function (url, is_writeable) {
     d3.json(url, function (error, results) {
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
@@ -1148,8 +1148,7 @@ var hivtrace_cluster_network_graph = function (
           });
         });
 
-        self.priority_set_table_writeable =
-          is_writeable || (use_date_driven && self.today >= latest_date);
+        self.priority_set_table_writeable = is_writeable == "writeable";
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -1282,8 +1281,11 @@ var hivtrace_cluster_network_graph = function (
         );
 
         if (!self.priority_set_table_writeable) {
-          self.warning_string +=
-            '<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because the network is <b>older</b> than some of the Clusters of Interest. None of the changes to clustersOI made during this session will be recorded.</p>';
+          const rationale =
+            is_writeable == "old"
+              ? "the network is <b>older</b> than some of the Clusters of Interest"
+              : "the network was ran in <b>standalone</b> mode so no data is stored";
+          self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
           self.display_warning(self.warning_string, true);
           if (tab_pill) {
             d3.select(tab_pill).text("Read-only");
@@ -13055,12 +13057,8 @@ var hivtrace_cluster_network_graph = function (
     }
 
     if (options["priority-sets-url"]) {
-      let is_writeable = options["is-latest"];
-      self.load_priority_sets(
-        options["priority-sets-url"],
-        is_writeable,
-        options["date-driven-writeable"]
-      );
+      let is_writeable = options["is-writeable"];
+      self.load_priority_sets(options["priority-sets-url"], is_writeable);
     }
 
     if (self.showing_diff) {
