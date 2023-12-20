@@ -115,12 +115,15 @@ var _networkSequentialColor = {
 var _networkPresetColorSchemes = {
   sex_trans: {
     "MSM-Male": "#1f78b4",
+    "MMSC-Male": "#1f78b4",
     "MSM-Unknown sex": "#1f78b4",
+    "MMSC-Unknown sex": "#1f78b4",
     "Heterosexual Contact-Male": "#e31a1c",
     "Heterosexual Contact-Female": "#e31a1c",
     "Heterosexual Contact-Unknown sex": "#e31a1c",
     "IDU-Male": "#33a02c",
     "MSM & IDU-Male": "#33a02c",
+    "MMSC & IDU-Male": "#33a02c",
     "IDU-Female": "#33a02c",
     "IDU-Unknown sex": "#33a02c",
     "Other/Unknown-Male": "#636363",
@@ -134,6 +137,7 @@ var _networkPresetColorSchemes = {
     "Other/Unknown-Child": "#ff7f00",
     "Other-Child": "#ff7f00",
   },
+
   race_cat: {
     Asian: "#1f77b4",
     "Black/African American": "#bcbd22",
@@ -147,6 +151,26 @@ var _networkPresetColorSchemes = {
     missing: "#999",
     White: "#d62728",
   },
+  sex_birth: {
+    Male: "#0047AB",
+    Female: "#E30B5C",
+    Unknown: "#3D2B1F",
+  },
+  birth_sex: {
+    Male: "#4682B4",
+    Female: "#b22222",
+    Unknown: "#3D2B1F",
+  },
+  gender_identity: {
+    Man: "#0047AB",
+    Woman: "#E30B5C",
+    "Transgender man": "#A7C7E7",
+    "Transgender woman": "#FF4433",
+    "Additional gender identity": "#228B22",
+    Unknown: "#3D2B1F",
+    "Declined to answer": "#E4D00A",
+    Unknown: "#999",
+  },
 };
 
 var _networkPresetShapeSchemes = {
@@ -155,6 +179,23 @@ var _networkPresetShapeSchemes = {
     Female: "ellipse",
     Missing: "diamond",
     missing: "diamond",
+    Unknown: "diamond",
+  },
+  sex_birth: {
+    Male: "square",
+    Female: "ellipse",
+    Missing: "diamond",
+    missing: "diamond",
+    Unknown: "diamond",
+  },
+  gender_identity: {
+    Man: "square",
+    Woman: "ellipse",
+    "Transgender man": "hexagon",
+    "Transgender woman": "circle",
+    "Additional gender identity": "pentagon",
+    Unknown: "diamond",
+    "Declined to answer": "diamond",
     Unknown: "diamond",
   },
   race_cat: {
@@ -10272,9 +10313,18 @@ var hivtrace_cluster_network_graph = function (
 
     if (cat_id) {
       if (cat_id in self.networkColorScheme) {
+        let cat_data = graph_data[_networkGraphAttrbuteID][cat_id]["enum"];
+        if (cat_data) {
+          cat_data = new Set(_.map(cat_data, (d) => d.toLowerCase()));
+        }
         var domain = [],
           range = [];
         _.each(self.networkColorScheme[cat_id], function (value, key) {
+          if (cat_data) {
+            if (!cat_data.has(key.toLowerCase())) {
+              return;
+            }
+          }
           domain.push(key);
           range.push(value);
         });
