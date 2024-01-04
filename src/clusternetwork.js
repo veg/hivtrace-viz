@@ -112,20 +112,30 @@ var _networkSequentialColor = {
   ],
 };
 
+/*
+Sex/Transmission Risk
+
+IDU= blue
+Heterosexual= green
+Perinatal, child= red
+MMSC= orange
+Other= grey (leave as-is)*/
+
 var _networkPresetColorSchemes = {
   sex_trans: {
     "MSM-Male": "#1f78b4",
-    "MMSC-Male": "#1f78b4",
+    "MMSC-Male": "#FFBF00",
     "MSM-Unknown sex": "#1f78b4",
-    "MMSC-Unknown sex": "#1f78b4",
-    "Heterosexual Contact-Male": "#e31a1c",
-    "Heterosexual Contact-Female": "#e31a1c",
-    "Heterosexual Contact-Unknown sex": "#e31a1c",
-    "IDU-Male": "#33a02c",
+    "MMSC-Unknown sex": "#FFBF00",
+    "Heterosexual Contact-Male": "#AAFF00",
+    "Heterosexual Contact-Female": "#AAFF00",
+    "Heterosexual Contact-Unknown sex": "#AAFF00",
+    "IDU-Male": "#0096FF",
     "MSM & IDU-Male": "#33a02c",
-    "MMSC & IDU-Male": "#33a02c",
-    "IDU-Female": "#33a02c",
-    "IDU-Unknown sex": "#33a02c",
+    "MMSC & IDU-Unknown sex": "#0096FF",
+    "MMSC & IDU-Male": "#FFBF00",
+    "IDU-Female": "#0096FF",
+    "IDU-Unknown sex": "#0096FF",
     "Other/Unknown-Male": "#636363",
     "Other/Unknown-Female": "#636363",
     "Other-Male": "#636363",
@@ -133,9 +143,9 @@ var _networkPresetColorSchemes = {
     Missing: "#636363",
     "": "#636363",
     "Other/Unknown-Unknown sex": "#636363",
-    Perinatal: "#ff7f00",
-    "Other/Unknown-Child": "#ff7f00",
-    "Other-Child": "#ff7f00",
+    Perinatal: "#D2042D",
+    "Other/Unknown-Child": "#D2042D",
+    "Other-Child": "#D2042D",
   },
 
   race_cat: {
@@ -152,23 +162,23 @@ var _networkPresetColorSchemes = {
     White: "#d62728",
   },
   sex_birth: {
-    Male: "#0047AB",
-    Female: "#E30B5C",
-    Unknown: "#3D2B1F",
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
   },
   birth_sex: {
-    Male: "#4682B4",
-    Female: "#b22222",
-    Unknown: "#3D2B1F",
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
   },
+
   gender_identity: {
-    Man: "#0047AB",
-    Woman: "#E30B5C",
-    "Transgender man": "#A7C7E7",
-    "Transgender woman": "#FF4433",
-    "Additional gender identity": "#228B22",
-    Unknown: "#3D2B1F",
-    "Declined to answer": "#E4D00A",
+    Woman: "#AAFF00",
+    "Transgender woman": "#228B22",
+    Man: "#FFBF00",
+    "Transgender man": "#FF5F1F",
+    "Declined to answer": "#FAFA33",
+    "Additional gender identity": "#D2042D",
     Unknown: "#999",
   },
 };
