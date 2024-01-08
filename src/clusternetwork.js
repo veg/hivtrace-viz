@@ -1119,7 +1119,7 @@ var hivtrace_cluster_network_graph = function (
 
   self.priority_groups_check_name = function (string, prior_name) {
     if (string.length) {
-      if (string.length == 35) return false;
+      if (string.length == 36) return false;
       return !_.some(
         self.defined_priority_groups,
         (d) => d.name == string && d.name != prior_name
@@ -1270,7 +1270,7 @@ var hivtrace_cluster_network_graph = function (
             autoexpanded +
             "</b> clusters of interest." +
             (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.<br>"
+              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
               : "");
           self.display_warning(self.warning_string, true);
         }
@@ -1904,6 +1904,17 @@ var hivtrace_cluster_network_graph = function (
     op_code
   ) {
     function check_dup() {
+      if (
+        nodeset.name[0] == " " ||
+        nodeset.name[nodeset.name.length - 1] == " "
+      ) {
+        alert(
+          "Cluster of interest '" +
+            nodeset.name +
+            "' has spaces either at the beginning or end of the name. Secure HIV-TRACE does not allow names that start or end with spaces."
+        );
+        return true;
+      }
       let my_nodes = new Set(_.map(nodeset.nodes, (d) => d.name));
       return _.some(self.defined_priority_groups, (d) => {
         if (d.nodes.length == my_nodes.size) {
@@ -2519,7 +2530,7 @@ var hivtrace_cluster_network_graph = function (
           .classed("form-control input-sm", true)
           .attr("placeholder", "Name this cluster of interest")
           .attr("data-hivtrace-ui-role", "priority-panel-name")
-          .attr("maxlength", 35);
+          .attr("maxlength", 36);
 
         var grp_name_box_label = grp_name
           .append("p")
@@ -2763,11 +2774,10 @@ var hivtrace_cluster_network_graph = function (
             }
             panel_object.first_save = false;
           }
-          document
-            .querySelector(
-              self.get_ui_element_selector_by_role("priority-panel-name", true)
-            )
-            .focus();
+          let panel_to_focus = document.querySelector(
+            self.get_ui_element_selector_by_role("priority-panel-name", true)
+          );
+          if (panel_to_focus) panel_to_focus.focus();
           return res;
         }
 
@@ -2821,7 +2831,7 @@ var hivtrace_cluster_network_graph = function (
                 save_set_button.attr("disabled", null);
               }
             } else {
-              let too_long = current_text.length == 35;
+              let too_long = current_text.length == 36;
               grp_name.classed({
                 "has-success": false,
                 "has-error": !too_long,
