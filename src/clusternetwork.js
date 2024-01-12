@@ -1170,6 +1170,7 @@ var hivtrace_cluster_network_graph = function (
 
   self.priority_groups_check_name = function (string, prior_name) {
     if (string.length) {
+      if (string.length == 36) return false;
       return !_.some(
         self.defined_priority_groups,
         (d) => d.name == string && d.name != prior_name
@@ -1178,7 +1179,7 @@ var hivtrace_cluster_network_graph = function (
     return false;
   };
 
-  self.load_priority_sets = function (url, is_writeable, use_date_driven) {
+  self.load_priority_sets = function (url, is_writeable) {
     d3.json(url, function (error, results) {
       if (error) {
         throw "Failed loading cluster of interest file " + error.responseURL;
@@ -1198,8 +1199,7 @@ var hivtrace_cluster_network_graph = function (
           });
         });
 
-        self.priority_set_table_writeable =
-          is_writeable || (use_date_driven && self.today >= latest_date);
+        self.priority_set_table_writeable = is_writeable == "writeable";
 
         self.priority_groups_validate(
           self.defined_priority_groups,
@@ -1321,7 +1321,7 @@ var hivtrace_cluster_network_graph = function (
             autoexpanded +
             "</b> clusters of interest." +
             (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.<br>"
+              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
               : "");
           self.display_warning(self.warning_string, true);
         }
@@ -1332,8 +1332,11 @@ var hivtrace_cluster_network_graph = function (
         );
 
         if (!self.priority_set_table_writeable) {
-          self.warning_string +=
-            '<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because the network is <b>older</b> than some of the Clusters of Interest. None of the changes to clustersOI made during this session will be recorded.</p>';
+          const rationale =
+            is_writeable == "old"
+              ? "the network is <b>older</b> than some of the Clusters of Interest"
+              : "the network was ran in <b>standalone</b> mode so no data is stored";
+          self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
           self.display_warning(self.warning_string, true);
           if (tab_pill) {
             d3.select(tab_pill).text("Read-only");
@@ -1952,6 +1955,17 @@ var hivtrace_cluster_network_graph = function (
     op_code
   ) {
     function check_dup() {
+      if (
+        nodeset.name[0] == " " ||
+        nodeset.name[nodeset.name.length - 1] == " "
+      ) {
+        alert(
+          "Cluster of interest '" +
+            nodeset.name +
+            "' has spaces either at the beginning or end of the name. Secure HIV-TRACE does not allow names that start or end with spaces."
+        );
+        return true;
+      }
       let my_nodes = new Set(_.map(nodeset.nodes, (d) => d.name));
       return _.some(self.defined_priority_groups, (d) => {
         if (d.nodes.length == my_nodes.size) {
@@ -2088,7 +2102,10 @@ var hivtrace_cluster_network_graph = function (
           //console.log ("GROUP: ",g.name, " = ", g.modified);
 
           const exclude_nodes = new Set(g.not_in_network);
-
+          let cluster_detect_size = 0;
+          g.nodes.forEach((node) => {
+            if (node.added <= g.created) cluster_detect_size++;
+          });
           return _.map(
             _.filter(g.nodes, (gn) => !exclude_nodes.has(gn.name)),
             (gn) => {
@@ -2102,11 +2119,41 @@ var hivtrace_cluster_network_graph = function (
                 new_linked_case: self.priority_groups_is_new_node(g, gn)
                   ? 1
                   : 0,
-                cluster_created: hivtrace_date_or_na_if_missing(g.created),
+                cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
                 network_date: hivtrace_date_or_na_if_missing(self.today),
+                cluster_detect_size: cluster_detect_size,
+                cluster_type: g.createdBy,
+                cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
+                cluster_growth: _cdcConciseTrackingOptions[g.tracking],
+                national_priority: g.meets_priority_def,
+                cluster_current_size: g.nodes.length,
+                cluster_dx_recent12_mo: g.last12,
+                cluster_overlap: g.overlap.sets,
               };
             }
           );
+        }
+      )
+    );
+  };
+
+  self.priority_groups_export_sets = function () {
+    return _.flatten(
+      _.map(
+        _.filter(self.defined_priority_groups, (g) => g.validated),
+        (g) => {
+          return {
+            cluster_type: g.createdBy,
+            cluster_uid: g.name,
+            cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
+            cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
+            cluster_ident_method: g.kind,
+            cluster_growth: _cdcConciseTrackingOptions[g.tracking],
+            cluster_current_size: g.nodes.length,
+            national_priority: g.meets_priority_def,
+            cluster_dx_recent12_mo: g.last12,
+            cluster_overlap: g.overlap.sets,
+          };
         }
       )
     );
@@ -2533,12 +2580,20 @@ var hivtrace_cluster_network_graph = function (
           .append("input")
           .classed("form-control input-sm", true)
           .attr("placeholder", "Name this cluster of interest")
-          .attr("data-hivtrace-ui-role", "priority-panel-name");
+          .attr("data-hivtrace-ui-role", "priority-panel-name")
+          .attr("maxlength", 36);
 
         var grp_name_box_label = grp_name
           .append("p")
           .classed("help-block", true)
           .text("Name this cluster of interest");
+
+        grp_name_button.on("input", function () {
+          if (this.value.length == 35);
+          {
+            grp_name.classed("form-group has-error");
+          }
+        });
 
         var grp_kind = form_save.append("div").classed("form-group", true);
 
@@ -2770,6 +2825,10 @@ var hivtrace_cluster_network_graph = function (
             }
             panel_object.first_save = false;
           }
+          let panel_to_focus = document.querySelector(
+            self.get_ui_element_selector_by_role("priority-panel-name", true)
+          );
+          if (panel_to_focus) panel_to_focus.focus();
           return res;
         }
 
@@ -2813,15 +2872,27 @@ var hivtrace_cluster_network_graph = function (
                 panel_object.prior_name
               )
             ) {
-              grp_name.classed({ "has-success": true, "has-error": false });
+              grp_name.classed({
+                "has-success": true,
+                "has-error": false,
+                "has-warning": false,
+              });
               grp_name_box_label.text("Name this cluster of interest");
               if (panel_object.network_nodes.length) {
                 save_set_button.attr("disabled", null);
               }
             } else {
-              grp_name.classed({ "has-success": false, "has-error": true });
+              let too_long = current_text.length == 36;
+              grp_name.classed({
+                "has-success": false,
+                "has-error": !too_long,
+                "has-warning": too_long,
+              });
+              let error_message = too_long
+                ? "MUST be shorter than 36 characters"
+                : "MUST be unique";
               grp_name_box_label.text(
-                "Name this cluster of interest (MUST be unique)"
+                "Name this cluster of interest " + error_message
               );
               save_set_button.attr("disabled", "disabled");
             }
@@ -8591,8 +8662,8 @@ var hivtrace_cluster_network_graph = function (
                   );
                   self.open_priority_set_editor(
                     copied_node_objects,
+                    "",
                     "Clone of " + pg.name,
-                    ref_set.description,
                     ref_set.kind
                   );
                   self.redraw_tables();
@@ -8791,6 +8862,12 @@ var hivtrace_cluster_network_graph = function (
         helpers.export_csv_button(
           self.priority_groups_export_nodes(),
           "clusters-of-interest"
+        );
+      });
+      d3.select("#priority_set_table_download").on("click", function (d) {
+        helpers.export_csv_button(
+          self.priority_groups_export_sets(),
+          "priority_set_table"
         );
       });
     }
@@ -13050,12 +13127,8 @@ var hivtrace_cluster_network_graph = function (
     }
 
     if (options["priority-sets-url"]) {
-      let is_writeable = options["is-latest"];
-      self.load_priority_sets(
-        options["priority-sets-url"],
-        is_writeable,
-        options["date-driven-writeable"]
-      );
+      let is_writeable = options["is-writeable"];
+      self.load_priority_sets(options["priority-sets-url"], is_writeable);
     }
 
     if (self.showing_diff) {
