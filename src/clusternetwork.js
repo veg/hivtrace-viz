@@ -112,17 +112,30 @@ var _networkSequentialColor = {
   ],
 };
 
+/*
+Sex/Transmission Risk
+
+IDU= blue
+Heterosexual= green
+Perinatal, child= red
+MMSC= orange
+Other= grey (leave as-is)*/
+
 var _networkPresetColorSchemes = {
   sex_trans: {
     "MSM-Male": "#1f78b4",
+    "MMSC-Male": "#FFBF00",
     "MSM-Unknown sex": "#1f78b4",
-    "Heterosexual Contact-Male": "#e31a1c",
-    "Heterosexual Contact-Female": "#e31a1c",
-    "Heterosexual Contact-Unknown sex": "#e31a1c",
-    "IDU-Male": "#33a02c",
+    "MMSC-Unknown sex": "#FFBF00",
+    "Heterosexual Contact-Male": "#AAFF00",
+    "Heterosexual Contact-Female": "#AAFF00",
+    "Heterosexual Contact-Unknown sex": "#AAFF00",
+    "IDU-Male": "#0096FF",
     "MSM & IDU-Male": "#33a02c",
-    "IDU-Female": "#33a02c",
-    "IDU-Unknown sex": "#33a02c",
+    "MMSC & IDU-Unknown sex": "#0096FF",
+    "MMSC & IDU-Male": "#FFBF00",
+    "IDU-Female": "#0096FF",
+    "IDU-Unknown sex": "#0096FF",
     "Other/Unknown-Male": "#636363",
     "Other/Unknown-Female": "#636363",
     "Other-Male": "#636363",
@@ -130,10 +143,11 @@ var _networkPresetColorSchemes = {
     Missing: "#636363",
     "": "#636363",
     "Other/Unknown-Unknown sex": "#636363",
-    Perinatal: "#ff7f00",
-    "Other/Unknown-Child": "#ff7f00",
-    "Other-Child": "#ff7f00",
+    Perinatal: "#D2042D",
+    "Other/Unknown-Child": "#D2042D",
+    "Other-Child": "#D2042D",
   },
+
   race_cat: {
     Asian: "#1f77b4",
     "Black/African American": "#bcbd22",
@@ -147,6 +161,26 @@ var _networkPresetColorSchemes = {
     missing: "#999",
     White: "#d62728",
   },
+  sex_birth: {
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
+  },
+  birth_sex: {
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
+  },
+
+  gender_identity: {
+    Woman: "#AAFF00",
+    "Transgender woman": "#228B22",
+    Man: "#FFBF00",
+    "Transgender man": "#FF5F1F",
+    "Declined to answer": "#FAFA33",
+    "Additional gender identity": "#D2042D",
+    Unknown: "#999",
+  },
 };
 
 var _networkPresetShapeSchemes = {
@@ -155,6 +189,23 @@ var _networkPresetShapeSchemes = {
     Female: "ellipse",
     Missing: "diamond",
     missing: "diamond",
+    Unknown: "diamond",
+  },
+  sex_birth: {
+    Male: "square",
+    Female: "ellipse",
+    Missing: "diamond",
+    missing: "diamond",
+    Unknown: "diamond",
+  },
+  gender_identity: {
+    Man: "square",
+    Woman: "ellipse",
+    "Transgender man": "hexagon",
+    "Transgender woman": "circle",
+    "Additional gender identity": "pentagon",
+    Unknown: "diamond",
+    "Declined to answer": "diamond",
     Unknown: "diamond",
   },
   race_cat: {
@@ -10272,9 +10323,18 @@ var hivtrace_cluster_network_graph = function (
 
     if (cat_id) {
       if (cat_id in self.networkColorScheme) {
+        let cat_data = graph_data[_networkGraphAttrbuteID][cat_id]["enum"];
+        if (cat_data) {
+          cat_data = new Set(_.map(cat_data, (d) => d.toLowerCase()));
+        }
         var domain = [],
           range = [];
         _.each(self.networkColorScheme[cat_id], function (value, key) {
+          if (cat_data) {
+            if (!cat_data.has(key.toLowerCase())) {
+              return;
+            }
+          }
           domain.push(key);
           range.push(value);
         });
