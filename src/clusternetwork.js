@@ -5988,6 +5988,7 @@ var hivtrace_cluster_network_graph = function (
             if (current_node_set) {
               self.open_priority_set_editor(
                 [],
+                "",
                 "Merged from " + [...current_selection].join(" and ")
               );
               self
