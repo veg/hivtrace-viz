@@ -179,6 +179,7 @@ var _networkPresetColorSchemes = {
     "Transgender man": "#FF5F1F",
     "Declined to answer": "#FAFA33",
     "Additional gender identity": "#D2042D",
+    Missing: "#999",
     Unknown: "#999",
   },
 };
