@@ -155,6 +155,7 @@ var _networkPresetColorSchemes = {
     "American Indian/Alaska Native": "#2ca02c",
     "Native Hawaiian/Other Pacific Islander": "#17becf",
     "Multiple Races": "#e377c2",
+    Multiracial: "#e377c2",
     "Multiple races": "#e377c2",
     "Unknown race": "#999",
     Missing: "#999",
