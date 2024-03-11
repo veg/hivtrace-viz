@@ -1194,7 +1194,6 @@ var hivtrace_cluster_network_graph = function (
               if (n.added > latest_date) {
                 latest_date = n.added;
               }
-              n.autoadded = false;
             } catch (e) {}
           });
         });
@@ -2954,7 +2953,7 @@ var hivtrace_cluster_network_graph = function (
 
         panel_object._append_node = function (node) {
           if (!("_priority_set_date" in node)) {
-            node["_priority_set_date"] = self.getCurrentDate();
+            node["_priority_set_date"] = createdDate;
           } else {
           }
           if (!("_priority_set_kind" in node)) {
@@ -5989,6 +5988,7 @@ var hivtrace_cluster_network_graph = function (
             if (current_node_set) {
               self.open_priority_set_editor(
                 [],
+                "",
                 "Merged from " + [...current_selection].join(" and ")
               );
               self
@@ -8867,7 +8867,7 @@ var hivtrace_cluster_network_graph = function (
       d3.select("#priority_set_table_download").on("click", function (d) {
         helpers.export_csv_button(
           self.priority_groups_export_sets(),
-          "priority_set_table"
+          "clusters_of_interest_table"
         );
       });
     }
