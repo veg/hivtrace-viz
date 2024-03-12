@@ -4,7 +4,6 @@ import { hivtrace_cluster_graph_summary } from "./hivtrace_cluster_graph_summary
 import { histogram, histogramDistances } from "./histogram.js";
 import { scatterPlot } from "./scatterplot.js";
 
-// QUESTION: should these be exported? (seems like they are not being used - misc, helpers, colorPicker)
 let misc = require("./misc.js");
 let helpers = require("./helpers.js");
 let colorPicker = require("./colorPicker.js");

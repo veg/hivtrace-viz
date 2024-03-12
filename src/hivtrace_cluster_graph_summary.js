@@ -93,14 +93,14 @@ var hivtrace_cluster_graph_summary = function (graph, tag, not_CDC) {
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
       _defaultPercentFormat(degrees["min"]) +
-        " - " +
-        _defaultPercentFormat(degrees["max"]),
+      " - " +
+      _defaultPercentFormat(degrees["max"]),
     ]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
       _defaultPercentFormat(degrees["Q1"]) +
-        " - " +
-        _defaultPercentFormat(degrees["Q3"]),
+      " - " +
+      _defaultPercentFormat(degrees["Q3"]),
     ]);
   }
 
