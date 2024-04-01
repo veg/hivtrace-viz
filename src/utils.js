@@ -1,10 +1,18 @@
+let is_primary_graph;
+let ui_container_selector;
+
+function init(is_primary_graph_arg, ui_container_selector_arg) {
+  is_primary_graph = is_primary_graph_arg;
+  ui_container_selector = ui_container_selector_arg;
+}
+
 // TODO: consolidate with other utility / helper function files
 function get_ui_element_selector_by_role(role, not_nested) {
-  if (not_nested && !self.primary_graph) {
+  if (not_nested && !is_primary_graph) {
     return undefined;
   }
   return (
-    (not_nested ? "" : "#" + self.ui_container_selector) +
+    (not_nested ? "" : "#" + ui_container_selector) +
     " [data-hivtrace-ui-role='" +
     role +
     "']"
@@ -12,5 +20,6 @@ function get_ui_element_selector_by_role(role, not_nested) {
 };
 
 module.exports = {
-  get_ui_element_selector_by_role
+  init,
+  get_ui_element_selector_by_role,
 };
