@@ -1,8 +1,8 @@
-const d3 = require("d3"),
-  _ = require("underscore"),
-  utils = require("./utils.js"),
-  timeDateUtil = require('./time_date_util.js').
-  nodesTab = require('./nodes_tab.js');
+const d3 = require("d3");
+const _ = require("underscore");
+const utils = require("./utils.js");
+const timeDateUtil = require('./timeDateUtil.js');
+const nodesTab = require('./nodesTab.js');
 
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";

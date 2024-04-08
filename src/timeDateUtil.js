@@ -4,12 +4,10 @@ const _networkTimeQuery = new RegExp("([0-9]{8}):([0-9]{8})", "i");
 let cluster_time_scale;
 
 function init(options, isCDC) {
-  if (options && "cluster-time" in options) {
-    cluster_time_scale = options["cluster-time"];
-  }
+  cluster_time_scale = options?.["cluster-time"];
 
-  if (isCDC) {
-    cluster_time_scale = cluster_time_scale || _networkCDCDateField;
+  if (isCDC && !cluster_time_scale) {
+    cluster_time_scale = _networkCDCDateField;
   }
 }
 
@@ -22,9 +20,7 @@ function getCurrentDate() {
 };
 
 function getAncientDate() {
-  let d = new Date();
-  d.setYear(1900);
-  return d;
+  return new Date(1900, 0, 1);
 };
 
 
