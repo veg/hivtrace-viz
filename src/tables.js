@@ -1,19 +1,11 @@
 const d3 = require("d3"),
   _ = require("underscore"),
   utils = require("./utils.js"),
-  timeDateUtil = require('./time_date_util.js');
+  timeDateUtil = require('./time_date_util.js').
+  nodesTab = require('./nodes_tab.js');
 
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
-let node_table;
-
-function init(node_table_arg) {
-  node_table = node_table_arg;
-}
-
-function getNodeTable() {
-  return node_table;
-}
 
 function add_a_sortable_table(
   container,
@@ -144,7 +136,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         add_to_ps.on("click", function (d) {
           let node_ids = [];
-          node_table.selectAll("tr").each(function (d, i) {
+          nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
             let this_row = d3.select(this);
             if (this_row.style("display") != "none") {
               this_row.selectAll("td").each(function (d, j) {
@@ -641,8 +633,6 @@ function sort_table_toggle_icon(element, value) {
 module.exports = {
   _networkNodeIDField,
   _networkNewNodeMarker,
-  getNodeTable,
-  init,
   add_a_sortable_table,
   format_a_cell,
   sort_table_by_column,

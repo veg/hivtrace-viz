@@ -11,7 +11,8 @@ var misc = require("./misc"),
   scatterPlot = require("./scatterplot"),
   utils = require("./utils"),
   tables = require("./tables"),
-  timeDateUtil = require("./time_date_util");
+  timeDateUtil = require("./time_date_util"),
+  nodesTab = require("./nodes_tab");
 
 
 const _networkSubclusterSeparator = ".";
@@ -3367,7 +3368,7 @@ var hivtrace_cluster_network_graph = function (
     },
   };
 
-  tables.init(d3.select(nodes_table));
+  nodesTab.init(d3.select(nodes_table));
 
   (self.filter_edges = true),
     (self.hide_hxb2 = false),
@@ -7473,7 +7474,7 @@ var hivtrace_cluster_network_graph = function (
               expand_cluster(self.clusters[payload[3] - 1]);
             }
             //format_a_cell(d3.select(element).datum(), null, element);
-            self.update_volatile_elements(tables.getNodeTable());
+            self.update_volatile_elements(nodesTab.getNodeTable());
           }
         }
       });
@@ -7516,7 +7517,7 @@ var hivtrace_cluster_network_graph = function (
     if (self.subcluster_table) {
       self.update_volatile_elements(self.subcluster_table);
     }
-    self.update_volatile_elements(tables.getNodeTable());
+    self.update_volatile_elements(nodesTab.getNodeTable());
     if (self.priority_set_table) {
       self.update_volatile_elements(self.priority_set_table);
     }
@@ -7527,7 +7528,7 @@ var hivtrace_cluster_network_graph = function (
     container,
     extra_columns
   ) {
-    container = container || tables.getNodeTable();
+    container = container || nodesTab.getNodeTable();
 
     if (container) {
       node_list = node_list || self.nodes;
@@ -8451,7 +8452,7 @@ var hivtrace_cluster_network_graph = function (
     container,
     table_caption
   ) {
-    container = container || tables.getNodeTable();
+    container = container || nodesTab.getNodeTable();
 
     if (container) {
       node_list = node_list || self.nodes;
@@ -12384,7 +12385,7 @@ var hivtrace_cluster_network_graph = function (
 
   d3.select(self.container).selectAll(".my_progress").style("display", "none");
   d3.select(self.container).selectAll("svg").remove();
-  tables.getNodeTable().selectAll("*").remove();
+  nodesTab.getNodeTable().selectAll("*").remove();
   self.cluster_table.selectAll("*").remove();
 
   self.network_svg = d3
