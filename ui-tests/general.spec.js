@@ -5,7 +5,6 @@ test('network graph loaded', async ({ page }) => {
 	await page.goto('http://127.0.0.1:8080/');
 
 	await expect(page).toHaveTitle('HIV-TRACE');
-	
 	await expect(page.locator("#hiv-trace-network-svg")).toBeVisible();
 });
 
@@ -17,5 +16,4 @@ test('network statistics loaded', async ({ page }) => {
 	await expect(page.locator("#trace-graph")).toBeVisible();
 	await expect(page.getByText("Sequences used to make links")).toBeVisible();
 	await expect(page.getByText("0.891%")).toBeVisible();
-
 });
