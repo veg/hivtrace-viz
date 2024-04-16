@@ -35,6 +35,8 @@
     "@fortawesome/free-brands-svg-icons": "^6.2.1",
     "@fortawesome/free-regular-svg-icons": "^6.2.1",
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@playwright/test": "^1.43.0",
+    "@types/node": "^20.12.5",
     "@zainulbr/i18n-webpack-plugin": "^2.0.3",
     "babel-loader": "^9.1.0",
     "babel-preset-react-hmre": "^1.1.1",
