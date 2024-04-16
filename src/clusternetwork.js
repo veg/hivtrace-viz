@@ -2547,6 +2547,7 @@ var hivtrace_cluster_network_graph = function (
         var submit_button = form
           .append("button")
           .classed("btn btn-primary btn-sm", true)
+		  .attr("id", "priority-panel-add-node")
           .attr("disabled", "disabled")
           .on("click", function (e) {
             panel_object.append_node();
@@ -3078,10 +3079,12 @@ var hivtrace_cluster_network_graph = function (
             .selectAll("table")
             .data(["panel"]);
           table_container.enter().append("table");
-          table_container.classed(
+          table_container
+		  .classed(
             "table table-striped table-condensed table-hover table-smaller",
             true
-          );
+		  )
+		  .attr("id", "priority-panel-node-table");
 
           panel.setHeaderTitle(
             "clusterOI editor (" +
