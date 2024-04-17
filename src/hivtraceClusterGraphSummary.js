@@ -6,7 +6,7 @@ var _defaultFloatFormat = d3.format(",.2r");
 var _defaultPercentFormat = d3.format(",.3p");
 
 // The function for creating the "Network Statistics" table that is displayed on the "Statistics" tab.
-var hivtrace_cluster_graph_summary = function (graph, tag, not_CDC) {
+var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   var summary_table = d3.select(tag);
 
   summary_table = d3.select(tag).select("tbody");
@@ -93,14 +93,14 @@ var hivtrace_cluster_graph_summary = function (graph, tag, not_CDC) {
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
       _defaultPercentFormat(degrees["min"]) +
-        " - " +
-        _defaultPercentFormat(degrees["max"]),
+      " - " +
+      _defaultPercentFormat(degrees["max"]),
     ]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
       _defaultPercentFormat(degrees["Q1"]) +
-        " - " +
-        _defaultPercentFormat(degrees["Q3"]),
+      " - " +
+      _defaultPercentFormat(degrees["Q3"]),
     ]);
   }
 
@@ -117,4 +117,4 @@ var hivtrace_cluster_graph_summary = function (graph, tag, not_CDC) {
   });
 };
 
-module.exports.hivtrace_cluster_graph_summary = hivtrace_cluster_graph_summary;
+module.exports.hivtraceClusterGraphSummary = hivtraceClusterGraphSummary;

@@ -17,11 +17,11 @@ function hivtrace_render_prevalence(
   var container = d3.select(id);
 
   var margin = {
-      top: base_line * 2,
-      right: base_line * 1.5,
-      bottom: 3 * base_line,
-      left: 5 * base_line,
-    },
+    top: base_line * 2,
+    right: base_line * 1.5,
+    bottom: 3 * base_line,
+    left: 5 * base_line,
+  },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom,
     font_size = baseline * 1.25,
@@ -77,10 +77,10 @@ function hivtrace_render_prevalence(
     .attr(
       "transform",
       "translate(" +
-        (margin.left + font_size * 2.5) +
-        "," +
-        (margin.top + font_size) +
-        ")"
+      (margin.left + font_size * 2.5) +
+      "," +
+      (margin.top + font_size) +
+      ")"
     );
 
   svg = svg

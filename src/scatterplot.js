@@ -5,11 +5,11 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   var _defaultDateViewFormatShort = d3.time.format("%B %Y");
 
   var margin = {
-      top: 10,
-      right: 10,
-      bottom: 100,
-      left: 100,
-    },
+    top: 10,
+    right: 10,
+    bottom: 100,
+    left: 100,
+  },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 
