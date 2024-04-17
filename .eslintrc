@@ -14,7 +14,13 @@
   },
   "rules": {
     "strict": "off",
-    "no-unused-vars": [1, { "vars": "all", "args": "none" }],
+    "no-unused-vars": [
+      1,
+      {
+        "vars": "all",
+        "args": "none"
+      }
+    ],
     "no-self-assign": 1,
     "no-unreachable": 1,
     "no-useless-catch": 1,

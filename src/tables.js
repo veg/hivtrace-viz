@@ -1,8 +1,11 @@
-var d3 = require("d3"),
-  _ = require("underscore"),
-  utils = require("./utils.js");
+const d3 = require("d3");
+const _ = require("underscore");
+const utils = require("./utils.js");
+const timeDateUtil = require('./timeDateUtil.js');
+const nodesTab = require('./nodesTab.js');
 
-var _networkNodeIDField = "hivtrace_node_id";
+const _networkNodeIDField = "hivtrace_node_id";
+const _networkNewNodeMarker = "[+]";
 
 function add_a_sortable_table(
   container,
@@ -10,7 +13,7 @@ function add_a_sortable_table(
   content,
   overwrite,
   caption,
-  has_priority_set_editor
+  priority_set_editor
 ) {
   if (!container || !container.node()) {
     return;
@@ -49,7 +52,7 @@ function add_a_sortable_table(
       .call(function (selection) {
         return selection.each(function (d, i) {
           set_table_elements(d, this);
-          format_a_cell(d, i, this, has_priority_set_editor);
+          format_a_cell(d, i, this, priority_set_editor);
         });
       });
     container.node().appendChild(tbody.node());
@@ -73,7 +76,7 @@ function add_a_sortable_table(
       .call(function (selection) {
         return selection.each(function (d, i) {
           set_table_elements(d, this);
-          format_a_cell(d, i, this, has_priority_set_editor);
+          format_a_cell(d, i, this, priority_set_editor);
         });
       });
   }
@@ -98,7 +101,7 @@ function table_get_cell_value(data) {
   return _.isFunction(data.value) ? data.value() : data.value;
 }
 
-function format_a_cell(data, index, item, has_priority_set_editor) {
+function format_a_cell(data, index, item, priority_set_editor) {
   var this_sel = d3.select(item);
   var current_value = table_get_cell_value(data);
   var handle_sort = this_sel;
@@ -119,7 +122,7 @@ function format_a_cell(data, index, item, has_priority_set_editor) {
 
     if (data.value == _networkNodeIDField) {
       // this is an ugly hardcode.
-      if (has_priority_set_editor) {
+      if (priority_set_editor) {
         //console.log ("Here");
         var add_to_ps = handle_sort.append("a").property("href", "#");
         add_to_ps
@@ -133,14 +136,14 @@ function format_a_cell(data, index, item, has_priority_set_editor) {
 
         add_to_ps.on("click", function (d) {
           let node_ids = [];
-          self.node_table.selectAll("tr").each(function (d, i) {
+          nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
             let this_row = d3.select(this);
             if (this_row.style("display") != "none") {
               this_row.selectAll("td").each(function (d, j) {
                 if (j == data.column_id) {
-                  let has_marker = d.value.indexOf(_networkNewNodeMarker);
-                  if (has_marker > 0) {
-                    node_ids.push(d.value.substring(0, has_marker));
+                  let marker_index = d.value.indexOf(_networkNewNodeMarker);
+                  if (marker_index > 0) {
+                    node_ids.push(d.value.substring(0, marker_index));
                   } else {
                     node_ids.push(d.value);
                   }
@@ -148,7 +151,7 @@ function format_a_cell(data, index, item, has_priority_set_editor) {
               });
             }
           });
-          pse.append_nodes(node_ids);
+          priority_set_editor.append_nodes(node_ids);
         });
       }
     }
@@ -380,6 +383,182 @@ function format_a_cell(data, index, item, has_priority_set_editor) {
 }
 
 /** element is the sortable clicker **/
+
+function filter_table_by_column_handler(datum, conditions) {
+  if (conditions.length) {
+    return _.some(conditions, (c) => {
+      if (c.type == "re") {
+        return c.value.test(datum);
+      } else if (c.type == "date") {
+        return datum >= c.value[0] && datum <= c.value[1];
+      } else if (c.type == "distance") {
+        if (c.greater_than) return datum > c.value;
+
+        return datum <= c.value;
+      }
+      return false;
+    });
+  }
+
+  return true;
+}
+
+function filter_table(element) {
+  if (d3.event) {
+    d3.event.preventDefault();
+  }
+
+  var table_element = $(element).closest("table");
+
+  if (table_element.length) {
+    // construct compound filters over all columns
+
+    var filter_array = [];
+    var filter_handlers = [];
+
+    d3.select(table_element[0])
+      .selectAll("thead th")
+      .each(function (d, i) {
+        if (d.filter) {
+          if (_.isString(d.filter_term) && d.filter_term.length) {
+            filter_array[d.column_id] = filter_parse(d.filter_term);
+            filter_handlers[d.column_id] = _.isFunction(d.filter)
+              ? d.filter
+              : filter_table_by_column_handler;
+          } else {
+            filter_array[d.column_id] = null;
+            filter_handlers[d.column_id] = null;
+          }
+        }
+      });
+
+    var shown_rows = 0;
+
+    d3.select(table_element[0])
+      .select("tbody")
+      .selectAll("tr")
+      .each(function (d, r) {
+        var this_row = d3.select(this);
+        var hide_me = false;
+
+        this_row.selectAll("td").each(function (d, i) {
+          if (!hide_me) {
+            if (filter_array[i]) {
+              if (
+                !filter_handlers[i](table_get_cell_value(d), filter_array[i])
+              ) {
+                hide_me = true;
+              }
+            }
+          }
+        });
+
+        if (hide_me) {
+          this_row.style("display", "none");
+        } else {
+          shown_rows += 1;
+          this_row.style("display", null);
+        }
+      });
+    d3.select(table_element[0])
+      .select("caption")
+      .select(utils.get_ui_element_selector_by_role("table-count-shown", true))
+      .text(shown_rows);
+
+    /*.selectAll("td").each (function (d, i) {
+          if (i == filter_on) {
+              var this_cell = d3.select (this);
+              d3.select (this).style ("display", filter_handler ())
+          }
+      });*/
+
+    // select all other elements from thead and toggle their icons
+
+    /*$(table_element)
+      .find("thead [data-column-id]")
+      .filter(function() {
+        return parseInt($(this).data("column-id")) != sort_on;
+      })
+      .each(function() {
+        sort_table_toggle_icon(this, "unsorted");
+      });*/
+  }
+}
+
+function filter_parse(filter_value) {
+  let search_terms = [];
+  let quote_state = 0;
+  let current_term = [];
+  _.each(filter_value, (c) => {
+    if (c == " ") {
+      if (quote_state == 0) {
+        if (current_term.length) {
+          search_terms.push(current_term.join(""));
+          current_term = [];
+        }
+      } else {
+        current_term.push(c);
+      }
+    } else {
+      if (c == '"') {
+        quote_state = 1 - quote_state;
+      }
+      current_term.push(c);
+    }
+  });
+
+  if (quote_state == 0) {
+    search_terms.push(current_term.join(""));
+  }
+
+  return search_terms
+    .filter(function (d) {
+      return d.length > 0;
+    })
+    .map(function (d) {
+      if (d.length >= 2) {
+        if (d[0] == '"' && d[d.length - 1] == '"' && d.length > 2) {
+          return {
+            type: "re",
+            value: new RegExp("^" + d.substr(1, d.length - 2) + "$", "i"),
+          };
+        }
+        if (d[0] == "<" || d[0] == ">") {
+          var distance_threshold = parseFloat(d.substr(1));
+          if (distance_threshold > 0) {
+            return {
+              type: "distance",
+              greater_than: d[0] == ">",
+              value: distance_threshold,
+            };
+          }
+        }
+        if (timeDateUtil.getClusterTimeScale()) {
+          var is_range = timeDateUtil._networkTimeQuery.exec(d);
+          if (is_range) {
+            return {
+              type: "date",
+              value: _.map([is_range[1], is_range[2]], function (d) {
+                return new Date(
+                  d.substring(0, 4) +
+                  "-" +
+                  d.substring(4, 6) +
+                  "-" +
+                  d.substring(6, 8)
+                );
+              }),
+            };
+          }
+        }
+      }
+      return {
+        type: "re",
+        value: new RegExp(d, "i"),
+      };
+    });
+};
+
+/** element is the sortable clicker **/
 function sort_table_by_column(element, datum) {
   if (d3.event) {
     d3.event.preventDefault();
@@ -452,6 +631,8 @@ function sort_table_toggle_icon(element, value) {
 }
 
 module.exports = {
+  _networkNodeIDField,
+  _networkNewNodeMarker,
   add_a_sortable_table,
   format_a_cell,
   sort_table_by_column,

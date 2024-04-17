@@ -255,9 +255,9 @@ function datamonkey_export_handler(data, filename, mimeType) {
     pom.setAttribute(
       "href",
       "data:" +
-        (mimeType || "text/plain") +
-        ";charset=utf-8," +
-        encodeURIComponent(data)
+      (mimeType || "text/plain") +
+      ";charset=utf-8," +
+      encodeURIComponent(data)
     );
     pom.setAttribute("download", filename || "download.tsv");
     pom.click();

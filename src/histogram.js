@@ -53,11 +53,11 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
 
 function hivtrace_render_histogram_continuous(data, w, h, id) {
   var margin = {
-      top: 10,
-      right: 30,
-      bottom: 50,
-      left: 10,
-    },
+    top: 10,
+    right: 30,
+    bottom: 50,
+    left: 10,
+  },
     width = w - margin.right,
     height = h - margin.top - margin.bottom;
 
@@ -173,11 +173,11 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
 
 function hivtrace_render_histogram(counts, fit, w, h, id) {
   var margin = {
-      top: 10,
-      right: 30,
-      bottom: 50,
-      left: 30,
-    },
+    top: 10,
+    right: 30,
+    bottom: 50,
+    left: 30,
+  },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 

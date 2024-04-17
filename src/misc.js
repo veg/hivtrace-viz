@@ -433,10 +433,10 @@ function hivtrace_plot_cluster_dynamics(
     .attr(
       "transform",
       "translate(" +
-        (options.left + options.font_size * 2.5) +
-        "," +
-        (options.top + options.font_size) +
-        ")"
+      (options.left + options.font_size * 2.5) +
+      "," +
+      (options.top + options.font_size) +
+      ")"
     );
 
   /* set the domain for the codons */
@@ -445,8 +445,8 @@ function hivtrace_plot_cluster_dynamics(
 
   var color_scale =
     "colorizer" in options &&
-    options["colorizer"] &&
-    y_key in options["colorizer"]
+      options["colorizer"] &&
+      y_key in options["colorizer"]
       ? options["colorizer"][y_key]
       : d3.scale.category10();
 
@@ -635,10 +635,10 @@ function hivtrace_plot_cluster_dynamics(
           .append("title")
           .text(
             plot_key +
-              " " +
-              new_y +
-              " cases in " +
-              (x_tick_format ? x_tick_format(d["time"]) : d["time"])
+            " " +
+            new_y +
+            " cases in " +
+            (x_tick_format ? x_tick_format(d["time"]) : d["time"])
           );
 
         d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;

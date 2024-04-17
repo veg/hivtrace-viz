@@ -1,14 +1,13 @@
 import Bootstrap from "bootstrap/dist/css/bootstrap.css"; // eslint-disable-line
 import { clusterNetwork } from "./clusternetwork.js";
-import { hivtrace_cluster_graph_summary } from "./hivtrace_cluster_graph_summary.js";
+import { hivtraceClusterGraphSummary } from "./hivtraceClusterGraphSummary.js";
 import { histogram, histogramDistances } from "./histogram.js";
 import { scatterPlot } from "./scatterplot.js";
 
-// QUESTION: should these be exported? (seems like they are not being used - misc, helpers, colorPicker)
-let misc = require("./misc.js");
-let helpers = require("./helpers.js");
-let colorPicker = require("./colorPicker.js");
-let graphSummary = hivtrace_cluster_graph_summary;
+const misc = require("./misc.js");
+const helpers = require("./helpers.js");
+const colorPicker = require("./colorPicker.js");
+const graphSummary = hivtraceClusterGraphSummary;
 
 export {
   clusterNetwork,
