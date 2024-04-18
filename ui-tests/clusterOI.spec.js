@@ -22,7 +22,7 @@ test('clusterOI editor opens, can add nodes', async ({ page }) => {
 	await page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]').fill("BMK385560US2007");
 	await page.locator("#priority-panel-add-node").click();
 	await expect(page.locator("#priority-panel-node-table")
-	.filter({ has: page.getByText("BMK384750US2015") }))
-	.filter({ has: page.getByText("BMK385560US2007") }
-	.toBeVisible());
+	.filter({ has: page.getByText("BMK384750US2015") })
+	.filter({ has: page.getByText("BMK385560US2007") }))
+	.toBeVisible();
 });
