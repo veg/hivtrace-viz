@@ -8,11 +8,15 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 19.x]
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        node-version: ${{ matrix.node-version }}
     - name: Install dependencies
       run: npm install -g yarn && yarn
     - name: Install Playwright Browsers
