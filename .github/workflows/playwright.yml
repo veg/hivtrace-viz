@@ -1,9 +1,16 @@
 name: Playwright Tests
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - refactor
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - refactor
+  workflow_dispatch:
 jobs:
   test:
     timeout-minutes: 60
