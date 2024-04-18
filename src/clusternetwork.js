@@ -7007,9 +7007,9 @@ var hivtrace_cluster_network_graph = function (
                 return (
                   v[0] +
                   (v[1]
-                    ? ' <span title="Number of nodes added since the last network update" class="label label-default">' +
-                    v[1] +
-                    " new</span>"
+                    ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' +
+                      v[1] +
+                      " new</span>"
                     : "")
                 );
               }
