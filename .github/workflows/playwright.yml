@@ -1,24 +1,29 @@
-name: Playwright Tests
+name: Playwright UI Tests
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+      - refactor
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 jobs:
-  test:
+  run-ui-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x, 19.x]
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js '19.x'
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '19.x'
     - name: Install dependencies
       run: npm install -g yarn && yarn
+    - name: Build the project
+      run: yarn build
     - name: Install Playwright Browsers
       run: yarn playwright install --with-deps
     - name: Run Playwright tests

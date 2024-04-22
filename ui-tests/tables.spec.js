@@ -1,5 +1,21 @@
 const { test, expect } = require('@playwright/test');
 
+let errors = [];
+
+test.beforeEach(async ({ page }) => {
+  errors = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      console.log(msg.text());
+      errors.push(msg.text());
+    }
+  })
+});
+
+test.afterEach(async ({ page }) => {
+	expect(errors).toEqual([]);
+});
+
 test('cluster table loads and works', async ({ page }) => {
 	await page.goto('http://127.0.0.1:8080/');
 
