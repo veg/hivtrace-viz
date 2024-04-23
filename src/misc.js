@@ -983,14 +983,20 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     });
 }
 
-module.exports.coi_timeseries = hivtrace_coi_timeseries;
-module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
-module.exports.export_table_to_text = hiv_trace_export_table_to_text;
-module.exports.undefined = {};
-module.exports.too_large = {};
-module.exports.processing = {};
-module.exports.format_value = hivtrace_format_value;
-module.exports.symbol = hivtrace_generate_svg_symbol;
-module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
-module.exports.hivtrace_cluster_depthwise_traversal =
-  hivtrace_cluster_depthwise_traversal;
+function edge_typer(e, edge_types, T) {
+  return edge_types[e.length <= T ? 0 : 1];
+};
+
+module.exports = {
+  edge_typer,
+  coi_timeseries: hivtrace_coi_timeseries,
+  compute_node_degrees: hivtrace_compute_node_degrees,
+  export_table_to_text: hiv_trace_export_table_to_text,
+  undefined: {},
+  too_large: {},
+  processing: {},
+  format_value: hivtrace_format_value,
+  symbol: hivtrace_generate_svg_symbol,
+  cluster_dynamics: hivtrace_plot_cluster_dynamics,
+  hivtrace_cluster_depthwise_traversal,
+}

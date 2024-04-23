@@ -89,10 +89,10 @@ function add_a_sortable_table(
       return d;
     });
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-total", true))
+      .select(utils.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-shown", true))
+      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
   }
 }
@@ -224,13 +224,13 @@ function format_a_cell(data, index, item, priority_set_editor) {
           "#" + d3.select(this).attr("aria-describedby")
         );
         var search_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-apply", true)
+          utils.get_ui_element_selector_by_role("table-filter-apply")
         );
         var reset_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-reset", true)
+          utils.get_ui_element_selector_by_role("table-filter-reset")
         );
         var search_box = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-term", true)
+          utils.get_ui_element_selector_by_role("table-filter-term")
         );
 
         search_box.property("value", data.filter_term);
@@ -462,7 +462,7 @@ function filter_table(element) {
       });
     d3.select(table_element[0])
       .select("caption")
-      .select(utils.get_ui_element_selector_by_role("table-count-shown", true))
+      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
 
     /*.selectAll("td").each (function (d, i) {

@@ -44,6 +44,17 @@ function init(self) {
   }
 }
 
+function priority_groups_check_name(string, prior_name) {
+  if (string.length) {
+    if (string.length == 36) return false;
+    return !_.some(
+      self.defined_priority_groups,
+      (d) => d.name == string && d.name != prior_name
+    );
+  }
+  return false;
+};
+
 function open_priority_set_editor(
   self,
   node_set,
@@ -336,7 +347,7 @@ function open_priority_set_editor(
 
           if (
             !panel_object.first_save &&
-            self.priority_groups_check_name(name, panel_object.prior_name)
+            priority_groups_check_name(name, panel_object.prior_name)
           ) {
             let set_description = {
               name: name,
@@ -435,6 +446,7 @@ function open_priority_set_editor(
       form
         .append("button")
         .classed("btn btn-info btn-sm pull-right", true)
+        .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
         .on("click", function (e) {
           self.priority_set_view(self.priority_set_editor, {
@@ -445,6 +457,7 @@ function open_priority_set_editor(
       form
         .append("button")
         .classed("btn btn-info btn-sm pull-right", true)
+        .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
         .on("click", function (e) {
           self.priority_set_view(self.priority_set_editor, {
@@ -458,7 +471,7 @@ function open_priority_set_editor(
         .on("input propertychange", function (e) {
           let current_text = $(this).val();
           if (
-            self.priority_groups_check_name(
+            priority_groups_check_name(
               current_text,
               panel_object.prior_name
             )
