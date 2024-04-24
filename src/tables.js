@@ -123,7 +123,6 @@ function format_a_cell(data, index, item, priority_set_editor) {
     if (data.value == _networkNodeIDField) {
       // this is an ugly hardcode.
       if (priority_set_editor) {
-        //console.log ("Here");
         var add_to_ps = handle_sort.append("a").property("href", "#");
         add_to_ps
           .append("i")

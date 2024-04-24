@@ -10,15 +10,15 @@ test.beforeEach(async ({ page }) => {
       errors.push(msg.text());
     }
   })
+
+  await page.goto('http://127.0.0.1:8080/priority-sets-args.html?network=ui-tests/data/network.json');
 });
 
 test.afterEach(async ({ page }) => {
-	expect(errors).toEqual([]);
+  expect(errors).toEqual([]);
 });
 
 test('clusterOI editor opens, can add nodes', async ({ page }) => {
-  await page.goto('http://127.0.0.1:8080/priority-sets-args.html?network=ui-tests/data/network.json');
-
   await expect(page.locator("#priority-set-tab")).toBeVisible();
   await page.locator("#priority-set-tab").click();
 

@@ -1,13 +1,15 @@
-const d3 = require("d3");
-const _ = require("underscore");
-const jsPanel = require("jspanel4").jsPanel;
-const autocomplete = require("autocomplete.js");
-const timeDateUtil = require("./timeDateUtil");
-
-const utils = require("./utils");
-const clusterNetwork = require("./clusternetwork");
+import * as d3 from "d3";
+import _ from "underscore";
+import { jsPanel } from "jspanel4";
+import autocomplete from "autocomplete.js";
+import * as timeDateUtil from "./timeDateUtil.js";
+import * as utils from "./utils.js";
+import * as clusterNetwork from "./clusternetwork.js";
+import { hivtrace_cluster_depthwise_traversal } from "./misc";
 
 var _defaultDateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
+
+let priority_set_editor = null;
 
 function init(self) {
   if (self._is_CDC_ && self.isPrimaryGraph) {
@@ -24,7 +26,7 @@ function init(self) {
       });
 
       d3.selectAll(new_set).on("click", function (e) {
-        open_priority_set_editor(self, []);
+        open_editor(self, []);
         self.redraw_tables();
       });
     }
@@ -55,7 +57,7 @@ function priority_groups_check_name(string, prior_name) {
   return false;
 };
 
-function open_priority_set_editor(
+function open_editor(
   self,
   node_set,
   name,
@@ -73,7 +75,7 @@ function open_priority_set_editor(
         - "validate" (validate an automatically generated dataset)
         - "revise" (revise a dataset)
   */
-  if (self.priority_set_editor || !self.isPrimaryGraph) return;
+  if (priority_set_editor || !self.isPrimaryGraph) return;
   // only open one editor at a time
   // only primary network supports editor view
 
@@ -86,7 +88,7 @@ function open_priority_set_editor(
     ? existing_set.createdBy
     : created_by || clusterNetwork._cdcCreatedByManual;
 
-  self.priority_set_editor = jsPanel.create({
+  priority_set_editor = jsPanel.create({
     theme: "bootstrap-primary",
     headerTitle: "Priority node set editor",
     headerControls: { size: "lg", maximize: "remove" },
@@ -449,7 +451,7 @@ function open_priority_set_editor(
         .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
         .on("click", function (e) {
-          self.priority_set_view(self.priority_set_editor, {
+          priority_set_view(self, priority_set_editor, {
             "priority-edge-length": 0.015,
             timestamp: createdDate,
           });
@@ -460,7 +462,7 @@ function open_priority_set_editor(
         .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
         .on("click", function (e) {
-          self.priority_set_view(self.priority_set_editor, {
+          priority_set_view(priority_set_editor, {
             "priority-edge-length": self.subcluster_threshold,
             timestamp: createdDate,
           });
@@ -943,13 +945,215 @@ function open_priority_set_editor(
       return true;
     },
     onclosed: function () {
-      self.priority_set_editor = null;
+      priority_set_editor = null;
       self.redraw_tables();
     },
   });
 };
 
-module.exports = {
+function priority_set_view(self, priority_set, options) {
+  options = options || {};
+
+  let nodes = priority_set.node_objects || priority_set.network_nodes;
+  let current_time = timeDateUtil.getCurrentDate();
+  let edge_length =
+    options["priority-edge-length"] || self.subcluster_threshold;
+  let reference_date = options["timestamp"] || self.today;
+  let title = options["title"] || "clusterOI " + (priority_set.prior_name ?? "unnamed");
+  let node_dates = {};
+
+  if (priority_set.nodes) {
+    _.each(priority_set.nodes, (nd) => {
+      node_dates[nd.name] = nd.added;
+    });
+  } else {
+    _.each(priority_set.network_nodes, (nd) => {
+      node_dates[nd.id] = nd["_priority_set_date"];
+    });
+  }
+
+  let nodeDates = {};
+  if (options.priority_set && options.priority_set.nodes) {
+    _.each(options.priority_set.nodes, (d) => {
+      nodeDates[d.name] = d.added;
+    });
+  }
+
+  _.each(nodes, (d) => {
+    //console.log (d);
+    d.priority_set = 1;
+    d._added_date =
+      d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
+    if (d._added_date)
+      d._added_date = clusterNetwork._defaultDateViewFormatSlider(d._added_date);
+    else d._added_date = null;
+  });
+
+  let pgDates = _.sortBy(_.keys(_.groupBy(nodes, (d) => d._added_date)));
+
+  let node_set = _.flatten(
+    hivtrace_cluster_depthwise_traversal(
+      self.json["Nodes"],
+      self.json["Edges"],
+      (e) => {
+        return e.length <= edge_length;
+      },
+      null,
+      nodes
+    )
+  );
+
+  let refDate = clusterNetwork._defaultDateViewFormat(reference_date);
+
+  let dco = "fee8c8fdbb84e34a33";
+  let defColorsOther = d3.scale
+    .ordinal()
+    .range(_.map(_.range(0, dco.length, 6), (d) => "#" + dco.substr(d, 6)));
+
+  let maxColors = 4;
+  let dcpg = "7b3294c2a5cfa6dba0008837";
+  let defColorsPG = d3.scale
+    .ordinal()
+    .range(_.map(_.range(0, dcpg.length, 6), (d) => "#" + dcpg.substr(d, 6)));
+
+  let viewEnum = [];
+  let dateID = {};
+  _.each(pgDates, (d, i) => {
+    if (d) {
+      if (pgDates.length > maxColors) {
+        if (i < pgDates.length - maxColors) {
+          dateID[d] = 0;
+          return;
+        } else {
+          if (i == pgDates.length - maxColors) {
+            dateID[d] = viewEnum.length;
+            viewEnum.push(
+              "In cluster of interest (added on or before " + d + ")"
+            );
+            return;
+          }
+        }
+      }
+      dateID[d] = viewEnum.length;
+      viewEnum.push("In cluster of interest (added " + d + ")");
+    }
+  });
+
+  let priorityColorOffset = viewEnum.length;
+
+  viewEnum.push("Diagnosed and in network before " + refDate);
+  viewEnum.push(
+    "Diagnosed or in network on or after " +
+    refDate +
+    " [directly linked to cluster of interest]"
+  );
+  viewEnum.push(
+    "Diagnosed or in network on or after " +
+    refDate +
+    " [indirectly linked to cluster of interest]"
+  );
+  let viewEnumMissing = [...viewEnum, clusterNetwork._networkMissing];
+
+  let viewEnumMissingColors = _.map(viewEnumMissing, (d, i) => {
+    if (d != clusterNetwork._networkMissing) {
+      if (i < priorityColorOffset) {
+        return defColorsPG(d);
+      }
+      return defColorsOther(d);
+    }
+    return "gray";
+  });
+
+  let subcluster_view = self
+    .view_subcluster(
+      -1,
+      node_set,
+      title,
+      {
+        skip_recent_rapid: true,
+        init_code: function (network) {
+          _.each(network.json.Edges, (e) => {
+            let other_node = null;
+            if (network.json.Nodes[e.target].priority_set == 1) {
+              other_node = network.json.Nodes[e.source];
+            } else {
+              if (network.json.Nodes[e.source].priority_set == 1) {
+                other_node = network.json.Nodes[e.target];
+              }
+            }
+            if (other_node && other_node.priority_set != 1) {
+              other_node.priority_set = 2; // directly linked to a priority set node
+            }
+          });
+        },
+        "computed-attributes": {
+          date_added: {
+            depends: [timeDateUtil._networkCDCDateField],
+            label: "Date added to cluster of interest",
+            type: "Date",
+            map: function (node) {
+              return node.id in node_dates
+                ? node_dates[node.id]
+                : clusterNetwork._networkMissing;
+            },
+          },
+          priority_set: {
+            depends: [timeDateUtil._networkCDCDateField],
+            label: "Cluster of Interest Status",
+            enum: viewEnum,
+            type: "String",
+            map: function (node) {
+              //console.log ("PS", node.id, node.priority_set);
+              if (node.priority_set == 1) {
+                if (node._added_date) {
+                  return viewEnum[dateID[node._added_date]];
+                }
+                return viewEnum[0];
+              }
+              if (
+                self._filter_by_date(
+                  reference_date,
+                  timeDateUtil._networkCDCDateField,
+                  current_time,
+                  node,
+                  true
+                )
+              ) {
+                if (node.priority_set == 2) {
+                  return viewEnum[priorityColorOffset + 1];
+                } else {
+                  return viewEnum[priorityColorOffset + 2];
+                }
+              }
+              return viewEnum[priorityColorOffset];
+            },
+            color_scale: function () {
+              return d3.scale
+                .ordinal()
+                .domain(viewEnumMissing)
+                .range(viewEnumMissingColors);
+            },
+          },
+        },
+      },
+      null,
+      null,
+      edge_length
+    )
+    .handle_attribute_categorical("priority_set");
+
+  _.each(nodes, (d) => {
+    delete d.priority_set;
+  });
+};
+
+function get_editor() {
+  return priority_set_editor;
+};
+
+export {
   init,
-  open_priority_set_editor
+  open_editor,
+  priority_set_view,
+  get_editor
 };

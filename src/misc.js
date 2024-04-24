@@ -714,12 +714,16 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
+// TODO: convert and save this data rather than do it each time.
 var hivtrace_cluster_depthwise_traversal = function (
   nodes,
   edges,
   edge_filter,
   save_edges,
-  seed_nodes
+  seed_nodes,
+  white_list
+  // an optional set of node IDs (a subset of 'nodes') that will be considered for traversal
+  // it is further assumed that seed_nodes are a subset of white_list, if the latter is specified
 ) {
   var clusters = [],
     adjacency = {},
@@ -736,15 +740,19 @@ var hivtrace_cluster_depthwise_traversal = function (
     edges = _.filter(edges, edge_filter);
   }
 
+  if (white_list) {
+    edges = _.filter(edges, (e) => {
+      return (
+        white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
+      );
+    });
+  }
+
   _.each(edges, function (e) {
     try {
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
     } catch (err) {
-      // eslint-disable-next-line
-      console.log(
-        "Edge does not map to an existing node " + e.source + " to " + e.target
-      );
       throw (
         "Edge does not map to an existing node " + e.source + " to " + e.target
       );
