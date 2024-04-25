@@ -612,7 +612,7 @@ function open_editor(
             if (existing_attributes) {
               valid_ids[n.id] = _.extend(n, existing_attributes[n.id]);
             } else {
-              valid_ids[n.id] = _.clone(n);
+              valid_ids[n.id] = n;
             }
           }
         });

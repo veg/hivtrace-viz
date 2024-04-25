@@ -18,7 +18,8 @@ test.afterEach(async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('clusterOI editor opens, can add nodes', async ({ page }) => {
+const openEditor = async (page) => {
+  // go to clusterOI tab
   await expect(page.locator("#priority-set-tab")).toBeVisible();
   await page.locator("#priority-set-tab").click();
 
@@ -32,15 +33,34 @@ test('clusterOI editor opens, can add nodes', async ({ page }) => {
 
   jsPanels = await page.locator(".jsPanel").all();
   await expect(jsPanels).toHaveLength(1);
+}
 
-  await page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]').fill("BMK384750US2015");
-  await page.locator("#priority-panel-add-node").click();
-  await page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]').fill("BMK385560US2007");
-  await page.locator("#priority-panel-add-node").click();
-  await expect(page.locator("#priority-panel-node-table")
-    .filter({ has: page.getByText("BMK384750US2015") })
-    .filter({ has: page.getByText("BMK385560US2007") }))
+const createCluster = async (page, nodes) => {
+  await openEditor(page);
+
+  for (const node of nodes) {
+    await page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]').fill(node);
+    await page.locator("#priority-panel-add-node").click();
+  }
+
+  let nodeTable = await page.locator("#priority-panel-node-table");
+
+  for (const node of nodes) {
+    nodeTable = nodeTable.filter({ has: page.getByText(node) });
+  }
+
+  await expect(nodeTable).toBeVisible();
+}
+
+const previewClusterOI = async (page) => {
+  await page.locator("#priority-panel-preview").click();
+  await expect(page.locator(".subcluster-view")
+    .filter({ has: page.getByText('Color: Cluster of Interest Status', { exact: true }) }))
     .toBeVisible();
+}
+
+test('clusterOI editor opens, can add nodes', async ({ page }) => {
+  await createCluster(page, ["BMK384750US2015", "BMK385560US2007"]);
 });
 
 test('preview cluster and then open clusterOI editor', async ({ page }) => {
@@ -52,27 +72,20 @@ test('preview cluster and then open clusterOI editor', async ({ page }) => {
     .filter({ has: page.getByText("Cluster 1") }))
     .toBeVisible();
 
-  await expect(page.locator("#priority-set-tab")).toBeVisible();
-  await page.locator("#priority-set-tab").click();
+  await createCluster(page, ["BMK384750US2015"]);
 
-  // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await previewClusterOI(page)
+});
 
-  await expect(page.locator("#trace-priority-sets")).toBeVisible();
-  await expect(page.getByText("Create A Cluster of Interest", { exact: true })).toBeVisible();
-  await page.getByText("Create A Cluster of Interest", { exact: true }).click();
+test('add nodes via graph to clusterOI editor and save', async ({ page }) => {
+  await openEditor(page);
 
-  jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await page.locator("#trace-default-tab").click();
+  await page.locator(".cluster-group").first().click();
+  await page.getByText("Add this cluster to the cluster of interest", { exact: true }).click();
 
-  await page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]').fill("BMK384750US2015");
-  await page.locator("#priority-panel-add-node").click();
-  await expect(page.locator("#priority-panel-node-table")
-    .filter({ has: page.getByText("BMK384750US2015") }))
-    .toBeVisible();
+  // check that the nodes are added, empty clusterOI text shouldn't exist 
+  await expect(page.getByText("clusterOI editor (0 nodes)")).toHaveCount(0);
 
-  await page.locator("#priority-panel-preview").click();
-  await expect(page.locator(".subcluster-view"))
-    .toBeVisible();
+  await previewClusterOI(page);
 });
