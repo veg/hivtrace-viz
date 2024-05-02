@@ -248,16 +248,17 @@ function hivtrace_plot_cluster_dynamics(
       nearest_quarter.setFullYear(year);
       mid_point.setFullYear(year);
 
-      var quarter = Math.floor(date.getMonth() / 3) + 1;
+      var quarter = Math.floor(date.getMonth() / 3);
+
       nearest_quarter.setMonth(quarter * 3);
       nearest_quarter.setHours(0, 0, 0);
       mid_point.setHours(0, 0, 0);
 
-      nearest_quarter.setFullYear(year + (quarter == 4 ? 1 : 0));
+      nearest_quarter.setFullYear(year);
       mid_point.setMonth(quarter * 3 + 1);
       mid_point.setDate(15);
 
-      return ["Q" + quarter + " " + year, nearest_quarter, mid_point];
+      return ["Q" + (quarter + 1) + " " + year, nearest_quarter, mid_point];
     };
 
     min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
@@ -331,6 +332,7 @@ function hivtrace_plot_cluster_dynamics(
 
   _.each(time_series, function (point, index) {
     var bin_tag = bin_by(point["time"]);
+
     if (!(bin_tag[0] in binned)) {
       binned[bin_tag[0]] = { time: bin_tag[1], x: bin_tag[2] };
       binned[bin_tag[0]][total_id] = 0;
@@ -403,6 +405,9 @@ function hivtrace_plot_cluster_dynamics(
     var max_x2 = new Date();
     max_x2.setTime(max_x.getTime() + min_diff);
     max_x = max_x2;
+    max_x2 = new Date();
+    max_x2.setTime(min_x.getTime() - min_diff);
+    min_x = max_x2;
   }
 
   let quarter_span = Math.floor((max_x - min_x) / 3600 / 24 / 1000 / 30);
