@@ -11,11 +11,13 @@
   },
   "browserslist": "> 0.25%",
   "dependencies": {
+    "@eslint/js": "^9.2.0",
     "@fortawesome/fontawesome-free": "^6.2.1",
     "autocomplete.js": "^0.38.1",
     "bootstrap": "^3.4.1",
     "d3": "3.x",
     "downloadjs": "^1.4.7",
+    "globals": "^15.2.0",
     "graceful-fs": "^4.2.10",
     "htmllint": "^0.8.0",
     "i18n-webpack-plugin": "1.0.0",
@@ -71,7 +73,7 @@
     "develop": "export NODE_OPTIONS=--openssl-legacy-provider; concurrently \"webpack --watch --mode=development\" \"http-server\"",
     "crear": "export NODE_OPTIONS=--openssl-legacy-provider; concurrently \"webpack --env lang='es' --watch --mode=development\" \"http-server\"",
     "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack && webpack --env lang='es'",
-    "lint": "eslint --ext .js ./",
+    "lint": "eslint",
     "format": "prettier 'src/*.js' --write",
     "precommit": "pretty-quick --staged"
   },

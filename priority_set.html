@@ -839,7 +839,7 @@
               "" + import_result.edges[k] + " <i>" + k + "</i> links"
             );
           }
-          if (imported_edges.length == 0) {
+          if (imported_edges.length === 0) {
             imported_edges = ["no link data"];
           }
 
@@ -873,7 +873,7 @@
           d3.select(d[1]).style("display", "block");
           var files = e.target.files; // FileList object
 
-          if (files.length == 1) {
+          if (files.length === 1) {
             var f = files[0];
             var reader = new FileReader();
 
@@ -916,7 +916,7 @@
 
         var files = e.target.files; // FileList object
 
-        if (files.length == 1) {
+        if (files.length === 1) {
           var f = files[0];
           var reader = new FileReader();
 
