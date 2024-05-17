@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 
 let errors = [];
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(({ page }) => {
   errors = [];
   page.on('console', msg => {
     if (msg.type() === 'error') {
@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   })
 });
 
-test.afterEach(async ({ page }) => {
+test.afterEach(({ page }) => {
 	expect(errors).toEqual([]);
 });
 

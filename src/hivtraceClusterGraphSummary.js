@@ -18,7 +18,7 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
 
   if (!summary_table.empty()) {
     _.each(graph["Network Summary"], function (value, key) {
-      if (key == "Clusters") {
+      if (key === "Clusters") {
         value = _.size(graph["Cluster description"]);
       }
 

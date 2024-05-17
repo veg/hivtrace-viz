@@ -45,7 +45,7 @@ var hivtrace_generate_svg_ellipse = function () {
       "M " +
       self.radius +
       " 0 A " +
-      self.radius * 1 +
+      self.radius +
       " " +
       self.radius * 0.75 +
       " 0 1 0 " +
@@ -223,11 +223,9 @@ function hivtrace_plot_cluster_dynamics(
   };
 
   // Only accept time_series with time that is a date
-  time_series = _.filter(time_series, (ts) => {
-    return _.isDate(ts.time);
-  });
+  time_series = _.filter(time_series, (ts) => _.isDate(ts.time));
 
-  if (time_series.length == 0) {
+  if (time_series.length === 0) {
     return;
   }
 
@@ -268,7 +266,7 @@ function hivtrace_plot_cluster_dynamics(
     var year = d.getFullYear();
     var quarter = Math.floor(d.getMonth() / 3) + 1;
 
-    return "" + year + "-Q" + quarter;
+    return String(year) + "-Q" + quarter;
   };
 
   if (options && options["x-tick-format"]) {
@@ -316,7 +314,7 @@ function hivtrace_plot_cluster_dynamics(
     .scale(y)
     .orient("left")
     .tickFormat(function (v) {
-      if (v << 0 == v) {
+      if (v << 0 === v) {
         // an integer
         return v;
       }
@@ -337,7 +335,7 @@ function hivtrace_plot_cluster_dynamics(
       binned[bin_tag[0]] = { time: bin_tag[1], x: bin_tag[2] };
       binned[bin_tag[0]][total_id] = 0;
       _.each(point, function (v, k) {
-        if (k != "time") {
+        if (k !== "time") {
           binned[bin_tag[0]][k] = {};
         }
       });
@@ -349,7 +347,7 @@ function hivtrace_plot_cluster_dynamics(
     var y = {};
     y[total_id] = index + 1;
     _.each(point, function (v, k) {
-      if (k != "time") {
+      if (k !== "time") {
         binned[bin_tag[0]][k][v] = binned[bin_tag[0]][k][v]
           ? binned[bin_tag[0]][k][v] + 1
           : 1;
@@ -377,7 +375,7 @@ function hivtrace_plot_cluster_dynamics(
   });
 
   binned_array.sort(function (a, b) {
-    return b["time"] > a["time"] ? 1 : b["time"] == a["time"] ? 0 : -1;
+    return b["time"] > a["time"] ? 1 : b["time"] === a["time"] ? 0 : -1;
   });
 
   if (do_barchart) {
@@ -456,14 +454,14 @@ function hivtrace_plot_cluster_dynamics(
       : d3.scale.category10();
 
   color_scale = _.wrap(color_scale, function (func, arg) {
-    if (arg == total_id) return total_color;
+    if (arg === total_id) return total_color;
     return func(arg);
   });
 
   var plot_types = _.keys(values_by_attribute[y_key]);
 
   if (do_barchart) {
-    if (plot_types.length == 0) {
+    if (plot_types.length === 0) {
       plot_types.push(total_id);
     }
   } else {
@@ -503,7 +501,7 @@ function hivtrace_plot_cluster_dynamics(
     );
   }
 
-  if (!do_barchart || plot_types.length > 1 || plot_types[0] != total_id) {
+  if (!do_barchart || plot_types.length > 1 || plot_types[0] !== total_id) {
     var legend_lines = legend_area.selectAll("g").data(plot_types);
 
     legend_lines.enter().append("g").attr("class", "annotation-text");
@@ -746,11 +744,9 @@ var hivtrace_cluster_depthwise_traversal = function (
   }
 
   if (white_list) {
-    edges = _.filter(edges, (e) => {
-      return (
-        white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
-      );
-    });
+    edges = _.filter(edges, (e) => (
+      white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
+    ));
   }
 
   _.each(edges, function (e) {
@@ -944,20 +940,19 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       });
 
       let fills = ["firebrick", "grey"];
-      time_boxes = _.map(years_ago, (sya, i) => {
-        return svg
-          .append("g")
-          .selectAll("rect")
-          .data([d])
-          .enter()
-          .append("rect")
-          .attr("fill", fills[i])
-          .attr("x", (d) => x(sya))
-          .attr("y", (d) => y(0))
-          .attr("width", x(d[1]) - x(sya))
-          .attr("height", (d) => -y(0) + y(data.length - 1))
-          .attr("opacity", 0.25);
-      });
+      time_boxes = _.map(years_ago, (sya, i) => svg
+        .append("g")
+        .selectAll("rect")
+        .data([d])
+        .enter()
+        .append("rect")
+        .attr("fill", fills[i])
+        .attr("x", (d) => x(sya))
+        .attr("y", (d) => y(0))
+        .attr("width", x(d[1]) - x(sya))
+        .attr("height", (d) => -y(0) + y(data.length - 1))
+        .attr("opacity", 0.25)
+      );
 
       lines
         .attr("stroke-width", (d) => (highlight_nodes.has(d[0]) ? 5 : 2))
@@ -981,8 +976,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
         text += "National priority clusterOI. ";
       }
       text +=
-        "" +
-        d3.sum(ed.connected_componets) +
+        String(d3.sum(ed.connected_componets)) +
         " nodes in " +
         ed.connected_componets.length +
         " components. ";

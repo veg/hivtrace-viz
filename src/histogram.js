@@ -20,7 +20,7 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
     "</strong> model, with &rho; of " +
     defaultFloatFormat(graph["Degrees"]["rho"]);
 
-  if (graph["Degrees"]["rho CI"] != undefined) {
+  if (graph["Degrees"]["rho CI"] !== undefined) {
     label +=
       " (95% CI " +
       defaultFloatFormat(graph["Degrees"]["rho CI"][0]) +

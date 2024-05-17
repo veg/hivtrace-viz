@@ -120,7 +120,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
     data.filter_term = "";
     data.column_id = index;
 
-    if (data.value == _networkNodeIDField) {
+    if (data.value === _networkNodeIDField) {
       // this is an ugly hardcode.
       if (priority_set_editor) {
         var add_to_ps = handle_sort.append("a").property("href", "#");
@@ -137,9 +137,9 @@ function format_a_cell(data, index, item, priority_set_editor) {
           let node_ids = [];
           nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
             let this_row = d3.select(this);
-            if (this_row.style("display") != "none") {
+            if (this_row.style("display") !== "none") {
               this_row.selectAll("td").each(function (d, j) {
-                if (j == data.column_id) {
+                if (j === data.column_id) {
                   let marker_index = d.value.indexOf(_networkNewNodeMarker);
                   if (marker_index > 0) {
                     node_ids.push(d.value.substring(0, marker_index));
@@ -262,7 +262,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
       .style("margin-left", "0.2em");
 
     if ("presort" in data) {
-      if (data["presort"] == "desc") {
+      if (data["presort"] === "desc") {
         clicker.attr("data-sorted", "asc");
       }
       sort_table_by_column(clicker.node(), data);
@@ -386,11 +386,11 @@ function format_a_cell(data, index, item, priority_set_editor) {
 function filter_table_by_column_handler(datum, conditions) {
   if (conditions.length) {
     return _.some(conditions, (c) => {
-      if (c.type == "re") {
+      if (c.type === "re") {
         return c.value.test(datum);
-      } else if (c.type == "date") {
+      } else if (c.type === "date") {
         return datum >= c.value[0] && datum <= c.value[1];
-      } else if (c.type == "distance") {
+      } else if (c.type === "distance") {
         if (c.greater_than) return datum > c.value;
 
         return datum <= c.value;
@@ -465,7 +465,7 @@ function filter_table(element) {
       .text(shown_rows);
 
     /*.selectAll("td").each (function (d, i) {
-          if (i == filter_on) {
+          if (i === filter_on) {
               var this_cell = d3.select (this);
               d3.select (this).style ("display", filter_handler ())
           }
@@ -476,7 +476,7 @@ function filter_table(element) {
     /*$(table_element)
       .find("thead [data-column-id]")
       .filter(function() {
-        return parseInt($(this).data("column-id")) != sort_on;
+        return parseInt($(this).data("column-id")) !== sort_on;
       })
       .each(function() {
         sort_table_toggle_icon(this, "unsorted");
@@ -489,8 +489,8 @@ function filter_parse(filter_value) {
   let quote_state = 0;
   let current_term = [];
   _.each(filter_value, (c) => {
-    if (c == " ") {
-      if (quote_state == 0) {
+    if (c === " ") {
+      if (quote_state === 0) {
         if (current_term.length) {
           search_terms.push(current_term.join(""));
           current_term = [];
@@ -499,14 +499,14 @@ function filter_parse(filter_value) {
         current_term.push(c);
       }
     } else {
-      if (c == '"') {
+      if (c === '"') {
         quote_state = 1 - quote_state;
       }
       current_term.push(c);
     }
   });
 
-  if (quote_state == 0) {
+  if (quote_state === 0) {
     search_terms.push(current_term.join(""));
   }
 
@@ -516,18 +516,18 @@ function filter_parse(filter_value) {
     })
     .map(function (d) {
       if (d.length >= 2) {
-        if (d[0] == '"' && d[d.length - 1] == '"' && d.length > 2) {
+        if (d[0] === '"' && d[d.length - 1] === '"' && d.length > 2) {
           return {
             type: "re",
             value: new RegExp("^" + d.substr(1, d.length - 2) + "$", "i"),
           };
         }
-        if (d[0] == "<" || d[0] == ">") {
+        if (d[0] === "<" || d[0] === ">") {
           var distance_threshold = parseFloat(d.substr(1));
           if (distance_threshold > 0) {
             return {
               type: "distance",
-              greater_than: d[0] == ">",
+              greater_than: d[0] === ">",
               value: distance_threshold,
             };
           }
@@ -605,7 +605,7 @@ function sort_table_by_column(element, datum) {
     $(table_element)
       .find("thead [data-column-id]")
       .filter(function () {
-        return parseInt($(this).data("column-id")) != sort_on;
+        return parseInt($(this).data("column-id")) !== sort_on;
       })
       .each(function () {
         sort_table_toggle_icon(this, "unsorted");
@@ -619,13 +619,13 @@ function sort_table_toggle_icon(element, value) {
     $(element).data("sorted", value);
     d3.select(element)
       .selectAll("i")
-      .classed("fa-sort-amount-desc", value == "desc")
-      .classed("fa-sort-amount-asc", value == "asc")
-      .classed("fa-sort", value == "unsorted");
+      .classed("fa-sort-amount-desc", value === "desc")
+      .classed("fa-sort-amount-asc", value === "asc")
+      .classed("fa-sort", value === "unsorted");
   } else {
     var sorted_state = $(element).data("sorted");
-    sort_table_toggle_icon(element, sorted_state == "asc" ? "desc" : "asc");
-    return sorted_state == "asc" ? d3.descending : d3.ascending;
+    sort_table_toggle_icon(element, sorted_state === "asc" ? "desc" : "asc");
+    return sorted_state === "asc" ? d3.descending : d3.ascending;
   }
 }
 
