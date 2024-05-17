@@ -1,5 +1,5 @@
 const _networkCDCDateField = "hiv_aids_dx_dt";
-const _networkTimeQuery = new RegExp("([0-9]{8}):([0-9]{8})", "i");
+const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
 let cluster_time_scale;
 

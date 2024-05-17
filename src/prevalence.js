@@ -42,25 +42,19 @@ function hivtrace_render_prevalence(
     .ticks(8, fractions ? "p" : "f");
 
   x.domain(
-    d3.extent(plot_data, function (d) {
-      return d["x"];
-    })
+    d3.extent(plot_data, (d) => d["x"])
   ).clamp(true);
 
-  var extents = d3.extent(plot_data, function (d) {
-    return _.max(d["y"]);
-  });
+  var extents = d3.extent(plot_data, (d) => _.max(d["y"]));
 
   var year_range = [
     plot_data[0]["x"].getFullYear(),
     plot_data[plot_data.length - 1]["x"].getFullYear(),
   ];
 
-  _.each(annual, function (v, year) {
+  _.each(annual, (v, year) => {
     if (year >= year_range[0] && year <= year_range[1]) {
-      var my_f = _.max(v, function (f) {
-        return f[1] / (fractions ? 1 : f[0]);
-      });
+      var my_f = _.max(v, (f) => f[1] / (fractions ? 1 : f[0]));
       extents[1] = Math.max(extents[1], my_f[1]);
     }
   });
@@ -91,9 +85,7 @@ function hivtrace_render_prevalence(
 
   var color_scale = d3.scale.category10();
 
-  var plot_types = _.map(plot_data[0]["y"], function (v, k) {
-    return k;
-  });
+  var plot_types = _.map(plot_data[0]["y"], (v, k) => k);
 
   plot_types.sort();
 
@@ -103,46 +95,34 @@ function hivtrace_render_prevalence(
 
   legend_lines
     .selectAll("text")
-    .data(function (d) {
-      return [d];
-    })
+    .data((d) => [d])
     .enter()
     .append("text")
-    .attr("transform", function (d, i, j) {
-      return (
+    .attr("transform", (d, i, j) => (
         "translate(" +
         rect_size +
         "," +
         (rect_size * (plot_types.length - 1 - j) - (rect_size - font_size)) +
         ")"
-      );
-    })
+      ))
     .attr("dx", "0.2em")
-    .text(function (d) {
-      return d;
-    });
+    .text((d) => d);
 
   //console.log (plot_data);
 
   legend_lines
     .selectAll("rect")
-    .data(function (d) {
-      return [d];
-    })
+    .data((d) => [d])
     .enter()
     .append("rect")
     .attr("x", 0)
-    .attr("y", function (d, i, j) {
-      return rect_size * (plot_types.length - 2 - j);
-    })
+    .attr("y", (d, i, j) => rect_size * (plot_types.length - 2 - j))
     .attr("width", rect_size)
     .attr("height", rect_size)
     .attr("class", "area")
-    .style("fill", function (d, i, j) {
-      return color_scale(d);
-    });
+    .style("fill", (d, i, j) => color_scale(d));
 
-  _.each(plot_types, function (plot_key, idx) {
+  _.each(plot_types, (plot_key, idx) => {
     var plot_color = color_scale(plot_key);
 
     var y_accessor = function (d) {
@@ -160,12 +140,8 @@ function hivtrace_render_prevalence(
 
     var line = d3.svg
       .line()
-      .x(function (d) {
-        return x(d["x"]);
-      })
-      .y(function (d) {
-        return y(d["y"]);
-      })
+      .x((d) => x(d["x"]))
+      .y((d) => y(d["y"]))
       .interpolate("basis");
 
     svg
@@ -186,7 +162,7 @@ function hivtrace_render_prevalence(
                   .style ("stroke", plot_color)
                   .attr("d", curve_year); */
 
-    year_points.forEach(function (d) {
+    year_points.forEach((d) => {
       svg
         .append("circle")
         .attr("cx", x(d["x"]))
@@ -197,26 +173,20 @@ function hivtrace_render_prevalence(
         .style("stroke", plot_color);
     });
 
-    year_points.forEach(function (d) {
+    year_points.forEach((d) => {
       svg
         .append("text")
         .attr("x", x(d["x"]) + 5)
         .attr("y", y(d["y"]) + 5)
-        .text(d["y"]) //.attr ("transform", "rotate (" + 30*(1 - 2*idx) + " " + x(d['x']) + " " + y(d['y']) + ")")
-        .attr("dy", "" + (0.5 - idx) + "em");
+        .text(d["y"]) //.atstr ("transform", "rotate (" + 30*(1 - 2*idx) + " " + x(d['x']) + " " + y(d['y']) + ")")
+        .attr("dy", String(0.5 - idx) + "em");
     });
 
     var curve = d3.svg
       .area()
-      .x(function (d) {
-        return x(d["x"]);
-      })
-      .y1(function (d) {
-        return y(y_accessor(d));
-      })
-      .y0(function (d) {
-        return y(0);
-      })
+      .x((d) => x(d["x"]))
+      .y1((d) => y(y_accessor(d)))
+      .y0((d) => y(0))
       .interpolate("line");
 
     svg

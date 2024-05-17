@@ -1,4 +1,5 @@
-window.jQuery = window.$ = $;
+window.jQuery = $;
+window.$ = $;
 
 require("@fortawesome/fontawesome-free/css/all.css");
 require("@fortawesome/fontawesome-free/css/solid.css");

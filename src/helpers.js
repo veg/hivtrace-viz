@@ -83,13 +83,9 @@ var datamonkey_save_image = function (type, container) {
             if (rule.type === 3) {
               // Import Rule
               process_stylesheet(rule.styleSheet);
-            } else {
               // hack for illustrator crashing on descendent selectors
-              if (rule.selectorText) {
-                if (rule.selectorText.indexOf(">") === -1) {
-                  styles += "\n" + rule.cssText;
-                }
-              }
+            } else if (rule.selectorText && rule.selectorText.indexOf(">") === -1) {
+              styles += "\n" + rule.cssText;
             }
           }
         }
@@ -154,7 +150,7 @@ var datamonkey_save_image = function (type, container) {
   } else if (type === "png") {
     b64toBlob(
       image_string,
-      function (blob) {
+      (blob) => {
         var url = window.URL.createObjectURL(blob);
         var pom = document.createElement("a");
         pom.setAttribute("download", "image.png");
@@ -163,7 +159,7 @@ var datamonkey_save_image = function (type, container) {
         pom.click();
         pom.remove();
       },
-      function (error) {
+      (e) => {
         console.log(error); // eslint-disable-line
       }
     );
@@ -178,7 +174,7 @@ var datamonkey_save_image = function (type, container) {
 };
 
 function datamonkey_describe_vector(vector, as_list) {
-  var d = {};
+  let d;
 
   if (vector.length) {
     vector.sort(d3.ascending);
@@ -373,10 +369,10 @@ function exportColorScheme(uniqValues, colorizer) {
 
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(
-    function () {
+    () => {
       console.log("Copying to clipboard was successful!");
     },
-    function (err) {
+    () => {
       console.error("Could not copy text: ", err);
     }
   );

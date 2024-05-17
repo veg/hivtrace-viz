@@ -25,7 +25,7 @@ function add_a_sortable_table(
   const set_table_elements = (d, cell) => {
     if (d.width || d.text_wrap) {
       cell = d3.select(cell);
-      if (d.width) cell.style("width", "" + d.width + "px");
+      if (d.width) cell.style("width", String(d.width) + "px");
       if (d.text_wrap) {
         cell
           .style("overflow", "hidden")
@@ -44,17 +44,13 @@ function add_a_sortable_table(
       .enter()
       .append("tr")
       .selectAll("td")
-      .data(function (d) {
-        return d;
-      })
+      .data((d) => d)
       .enter()
       .append("td")
-      .call(function (selection) {
-        return selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(d, i, this, priority_set_editor);
-        });
-      });
+      .call((selection) => selection.each(function (d, i) {
+        set_table_elements(d, this);
+        format_a_cell(d, i, this, priority_set_editor);
+      }));
     container.node().appendChild(tbody.node());
   }
 
@@ -68,26 +64,20 @@ function add_a_sortable_table(
       .enter()
       .append("tr")
       .selectAll("th")
-      .data(function (d) {
-        return d;
-      })
+      .data((d) => d)
       .enter()
       .append("th")
-      .call(function (selection) {
-        return selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(d, i, this, priority_set_editor);
-        });
-      });
+      .call((selection) => selection.each(function (d, i) {
+        set_table_elements(d, this);
+        format_a_cell(d, i, this, priority_set_editor);
+      }));
   }
   //'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes');
 
   if (caption) {
     var table_caption = container.selectAll("caption").data([caption]);
     table_caption.enter().insert("caption", ":first-child");
-    table_caption.html(function (d) {
-      return d;
-    });
+    table_caption.html((d) => d);
     table_caption
       .select(utils.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
@@ -133,12 +123,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
             "Add currently visible nodes to the Cluster of Interest"
           );
 
-        add_to_ps.on("click", function (d) {
+        add_to_ps.on("click", (d) => {
           let node_ids = [];
           nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
             let this_row = d3.select(this);
             if (this_row.style("display") !== "none") {
-              this_row.selectAll("td").each(function (d, j) {
+              this_row.selectAll("td").each((d, j) => {
                 if (j === data.column_id) {
                   let marker_index = d.value.indexOf(_networkNewNodeMarker);
                   if (marker_index > 0) {
@@ -164,40 +154,40 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
     var search_form_generator = function () {
       return (
-        '<form class="form-inline"> \
-                        <div class="form-group"> \
-                            <div class="input-group">\
-                            <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">\
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>\
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> \
-                            <div class="input-group-addon">\
+        `<form class="form-inline"> 
+                        <div class="form-group"> 
+                            <div class="input-group">
+                            <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
+                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
+                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+                            <div class="input-group-addon">
                                 <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
         index +
-        '"  aria-expanded="false" aria-controls="collapseExample"></i>\
-                            </div> \
-                        </div>\
-                        </div>\
-                    </form>\
+        '"  aria-expanded="false" aria-controls="collapseExample"></i>
+                            </div> 
+                        </div>
+                        </div>
+                    </form>
                     <div class="collapse" id="filter-help-column' +
         index +
-        '">\
-                      <div class="well">\
-                        Type in text to select columns which \
-                        <em>contain the term</em>. <br />\
-                        For example, typing in <code>MSM</code> will select rows\
-                        that have "MSM" as a part of the column value.\
-                        <p />\
-                        Type in space separated terms (<code>MSM IDU</code>) to\
-                        search for <b>either</b> term. <p/>\
-                        Type in terms in quotes (<code>"male"</code>) to search\
-                        for this <b>exact</b> term. <p/>\
-                        If columns have date information you can use\
-                        <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>\
-                        Use <code>&lt;value</code> or <code>&gt;value</code>\
-                        to search numerical columns<p/>\
-                      </div>\
-                    </div>\
-                    '
+        '">
+                      <div class="well">
+                        Type in text to select columns which 
+                        <em>contain the term</em>. <br />
+                        For example, typing in <code>MSM</code> will select rows
+                        that have "MSM" as a part of the column value.
+                        <p />
+                        Type in space separated terms (<code>MSM IDU</code>) to
+                        search for <b>either</b> term. <p/>
+                        Type in terms in quotes (<code>"male"</code>) to search
+                        for this <b>exact</b> term. <p/>
+                        If columns have date information you can use
+                        <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>
+                        Use <code>&lt;value</code> or <code>&gt;value</code>
+                        to search numerical columns<p/>
+                      </div>
+                    </div>
+                    `
       );
     };
 
@@ -234,12 +224,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         search_box.property("value", data.filter_term);
 
-        search_click.on("click", function (d) {
+        search_click.on("click", (d) => {
           update_term(search_box.property("value"));
           filter_table(clicker.node());
         });
 
-        reset_click.on("click", function (d) {
+        reset_click.on("click", (d) => {
           search_box.property("value", "");
           update_term("");
           filter_table(clicker.node());
@@ -321,20 +311,18 @@ function format_a_cell(data, index, item, priority_set_editor) {
                   .select(this)
                   .append("a")
                   .attr("href", "#")
-                  .text(function (data) {
-                    return get_item_text(data);
-                  });
+                  .text((data) => get_item_text(data));
                 if (_.has(data, "data") && data["data"]) {
                   //let element = $(this_button.node());
                   _.each(data.data, (v, k) => {
                     handle_change.attr("data-" + k, v);
                   });
                 }
-                handle_change.on("click", function (d) {
+                handle_change.on("click", (d) => {
                   if (_.has(d, "action") && d["action"]) {
                     d["action"](this_button, d["label"]);
-                  } else {
-                    if (b.action) b.action(this_button, get_item_text(d));
+                  } else if (b.action) {
+                    b.action(this_button, get_item_text(d))
                   }
                 });
               });
@@ -343,7 +331,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .append("button")
                 .classed("btn btn-default btn-xs", true);
               if (b.action)
-                this_button.on("click", function (e) {
+                this_button.on("click", (e) => {
                   d3.event.preventDefault();
                   b.action(this_button, current_value);
                 });
@@ -417,7 +405,7 @@ function filter_table(element) {
 
     d3.select(table_element[0])
       .selectAll("thead th")
-      .each(function (d, i) {
+      .each((d, i) => {
         if (d.filter) {
           if (_.isString(d.filter_term) && d.filter_term.length) {
             filter_array[d.column_id] = filter_parse(d.filter_term);
@@ -440,7 +428,7 @@ function filter_table(element) {
         var this_row = d3.select(this);
         var hide_me = false;
 
-        this_row.selectAll("td").each(function (d, i) {
+        this_row.selectAll("td").each((d, i) => {
           if (!hide_me) {
             if (filter_array[i]) {
               if (
@@ -511,10 +499,8 @@ function filter_parse(filter_value) {
   }
 
   return search_terms
-    .filter(function (d) {
-      return d.length > 0;
-    })
-    .map(function (d) {
+    .filter((d) => d.length > 0)
+    .map((d) => {
       if (d.length >= 2) {
         if (d[0] === '"' && d[d.length - 1] === '"' && d.length > 2) {
           return {
@@ -537,15 +523,13 @@ function filter_parse(filter_value) {
           if (is_range) {
             return {
               type: "date",
-              value: _.map([is_range[1], is_range[2]], function (d) {
-                return new Date(
-                  d.substring(0, 4) +
-                  "-" +
-                  d.substring(4, 6) +
-                  "-" +
-                  d.substring(6, 8)
-                );
-              }),
+              value: _.map([is_range[1], is_range[2]], (d) => new Date(
+                d.substring(0, 4) +
+                "-" +
+                d.substring(4, 6) +
+                "-" +
+                d.substring(6, 8)
+              )),
             };
           }
         }
@@ -593,12 +577,10 @@ function sort_table_by_column(element, datum) {
     d3.select(table_element[0])
       .select("tbody")
       .selectAll("tr")
-      .sort(function (a, b) {
-        return sorted_function(
-          sort_accessor(a[sort_on]),
-          sort_accessor(b[sort_on])
-        );
-      });
+      .sort((a, b) => sorted_function(
+        sort_accessor(a[sort_on]),
+        sort_accessor(b[sort_on])
+      ));
 
     // select all other elements from thead and toggle their icons
 

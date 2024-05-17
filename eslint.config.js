@@ -2,6 +2,8 @@ const js = require("@eslint/js");
 const globals = require("globals");
 
 module.exports = [
+  // For more extensive testing, with some rules turned off (see below)
+  // js.configs.all,
   js.configs.recommended,
   {
     languageOptions: {
@@ -17,9 +19,6 @@ module.exports = [
       sourceType: "module",
     },
     rules: {
-      // TODO: two rules turned off, but should be looked at
-      // "block-scoped-var": 2,
-      // "no-shadow": 2,
       strict: "off",
       "no-unused-vars": [
         1,
@@ -28,6 +27,58 @@ module.exports = [
           "args": "none"
         }
       ],
+      // For more extensive testing (with js.configs.all)
+      // "sort-keys": 0,
+      // "no-magic-numbers": 0,
+      // "no-ternary": 0,
+      // "no-undefined": 0,
+      // "sort-vars": 0,
+      // "max-lines-per-function": 0,
+      // "one-var": 0,
+      // "require-unicode-regexp": 0,
+      // "id-length": 0,
+      // "no-underscore-dangle": 0,
+      // "prefer-destructuring": 0,
+      // "max-lines": 0,
+      // "max-params": 0,
+      // "max-statements": 0,
+      // "sort-imports": 0,
+      // "dot-notation": 0,
+      // "complexity": 0,
+      // "no-unneeded-ternary": 0,
+      // "logical-assignment-operators": 0,
+      // "no-param-reassign": 0,
+      // "multiline-comment-style": 0,
+      // "vars-on-top": 0,
+      // "func-names": 0,
+      // "capitalized-comments": 0,
+      // "curly": 0,
+      // "prefer-template": 0,
+      // "object-shorthand": 0,
+      // "no-var": 0,
+      // "line-comment-position": 0,
+      // "no-inline-comments": 0,
+      // "no-plusplus": 0,
+      // "init-declarations": 0,
+      // "no-use-before-define": 0,
+      // "prefer-const": 0,
+      // "func-style": 0,
+      // "max-depth": 0,
+      // "no-loop-func": 0,
+      // "no-await-in-loop": 0,
+      // "no-invalid-this": 0,
+      // "no-negated-condition": 0,
+      // "guard-for-in": 0,
+      // "radix": 0,
+      // "no-warning-comments": 0,
+      // "no-alert": 0,
+      // "no-script-url": 0,
+      // "new-cap": 0,
+
+      // TODO: two rules turned off, but should be looked at
+      "block-scoped-var": 0,
+      "no-shadow": 0,
+
       "no-console": 1,
       "camelcase": 0,
       "no-self-assign": 1,
