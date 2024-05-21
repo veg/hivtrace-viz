@@ -2837,7 +2837,7 @@ var hivtrace_cluster_network_graph = function (
     additional_options,
     include_injected_edges
   ) {
-    var cluster = _.find(self.clusters, (c) => c.cluster_id === cluster_id);
+    var cluster = _.find(self.clusters, (c) => String(c.cluster_id) === String(cluster_id));
 
     if (!cluster) {
       return;
