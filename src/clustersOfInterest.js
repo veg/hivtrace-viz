@@ -42,11 +42,11 @@ function init(self) {
   }
 }
 
-function priority_groups_check_name(string, prior_name) {
+function priority_groups_check_name(defined_priority_groups, string, prior_name) {
   if (string.length) {
     if (string.length >= 36) return false;
     return !_.some(
-      self.defined_priority_groups,
+      defined_priority_groups,
       (d) => d.name === string && d.name !== prior_name
     );
   }
@@ -338,7 +338,7 @@ function open_editor(
 
           if (
             !panel_object.first_save &&
-            priority_groups_check_name(name, panel_object.prior_name)
+            priority_groups_check_name(self.defined_priority_groups, name, panel_object.prior_name)
           ) {
             let set_description = {
               name: name,
@@ -426,6 +426,7 @@ function open_editor(
         .classed("btn btn-primary btn-sm pull-right", true)
         .text(validation_mode === "validate" ? "Review & Save" : "Save")
         .attr("disabled", "disabled")
+        .attr("id", "priority-panel-save")
         .on("click", (e) => {
           save_priority_set();
         });
@@ -458,6 +459,7 @@ function open_editor(
           let current_text = $(this).val();
           if (
             priority_groups_check_name(
+              self.defined_priority_groups,
               current_text,
               panel_object.prior_name
             )
@@ -475,7 +477,7 @@ function open_editor(
             let too_long = current_text.length >= 36;
             grp_name.classed({
               "has-success": false,
-              "has-error": too_long,
+              "has-error": true,
             });
             let error_message = too_long
               ? "MUST be shorter than 36 characters"
@@ -847,7 +849,7 @@ function open_editor(
                       .style("margin-left", "1em")
                       .datum(payload)
                       .on("click", function () {
-                        self.handle_inline_confirm(
+                        handle_inline_confirm(
                           d3.select(this),
                           del_form_generator,
                           "Are you sure you wish to permanently delete this node from the cluster of interest?",
@@ -931,7 +933,63 @@ function open_editor(
   });
 }
 
-function _action_drop_down(pg) {
+function handle_inline_confirm(
+  this_button,
+  generator,
+  text,
+  action,
+  disabled
+) {
+  this_button = $(this_button.node());
+  if (this_button.data("popover_shown") !== "shown") {
+    const popover = this_button
+      .popover({
+        sanitize: false,
+        placement: "right",
+        container: "body",
+        html: true,
+        content: generator,
+        trigger: "manual",
+      })
+      .on("shown.bs.popover", function (e) {
+        var clicked_object = d3.select(this);
+        var popover_div = d3.select(
+          "#" + clicked_object.attr("aria-describedby")
+        );
+        var textarea_element = popover_div.selectAll(
+          utils.get_ui_element_selector_by_role("priority-description-form")
+        );
+        var button_element = popover_div.selectAll(
+          utils.get_ui_element_selector_by_role("priority-description-save")
+        );
+        textarea_element.text(text);
+        if (disabled) textarea_element.attr("disabled", true);
+        button_element.on("click", (d) => {
+          action($(textarea_element.node()).val());
+          d3.event.preventDefault();
+          this_button.click();
+        });
+        button_element = popover_div.selectAll(
+          utils.get_ui_element_selector_by_role("priority-description-dismiss")
+        );
+        button_element.on("click", (d) => {
+          d3.event.preventDefault();
+          this_button.click();
+        });
+      });
+
+    popover.popover("show");
+    this_button.data("popover_shown", "shown");
+    this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
+      $(this).data("popover_shown", "hidden");
+    });
+  } else {
+    this_button.data("popover_shown", "hidden");
+    this_button.popover("destroy");
+  }
+};
+
+function _action_drop_down(self, pg) {
   let dropdown = _.flatten(
     [
       _.map([self.subcluster_threshold, 0.015], (threshold) => ({
@@ -988,10 +1046,7 @@ function _action_drop_down(pg) {
       label: "View nodes in this cluster of interest",
       data: {
         toggle: "modal",
-        target: self.get_ui_element_selector_by_role(
-          "cluster_list",
-          true
-        ),
+        target: utils.get_ui_element_selector_by_role("cluster_list"),
         priority_set: pg.name,
       },
     });
@@ -1305,10 +1360,7 @@ function draw_priority_set_table(self, container, priority_groups) {
                       label: "List overlaps",
                       data: {
                         toggle: "modal",
-                        target: self.get_ui_element_selector_by_role(
-                          "overlap_list",
-                          true
-                        ),
+                        target: utils.get_ui_element_selector_by_role("overlap_list"),
                         priority_set: pg.name,
                       },
                     },
@@ -1373,7 +1425,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           {
             icon: "fa-info-circle",
             help: "View/edit this cluster of interest",
-            dropdown: _action_drop_down(pg),
+            dropdown: _action_drop_down(self, pg),
             /*action: function (button, menu_value) {
                 console.log (menu_value);
             }*/
@@ -1383,7 +1435,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             classed: { "btn-info": true },
             help: "Edit description",
             action: function (this_button, cv) {
-              self.handle_inline_confirm(
+              handle_inline_confirm(
                 this_button,
                 edit_form_generator,
                 pg.description,
@@ -1468,10 +1520,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     );
 
     d3.select(
-      self.get_ui_element_selector_by_role(
-        "priority-subclusters-export",
-        true
-      )
+      utils.get_ui_element_selector_by_role("priority-subclusters-export")
     ).on("click", (d) => {
       helpers.export_json_button(
         self.priority_groups_export(),
@@ -1479,10 +1528,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       );
     });
     d3.select(
-      self.get_ui_element_selector_by_role(
-        "priority-subclusters-export-csv",
-        true
-      )
+      utils.get_ui_element_selector_by_role("priority-subclusters-export-csv")
     ).on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_nodes(),
@@ -1506,7 +1552,7 @@ function priority_set_view(self, priority_set, options) {
   let edge_length =
     options["priority-edge-length"] || self.subcluster_threshold;
   let reference_date = options["timestamp"] || self.today;
-  let title = options["title"] || "clusterOI " + (priority_set.prior_name || priority_set.name);
+  let title = options["title"] || "clusterOI " + (priority_set.prior_name || priority_set.name || "unnamed");
   let node_dates = {};
 
   if (priority_set.nodes) {

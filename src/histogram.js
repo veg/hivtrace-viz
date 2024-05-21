@@ -20,6 +20,7 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
     "</strong> model, with &rho; of " +
     defaultFloatFormat(graph["Degrees"]["rho"]);
 
+  console.log(graph["Degrees"]["rho CI"])
   if (graph["Degrees"]["rho CI"] !== undefined) {
     label +=
       " (95% CI " +
@@ -192,9 +193,9 @@ function hivtrace_render_histogram(counts, fit, w, h, id) {
   }
 
   var data_to_plot = counts.map((d, i) => ({
-      x: i + 1,
-      y: d + 1,
-    }));
+    x: i + 1,
+    y: d + 1,
+  }));
   data_to_plot.push({
     x: counts.length + 1,
     y: 1,

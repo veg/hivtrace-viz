@@ -59,8 +59,46 @@ const previewClusterOI = async (page) => {
     .toBeVisible();
 }
 
+/**
+ * Assumes that the clusterOI editor is open
+ * Assumes that the clusterOI editor has nodes
+ * Assumes that a current clusterOI does not have the same name
+ */
+const saveClusterOI = async (page, name) => {
+  await page.locator("#priority-panel-save").click();
+  await expect(page.locator(".has-error")).toBeVisible();
+
+  await page.locator('[data-hivtrace-ui-role="priority-panel-name"]').fill(name);
+  await page.locator("#priority-panel-save").click();
+  await expect(page.locator(".has-error")).toHaveCount(0);
+
+  // jspanel should not be visible
+  let jsPanels = await page.locator(".jsPanel").all();
+  await expect(jsPanels).toHaveLength(0);
+
+  await page.locator("#priority-set-tab").click();
+
+  await expect(page.locator("#priority_set_table")
+    .filter({ has: page.getByText(name) }))
+    .toBeVisible();
+};
+
+
 test('clusterOI editor opens, can add nodes', async ({ page }) => {
+  // these specific nodes cause a confirm to appear when trying to save the clusterOI  
   await createCluster(page, ["BMK384750US2015", "BMK385560US2007"]);
+
+  const acceptDialog = async (dialog) => {
+    if (dialog.message().includes("This cluster of interest does not include all the nodes in the current")) {
+      await dialog.accept();
+    } else {
+      await dialog.dismiss();
+    }
+  }
+
+  await page.on('dialog', acceptDialog);
+  await saveClusterOI(page, "Cluster 1");
+  await page.off('dialog', acceptDialog);
 });
 
 test('preview cluster and then open clusterOI editor', async ({ page }) => {
@@ -88,4 +126,6 @@ test('add nodes via graph to clusterOI editor and save', async ({ page }) => {
   await expect(page.getByText("clusterOI editor (0 nodes)")).toHaveCount(0);
 
   await previewClusterOI(page);
+
+  await saveClusterOI(page, "Cluster 1");
 });
