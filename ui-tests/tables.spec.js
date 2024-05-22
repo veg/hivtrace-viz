@@ -41,7 +41,7 @@ test('cluster table loads and works', async ({ page }) => {
 });
 
 test('subclusters table loads and works', async ({ page }) => {
-  await page.goto('http://localhost:8080/priority-sets-args.html?network=ui-tests/data/network.json');
+  await page.goto('http://localhost:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
 
   await expect(page.locator("#subclusters-tab")).toBeVisible();
   await page.locator("#subclusters-tab").click();

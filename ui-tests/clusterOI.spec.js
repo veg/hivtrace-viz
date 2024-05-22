@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
     }
   })
 
-  await page.goto('http://127.0.0.1:8080/priority-sets-args.html?network=ui-tests/data/network.json');
+  await page.goto('http://127.0.0.1:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
 });
 
 test.afterEach(({ page }) => {
@@ -102,7 +102,7 @@ test('clusterOI editor opens, can add nodes', async ({ page }) => {
 });
 
 test('preview cluster and then open clusterOI editor', async ({ page }) => {
-  await page.goto('http://127.0.0.1:8080/priority-sets-args.html?network=ui-tests/data/network.json');
+  await page.goto('http://127.0.0.1:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
 
   await page.locator(".cluster-group").first().click();
   await page.getByText("Show this cluster in separate tab", { exact: true }).click();

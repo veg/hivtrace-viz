@@ -5852,6 +5852,7 @@ var hivtrace_cluster_network_graph = function (
       }
     } else {
       labels = [[payload[0] ? "hide" : "show", 0]];
+      // TODO: deprecated? remove if not needed (5/22/2024 meeting with @spond, @daniel-ji, @stevenweaver)
     }
 
     if (payload.length === 2 && payload[1] >= 1) {

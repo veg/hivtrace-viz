@@ -6,7 +6,7 @@
   <title>CDC HIV-TRACE Workshop</title>
 
   <!-- Latest compiled and minified CSS -->
-  <link href="dist/hivtrace.css" rel="stylesheet" />
+  <link href="../dist/hivtrace.css" rel="stylesheet" />
 
   <!-- no favicon, prevent 404 errors -->
   <link rel="shortcut icon" href="#" />
@@ -35,8 +35,13 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="navbar-collapse-1">
         <ul class="nav navbar-nav">
-          <li>
-            <a href="#" data-hivtrace-ui-role="new_priority_set">Create A Priority Set</a>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Datasets<b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li>
+                <a href=""><label>Item One</label></a>
+              </li>
+            </ul>
           </li>
 
           <li class="dropdown">
@@ -149,8 +154,7 @@
               <i class="fa fa-download" data-hivtrace-ui-role="cluster_list_data_export"></i>
             </button>
           </div>
-          <ul data-hivtrace-ui-role="cluster_list_payload" class="list-unstyled list-smaller"
-            style="height: 70vh; overflow: auto"></ul>
+          <ul data-hivtrace-ui-role="cluster_list_payload" class="list-unstyled"></ul>
           <div class="modal-footer">
             <!--<button type="button" class="btn btn-primary" id = "network_ui_bar_cluster_zoom_svg_export">Export <i class = "fa fa-image"></i></button>-->
             <button type="button" class="btn btn-default" data-dismiss="modal">
@@ -181,11 +185,11 @@
         <li class="disabled" id="nodes-tab">
           <a href="#trace-nodes" data-toggle="tab">Nodes</a>
         </li>
-        <li class="disabled" id="priority-set-tab">
-          <a href="#trace-priority-sets" data-toggle="tab">Priority Sets</a>
-        </li>
         <li class="disabled" id="attributes-tab">
           <a href="#trace-attributes" data-toggle="tab">Attributes</a>
+        </li>
+        <li class="disabled">
+          <a href="#trace-settings" data-toggle="tab">Settings</a>
         </li>
       </ul>
 
@@ -322,9 +326,6 @@
                   search for <b>either</b> term. <br />
                   Type in terms in quotes (<code>\"male\"</code>) will search
                   for this <b>exact</b> term. <br />
-                  If nodes have time information you can use
-                  <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.
-                  <p />
                   Type in <code>&lt;0.01</code> to search for nodes that have
                   edges which are 0.01 (1%) or shorter. Any positive threshold
                   works <br />
@@ -369,7 +370,7 @@
         </div>
 
         <div id="trace-graph" class="tab-pane">
-          <div class="row main-content-panel">
+          <div class="row">
             <div class="col-lg-6">
               <p class="lead">Network Statistics</p>
               <table class="table table-striped table-condensed table-responsive" id="graph_summary_table"></table>
@@ -382,7 +383,7 @@
         </div>
 
         <div id="lanl-trace-results" class="tab-pane">
-          <div class="row main-content-panel" style="margin-top: 10px; margin-bottom: 10 px;">
+          <div class="row" style="margin-top: 10px; margin-bottom: 10 px;">
             <div class="col-lg-12">
               <div class="alert alert-info" id="lanl-main-warning" style="display:none;"></div>
             </div>
@@ -427,57 +428,37 @@
         </div>
 
         <div id="trace-clusters" class="tab-pane">
-          <div class="row main-content-panel">
+          <div class="row">
             <div class="col-lg-12">
               <span class="pull-right" id="cluster-table-export"> </span>
               <p class="lead">Clusters</p>
-              <table class="table table-striped table-condensed table-hover table-fixed table-smaller"
-                id="cluster_table"></table>
+              <table class="table table-striped table-condensed table-hover" id="cluster_table"></table>
             </div>
           </div>
         </div>
 
         <div id="trace-subclusters" class="tab-pane">
-          <div class="row main-content-panel">
+          <div class="row">
             <div class="col-lg-12">
               <span class="pull-right" id="subcluster-table-export"> </span>
               <p class="lead">Subclusters</p>
-              <table class="table table-striped table-condensed table-hover table-fixed table-smaller"
-                id="subcluster_table"></table>
+              <table class="table table-striped table-condensed table-hover" id="subcluster_table"></table>
             </div>
           </div>
         </div>
 
         <div id="trace-nodes" class="tab-pane">
-          <div class="row main-content-panel">
-            <div class="col-lg-12 ">
+          <div class="row">
+            <div class="col-lg-12">
               <span class="pull-right" id="node-table-export"> </span>
               <p class="lead">Linked individuals</p>
-              <table class="table table-striped table-condensed table-hover table-fixed table-smaller" id="node_table">
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="trace-priority-sets" class="tab-pane">
-          <div class="row main-content-panel">
-            <div class="col-lg-12">
-              <span class="pull-right" id="priority-table-export" style="margin-left: 1em">
-              </span>
-              <p class="lead">
-                Priority Node Sets
-                <button class="btn btn-primary btn-small pull-right" data-hivtrace-ui-role="new_priority_set">
-                  Create A Priority Set
-                </button>
-              </p>
-              <table class="table table-striped table-condensed table-hover table-fixed table-smaller"
-                id="priority_set_table"></table>
+              <table class="table table-striped table-condensed table-hover" id="node_table"></table>
             </div>
           </div>
         </div>
 
         <div id="trace-attributes" class="tab-pane">
-          <div class="row main-content-panel">
+          <div class="row">
             <div class="nav-trace">
               <div class="input-group input-group-sm" data-hivtrace-ui-role="attributes_container">
                 <span class="input-group-btn">
@@ -527,7 +508,7 @@
   <img class="hidden" id="hyphy-chart-image" />
   <canvas class="hidden" id="hyphy-chart-canvas"></canvas>
 
-  <script src="dist/hivtrace.js"></script>
+  <script src="../dist/hivtrace.js"></script>
 
   <script>
     var network_container = "#network_tag",
@@ -541,7 +522,6 @@
       filter_edges_toggle = "#network_ui_bar_toggle_filter_edges",
       graph_summary_tag = "#graph_summary_table",
       cluster_table = "#cluster_table",
-      priority_set_table = "#priority_set_table",
       subcluster_table = "#subcluster_table",
       parent_container = "#top_level_tab_container",
       node_table = "#node_table",
@@ -581,10 +561,7 @@
           parent_container,
           {
             no_cdc: false,
-            "no-subcluster-compute": false,
-            "subcluster-table": subcluster_table,
-            "priority-table": priority_set_table,
-            "priority-sets-url": "test/fl-example.json"
+            "subcluster-table": subcluster_table
           }
         );
 
@@ -603,12 +580,10 @@
             "#clusters-tab",
             "#subclusters-tab",
             "#nodes-tab",
-            "#attributes-tab",
-            "#priority-set-tab"
+            "#attributes-tab"
           ].forEach(function (tab) {
             d3.select(tab).classed("disabled", false);
           });
-
           d3.select(parent_container)
             .selectAll("li")
             .selectAll("a")
@@ -627,10 +602,6 @@
           hivtrace.misc.export_table_to_text(
             "#node-table-export",
             node_table
-          );
-          hivtrace.misc.export_table_to_text(
-            "#priority-table-export",
-            priority_set_table
           );
 
           $("#main-tab a[data-toggle='tab']").on("shown.bs.tab", function (e) {
@@ -679,7 +650,6 @@
           }
         }
       } catch (e) {
-        console.log(e.stack);
         HandleAppError(
           "Network loading failed with the following error " + e
         );
@@ -688,17 +658,14 @@
 
     var initialize_cluster_network_graphs = function () {
       //Initialize clusternetworkgraph with json url
-      url = "test/fl-2020-linted.json";
+      url = "workshop/SocialDemoFiles/SocialNetwork.trace.json";
+      //url = "test/LA.json"
 
       d3.json(url, function (error, results) {
         if (error) {
           HandleAppError("Failed loading file " + error.responseURL);
         } else {
-          if ("trace_results" in results) {
-            init(results["trace_results"]);
-          } else {
-            init(results);
-          }
+          init(results);
         }
       });
     };
@@ -802,7 +769,6 @@
         have 'MSM' in any of the data fields. <p/>\
         Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <p/>\
         Type in terms in quotes (<code>\"male\"</code>) will search for this <b>exact</b> term. <p/>\
-        If nodes have time information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges. <p/>\
         Type in <code>&lt;0.01</code> to search for nodes that have edges which are 0.01 (1%) or shorter. Any positive threshold works <p/>\
         Matching node <svg width = '20' height = '20' style = 'vertical-align: bottom; display: inline'><circle cx = '10' cy = '10' r = '7' class = 'node selected_object'> </circle></svg><p/>\
         Cluster where 25% of nodes match the term <svg width = '28' height = '28' style = 'vertical-align: bottom; display: inline'><circle cx = '14' cy = '14' r = '8' class = 'cluster'> </circle>\
@@ -814,12 +780,13 @@
         Use the <code>Hide others</code> checkbox to automatically hide all clusters/nodes that do not match the search terms\
         <p/>\
         Use the <code>Show small clusters</code> checkbox to display small clusters that may have been hidden for clarity\
-        </div>"
+        </div>\
+     "
       });
 
       initialize_cluster_network_graphs();
 
-      var _loaded_network_data = { nodes: [], edges: [] };
+      _loaded_network_data = { nodes: [], edges: [] };
 
       $("#csv_proceed_button").on("click", function (e) {
         try {
@@ -859,6 +826,22 @@
           $("#csv_proceed_button").prop("disabled", true);
           console.log(e);
         }
+      });
+
+      d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function (
+        error,
+        nodes
+      ) {
+        d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function (
+          error,
+          edges
+        ) {
+          _loaded_network_data["nodes"] = nodes;
+          _loaded_network_data["edges"] = edges;
+          setTimeout(function () {
+            $("#csv_proceed_button").trigger("click");
+          }, 100);
+        });
       });
 
       [

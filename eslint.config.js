@@ -75,7 +75,6 @@ module.exports = [
       // "no-script-url": 0,
       // "new-cap": 0,
 
-      // TODO: two rules turned off, but should be looked at
       "block-scoped-var": 0,
       "no-shadow": 0,
 
