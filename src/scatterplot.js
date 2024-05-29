@@ -15,17 +15,13 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
 
   var x = (dates ? d3.time.scale() : d3.scale.linear())
     .domain(
-      d3.extent(points, function (p) {
-        return p.x;
-      })
+      d3.extent(points, (p) => p.x)
     )
     .range([0, width]);
 
   var y = (dates ? d3.time.scale() : d3.scale.linear())
     .domain(
-      d3.extent(points, function (p) {
-        return p.y;
-      })
+      d3.extent(points, (p) => p.y)
     )
     .range([height, 0]);
 
@@ -59,12 +55,8 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   points.enter().append("circle");
 
   points
-    .attr("cx", function (d) {
-      return x(d.x);
-    })
-    .attr("cy", function (d) {
-      return y(d.y);
-    })
+    .attr("cx", (d) => x(d.x))
+    .attr("cy", (d) => y(d.y))
     .attr("r", 3)
     .classed("node scatter", true);
 

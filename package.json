@@ -3,7 +3,7 @@
   "version": "1.1.7",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
-    "node": ">=17 <20"
+    "node": ">=18 || >20"
   },
   "main": "dist/hivtrace.js",
   "directories": {
@@ -11,11 +11,13 @@
   },
   "browserslist": "> 0.25%",
   "dependencies": {
+    "@eslint/js": "^9.2.0",
     "@fortawesome/fontawesome-free": "^6.2.1",
     "autocomplete.js": "^0.38.1",
     "bootstrap": "^3.4.1",
     "d3": "3.x",
     "downloadjs": "^1.4.7",
+    "globals": "^15.2.0",
     "graceful-fs": "^4.2.10",
     "htmllint": "^0.8.0",
     "i18n-webpack-plugin": "1.0.0",
@@ -24,6 +26,7 @@
     "js-convert-case": "^4.2.0",
     "jspanel4": "4.16.1",
     "latest": "^0.2.0",
+    "sass": "^1.77.2",
     "topojson": "3.x",
     "underscore": "1.x"
   },
@@ -35,12 +38,14 @@
     "@fortawesome/free-brands-svg-icons": "^6.2.1",
     "@fortawesome/free-regular-svg-icons": "^6.2.1",
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@playwright/test": "^1.43.0",
+    "@types/node": "^20.12.5",
     "@zainulbr/i18n-webpack-plugin": "^2.0.3",
     "babel-loader": "^9.1.0",
     "babel-preset-react-hmre": "^1.1.1",
     "concurrently": "^7.6.0",
     "css-loader": "^6.7.2",
-    "eslint": "^8.28.0",
+    "eslint": "^9.2.0",
     "exports-loader": "^4.0.0",
     "expose-loader": "^4.0.0",
     "express": "^4.18.2",
@@ -52,7 +57,6 @@
     "husky": "^8.0.2",
     "imports-loader": "^4.0.1",
     "mini-css-extract-plugin": "^2.7.0",
-    "node-sass": "^8.0.0",
     "postcss-loader": "^7.0.1",
     "prettier": "^2.8.0",
     "pretty-quick": "^3.1.3",
@@ -69,7 +73,7 @@
     "develop": "export NODE_OPTIONS=--openssl-legacy-provider; concurrently \"webpack --watch --mode=development\" \"http-server\"",
     "crear": "export NODE_OPTIONS=--openssl-legacy-provider; concurrently \"webpack --env lang='es' --watch --mode=development\" \"http-server\"",
     "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack && webpack --env lang='es'",
-    "lint": "eslint --ext .js ./",
+    "lint": "eslint",
     "format": "prettier 'src/*.js' --write",
     "precommit": "pretty-quick --staged"
   },

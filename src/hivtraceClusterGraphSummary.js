@@ -7,7 +7,7 @@ var _defaultPercentFormat = d3.format(",.3p");
 
 // The function for creating the "Network Statistics" table that is displayed on the "Statistics" tab.
 var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
-  var summary_table = d3.select(tag);
+  var summary_table;
 
   summary_table = d3.select(tag).select("tbody");
   if (summary_table.empty()) {
@@ -17,8 +17,8 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   var table_data = [];
 
   if (!summary_table.empty()) {
-    _.each(graph["Network Summary"], function (value, key) {
-      if (key == "Clusters") {
+    _.each(graph["Network Summary"], (value, key) => {
+      if (key === "Clusters") {
         value = _.size(graph["Cluster description"]);
       }
 
@@ -32,7 +32,7 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   }
 
   var degrees = [];
-  _.each(graph["Degrees"]["Distribution"], function (value, index) {
+  _.each(graph["Degrees"]["Distribution"], (value, index) => {
     for (var k = 0; k < value; k++) {
       degrees.push(index + 1);
     }
@@ -77,9 +77,7 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
 
   if (!not_CDC) {
     degrees = helpers.describe_vector(
-      _.map(graph["Edges"], function (e) {
-        return e.length;
-      })
+      _.map(graph["Edges"], (e) => e.length)
     );
     table_data.push(["Genetic distances (links only)", ""]);
     table_data.push([
@@ -107,14 +105,10 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   var rows = summary_table.selectAll("tr").data(table_data);
   rows.enter().append("tr");
   rows.exit().remove();
-  var columns = rows.selectAll("td").data(function (d) {
-    return d;
-  });
+  var columns = rows.selectAll("td").data((d) => d);
   columns.enter().append("td");
   columns.exit();
-  columns.html(function (d) {
-    return d;
-  });
+  columns.html((d) => d);
 };
 
 module.exports.hivtraceClusterGraphSummary = hivtraceClusterGraphSummary;

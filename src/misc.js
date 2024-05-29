@@ -4,11 +4,11 @@ var d3 = require("d3"),
 
 var hivtrace_generate_svg_polygon_lookup = {};
 
-_.each(_.range(3, 20), function (d) {
+_.each(_.range(3, 20), (d) => {
   var angle_step = (Math.PI * 2) / d;
-  hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), function (i) {
-    return [Math.cos(angle_step * i), Math.sin(angle_step * i)];
-  });
+  hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), (i) =>
+    [Math.cos(angle_step * i), Math.sin(angle_step * i)]
+  );
 });
 
 function hivtrace_generate_svg_symbol(type) {
@@ -32,9 +32,9 @@ function hivtrace_generate_svg_symbol(type) {
       return new hivtrace_generate_svg_polygon().sides(8);
     case "ellipse":
       return new hivtrace_generate_svg_ellipse();
+    default:
+      return d3.svg.symbol().type("circle");
   }
-  //console.log (type);
-  return d3.svg.symbol().type("circle");
 }
 
 var hivtrace_generate_svg_ellipse = function () {
@@ -45,7 +45,7 @@ var hivtrace_generate_svg_ellipse = function () {
       "M " +
       self.radius +
       " 0 A " +
-      self.radius * 1 +
+      self.radius +
       " " +
       self.radius * 0.75 +
       " 0 1 0 " +
@@ -81,9 +81,7 @@ var hivtrace_generate_svg_polygon = function () {
 
     if (self.sides in hivtrace_generate_svg_polygon_lookup) {
       path += hivtrace_generate_svg_polygon_lookup[self.sides]
-        .map(function (value) {
-          return " L" + self.radius * value[0] + " " + self.radius * value[1];
-        })
+        .map((value) => " L" + self.radius * value[0] + " " + self.radius * value[1])
         .join(" ");
     } else {
       var angle_step = (Math.PI * 2) / self.sides,
@@ -223,11 +221,9 @@ function hivtrace_plot_cluster_dynamics(
   };
 
   // Only accept time_series with time that is a date
-  time_series = _.filter(time_series, (ts) => {
-    return _.isDate(ts.time);
-  });
+  time_series = _.filter(time_series, (ts) => _.isDate(ts.time));
 
-  if (time_series.length == 0) {
+  if (time_series.length === 0) {
     return;
   }
 
@@ -268,7 +264,7 @@ function hivtrace_plot_cluster_dynamics(
     var year = d.getFullYear();
     var quarter = Math.floor(d.getMonth() / 3) + 1;
 
-    return "" + year + "-Q" + quarter;
+    return String(year) + "-Q" + quarter;
   };
 
   if (options && options["x-tick-format"]) {
@@ -315,12 +311,12 @@ function hivtrace_plot_cluster_dynamics(
     .axis()
     .scale(y)
     .orient("left")
-    .tickFormat(function (v) {
-      if (v << 0 == v) {
+    .tickFormat((v) => {
+      if (v << 0 === v) {
         // an integer
         return v;
       }
-      return;
+      return null;
     });
 
   var binned = {};
@@ -330,14 +326,14 @@ function hivtrace_plot_cluster_dynamics(
   var prefix = options && options["prefix"] ? options["prefix"] : "";
   var max_bin = 0;
 
-  _.each(time_series, function (point, index) {
+  _.each(time_series, (point, index) => {
     var bin_tag = bin_by(point["time"]);
 
     if (!(bin_tag[0] in binned)) {
       binned[bin_tag[0]] = { time: bin_tag[1], x: bin_tag[2] };
       binned[bin_tag[0]][total_id] = 0;
-      _.each(point, function (v, k) {
-        if (k != "time") {
+      _.each(point, (v, k) => {
+        if (k !== "time") {
           binned[bin_tag[0]][k] = {};
         }
       });
@@ -348,8 +344,8 @@ function hivtrace_plot_cluster_dynamics(
 
     var y = {};
     y[total_id] = index + 1;
-    _.each(point, function (v, k) {
-      if (k != "time") {
+    _.each(point, (v, k) => {
+      if (k !== "time") {
         binned[bin_tag[0]][k][v] = binned[bin_tag[0]][k][v]
           ? binned[bin_tag[0]][k][v] + 1
           : 1;
@@ -371,18 +367,16 @@ function hivtrace_plot_cluster_dynamics(
   });
 
   var binned_array = [];
-  _.each(binned, function (v, k) {
+  _.each(binned, (v, k) => {
     v["id"] = k;
     binned_array.push(v);
   });
 
-  binned_array.sort(function (a, b) {
-    return b["time"] > a["time"] ? 1 : b["time"] == a["time"] ? 0 : -1;
-  });
+  binned_array.sort((a, b) => b["time"] - a["time"]);
 
   if (do_barchart) {
     if (_.isUndefined(min_diff)) {
-      _.each(binned_array, function (d, i) {
+      _.each(binned_array, (d, i) => {
         if (i > 0) {
           min_diff = Math.min(
             min_diff,
@@ -391,15 +385,11 @@ function hivtrace_plot_cluster_dynamics(
         }
       });
     }
-    min_diff = min_diff * 0.8; // convert to seconds and shrink a bit
+    min_diff *= 0.8; // convert to seconds and shrink a bit
   }
 
-  var min_x = d3.min(time_series, function (d) {
-    return d["time"] < d["_bin"] ? d["time"] : d["_bin"];
-  });
-  var max_x = d3.max(time_series, function (d) {
-    return d["time"] > d["_bin"] ? d["time"] : d["_bin"];
-  });
+  var min_x = d3.min(time_series, (d) => d["time"] < d["_bin"] ? d["time"] : d["_bin"]);
+  var max_x = d3.max(time_series, (d) => d["time"] > d["_bin"] ? d["time"] : d["_bin"]);
 
   if (do_barchart) {
     var max_x2 = new Date();
@@ -455,15 +445,15 @@ function hivtrace_plot_cluster_dynamics(
       ? options["colorizer"][y_key]
       : d3.scale.category10();
 
-  color_scale = _.wrap(color_scale, function (func, arg) {
-    if (arg == total_id) return total_color;
+  color_scale = _.wrap(color_scale, (func, arg) => {
+    if (arg === total_id) return total_color;
     return func(arg);
   });
 
   var plot_types = _.keys(values_by_attribute[y_key]);
 
   if (do_barchart) {
-    if (plot_types.length == 0) {
+    if (plot_types.length === 0) {
       plot_types.push(total_id);
     }
   } else {
@@ -503,61 +493,49 @@ function hivtrace_plot_cluster_dynamics(
     );
   }
 
-  if (!do_barchart || plot_types.length > 1 || plot_types[0] != total_id) {
+  if (!do_barchart || plot_types.length > 1 || plot_types[0] !== total_id) {
     var legend_lines = legend_area.selectAll("g").data(plot_types);
 
     legend_lines.enter().append("g").attr("class", "annotation-text");
 
     legend_lines
       .selectAll("text")
-      .data(function (d) {
-        return [d];
-      })
+      .data((d) => [d])
       .enter()
       .append("text")
-      .attr("transform", function (d, i, j) {
-        return (
-          "translate(" +
-          options.rect_size +
-          "," +
-          (options.rect_size * (plot_types.length - 1 - j) -
-            (options.rect_size - options.font_size)) +
-          ")"
-        );
-      })
+      .attr("transform", (d, i, j) => (
+        "translate(" +
+        options.rect_size +
+        "," +
+        (options.rect_size * (plot_types.length - 1 - j) -
+          (options.rect_size - options.font_size)) +
+        ")"
+      ))
       .attr("dx", "0.2em")
       .style("font-size", options.font_size)
-      .text(function (d) {
-        return d;
-      })
-      .on("mouseover", function (d) {
+      .text((d) => d)
+      .on("mouseover", (d) => {
         opacity_toggle(prefix + d, true);
       })
-      .on("mouseout", function (d) {
+      .on("mouseout", (d) => {
         opacity_toggle(prefix + d, false);
       });
 
     legend_lines
       .selectAll("rect")
-      .data(function (d) {
-        return [d];
-      })
+      .data((d) => [d])
       .enter()
       .append("rect")
       .attr("x", 0)
-      .attr("y", function (d, i, j) {
-        return options.rect_size * (plot_types.length - 2 - j);
-      })
+      .attr("y", (d, i, j) => options.rect_size * (plot_types.length - 2 - j))
       .attr("width", options.rect_size)
       .attr("height", options.rect_size)
       .attr("class", "area")
-      .style("fill", function (d, i, j) {
-        return color_scale(d);
-      })
-      .on("mouseover", function (d) {
+      .style("fill", (d, i, j) => color_scale(d))
+      .on("mouseover", (d) => {
         opacity_toggle(prefix + d, true);
       })
-      .on("mouseout", function (d) {
+      .on("mouseout", (d) => {
         opacity_toggle(prefix + d, false);
       });
   }
@@ -566,7 +544,7 @@ function hivtrace_plot_cluster_dynamics(
   last["time"] = x.domain()[1];
   time_series.push(last);
 
-  _.each(plot_types, function (plot_key, idx) {
+  _.each(plot_types, (plot_key, idx) => {
     var plot_color = color_scale(plot_key);
     var y_accessor = function (d) {
       //console.log ((plot_key in d['y']) ? d['y'][plot_key] : 0);
@@ -584,10 +562,8 @@ function hivtrace_plot_cluster_dynamics(
     var bin_accessor = function (d) {
       if (y_key && plot_key in d[y_key]) {
         return d[y_key][plot_key];
-      } else {
-        if (plot_key in d) {
-          return d[plot_key];
-        }
+      } else if (plot_key in d) {
+        return d[plot_key];
       }
       return 0.0;
     };
@@ -595,15 +571,9 @@ function hivtrace_plot_cluster_dynamics(
     if (!skip_cumulative) {
       var curve = d3.svg
         .area()
-        .x(function (d) {
-          return x(d["time"]);
-        })
-        .y1(function (d) {
-          return y(y_accessor(d));
-        })
-        .y0(function (d) {
-          return y(0);
-        })
+        .x((d) => x(d["time"]))
+        .y1((d) => y(y_accessor(d)))
+        .y0((d) => y(0))
         .interpolate("step");
 
       svg
@@ -617,7 +587,7 @@ function hivtrace_plot_cluster_dynamics(
     }
 
     if (do_barchart) {
-      binned_array.forEach(function (d) {
+      binned_array.forEach((d) => {
         var dd = new Date();
         dd.setTime(d["time"].getTime() - min_diff * 0.5);
         var dd2 = new Date();
@@ -649,7 +619,7 @@ function hivtrace_plot_cluster_dynamics(
         d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
       });
     } else {
-      binned_array.forEach(function (d) {
+      binned_array.forEach((d) => {
         svg
           .append("circle")
           .attr("cx", x(d["time"]))
@@ -663,12 +633,8 @@ function hivtrace_plot_cluster_dynamics(
 
       var curve_year = d3.svg
         .line()
-        .x(function (d) {
-          return x(d["time"]);
-        })
-        .y(function (d) {
-          return y(bin_accessor(d));
-        })
+        .x((d) => x(d["time"]))
+        .y((d) => y(bin_accessor(d)))
         .interpolate("cardinal");
 
       svg
@@ -719,12 +685,16 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
+// TODO: convert and save this data rather than do it each time.
 var hivtrace_cluster_depthwise_traversal = function (
   nodes,
   edges,
   edge_filter,
   save_edges,
-  seed_nodes
+  seed_nodes,
+  white_list
+  // an optional set of node IDs (a subset of 'nodes') that will be considered for traversal
+  // it is further assumed that seed_nodes are a subset of white_list, if the latter is specified
 ) {
   var clusters = [],
     adjacency = {},
@@ -732,7 +702,7 @@ var hivtrace_cluster_depthwise_traversal = function (
 
   seed_nodes = seed_nodes || nodes;
 
-  _.each(nodes, function (n) {
+  _.each(nodes, (n) => {
     n.visited = false;
     adjacency[n.id] = [];
   });
@@ -741,18 +711,18 @@ var hivtrace_cluster_depthwise_traversal = function (
     edges = _.filter(edges, edge_filter);
   }
 
-  _.each(edges, function (e) {
+  if (white_list) {
+    edges = _.filter(edges, (e) => (
+      white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
+    ));
+  }
+
+  _.each(edges, (e) => {
     try {
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
     } catch (err) {
-      // eslint-disable-next-line
-      console.log(
-        "Edge does not map to an existing node " + e.source + " to " + e.target
-      );
-      throw (
-        "Edge does not map to an existing node " + e.source + " to " + e.target
-      );
+      throw Error("Edge does not map to an existing node " + e.source + " to " + e.target);
     }
   });
 
@@ -766,7 +736,7 @@ var hivtrace_cluster_depthwise_traversal = function (
     }
     node.visited = true;
 
-    _.each(adjacency[node.id], function (neighbor) {
+    _.each(adjacency[node.id], (neighbor) => {
       if (!neighbor[0].visited) {
         by_node[neighbor[0].id] = by_node[node.id];
         clusters[by_node[neighbor[0].id]].push(neighbor[0]);
@@ -778,7 +748,7 @@ var hivtrace_cluster_depthwise_traversal = function (
     });
   };
 
-  _.each(seed_nodes, function (n) {
+  _.each(seed_nodes, (n) => {
     if (!n.visited) {
       traverse(n);
     }
@@ -936,20 +906,19 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       });
 
       let fills = ["firebrick", "grey"];
-      time_boxes = _.map(years_ago, (sya, i) => {
-        return svg
-          .append("g")
-          .selectAll("rect")
-          .data([d])
-          .enter()
-          .append("rect")
-          .attr("fill", fills[i])
-          .attr("x", (d) => x(sya))
-          .attr("y", (d) => y(0))
-          .attr("width", x(d[1]) - x(sya))
-          .attr("height", (d) => -y(0) + y(data.length - 1))
-          .attr("opacity", 0.25);
-      });
+      time_boxes = _.map(years_ago, (sya, i) => svg
+        .append("g")
+        .selectAll("rect")
+        .data([d])
+        .enter()
+        .append("rect")
+        .attr("fill", fills[i])
+        .attr("x", (d) => x(sya))
+        .attr("y", (d) => y(0))
+        .attr("width", x(d[1]) - x(sya))
+        .attr("height", (d) => -y(0) + y(data.length - 1))
+        .attr("opacity", 0.25)
+      );
 
       lines
         .attr("stroke-width", (d) => (highlight_nodes.has(d[0]) ? 5 : 2))
@@ -973,8 +942,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
         text += "National priority clusterOI. ";
       }
       text +=
-        "" +
-        d3.sum(ed.connected_componets) +
+        String(d3.sum(ed.connected_componets)) +
         " nodes in " +
         ed.connected_componets.length +
         " components. ";
@@ -988,14 +956,20 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     });
 }
 
-module.exports.coi_timeseries = hivtrace_coi_timeseries;
-module.exports.compute_node_degrees = hivtrace_compute_node_degrees;
-module.exports.export_table_to_text = hiv_trace_export_table_to_text;
-module.exports.undefined = {};
-module.exports.too_large = {};
-module.exports.processing = {};
-module.exports.format_value = hivtrace_format_value;
-module.exports.symbol = hivtrace_generate_svg_symbol;
-module.exports.cluster_dynamics = hivtrace_plot_cluster_dynamics;
-module.exports.hivtrace_cluster_depthwise_traversal =
-  hivtrace_cluster_depthwise_traversal;
+function edge_typer(e, edge_types, T) {
+  return edge_types[e.length <= T ? 0 : 1];
+};
+
+module.exports = {
+  edge_typer,
+  coi_timeseries: hivtrace_coi_timeseries,
+  compute_node_degrees: hivtrace_compute_node_degrees,
+  export_table_to_text: hiv_trace_export_table_to_text,
+  undefined: {},
+  too_large: {},
+  processing: {},
+  format_value: hivtrace_format_value,
+  symbol: hivtrace_generate_svg_symbol,
+  cluster_dynamics: hivtrace_plot_cluster_dynamics,
+  hivtrace_cluster_depthwise_traversal,
+}

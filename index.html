@@ -9,8 +9,8 @@
   <!-- Latest compiled and minified CSS -->
   <link href="dist/hivtrace.css" rel="stylesheet" />
 
-  <!-- Latest compiled and minified JavaScript -->
-  <script src="dist/vendor.js"></script>
+  <!-- no favicon, prevent 404 errors -->
+  <link rel="shortcut icon" href="#" />
 
   <style>
     .navbar {
@@ -669,9 +669,9 @@
 
     var initialize_cluster_network_graphs = function () {
       //Initialize clusternetworkgraph with json url
-      url = "example.json";
-      //url = "vl_recent_value_adj.json";
-      //url = "example_with_random_countries.json" // For testing the mapping feature.
+      url = "test/example/example.json";
+      //url = "test/example/vl_recent_value_adj.json";
+      //url = "test/example/example_with_random_countries.json" // For testing the mapping feature.
       //url = "test/LA.json"
       //url = "private/new.json";
 
@@ -696,7 +696,7 @@
           for (var i = 0; i < data.length; i++) {
             let countryCode = data[i]["Alpha-2 code"];
             let countryCodeNumeric = data[i]["Numeric code"];
-            countryCodeNumeric.length == 2
+            countryCodeNumeric.length === 2
               ? (countryCodeNumeric = "0" + countryCodeNumeric)
               : null;
             let countryName = data[i]["Country"];
@@ -842,7 +842,7 @@
               "" + import_result.edges[k] + " <i>" + k + "</i> links"
             );
           }
-          if (imported_edges.length == 0) {
+          if (imported_edges.length === 0) {
             imported_edges = ["no link data"];
           }
 
@@ -876,7 +876,7 @@
           d3.select(d[1]).style("display", "block");
           var files = e.target.files; // FileList object
 
-          if (files.length == 1) {
+          if (files.length === 1) {
             var f = files[0];
             var reader = new FileReader();
 
@@ -914,7 +914,7 @@
 
         var files = e.target.files; // FileList object
 
-        if (files.length == 1) {
+        if (files.length === 1) {
           var f = files[0];
           var reader = new FileReader();
 

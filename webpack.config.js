@@ -1,27 +1,27 @@
-var path = require("path"),
-  webpack = require("webpack"),
-  _ = require("underscore"),
-  I18nPlugin = require("@zainulbr/i18n-webpack-plugin");
+const path = require("path");
+const webpack = require("webpack");
+const _ = require("underscore");
+const I18nPlugin = require("@zainulbr/i18n-webpack-plugin");
 
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
 
-var languages = {
-  en: require(path.join(
-    __dirname,
-    "node_modules",
-    "hivtrace-locales",
-    "en.json"
-  )),
-  es: require(path.join(
-    __dirname,
-    "node_modules",
-    "hivtrace-locales",
-    "es.json"
-  )),
-};
+  languages = {
+    en: require(path.join(
+      __dirname,
+      "node_modules",
+      "hivtrace-locales",
+      "en.json"
+    )),
+    es: require(path.join(
+      __dirname,
+      "node_modules",
+      "hivtrace-locales",
+      "es.json"
+    )),
+  };
 
 module.exports = (env) => {
-  var language = "en";
+  let language = "en";
 
   if (!_.isUndefined(env)) {
     if (!_.isUndefined(env.lang)) {
@@ -29,13 +29,13 @@ module.exports = (env) => {
     }
   }
 
-  var filename = "hivtrace.js";
+  let filename = "hivtrace.js";
 
-  if (language != "en") {
-    filename = "hivtrace." + language + ".js";
+  if (language !== "en") {
+    filename = `hivtrace.${language}.js`;
   }
 
-  var config = {
+  const config = {
     devtool: "source-map",
     mode: "development",
     entry: {
@@ -65,7 +65,7 @@ module.exports = (env) => {
     },
     output: {
       path: path.resolve(__dirname, "dist/"),
-      filename: filename,
+      filename,
     },
     externals: {
       jsdom: "window",
@@ -75,7 +75,7 @@ module.exports = (env) => {
         {
           test: /\.css$/i,
           use: [MiniCssExtractPlugin.loader, "css-loader"],
-          //options: { publicPath: "/dist/", minimize: false }
+          //Options: { publicPath: "/dist/", minimize: false }
         },
         {
           test: /\.(js|jsx)?$/,
@@ -135,8 +135,10 @@ module.exports = (env) => {
         process: "process/browser",
       }),
       new MiniCssExtractPlugin({
-        // Options similar to the same options in webpackOptions.output
-        // both options are optional
+        /*
+         * Options similar to the same options in webpackOptions.output
+         * both options are optional
+         */
         filename: "[name].css",
         chunkFilename: "[id].css",
       }),

@@ -83,13 +83,9 @@ var datamonkey_save_image = function (type, container) {
             if (rule.type === 3) {
               // Import Rule
               process_stylesheet(rule.styleSheet);
-            } else {
               // hack for illustrator crashing on descendent selectors
-              if (rule.selectorText) {
-                if (rule.selectorText.indexOf(">") === -1) {
-                  styles += "\n" + rule.cssText;
-                }
-              }
+            } else if (rule.selectorText && rule.selectorText.indexOf(">") === -1) {
+              styles += "\n" + rule.cssText;
             }
           }
         }
@@ -151,10 +147,10 @@ var datamonkey_save_image = function (type, container) {
   if (navigator.msSaveBlob) {
     // IE10
     download(image_string, "image.svg", "image/svg+xml");
-  } else if (type == "png") {
+  } else if (type === "png") {
     b64toBlob(
       image_string,
-      function (blob) {
+      (blob) => {
         var url = window.URL.createObjectURL(blob);
         var pom = document.createElement("a");
         pom.setAttribute("download", "image.png");
@@ -163,7 +159,7 @@ var datamonkey_save_image = function (type, container) {
         pom.click();
         pom.remove();
       },
-      function (error) {
+      (e) => {
         console.log(error); // eslint-disable-line
       }
     );
@@ -178,7 +174,7 @@ var datamonkey_save_image = function (type, container) {
 };
 
 function datamonkey_describe_vector(vector, as_list) {
-  var d = {};
+  let d;
 
   if (vector.length) {
     vector.sort(d3.ascending);
@@ -279,10 +275,10 @@ function datamonkey_table_to_text(table_id, sep) {
       return d3.select(first_element.node()).attr("data-text-export");
     }
 
-    /*if (table_id == "#priority_set_table") {
-      if (node.firstChild.tagName == "I") {
+    /*if (table_id === "#priority_set_table") {
+      if (node.firstChild.tagName === "I") {
         return node.firstChild.getAttribute("title");
-      } else if (node.firstChild.tagName == "SPAN") {
+      } else if (node.firstChild.tagName === "SPAN") {
         return node.children[1].innerHTML;
       }
     }*/
@@ -302,7 +298,7 @@ function datamonkey_table_to_text(table_id, sep) {
     .selectAll("tr")
     .each(function (d) {
       var this_row = d3.select(this);
-      if (this_row.style("display") != "none") {
+      if (this_row.style("display") !== "none") {
         var write_to = data_rows.length;
         data_rows.push([]);
         d3.select(this)
@@ -314,9 +310,9 @@ function datamonkey_table_to_text(table_id, sep) {
     });
 
   return (
-    (sep == "," ? d3.csv.format([header_row]) : d3.tsv.format([header_row])) +
+    (sep === "," ? d3.csv.format([header_row]) : d3.tsv.format([header_row])) +
     "\n" +
-    (sep == "," ? d3.csv.format(data_rows) : d3.tsv.format(data_rows))
+    (sep === "," ? d3.csv.format(data_rows) : d3.tsv.format(data_rows))
     /*data_rows
       .map(function(d) {
         return d.join(sep);
@@ -373,10 +369,10 @@ function exportColorScheme(uniqValues, colorizer) {
 
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(
-    function () {
+    () => {
       console.log("Copying to clipboard was successful!");
     },
-    function (err) {
+    () => {
       console.error("Could not copy text: ", err);
     }
   );
