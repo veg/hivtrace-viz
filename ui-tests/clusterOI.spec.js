@@ -109,6 +109,23 @@ const saveClusterOI = async (page, name, expectDialog = false) => {
     .toBeVisible();
 };
 
+const deleteClusterOI = async (page, name) => {
+  await page.locator("#priority_set_table")
+    .filter({ has: page.getByText(name) })
+    .first()
+    .locator(".view-edit-cluster")
+    .first()
+    .click();
+
+  const acceptDialog = getAcceptDialogFunction("This action cannot be undone. Proceed?")
+  await page.on('dialog', acceptDialog);
+  await page.getByText("Delete this cluster of interest", { exact: true }).first().click();
+  await page.off('dialog', acceptDialog);
+
+  await expect(await page.locator("#priority_set_table")
+    .filter({ has: page.getByText(name) }))
+    .toHaveCount(0);
+}
 
 test('clusterOI editor opens, can add nodes', async ({ page }) => {
   // these specific nodes cause a confirm to appear when trying to save the clusterOI  
@@ -173,28 +190,15 @@ test('add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
     .filter({ has: page.getByText("Cluster 2") }))
     .toBeVisible();
 
-  // delete all clusters, accept confirmation dialog
-  await page.locator(".view-edit-cluster").first().click();
-  const acceptDialog = getAcceptDialogFunction("This action cannot be undone. Proceed?")
-  await page.on('dialog', acceptDialog);
-  await page.getByText("Delete this cluster of interest", { exact: true }).first().click();
-  await page.off('dialog', acceptDialog);
-
-  await expect(await page.locator("#priority_set_table")
-    .filter({ has: page.getByText("Cluster 1") })
-    .filter({ has: page.getByText("Cluster 2") }))
-    .toHaveCount(0);
+  // delete clusters, accept confirmation dialog
+  await deleteClusterOI(page, "Cluster 1");
 
   await expect(await page.locator("#priority_set_table")
     .filter({ has: page.getByText("Cluster 2") }))
     .toHaveCount(1);
 
   // delete the last cluster
-  await page.locator(".view-edit-cluster").first().click();
-  const acceptDialog2 = getAcceptDialogFunction("This action cannot be undone. Proceed?")
-  await page.on('dialog', acceptDialog2);
-  await page.getByText("Delete this cluster of interest", { exact: true }).first().click();
-  await page.off('dialog', acceptDialog2);
+  await deleteClusterOI(page, "Cluster 2");
 
   await expect(await page.locator("#priority_set_table tbody tr"))
     .toHaveCount(0);

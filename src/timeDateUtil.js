@@ -23,6 +23,24 @@ function getAncientDate() {
   return new Date(1900, 0, 1);
 };
 
+function getNMonthsAgo(reference_date, months) {
+  var past_date = new Date(reference_date);
+  var past_months = past_date.getMonth();
+  var diff_year = Math.floor(months / 12);
+  var left_over = months - diff_year * 12;
+
+  if (left_over > past_months) {
+    past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
+    past_date.setMonth(12 - (left_over - past_months));
+  } else {
+    past_date.setFullYear(past_date.getFullYear() - diff_year);
+    past_date.setMonth(past_months - left_over);
+  }
+
+  //past_date.setTime (past_date.getTime () - months * 30 * 24 * 3600000);
+  return past_date;
+}
+
 
 module.exports = {
   _networkCDCDateField,
@@ -30,5 +48,6 @@ module.exports = {
   getClusterTimeScale,
   getCurrentDate,
   getAncientDate,
+  getNMonthsAgo,
   init
 }

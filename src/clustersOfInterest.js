@@ -361,7 +361,7 @@ function open_editor(
             };
 
             if (tracking !== clusterNetwork._cdcTrackingNone) {
-              let added_nodes = self.auto_expand_pg_handler(set_description);
+              let added_nodes = auto_expand_pg(self, set_description);
               if (added_nodes.size) {
                 if (
                   confirm(
@@ -932,6 +932,330 @@ function open_editor(
     },
   });
 }
+
+function priority_groups_validate(self, groups, auto_extend) {
+  /**
+    groups is a list of priority groups
+
+    name: unique string
+    description: string,
+    nodes: {
+        {
+            'id' : node id,
+            'added' : date,
+            'kind' : enum (one of _cdcPrioritySetNodeKind)
+        }
+    },
+    created: date,
+    kind: enum (one of _cdcPrioritySetKind),
+    tracking: enum (one of _cdcTrackingOptions)
+    createdBy : enum (on of [_cdcCreatedBySystem,_cdcCreatedByManual])
+  */
+
+  if (_.some(groups, (g) => !g.validated)) {
+    const priority_subclusters = _.map(
+      _.filter(
+        _.flatten(
+          _.map(
+            _.flatten(
+              _.map(self.clusters, (c) =>
+                _.filter(
+                  _.filter(c.subclusters, (sc) => sc.priority_score.length)
+                )
+              )
+            ),
+            (d) => d.priority_score
+          ),
+          1
+        ),
+        (d) => d.length >= self.CDC_data["autocreate-priority-set-size"]
+      ),
+      (d) => new Set(d)
+    );
+
+    const nodeset = {};
+    const nodeID2idx = {};
+    _.each(self.json.Nodes, (n, i) => {
+      nodeset[n.id] = n;
+      nodeID2idx[n.id] = i;
+    });
+    _.each(groups, (pg) => {
+      if (!pg.validated) {
+        pg.node_objects = [];
+        pg.not_in_network = [];
+        pg.validated = true;
+        pg.created = _.isDate(pg.created)
+          ? pg.created
+          : clusterNetwork._defaultDateFormats[0].parse(pg.created);
+        if (pg.modified) {
+          pg.modified = _.isDate(pg.modified) ? pg.modified : clusterNetwork._defaultDateFormats[0].parse(pg.modified);
+        } else {
+          pg.modified = pg.created;
+        }
+        if (!pg.tracking) {
+          if (pg.kind === clusterNetwork._cdcPrioritySetKind[0]) {
+            pg.tracking = clusterNetwork._cdcTrackingOptions[0];
+          } else {
+            pg.tracking = clusterNetwork._cdcTrackingOptions[4];
+          }
+        }
+        if (!pg.createdBy) {
+          if (pg.kind === clusterNetwork._cdcPrioritySetKind[0]) {
+            pg.createdBy = clusterNetwork._cdcCreatedBySystem;
+          } else {
+            pg.createdBy = clusterNetwork._cdcCreatedByManual;
+          }
+        }
+
+        _.each(pg.nodes, (node) => {
+          const nodeid = node.name;
+          if (nodeid in nodeset) {
+            pg.node_objects.push(nodeset[nodeid]);
+          } else {
+            pg.not_in_network.push(nodeid);
+          }
+        });
+
+        /**     extract network data at 0.015 and subcluster thresholds
+                          filter on dates subsequent to created date
+                   **/
+
+        const my_nodeset = new Set(_.map(pg.node_objects, (n) => n.id));
+
+        const node_set15 = _.flatten(
+          hivtrace_cluster_depthwise_traversal(
+            self.json.Nodes,
+            self.json.Edges,
+            (e) => e.length <= 0.015,
+            null,
+            pg.node_objects
+          )
+        );
+
+        const saved_traversal_edges = auto_extend ? [] : null;
+
+        const node_set_subcluster = _.flatten(
+          hivtrace_cluster_depthwise_traversal(
+            self.json.Nodes,
+            self.json.Edges,
+            (e) => e.length <= self.subcluster_threshold,
+            saved_traversal_edges,
+            pg.node_objects
+          )
+        );
+
+        const direct_at_15 = new Set();
+
+        const json15 = self._extract_single_cluster(
+          node_set15,
+          (e) => (
+            e.length <= 0.015 &&
+            (my_nodeset.has(self.json.Nodes[e.target].id) ||
+              my_nodeset.has(self.json.Nodes[e.source].id))
+          ),
+          //null,
+          true
+        );
+
+        _.each(json15["Edges"], (e) => {
+          _.each([e.source, e.target], (nid) => {
+            if (!my_nodeset.has(json15["Nodes"][nid].id)) {
+              direct_at_15.add(json15["Nodes"][nid].id);
+            }
+          });
+        });
+
+        const current_time = self.today;
+
+        const json_subcluster = self._extract_single_cluster(
+          node_set_subcluster,
+          (e) => (
+            e.length <= self.subcluster_threshold &&
+            (my_nodeset.has(self.json.Nodes[e.target].id) ||
+              my_nodeset.has(self.json.Nodes[e.source].id))
+            /*|| (auto_extend && (self._filter_by_date(
+                pg.modified || pg.created,
+                timeDateUtil._networkCDCDateField,
+                current_time,
+                self.json.Nodes[e.target],
+                true
+              ) || self._filter_by_date(
+                pg.modified || pg.created,
+                timeDateUtil._networkCDCDateField,
+                current_time,
+                self.json.Nodes[e.source],
+                true
+              )))*/
+          ),
+          true
+        );
+
+        const direct_subcluster = new Set();
+        const direct_subcluster_new = new Set();
+        _.each(json_subcluster["Edges"], (e) => {
+          _.each([e.source, e.target], (nid) => {
+            if (!my_nodeset.has(json_subcluster["Nodes"][nid].id)) {
+              direct_subcluster.add(json_subcluster["Nodes"][nid].id);
+
+              if (
+                self._filter_by_date(
+                  pg.modified || pg.created,
+                  timeDateUtil._networkCDCDateField,
+                  current_time,
+                  json_subcluster["Nodes"][nid],
+                  true
+                )
+              )
+                direct_subcluster_new.add(json_subcluster["Nodes"][nid].id);
+            }
+          });
+        });
+
+        pg.partitioned_nodes = _.map(
+          [
+            [node_set15, direct_at_15],
+            [node_set_subcluster, direct_subcluster],
+          ],
+          (ns) => {
+            const nodesets = {
+              existing_direct: [],
+              new_direct: [],
+              existing_indirect: [],
+              new_indirect: [],
+            };
+
+            _.each(ns[0], (n) => {
+              if (my_nodeset.has(n.id)) return;
+              let key;
+              if (
+                self._filter_by_date(
+                  pg.modified || pg.created,
+                  timeDateUtil._networkCDCDateField,
+                  current_time,
+                  n,
+                  true
+                )
+              ) {
+                key = "new";
+              } else {
+                key = "existing";
+              }
+
+              if (ns[1].has(n.id)) {
+                key += "_direct";
+              } else {
+                key += "_indirect";
+              }
+
+              nodesets[key].push(n);
+            });
+
+            return nodesets;
+          }
+        );
+
+        if (auto_extend && pg.tracking !== clusterNetwork._cdcTrackingNone) {
+          const added_nodes = auto_expand_pg(self, pg, nodeID2idx);
+
+          if (added_nodes.size) {
+            _.each([...added_nodes], (nid) => {
+              const n = self.json.Nodes[nid];
+              pg.nodes.push({
+                name: n.id,
+                added: current_time,
+                kind: clusterNetwork._cdcPrioritySetDefaultNodeKind,
+                autoadded: true,
+              });
+              pg.node_objects.push(n);
+            });
+            pg.validated = false;
+            pg.autoexpanded = true;
+            pg.pending = true;
+            pg.expanded = added_nodes.size;
+            pg.modified = self.today;
+          }
+        }
+
+        const node_set = new Set(_.map(pg.nodes, (n) => n.name));
+        pg.meets_priority_def = _.some(priority_subclusters, (ps) => (
+          _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
+        ));
+        const cutoff12 = timeDateUtil.getNMonthsAgo(self.get_reference_date(), 12);
+        pg.last12 = _.filter(pg.node_objects, (n) =>
+          self._filter_by_date(
+            cutoff12,
+            timeDateUtil._networkCDCDateField,
+            self.today,
+            n,
+            false
+          )
+        ).length;
+      }
+    });
+  }
+};
+
+function auto_expand_pg(self, pg, nodeID2idx) {
+  if (!nodeID2idx) {
+    const nodeset = {};
+    nodeID2idx = {};
+    _.each(self.json.Nodes, (n, i) => {
+      nodeset[n.id] = n;
+      nodeID2idx[n.id] = i;
+    });
+  }
+
+  const core_node_set = new Set(_.map(pg.nodes, (n) => nodeID2idx[n.name]));
+  const added_nodes = new Set();
+  const filter = clusterNetwork._cdcTrackingOptionsFilter[pg.tracking];
+
+  if (filter) {
+    const time_cutoff = timeDateUtil.getNMonthsAgo(
+      self.get_reference_date(),
+      clusterNetwork._cdcTrackingOptionsCutoff[pg.tracking]
+    );
+    const expansion_test = hivtrace_cluster_depthwise_traversal(
+      self.json.Nodes,
+      self.json.Edges,
+      (e) => {
+        let pass = filter(e);
+        if (pass) {
+          if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
+            pass =
+              pass &&
+              self._filter_by_date(
+                time_cutoff,
+                timeDateUtil._networkCDCDateField,
+                self.get_reference_date(),
+                self.json.Nodes[e.source]
+              ) &&
+              self._filter_by_date(
+                time_cutoff,
+                timeDateUtil._networkCDCDateField,
+                self.get_reference_date(),
+                self.json.Nodes[e.target]
+              );
+          }
+        }
+        return pass;
+      },
+      false,
+      _.filter(
+        _.map([...core_node_set], (d) => self.json.Nodes[d]),
+        (d) => d
+      )
+    );
+
+    _.each(expansion_test, (c) => {
+      _.each(c, (n) => {
+        if (!core_node_set.has(nodeID2idx[n.id])) {
+          added_nodes.add(nodeID2idx[n.id]);
+        }
+      });
+    });
+  }
+  return added_nodes;
+};
 
 function handle_inline_confirm(
   this_button,
@@ -1780,7 +2104,7 @@ function priority_groups_add_set(
 
   op_code = op_code || "insert";
   if (not_validated) {
-    self.priority_groups_validate([nodeset]);
+    priority_groups_validate(self, [nodeset]);
   }
   if (prior_name) {
     let prior_index = _.findIndex(
@@ -1833,6 +2157,7 @@ function get_editor() {
 export {
   init,
   open_editor,
+  priority_groups_validate,
   priority_set_view,
   draw_priority_set_table,
   priority_set_inject_node_attibutes,
