@@ -1008,7 +1008,7 @@ function _action_drop_down(self, pg) {
 
   if (!self._is_CDC_executive_mode) {
     dropdown.push({
-      label: "Clone this cluster of interest in a new editor pane",
+      label: "Clone this cluster of interest in a new editor panel",
       action: function (button, value) {
         let ref_set = self.priority_groups_find_by_name(pg.name);
         let copied_node_objects = _.clone(ref_set.node_objects);
@@ -1418,6 +1418,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           0,
           {
             icon: "fa-info-circle",
+            classed: { "view-edit-cluster": true },
             help: "View/edit this cluster of interest",
             dropdown: _action_drop_down(self, pg),
             /*action: function (button, menu_value) {
