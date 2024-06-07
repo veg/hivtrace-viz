@@ -9,7 +9,7 @@ import * as utils from "./utils.js";
 import * as tables from "./tables.js";
 import * as timeDateUtil from "./timeDateUtil.js";
 import * as nodesTab from "./nodesTab.js";
-import * as clustersOfInterest from "./clustersOfInterest.js";
+import * as clustersOfInterest from "./clustersOI/clusterOI.js";
 import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as misc from "./misc";
 
@@ -1042,19 +1042,6 @@ var hivtrace_cluster_network_graph = function (
      }
   */
 
-  self.priority_groups_pending = function () {
-    return _.filter(self.defined_priority_groups, (pg) => pg.pending).length;
-  };
-  self.priority_groups_expanded = function () {
-    return _.filter(self.defined_priority_groups, (pg) => pg.expanded).length;
-  };
-  self.priority_groups_automatic = function () {
-    return _.filter(
-      self.defined_priority_groups,
-      (pg) => pg.createdBy === _cdcCreatedBySystem
-    ).length;
-  };
-
   self._generate_auto_id = function (subcluster_id) {
     const id =
       self.CDC_data["jurisdiction_code"] +
@@ -1243,26 +1230,6 @@ var hivtrace_cluster_network_graph = function (
         //self.update();
       }
     });
-  };
-
-  self.priority_groups_find_by_name = function (name) {
-    if (self.defined_priority_groups) {
-      return _.find(self.defined_priority_groups, (g) => g.name === name);
-    }
-    return null;
-  };
-
-  self.priority_groups_all_events = function () {
-    // generate a set of all unique temporal events (when new data were added to ANY PG)
-    const events = new Set();
-    if (self.defined_priority_groups) {
-      _.each(self.defined_priority_groups, (g) => {
-        _.each(g.nodes, (n) => {
-          events.add(_defaultDateViewFormatSlider(n.added));
-        });
-      });
-    }
-    return events;
   };
 
   self.priority_group_node_record = function (node_id, date, kind) {
@@ -1481,42 +1448,6 @@ var hivtrace_cluster_network_graph = function (
       self._aux_populated_predefined_attribute
     );
     self._aux_populate_category_menus();
-  };
-
-  self.priority_groups_edit_set_description = function (
-    name,
-    description,
-    update_table
-  ) {
-    if (self.defined_priority_groups) {
-      var idx = _.findIndex(
-        self.defined_priority_groups,
-        (g) => g.name === name
-      );
-      if (idx >= 0) {
-        self.defined_priority_groups[idx].description = description;
-        self.priority_groups_update_node_sets(name, "update");
-        if (update_table) {
-          clustersOfInterest.draw_priority_set_table(self);
-        }
-      }
-    }
-  };
-
-  self.priority_groups_remove_set = function (name, update_table) {
-    if (self.defined_priority_groups) {
-      var idx = _.findIndex(
-        self.defined_priority_groups,
-        (g) => g.name === name
-      );
-      if (idx >= 0) {
-        self.defined_priority_groups.splice(idx, 1);
-        self.priority_groups_update_node_sets(name, "delete");
-        if (update_table) {
-          clustersOfInterest.draw_priority_set_table(self);
-        }
-      }
-    }
   };
 
   self.priority_groups_export = function (group_set, include_unvalidated) {
@@ -3804,7 +3735,7 @@ var hivtrace_cluster_network_graph = function (
       var cluster_nodes;
 
       if (priority_group) {
-        cluster_nodes = self.priority_groups_find_by_name(priority_group);
+        cluster_nodes = clustersOfInterest.priority_groups_find_by_name(self, priority_group);
         if (cluster_nodes) {
           cluster_nodes = cluster_nodes.node_objects;
         } else {
@@ -3963,7 +3894,7 @@ var hivtrace_cluster_network_graph = function (
               " overlap with other clusterOI"
             );
 
-          const ps = self.priority_groups_find_by_name(priority_list);
+          const ps = clustersOfInterest.priority_groups_find_by_name(self, priority_list);
           if (!(ps && self.priority_node_overlap)) return;
 
           var headers = [
@@ -5784,142 +5715,6 @@ var hivtrace_cluster_network_graph = function (
         'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes'
       );
     }
-  };
-
-  self.generate_coi_temporal_report = function (ref_set, D) {
-    if (!ref_set) return {};
-    D = D || 0.005;
-
-    const nodesD = hivtrace_cluster_depthwise_traversal(
-      json["Nodes"],
-      json["Edges"],
-      (e) => e.length <= D,
-      null,
-      ref_set.node_objects
-    );
-
-    const full_subclusters = _.map(nodesD, (cc) =>
-      self._extract_single_cluster(cc, (e) => e.length <= D)
-    );
-    // the nodes in full_subclusters are now shallow clones
-    // const nodeid2cc = _.chain(nodesD) // unused var
-    //   .map((cc, i) => _.map(cc, (n) => [n.id, i]))
-    //   .flatten(1)
-    //   .object()
-    //   .value();
-    // node id => index of its connected component in the full_subclusters array
-    const pg_nodes = new Set(_.map(ref_set.node_objects, (n) => n.id));
-    // set of node IDs in the CoI
-    const seed_nodes = _.map(full_subclusters, (fc) =>
-      _.filter(fc["Nodes"], (n) => pg_nodes.has(n.id))
-    );
-    // for each connected component, store the list of nodes that are both in the CC and the CoI
-    // these are shallow copies
-    _.each(seed_nodes, (sn) => _.each(sn, (n) => (n.visited = false)));
-
-    var beginning_of_time = timeDateUtil.getCurrentDate();
-    beginning_of_time.setFullYear(1900);
-
-    // unused var 
-    // const nodesD2 = _.map(full_subclusters, (fc, i) => hivtrace_cluster_depthwise_traversal(
-    //   fc["Nodes"],
-    //   fc["Edges"],
-    //   (e) => (e.length <= D),
-    //   null,
-    //   seed_nodes[i]
-    // ));
-
-    const network_events = _.sortBy([...self.priority_groups_all_events()]);
-    network_events.reverse();
-    const info_by_event = {};
-
-    _.each(network_events, (DT) => {
-      const event_date = _defaultDateViewFormatSlider.parse(DT);
-      const event_date_m3y = _defaultDateViewFormatSlider.parse(DT);
-      event_date_m3y.setFullYear(event_date.getFullYear() - 3);
-      const event_date_m1y = _defaultDateViewFormatSlider.parse(DT);
-      event_date_m1y.setFullYear(event_date.getFullYear() - 1);
-      const n_filter = (n) =>
-        self._filter_by_date(
-          beginning_of_time,
-          timeDateUtil._networkCDCDateField,
-          event_date,
-          n
-        );
-      const n_filter3 = (n) =>
-        self._filter_by_date(
-          event_date_m3y,
-          timeDateUtil._networkCDCDateField,
-          event_date,
-          n
-        );
-      const n_filter1 = (n) =>
-        self._filter_by_date(
-          event_date_m1y,
-          timeDateUtil._networkCDCDateField,
-          event_date,
-          n
-        );
-
-      let nodesD2 = _.map(full_subclusters, (fc, i) => {
-        const white_list = new Set(
-          _.map(_.filter(fc["Nodes"], n_filter), (n) => n.id)
-        );
-        const cc_nodes = fc["Nodes"];
-        return hivtrace_cluster_depthwise_traversal(
-          cc_nodes,
-          fc["Edges"],
-          (e) => (
-            e.length <= D &&
-            n_filter3(cc_nodes[e.source]) &&
-            n_filter3(cc_nodes[e.target])
-          ),
-          null,
-          _.filter(seed_nodes[i], n_filter),
-          white_list
-        );
-      });
-
-      nodesD2 = _.flatten(nodesD2, 1);
-      //console.log (nodesD2);
-
-      info_by_event[DT] = {
-        connected_componets: _.map(nodesD2, (nd) => nd.length),
-        priority_nodes: _.map(nodesD2, (nd) =>
-          _.map(_.filter(nd, n_filter1), (n) => n.id)
-        ),
-      };
-
-      info_by_event[DT]["national_priority"] = _.map(
-        info_by_event[DT].priority_nodes,
-        (m) => m.length >= self.CDC_data["autocreate-priority-set-size"]
-      );
-    });
-
-    const report = {
-      node_info: _.map(ref_set.node_objects, (n) => [
-        n.id,
-        _defaultDateViewFormatSlider(
-          self.attribute_node_value_by_id(n, timeDateUtil._networkCDCDateField)
-        ),
-      ]),
-      event_info: info_by_event,
-    };
-
-    /*let options = ["0","1","2","3","4","5","6","7","8","9","10"];
-          let rename = {};
-          _.each (report.node_info, (n)=> {
-                rename[n[0]] = "N" + _.sample (options, 9).join ("");
-                n[0] = rename[n[0]];
-          });
-          _.each (report.event_info, (d)=> {
-              d.priority_nodes = _.map (d.priority_nodes, (d)=>_.map (d, (n)=>rename[n]));
-          });
-          //console.log (report);
-          */
-
-    helpers.export_json_button(report);
-    return report;
   };
 
   self.draw_node_table = function (
