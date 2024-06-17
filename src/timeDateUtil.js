@@ -1,5 +1,6 @@
 const _networkCDCDateField = "hiv_aids_dx_dt";
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
+const _defaultDateViewFormatExport = d3.time.format("%m/%d/%Y");
 
 let cluster_time_scale;
 
@@ -41,6 +42,13 @@ function getNMonthsAgo(reference_date, months) {
   return past_date;
 }
 
+function hivtrace_date_or_na_if_missing(date, formatter) {
+  formatter = formatter || _defaultDateViewFormatExport;
+  if (date) {
+    return formatter(date);
+  }
+  return "N/A";
+};
 
 module.exports = {
   _networkCDCDateField,
@@ -49,5 +57,6 @@ module.exports = {
   getCurrentDate,
   getAncientDate,
   getNMonthsAgo,
+  hivtrace_date_or_na_if_missing,
   init
 }

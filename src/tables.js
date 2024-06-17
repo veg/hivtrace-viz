@@ -154,23 +154,19 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
     var search_form_generator = function () {
       return (
-        `<form class="form-inline"> 
+        `<div class="form-inline"> 
                         <div class="form-group"> 
                             <div class="input-group">
                             <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
                             <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
                             <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
                             <div class="input-group-addon">
-                                <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
-        index +
-        '"  aria-expanded="false" aria-controls="collapseExample"></i>
+                                <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column-${index}"  aria-expanded="false" aria-controls="collapseExample"></i>
                             </div> 
                         </div>
                         </div>
-                    </form>
-                    <div class="collapse" id="filter-help-column' +
-        index +
-        '">
+                    </div>
+                    <div class="collapse" id="#filter-help-column-${index}">
                       <div class="well">
                         Type in text to select columns which 
                         <em>contain the term</em>. <br />
@@ -218,12 +214,20 @@ function format_a_cell(data, index, item, priority_set_editor) {
         var reset_click = popover_div.selectAll(
           utils.get_ui_element_selector_by_role("table-filter-reset")
         );
-        var search_box = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-term")
-        );
+        var search_box_element = utils.get_ui_element_selector_by_role("table-filter-term");
+        var search_box = popover_div.selectAll(search_box_element);
 
         search_box.property("value", data.filter_term);
 
+        // search by hitting enter
+        $(search_box_element).on("keyup", (e) => {
+          if (e.key === "Enter") {
+            update_term(search_box.property("value"));
+            filter_table(clicker.node());
+          }
+        })
+
+        // search by clicking the search icon
         search_click.on("click", (d) => {
           update_term(search_box.property("value"));
           filter_table(clicker.node());
@@ -238,7 +242,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
   }
 
   if (handle_sort && "sort" in data) {
-    var clicker = handle_sort
+    clicker = handle_sort
       .append("a")
       .property("href", "#")
       .on("click", function (d) {
@@ -505,11 +509,11 @@ function filter_parse(filter_value) {
         if (d[0] === '"' && d[d.length - 1] === '"' && d.length > 2) {
           return {
             type: "re",
-            value: new RegExp("^" + d.substr(1, d.length - 2) + "$", "i"),
+            value: new RegExp("^" + d.substring(1, d.length - 1) + "$", "i"),
           };
         }
         if (d[0] === "<" || d[0] === ">") {
-          var distance_threshold = parseFloat(d.substr(1));
+          var distance_threshold = parseFloat(d.substring(1));
           if (distance_threshold > 0) {
             return {
               type: "distance",
@@ -611,6 +615,19 @@ function sort_table_toggle_icon(element, value) {
   }
 }
 
+function update_volatile_elements(container) {
+  //var event = new CustomEvent('hiv-trace-viz-volatile-update', { detail: container });
+  //container.node().dispatchEvent (event);
+
+  container
+    .selectAll("td, th")
+    .filter((d) => "volatile" in d)
+    .each(function (d, i) {
+      // TODO: QUESTION: Should this have priority_set_editor arg passed in as well? 
+      format_a_cell(d, i, this);
+    });
+};
+
 module.exports = {
   _networkNodeIDField,
   _networkNewNodeMarker,
@@ -618,5 +635,6 @@ module.exports = {
   format_a_cell,
   sort_table_by_column,
   sort_table_toggle_icon,
+  update_volatile_elements,
 }
 
