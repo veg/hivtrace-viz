@@ -5010,7 +5010,8 @@ var hivtrace_cluster_network_graph = function (
               .select(element)
               .append("div")
               .classed("dropdown", true);
-            var menu_id = "hivtrace_node_column_" + payload;
+            // add col_id to ensure that the dropdowns are unique
+            var menu_id = "hivtrace_node_column_" + payload + "_" + col_id;
             var dropdown_button = dropdown
               .append("button")
               .classed({
