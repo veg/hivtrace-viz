@@ -2,19 +2,17 @@ import * as d3 from "d3";
 import _ from "underscore";
 import jsConvert from "js-convert-case";
 import * as topojson from "topojson";
-import * as helpers from "./helpers.js";
 import * as colorPicker from "./colorPicker.js";
 import * as scatterPlot from "./scatterplot.js";
-import * as utils from "./utils.js";
+import * as helpers from "./helpers.js";
 import * as tables from "./tables.js";
-import * as timeDateUtil from "./timeDateUtil.js";
 import * as nodesTab from "./nodesTab.js";
 import * as clustersOfInterest from "./clustersOI/clusterOI.js";
-import { hivtrace_cluster_depthwise_traversal } from "./misc";
-import * as misc from "./misc";
+import { hivtrace_cluster_depthwise_traversal } from "./helpers.js";
+import * as svgPlots from "./svgPlots.js";
 
 const _networkSubclusterSeparator = ".";
-const _networkGraphAttrbuteID = "patient_attribute_schema";
+export const _networkGraphAttrbuteID = "patient_attribute_schema";
 const _networkNodeAttributeID = "patient_attributes";
 export const _networkMissing = __("general")["missing"];
 const _networkReducedValue = "Different (other) value";
@@ -515,7 +513,7 @@ var hivtrace_cluster_network_graph = function (
   self.json = json;
 
   self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
-  self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
+  self.uniqValues = helpers.get_unique_values(json.Nodes, new_schema);
 
   self.schema = json[_networkGraphAttrbuteID];
   // set initial color schemes
@@ -582,7 +580,7 @@ var hivtrace_cluster_network_graph = function (
     self.today = new Date(json.Settings.created);
   } else {
     self.today =
-      options && options["today"] ? options["today"] : timeDateUtil.getCurrentDate();
+      options && options["today"] ? options["today"] : helpers.getCurrentDate();
   }
 
   self.get_reference_date = function () {
@@ -1006,18 +1004,10 @@ var hivtrace_cluster_network_graph = function (
       return undefined;
     }
     return (
-      (not_nested ? "" : "#" + button_bar_ui) + utils.get_ui_element_selector_by_role(role)
+      (not_nested ? "" : "#" + button_bar_ui) + helpers.get_ui_element_selector_by_role(role)
     );
   };
-
-  //---------------------------------------------------------------------------------------------------
-  // BEGIN: NODE SET GROUPS
-  //---------------------------------------------------------------------------------------------------
-
-  //---------------------------------------------------------------------------------------------------
-  // END: NODE SET GROUPS
-  //---------------------------------------------------------------------------------------------------
-
+  
   //---------------------------------------------------------------------------------------------------
   // BEGIN: NODE SET EDITOR
   //---------------------------------------------------------------------------------------------------
@@ -1109,10 +1099,10 @@ var hivtrace_cluster_network_graph = function (
     self.minimum_cluster_size = 5;
   }
 
-  timeDateUtil.init(options, self._is_CDC_, timeDateUtil._networkCDCDateField);
+  helpers.dateTimeInit(options, self._is_CDC_, helpers._networkCDCDateField);
 
   if (self._is_CDC_) {
-    self._additional_node_pop_fields.push(timeDateUtil._networkCDCDateField);
+    self._additional_node_pop_fields.push(helpers._networkCDCDateField);
   }
 
   if (options && "core-link" in options) {
@@ -1141,7 +1131,7 @@ var hivtrace_cluster_network_graph = function (
 
   self.filter_time_period = function (cluster) {
     return _.some(self.nodes_by_cluster[cluster.cluster_id], (n) =>
-      self.attribute_node_value_by_id(n, timeDateUtil.getClusterTimeScale()) >=
+      self.attribute_node_value_by_id(n, helpers.getClusterTimeScale()) >=
       self.using_time_filter
     );
   };
@@ -1164,11 +1154,11 @@ var hivtrace_cluster_network_graph = function (
   } else {
     self.showing_diff = false;
     if (
-      timeDateUtil.getClusterTimeScale() &&
+      helpers.getClusterTimeScale() &&
       "Cluster sizes" in self.json &&
       self.json["Cluster sizes"].length > 250
     ) {
-      self.using_time_filter = timeDateUtil.getCurrentDate();
+      self.using_time_filter = helpers.getCurrentDate();
       self.warning_string += __("network_tab")["cluster_display_info"];
       self.using_time_filter.setFullYear(
         self.using_time_filter.getFullYear() - 1
@@ -1195,7 +1185,7 @@ var hivtrace_cluster_network_graph = function (
     ];
 
     return {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [helpers._networkCDCDateField],
       label: "Subcluster or Priority Node",
       enum: subcluster_enum_simple,
       type: "String",
@@ -1236,7 +1226,7 @@ var hivtrace_cluster_network_graph = function (
     ];
 
     return {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [helpers._networkCDCDateField],
       label: "ClusterOI membership as of " + _defaultDateViewFormat(date),
       enum: subcluster_enum,
       //type: "String",
@@ -1412,7 +1402,7 @@ var hivtrace_cluster_network_graph = function (
     //subcluster_or_priority_node: self.recent_rapid_definition,
 
     /*subcluster_index: {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [helpers._networkCDCDateField],
       label: "Subcluster ID",
       type: "String",
 
@@ -1467,14 +1457,14 @@ var hivtrace_cluster_network_graph = function (
     },
 
     years_since_dx: {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [helpers._networkCDCDateField],
       label: "Years since diagnosis",
       type: "Number",
       label_format: d3.format(".2f"),
       map: function (node) {
         try {
           var value = self._parse_dates(
-            self.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField)
+            self.attribute_node_value_by_id(node, helpers._networkCDCDateField)
           );
 
           if (value) {
@@ -1513,14 +1503,14 @@ var hivtrace_cluster_network_graph = function (
     },
 
     hiv_aids_dx_dt_year: {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [helpers._networkCDCDateField],
       label: "Diagnosis Year",
       type: "Number",
       label_format: d3.format(".0f"),
       map: function (node) {
         try {
           var value = self._parse_dates(
-            self.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField)
+            self.attribute_node_value_by_id(node, helpers._networkCDCDateField)
           );
           if (value) {
             value = String(value.getFullYear());
@@ -1843,9 +1833,9 @@ var hivtrace_cluster_network_graph = function (
             color[attr_desc["label"]] = network.colorizer["category"];
           }
 
-          misc.cluster_dynamics(
+          svgPlots.plot_cluster_dynamics(
             network.extract_network_time_series(
-              timeDateUtil.getClusterTimeScale(),
+              helpers.getClusterTimeScale(),
               attr,
               plot_filter
             ),
@@ -1888,7 +1878,7 @@ var hivtrace_cluster_network_graph = function (
       }
     };
 
-    if (timeDateUtil.getClusterTimeScale()) {
+    if (helpers.getClusterTimeScale()) {
       if (export_items) {
         export_items.push(["Show time-course plots", event_handler]);
       } else {
@@ -2356,7 +2346,7 @@ var hivtrace_cluster_network_graph = function (
   }
 
   self._refresh_subcluster_view = function (set_date) {
-    self.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12, set_date);
+    self.annotate_priority_clusters(helpers._networkCDCDateField, 36, 12, set_date);
 
     var field_def = self.recent_rapid_definition(self, set_date);
 
@@ -2446,7 +2436,7 @@ var hivtrace_cluster_network_graph = function (
               _defaultDateViewFormatSlider(
                 d3.min(network.nodes, (node) => network.attribute_node_value_by_id(
                   node,
-                  timeDateUtil._networkCDCDateField
+                  helpers._networkCDCDateField
                 ))
               )
             )
@@ -2525,7 +2515,7 @@ var hivtrace_cluster_network_graph = function (
   };
 
   var oldest_nodes_first = function (n1, n2) {
-    const date_field = date_field || timeDateUtil._networkCDCDateField;
+    const date_field = date_field || helpers._networkCDCDateField;
 
     // consistent node sorting, older nodes first
     var node1_dx = self.attribute_node_value_by_id(n1, date_field);
@@ -2593,15 +2583,15 @@ var hivtrace_cluster_network_graph = function (
     try {
       start_date = start_date || self.get_reference_date();
 
-      var cutoff_long = timeDateUtil.getNMonthsAgo(start_date, span_months);
-      var cutoff_short = timeDateUtil.getNMonthsAgo(start_date, recent_months);
+      var cutoff_long = helpers.getNMonthsAgo(start_date, span_months);
+      var cutoff_short = helpers.getNMonthsAgo(start_date, recent_months);
 
       var node_iterator;
 
       if (start_date === self.today) {
         node_iterator = self.nodes;
       } else {
-        var beginning_of_time = timeDateUtil.getCurrentDate();
+        var beginning_of_time = helpers.getCurrentDate();
         beginning_of_time.setYear(1900);
         node_iterator = [];
         _.each(self.nodes, (node) => {
@@ -2975,9 +2965,9 @@ var hivtrace_cluster_network_graph = function (
       _.defer((a_node) => {
         const neighborhood_size = a_node.neighbors.size();
         if (neighborhood_size < 2) {
-          a_node.lcc = misc.undefined;
+          a_node.lcc = helpers.HIVTRACE_UNDEFINED;
         } else if (neighborhood_size > 500) {
-          a_node.lcc = misc.too_large;
+          a_node.lcc = helpers.HIVTRACE_TOO_LARGE;
         } else {
           // count triangles
           const neighborhood = a_node.neighbors.values();
@@ -3011,7 +3001,7 @@ var hivtrace_cluster_network_graph = function (
 
       nodes.forEach((n) => {
         const node_to_update = self.get_node_by_id(n.id);
-        node_to_update.lcc = n.lcc ? n.lcc : misc.undefined;
+        node_to_update.lcc = n.lcc ? n.lcc : helpers.HIVTRACE_UNDEFINED;
       });
     };
 
@@ -3040,9 +3030,9 @@ var hivtrace_cluster_network_graph = function (
       _.defer((a_cluster) => {
         const cluster_size = a_cluster.children.length;
         if (cluster_size < 3) {
-          a_cluster.cc = misc.undefined;
+          a_cluster.cc = helpers.HIVTRACE_UNDEFINED;
         } else if (estimate_cubic_compute_cost(a_cluster, true) >= 5000000) {
-          a_cluster.cc = misc.too_large;
+          a_cluster.cc = helpers.HIVTRACE_TOO_LARGE;
         } else {
           // pull out all the nodes that have this cluster id
           const member_nodes = [];
@@ -3080,7 +3070,7 @@ var hivtrace_cluster_network_graph = function (
 
   self.mark_nodes_as_processing = function (property) {
     self.nodes.forEach((n) => {
-      n[property] = misc.processing;
+      n[property] = helpers.HIVTRACE_PROCESSING;
     });
   };
 
@@ -3628,7 +3618,7 @@ var hivtrace_cluster_network_graph = function (
         [
           __("clusters_main")["export_colors"],
           () => {
-            const colorScheme = helpers.exportColorScheme(
+            const colorScheme = helpers.getCurrentCategoryColorMapping(
               self.uniqValues,
               self.colorizer
             );
@@ -3761,7 +3751,7 @@ var hivtrace_cluster_network_graph = function (
         ]);
       }
 
-      if (timeDateUtil.getClusterTimeScale()) {
+      if (helpers.getClusterTimeScale()) {
         cluster_commands.push([
           __("network_tab")["only_recent_clusters"],
           function (item) {
@@ -5437,7 +5427,7 @@ var hivtrace_cluster_network_graph = function (
                   (child) =>
                     d3.time.months(
                       child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
+                      helpers.getCurrentDate()
                     ).length <= 2
                 ).length;
               },
@@ -5451,7 +5441,7 @@ var hivtrace_cluster_network_graph = function (
                   (child) =>
                     d3.time.months(
                       child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
+                      helpers.getCurrentDate()
                     ).length <= 2
                 ).length;
                 return recent / Math.sqrt(d.children.length);
@@ -5595,7 +5585,7 @@ var hivtrace_cluster_network_graph = function (
 
       container
         .selectAll("path")
-        .attr("d", misc.symbol(symbol_type).size(node_size(node)))
+        .attr("d", svgPlots.generate_svg_symbol(symbol_type).size(node_size(node)))
         .style("fill", (d) => node_color(d));
 
       if (node.show_label) {
@@ -5622,7 +5612,7 @@ var hivtrace_cluster_network_graph = function (
       }
 
       container
-        //.attr("d", misc.symbol(symbol_type).size(node_size(node)))
+        //.attr("d", svgPlots.generate_svg_symbol(symbol_type).size(node_size(node)))
         .attr("class", "node")
         .classed("selected_object", (d) => d.match_filter && !self.hide_unselected)
         .classed("injected_object", (d) => d.node_class === "injected")
@@ -6129,7 +6119,7 @@ var hivtrace_cluster_network_graph = function (
             .attr("transform", "translate(0," + offset + ")")
             .append("path")
             .attr("transform", "translate(5,-5)")
-            .attr("d", misc.symbol(shape_mapper(value)).size(128))
+            .attr("d", svgPlots.generate_svg_symbol(shape_mapper(value)).size(128))
             .classed("legend", true)
             .style("fill", "none");
 
@@ -6680,7 +6670,7 @@ var hivtrace_cluster_network_graph = function (
       self.nodes.forEach((n) => {
         var node_T = self.attribute_node_value_by_id(
           n,
-          timeDateUtil.getClusterTimeScale()
+          helpers.getClusterTimeScale()
         );
         n.date_filter = _.some(conditions[2], (d) => node_T >= d[0] && node_T <= d[1]);
       });
@@ -6933,7 +6923,7 @@ var hivtrace_cluster_network_graph = function (
         )
       ) {
         // compute priority clusters
-        self.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12);
+        self.annotate_priority_clusters(helpers._networkCDCDateField, 36, 12);
 
         try {
           if (self.isPrimaryGraph) {
@@ -7196,13 +7186,6 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
-  self.has_network_attribute = function (key) {
-    if (_networkGraphAttrbuteID in self.json) {
-      return key in self.json[_networkGraphAttrbuteID];
-    }
-    return false;
-  };
-
   self.inject_attribute_description = function (key, d) {
     if (_networkGraphAttrbuteID in self.json) {
       var new_attr = {};
@@ -7271,7 +7254,7 @@ var hivtrace_cluster_network_graph = function (
         "Degree <em>" +
         n.degree +
         "</em><br>Clustering coefficient <em> " +
-        misc.format_value(n.lcc, _defaultFloatFormat) +
+        helpers.format_value(n.lcc, _defaultFloatFormat) +
         "</em>";
     } else {
       str = "# links <em>" + n.degree + "</em>";
@@ -7829,7 +7812,7 @@ var hivtrace_cluster_network_graph = function (
         the_cluster.degrees["max"] +
         "</em>" +
         "<br>Clustering coefficient <em> " +
-        misc.format_value(the_cluster.cc, _defaultFloatFormat) +
+        helpers.format_value(the_cluster.cc, _defaultFloatFormat) +
         "</em>";
     }
 
@@ -8013,7 +7996,7 @@ var hivtrace_cluster_network_graph = function (
     if (self.using_time_filter) {
       self.using_time_filter = null;
     } else {
-      self.using_time_filter = timeDateUtil.getCurrentDate();
+      self.using_time_filter = helpers.getCurrentDate();
       self.using_time_filter.setFullYear(
         self.using_time_filter.getFullYear() - 1
       );
@@ -8057,7 +8040,7 @@ var hivtrace_cluster_network_graph = function (
 
     return {
       "edge-styler": function (element, d, network) {
-        var e_type = misc.edge_typer(
+        var e_type = helpers.get_edge_type(
           d,
           network.edge_types,
           network.edge_cluster_threshold
@@ -8066,7 +8049,7 @@ var hivtrace_cluster_network_graph = function (
           d3.select(element).style(
             "stroke",
             network._edge_colorizer(
-              misc.edge_typer(d, network.edge_types, network.edge_cluster_threshold)
+              helpers.get_edge_type(d, network.edge_types, network.edge_cluster_threshold)
             )
           ); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
         }
@@ -8165,21 +8148,21 @@ var hivtrace_cluster_network_graph = function (
   self._social_view_options = function (
     labeled_links,
     shown_types,
-    edge_typer
+    get_edge_type
   ) {
-    edge_typer =
-      edge_typer ||
+    get_edge_type =
+      get_edge_type ||
       function (e) {
         return _.has(e, "edge_type") ? e["edge_type"] : "";
       };
 
     return {
       "edge-styler": function (element, d, network) {
-        var e_type = misc.edge_typer(d);
+        var e_type = helpers.get_edge_type(d);
         if (e_type !== "") {
           d3.select(element).style(
             "stroke",
-            network._edge_colorizer(misc.edge_typer(d))
+            network._edge_colorizer(helpers.get_edge_type(d))
           ); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
 
           d.is_hidden = !network.shown_types[e_type];
@@ -8535,9 +8518,9 @@ var hivtrace_cluster_network_graph = function (
           edge_filter_for_subclusters,
           true
         );
-        //cv.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12);
+        //cv.annotate_priority_clusters(helpers._networkCDCDateField, 36, 12);
         //cv.handle_attribute_categorical("recent_rapid");
-        cv._refresh_subcluster_view(self.today || timeDateUtil.getCurrentDate());
+        cv._refresh_subcluster_view(self.today || helpers.getCurrentDate());
       };
 
       var injected_column_subcluster = [

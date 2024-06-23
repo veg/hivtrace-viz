@@ -1,9 +1,7 @@
-var _ = require("underscore");
-var d3 = require("d3");
-var helpers = require("./helpers");
+const helpers = require("./helpers");
 
-var _defaultFloatFormat = d3.format(",.2r");
-var _defaultPercentFormat = d3.format(",.3p");
+const _defaultFloatFormat = d3.format(",.2r");
+const _defaultPercentFormat = d3.format(",.3p");
 
 // The function for creating the "Network Statistics" table that is displayed on the "Statistics" tab.
 var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {

@@ -3,14 +3,12 @@ import * as d3 from "d3";
 import _ from "underscore";
 import { jsPanel } from "jspanel4";
 import autocomplete from "autocomplete.js";
-import * as timeDateUtil from "../timeDateUtil.js";
-import * as utils from "../utils.js";
+import * as helpers from "../helpers.js";
 import * as clusterNetwork from "../clusternetwork.js";
 import * as tables from "../tables.js";
 import * as nodesTab from "../nodesTab.js";
-import * as helpers from "../helpers.js";
-import * as misc from "../misc.js";
-import { hivtrace_cluster_depthwise_traversal } from "../misc.js";
+import * as svgPlots from "../svgPlots.js";
+import { hivtrace_cluster_depthwise_traversal } from "../helpers.js";
 
 let priority_set_editor = null;
 let defined_priority_groups = [];
@@ -32,7 +30,7 @@ let defined_priority_groups = [];
 
 function init(self) {
   if (self._is_CDC_ && self.isPrimaryGraph) {
-    let new_set = utils.get_ui_element_selector_by_role("new_priority_set");
+    let new_set = helpers.get_ui_element_selector_by_role("new_priority_set");
     if (new_set) {
       window.addEventListener("beforeunload", (e) => {
         if (defined_priority_groups.some(pg => pg.pending)) {
@@ -48,12 +46,12 @@ function init(self) {
       });
     }
 
-    let merge_sets = utils.get_ui_element_selector_by_role("merge_priority_sets");
+    let merge_sets = helpers.get_ui_element_selector_by_role("merge_priority_sets");
 
     if (merge_sets) {
       d3.selectAll(merge_sets).on("click", (e) => {
         $(
-          utils.get_ui_element_selector_by_role("priority_set_merge")
+          helpers.get_ui_element_selector_by_role("priority_set_merge")
         ).modal();
       });
     }
@@ -317,12 +315,12 @@ function open_editor(
       let createdDate =
         existing_set && validation_mode && validation_mode.length
           ? existing_set.created
-          : timeDateUtil.getCurrentDate();
+          : helpers.getCurrentDate();
 
       let modifiedDate =
         validation_mode === "validate" && created_by === clusterNetwork._cdcCreatedBySystem
           ? self.today
-          : timeDateUtil.getCurrentDate();
+          : helpers.getCurrentDate();
 
       function save_priority_set() {
         /**
@@ -346,7 +344,7 @@ function open_editor(
             (k) =>
               $(
                 d3
-                  .select(utils.get_ui_element_selector_by_role(k))
+                  .select(helpers.get_ui_element_selector_by_role(k))
                   .node()
               ).val()
           );
@@ -391,7 +389,7 @@ function open_editor(
                     let n = self.json.Nodes[nid];
                     set_description.nodes.push({
                       name: n.id,
-                      added: timeDateUtil.getCurrentDate(),
+                      added: helpers.getCurrentDate(),
                       kind: clusterNetwork._cdcPrioritySetDefaultNodeKind,
                     });
                   });
@@ -419,7 +417,7 @@ function open_editor(
             panel_object.close();
             if (validation_mode === "validate") {
               if (self.priority_set_table_writeable) {
-                let tab_pill = utils.get_ui_element_selector_by_role("priority_set_counts"),
+                let tab_pill = helpers.get_ui_element_selector_by_role("priority_set_counts"),
                   tab_pill_select = d3.select(tab_pill),
                   remaining_sets = Number(tab_pill_select.text());
                 tab_pill_select.text(remaining_sets - 1);
@@ -430,7 +428,7 @@ function open_editor(
           panel_object.first_save = false;
         }
         let panel_to_focus = document.querySelector(
-          utils.get_ui_element_selector_by_role("priority-panel-name")
+          helpers.get_ui_element_selector_by_role("priority-panel-name")
         );
         if (panel_to_focus) panel_to_focus.focus();
         return res;
@@ -510,7 +508,7 @@ function open_editor(
       }
 
       var auto_object = autocomplete(
-        utils.get_ui_element_selector_by_role("priority-panel-nodeids"),
+        helpers.get_ui_element_selector_by_role("priority-panel-nodeids"),
         { hint: false },
         [
           {
@@ -948,6 +946,13 @@ function open_editor(
   });
 }
 
+function has_network_attribute(self, key) {
+  if (clusterNetwork._networkGraphAttrbuteID in self.json) {
+    return key in self.json[clusterNetwork._networkGraphAttrbuteID];
+  }
+  return false;
+};
+
 function _generate_auto_id(self, subcluster_id) {
   const id =
     self.CDC_data["jurisdiction_code"] +
@@ -1095,7 +1100,7 @@ function load_priority_sets(self, url, is_writeable) {
         self.display_warning(self.warning_string, true);
       }
 
-      const tab_pill = utils.get_ui_element_selector_by_role("priority_set_counts")
+      const tab_pill = helpers.get_ui_element_selector_by_role("priority_set_counts")
 
       if (!self.priority_set_table_writeable) {
         const rationale =
@@ -1126,7 +1131,7 @@ function load_priority_sets(self, url, is_writeable) {
       draw_priority_set_table(self);
       if (
         self.showing_diff &&
-        self.has_network_attribute("subcluster_or_priority_node")
+        has_network_attribute(self, "subcluster_or_priority_node")
       ) {
         self.handle_attribute_categorical("subcluster_or_priority_node");
       }
@@ -1265,7 +1270,7 @@ function priority_groups_compute_node_membership(self) {
   _.each(
     {
       subcluster_or_priority_node: {
-        depends: [timeDateUtil._networkCDCDateField],
+        depends: [helpers._networkCDCDateField],
         label: clusterNetwork._cdcPOImember,
         enum: pg_enum,
         type: "String",
@@ -1286,8 +1291,8 @@ function priority_groups_compute_node_membership(self) {
           const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
           if (npcoi) {
             const cutoffs = [
-              timeDateUtil.getNMonthsAgo(self.get_reference_date(), 12),
-              timeDateUtil.getNMonthsAgo(self.get_reference_date(), 36),
+              helpers.getNMonthsAgo(self.get_reference_date(), 12),
+              helpers.getNMonthsAgo(self.get_reference_date(), 36),
             ];
 
             //const ysd = self.attribute_node_value_by_id(
@@ -1298,7 +1303,7 @@ function priority_groups_compute_node_membership(self) {
             if (
               self._filter_by_date(
                 cutoffs[0],
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 self.get_reference_date(),
                 node,
                 false
@@ -1308,7 +1313,7 @@ function priority_groups_compute_node_membership(self) {
             if (
               self._filter_by_date(
                 cutoffs[1],
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 self.get_reference_date(),
                 node,
                 false
@@ -1321,7 +1326,7 @@ function priority_groups_compute_node_membership(self) {
         },
       },
       cluster_uid: {
-        depends: [timeDateUtil._networkCDCDateField],
+        depends: [helpers._networkCDCDateField],
         label: "Clusters of Interest",
         type: "String",
         volatile: true,
@@ -1336,7 +1341,7 @@ function priority_groups_compute_node_membership(self) {
         },
       },
       subcluster_id: {
-        depends: [timeDateUtil._networkCDCDateField],
+        depends: [helpers._networkCDCDateField],
         label: "Subcluster ID",
         type: "String",
         //label_format: d3.format(".2f"),
@@ -1516,13 +1521,13 @@ function priority_groups_validate(self, groups, auto_extend) {
               my_nodeset.has(self.json.Nodes[e.source].id))
             /*|| (auto_extend && (self._filter_by_date(
                 pg.modified || pg.created,
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 current_time,
                 self.json.Nodes[e.target],
                 true
               ) || self._filter_by_date(
                 pg.modified || pg.created,
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 current_time,
                 self.json.Nodes[e.source],
                 true
@@ -1541,7 +1546,7 @@ function priority_groups_validate(self, groups, auto_extend) {
               if (
                 self._filter_by_date(
                   pg.modified || pg.created,
-                  timeDateUtil._networkCDCDateField,
+                  helpers._networkCDCDateField,
                   current_time,
                   json_subcluster["Nodes"][nid],
                   true
@@ -1571,7 +1576,7 @@ function priority_groups_validate(self, groups, auto_extend) {
               if (
                 self._filter_by_date(
                   pg.modified || pg.created,
-                  timeDateUtil._networkCDCDateField,
+                  helpers._networkCDCDateField,
                   current_time,
                   n,
                   true
@@ -1621,11 +1626,11 @@ function priority_groups_validate(self, groups, auto_extend) {
         pg.meets_priority_def = _.some(priority_subclusters, (ps) => (
           _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
         ));
-        const cutoff12 = timeDateUtil.getNMonthsAgo(self.get_reference_date(), 12);
+        const cutoff12 = helpers.getNMonthsAgo(self.get_reference_date(), 12);
         pg.last12 = _.filter(pg.node_objects, (n) =>
           self._filter_by_date(
             cutoff12,
-            timeDateUtil._networkCDCDateField,
+            helpers._networkCDCDateField,
             self.today,
             n,
             false
@@ -1651,7 +1656,7 @@ function auto_expand_pg(self, pg, nodeID2idx) {
   const filter = clusterNetwork._cdcTrackingOptionsFilter[pg.tracking];
 
   if (filter) {
-    const time_cutoff = timeDateUtil.getNMonthsAgo(
+    const time_cutoff = helpers.getNMonthsAgo(
       self.get_reference_date(),
       clusterNetwork._cdcTrackingOptionsCutoff[pg.tracking]
     );
@@ -1666,13 +1671,13 @@ function auto_expand_pg(self, pg, nodeID2idx) {
               pass &&
               self._filter_by_date(
                 time_cutoff,
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 self.get_reference_date(),
                 self.json.Nodes[e.source]
               ) &&
               self._filter_by_date(
                 time_cutoff,
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 self.get_reference_date(),
                 self.json.Nodes[e.target]
               );
@@ -1722,10 +1727,10 @@ function handle_inline_confirm(
           "#" + clicked_object.attr("aria-describedby")
         );
         var textarea_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-form")
+          helpers.get_ui_element_selector_by_role("priority-description-form")
         );
         var button_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-save")
+          helpers.get_ui_element_selector_by_role("priority-description-save")
         );
         textarea_element.text(text);
         if (disabled) textarea_element.attr("disabled", true);
@@ -1735,7 +1740,7 @@ function handle_inline_confirm(
           this_button.click();
         });
         button_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-dismiss")
+          helpers.get_ui_element_selector_by_role("priority-description-dismiss")
         );
         button_element.on("click", (d) => {
           d3.event.preventDefault();
@@ -1811,7 +1816,7 @@ function _action_drop_down(self, pg) {
       label: "View nodes in this cluster of interest",
       data: {
         toggle: "modal",
-        target: utils.get_ui_element_selector_by_role("cluster_list"),
+        target: helpers.get_ui_element_selector_by_role("cluster_list"),
         priority_set: pg.name,
       },
     });
@@ -1856,7 +1861,7 @@ function _action_drop_down(self, pg) {
         "History of " + pg.name,
         {}
       );
-      misc.coi_timeseries(
+      svgPlots.plot_coi_timeseries(
         report,
         d3.select("#" + container).style("padding", "20px"),
         1000
@@ -2125,7 +2130,7 @@ function draw_priority_set_table(self, container, priority_groups) {
                       label: "List overlaps",
                       data: {
                         toggle: "modal",
-                        target: utils.get_ui_element_selector_by_role("overlap_list"),
+                        target: helpers.get_ui_element_selector_by_role("overlap_list"),
                         priority_set: pg.name,
                       },
                     },
@@ -2286,7 +2291,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     );
 
     d3.select(
-      utils.get_ui_element_selector_by_role("priority-subclusters-export")
+      helpers.get_ui_element_selector_by_role("priority-subclusters-export")
     ).on("click", (d) => {
       helpers.export_json_button(
         priority_groups_export(),
@@ -2294,7 +2299,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       );
     });
     d3.select(
-      utils.get_ui_element_selector_by_role("priority-subclusters-export-csv")
+      helpers.get_ui_element_selector_by_role("priority-subclusters-export-csv")
     ).on("click", (d) => {
       helpers.export_csv_button(
         priority_groups_export_nodes(self),
@@ -2325,7 +2330,7 @@ function priority_set_view(self, priority_set, options) {
   options = options || {};
 
   let nodes = priority_set.node_objects || priority_set.network_nodes;
-  let current_time = timeDateUtil.getCurrentDate();
+  let current_time = helpers.getCurrentDate();
   let edge_length =
     options["priority-edge-length"] || self.subcluster_threshold;
   let reference_date = options["timestamp"] || self.today;
@@ -2451,7 +2456,7 @@ function priority_set_view(self, priority_set, options) {
       },
       "computed-attributes": {
         date_added: {
-          depends: [timeDateUtil._networkCDCDateField],
+          depends: [helpers._networkCDCDateField],
           label: "Date added to cluster of interest",
           type: "Date",
           map: function (node) {
@@ -2461,7 +2466,7 @@ function priority_set_view(self, priority_set, options) {
           },
         },
         priority_set: {
-          depends: [timeDateUtil._networkCDCDateField],
+          depends: [helpers._networkCDCDateField],
           label: "Cluster of Interest Status",
           enum: viewEnum,
           type: "String",
@@ -2476,7 +2481,7 @@ function priority_set_view(self, priority_set, options) {
             if (
               self._filter_by_date(
                 reference_date,
-                timeDateUtil._networkCDCDateField,
+                helpers._networkCDCDateField,
                 current_time,
                 node,
                 true
@@ -2699,7 +2704,7 @@ function generate_coi_temporal_report(self, ref_set, D) {
   // these are shallow copies
   _.each(seed_nodes, (sn) => _.each(sn, (n) => (n.visited = false)));
 
-  var beginning_of_time = timeDateUtil.getCurrentDate();
+  var beginning_of_time = helpers.getCurrentDate();
   beginning_of_time.setFullYear(1900);
 
   // unused var 
@@ -2724,21 +2729,21 @@ function generate_coi_temporal_report(self, ref_set, D) {
     const n_filter = (n) =>
       self._filter_by_date(
         beginning_of_time,
-        timeDateUtil._networkCDCDateField,
+        helpers._networkCDCDateField,
         event_date,
         n
       );
     const n_filter3 = (n) =>
       self._filter_by_date(
         event_date_m3y,
-        timeDateUtil._networkCDCDateField,
+        helpers._networkCDCDateField,
         event_date,
         n
       );
     const n_filter1 = (n) =>
       self._filter_by_date(
         event_date_m1y,
-        timeDateUtil._networkCDCDateField,
+        helpers._networkCDCDateField,
         event_date,
         n
       );
@@ -2782,7 +2787,7 @@ function generate_coi_temporal_report(self, ref_set, D) {
     node_info: _.map(ref_set.node_objects, (n) => [
       n.id,
       clusterNetwork._defaultDateViewFormatSlider(
-        self.attribute_node_value_by_id(n, timeDateUtil._networkCDCDateField)
+        self.attribute_node_value_by_id(n, helpers._networkCDCDateField)
       ),
     ]),
     event_info: info_by_event,
@@ -2830,15 +2835,15 @@ function priority_groups_export_nodes(
             cluster_uid: g.name,
             cluster_ident_method: g.kind,
             person_ident_method: gn.kind,
-            person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(gn.added),
+            person_ident_dt: helpers.hivtrace_date_or_na_if_missing(gn.added),
             new_linked_case: gn.autoadded
               ? 1
               : 0,
-            cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(g.created),
-            network_date: timeDateUtil.hivtrace_date_or_na_if_missing(self.today),
+            cluster_created_dt: helpers.hivtrace_date_or_na_if_missing(g.created),
+            network_date: helpers.hivtrace_date_or_na_if_missing(self.today),
             cluster_detect_size: cluster_detect_size,
             cluster_type: g.createdBy,
-            cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(g.modified),
+            cluster_modified_dt: helpers.hivtrace_date_or_na_if_missing(g.modified),
             cluster_growth: clusterNetwork._cdcConciseTrackingOptions[g.tracking],
             national_priority: g.meets_priority_def,
             cluster_current_size: g.nodes.length,
@@ -2858,8 +2863,8 @@ function priority_groups_export_sets() {
       (g) => ({
         cluster_type: g.createdBy,
         cluster_uid: g.name,
-        cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(g.modified),
-        cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(g.created),
+        cluster_modified_dt: helpers.hivtrace_date_or_na_if_missing(g.modified),
+        cluster_created_dt: helpers.hivtrace_date_or_na_if_missing(g.created),
         cluster_ident_method: g.kind,
         cluster_growth: clusterNetwork._cdcConciseTrackingOptions[g.tracking],
         cluster_current_size: g.nodes.length,

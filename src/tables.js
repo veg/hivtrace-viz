@@ -1,7 +1,6 @@
 const d3 = require("d3");
 const _ = require("underscore");
-const utils = require("./utils.js");
-const timeDateUtil = require('./timeDateUtil.js');
+const helpers = require("./helpers.js");
 const nodesTab = require('./nodesTab.js');
 
 const _networkNodeIDField = "hivtrace_node_id";
@@ -79,10 +78,10 @@ function add_a_sortable_table(
     table_caption.enter().insert("caption", ":first-child");
     table_caption.html((d) => d);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-total"))
+      .select(helpers.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(helpers.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
   }
 }
@@ -209,12 +208,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
           "#" + d3.select(this).attr("aria-describedby")
         );
         var search_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-apply")
+          helpers.get_ui_element_selector_by_role("table-filter-apply")
         );
         var reset_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-reset")
+          helpers.get_ui_element_selector_by_role("table-filter-reset")
         );
-        var search_box_element = utils.get_ui_element_selector_by_role("table-filter-term");
+        var search_box_element = helpers.get_ui_element_selector_by_role("table-filter-term");
         var search_box = popover_div.selectAll(search_box_element);
 
         search_box.property("value", data.filter_term);
@@ -453,7 +452,7 @@ function filter_table(element) {
       });
     d3.select(table_element[0])
       .select("caption")
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(helpers.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
 
     /*.selectAll("td").each (function (d, i) {
@@ -522,8 +521,8 @@ function filter_parse(filter_value) {
             };
           }
         }
-        if (timeDateUtil.getClusterTimeScale()) {
-          var is_range = timeDateUtil._networkTimeQuery.exec(d);
+        if (helpers.getClusterTimeScale()) {
+          var is_range = helpers._networkTimeQuery.exec(d);
           if (is_range) {
             return {
               type: "date",
@@ -637,4 +636,3 @@ module.exports = {
   sort_table_toggle_icon,
   update_volatile_elements,
 }
-

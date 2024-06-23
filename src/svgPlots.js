@@ -1,8 +1,4 @@
-var d3 = require("d3"),
-  _ = require("underscore"),
-  helpers = require("./helpers.js");
-
-var hivtrace_generate_svg_polygon_lookup = {};
+const hivtrace_generate_svg_polygon_lookup = {};
 
 _.each(_.range(3, 20), (d) => {
   var angle_step = (Math.PI * 2) / d;
@@ -37,7 +33,7 @@ function hivtrace_generate_svg_symbol(type) {
   }
 }
 
-var hivtrace_generate_svg_ellipse = function () {
+function hivtrace_generate_svg_ellipse() {
   var self = this;
 
   self.ellipse = function () {
@@ -73,7 +69,7 @@ var hivtrace_generate_svg_ellipse = function () {
   return self.ellipse;
 };
 
-var hivtrace_generate_svg_polygon = function () {
+function hivtrace_generate_svg_polygon() {
   var self = this;
 
   self.polygon = function () {
@@ -128,76 +124,6 @@ var hivtrace_generate_svg_polygon = function () {
 
   return self.polygon;
 };
-
-function hivtrace_compute_node_degrees(obj) {
-  var nodes = obj.Nodes,
-    edges = obj.Edges;
-
-  for (var n in nodes) {
-    nodes[n].degree = 0;
-  }
-
-  for (var e in edges) {
-    nodes[edges[e].source].degree++;
-    nodes[edges[e].target].degree++;
-  }
-}
-
-function hiv_trace_export_table_to_text(
-  parent_id,
-  table_id,
-  csv,
-  file_name_placeholder
-) {
-  var the_button = d3.select(parent_id);
-  the_button.selectAll("[data-type='download-button']").remove();
-
-  the_button = the_button
-    .append("a")
-    .attr("target", "_blank")
-    .attr("data-type", "download-button")
-    .on("click", function (data, element) {
-      d3.event.preventDefault();
-      var table_tag = d3.select(this).attr("data-table");
-      var table_text = helpers.table_to_text(table_tag, csv ? "," : "\t");
-      file_name_placeholder = file_name_placeholder || table_tag.substring(1);
-      if (!csv) {
-        helpers.export_handler(
-          table_text,
-          file_name_placeholder + ".tsv",
-          "text/tab-separated-values"
-        );
-      } else {
-        helpers.export_handler(
-          table_text,
-          file_name_placeholder + ".csv",
-          "text/comma-separated-values"
-        );
-      }
-    })
-    .attr("data-table", table_id);
-
-  the_button.append("i").classed("fa fa-download fa-2x", true);
-  return the_button;
-}
-
-function hivtrace_format_value(value, formatter) {
-  if (typeof value === "undefined") {
-    return "Not computed";
-  }
-  if (value === hivtrace_undefined) {
-    return "Undefined";
-  }
-  if (value === hivtrace_too_large) {
-    return "Size limit";
-  }
-
-  if (value === hivtrace_processing) {
-    return '<span class="fa fa-spin fa-spinner"></span>';
-  }
-
-  return formatter ? formatter(value) : value;
-}
 
 function hivtrace_plot_cluster_dynamics(
   time_series,
@@ -685,79 +611,7 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
-// TODO: convert and save this data rather than do it each time.
-var hivtrace_cluster_depthwise_traversal = function (
-  nodes,
-  edges,
-  edge_filter,
-  save_edges,
-  seed_nodes,
-  white_list
-  // an optional set of node IDs (a subset of 'nodes') that will be considered for traversal
-  // it is further assumed that seed_nodes are a subset of white_list, if the latter is specified
-) {
-  var clusters = [],
-    adjacency = {},
-    by_node = {};
-
-  seed_nodes = seed_nodes || nodes;
-
-  _.each(nodes, (n) => {
-    n.visited = false;
-    adjacency[n.id] = [];
-  });
-
-  if (edge_filter) {
-    edges = _.filter(edges, edge_filter);
-  }
-
-  if (white_list) {
-    edges = _.filter(edges, (e) => (
-      white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
-    ));
-  }
-
-  _.each(edges, (e) => {
-    try {
-      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-    } catch (err) {
-      throw Error("Edge does not map to an existing node " + e.source + " to " + e.target);
-    }
-  });
-
-  var traverse = function (node) {
-    if (!(node.id in by_node)) {
-      clusters.push([node]);
-      by_node[node.id] = clusters.length - 1;
-      if (save_edges) {
-        save_edges.push([]);
-      }
-    }
-    node.visited = true;
-
-    _.each(adjacency[node.id], (neighbor) => {
-      if (!neighbor[0].visited) {
-        by_node[neighbor[0].id] = by_node[node.id];
-        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
-        if (save_edges) {
-          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
-        }
-        traverse(neighbor[0]);
-      }
-    });
-  };
-
-  _.each(seed_nodes, (n) => {
-    if (!n.visited) {
-      traverse(n);
-    }
-  });
-
-  return clusters;
-};
-
-function hivtrace_coi_timeseries(cluster, element, plot_width) {
+function hivtrace_plot_coi_timeseries(cluster, element, plot_width) {
   const margin = { top: 30, right: 60, bottom: 10, left: 120 };
   const formatTime = d3.time.format("%Y-%m-%d");
   let data = _.sortBy(
@@ -956,20 +810,8 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     });
 }
 
-function edge_typer(e, edge_types, T) {
-  return edge_types[e.length <= T ? 0 : 1];
-};
-
 module.exports = {
-  edge_typer,
-  coi_timeseries: hivtrace_coi_timeseries,
-  compute_node_degrees: hivtrace_compute_node_degrees,
-  export_table_to_text: hiv_trace_export_table_to_text,
-  undefined: {},
-  too_large: {},
-  processing: {},
-  format_value: hivtrace_format_value,
-  symbol: hivtrace_generate_svg_symbol,
-  cluster_dynamics: hivtrace_plot_cluster_dynamics,
-  hivtrace_cluster_depthwise_traversal,
+  generate_svg_symbol: hivtrace_generate_svg_symbol,
+  plot_coi_timeseries: hivtrace_plot_coi_timeseries,
+  plot_cluster_dynamics: hivtrace_plot_cluster_dynamics,
 }

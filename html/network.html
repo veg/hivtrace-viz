@@ -612,19 +612,19 @@
               d3.select(d3.select(this).attr("href")).style("display", null);
             });
 
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#cluster-table-export",
             cluster_table
           );
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#subcluster-table-export",
             subcluster_table
           );
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#node-table-export",
             node_table
           );
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#priority-table-export",
             priority_set_table
           );
