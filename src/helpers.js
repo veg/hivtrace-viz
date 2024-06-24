@@ -10,7 +10,7 @@ function copyToClipboard(text) {
     () => {
       console.log("Copying to clipboard was successful!");
     },
-    () => {
+    (err) => {
       console.error("Could not copy text: ", err);
     }
   );
@@ -139,7 +139,7 @@ function save_image(type, container) {
             }
           }
         }
-      } catch (e) {
+      } catch {
         console.log("Could not process stylesheet : " + ss); // eslint-disable-line
       }
     }
@@ -528,7 +528,7 @@ function hivtrace_cluster_depthwise_traversal(
     try {
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-    } catch (err) {
+    } catch {
       throw Error("Edge does not map to an existing node " + e.source + " to " + e.target);
     }
   });

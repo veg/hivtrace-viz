@@ -1,7 +1,5 @@
 const helpers = require("./helpers");
-
-const _defaultFloatFormat = d3.format(",.2r");
-const _defaultPercentFormat = d3.format(",.3p");
+const clusterNetwork = require('./clusternetwork');
 
 // The function for creating the "Network Statistics" table that is displayed on the "Statistics" tab.
 var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
@@ -39,11 +37,11 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   table_data.push([__("statistics")["links_per_node"], ""]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-    _defaultFloatFormat(degrees["mean"]),
+    clusterNetwork._defaultFloatFormat(degrees["mean"]),
   ]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-    _defaultFloatFormat(degrees["median"]),
+    clusterNetwork._defaultFloatFormat(degrees["median"]),
   ]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
@@ -58,11 +56,11 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
   table_data.push([__("statistics")["cluster_sizes"], ""]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-    _defaultFloatFormat(degrees["mean"]),
+    clusterNetwork._defaultFloatFormat(degrees["mean"]),
   ]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-    _defaultFloatFormat(degrees["median"]),
+    clusterNetwork._defaultFloatFormat(degrees["median"]),
   ]);
   table_data.push([
     "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
@@ -80,23 +78,23 @@ var hivtraceClusterGraphSummary = function (graph, tag, not_CDC) {
     table_data.push(["Genetic distances (links only)", ""]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["mean"] + "</i>",
-      _defaultPercentFormat(degrees["mean"]),
+      clusterNetwork._defaultPercentFormat(degrees["mean"]),
     ]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["median"] + "</i>",
-      _defaultPercentFormat(degrees["median"]),
+      clusterNetwork._defaultPercentFormat(degrees["median"]),
     ]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["range"] + "</i>",
-      _defaultPercentFormat(degrees["min"]) +
+      clusterNetwork._defaultPercentFormat(degrees["min"]) +
       " - " +
-      _defaultPercentFormat(degrees["max"]),
+      clusterNetwork._defaultPercentFormat(degrees["max"]),
     ]);
     table_data.push([
       "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
-      _defaultPercentFormat(degrees["Q1"]) +
+      clusterNetwork._defaultPercentFormat(degrees["Q1"]) +
       " - " +
-      _defaultPercentFormat(degrees["Q3"]),
+      clusterNetwork._defaultPercentFormat(degrees["Q3"]),
     ]);
   }
 

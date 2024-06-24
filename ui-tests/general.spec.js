@@ -7,10 +7,12 @@ test.beforeEach(({ page }) => {
   errors = [];
   page.on('console', msg => {
     if (msg.type() === 'error') {
-      console.log(msg.text());
       errors.push(msg.text());
     }
   })
+	page.on("pageerror", (err) => {
+    errors.push(err.message);
+  }) 
 });
 
 test.afterEach(({ page }) => {

@@ -82,7 +82,7 @@ function hivtrace_generate_svg_polygon() {
     } else {
       var angle_step = (Math.PI * 2) / self.sides,
         current_angle = 0;
-      for (i = 0; i < self.sides - 1; i++) {
+      for (let i = 0; i < self.sides - 1; i++) {
         current_angle += angle_step;
         path +=
           " L" +

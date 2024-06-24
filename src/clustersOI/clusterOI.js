@@ -717,7 +717,7 @@ function open_editor(
             generator: function (node) {
               return {
                 value: node,
-                callback: function (element, payload) {
+                callback: function (self, element, payload) {
                   let this_cell = d3.select(element);
                   if (payload["_priority_set_date"]) {
                     if (payload["_priority_set_autoadded"]) {
@@ -788,7 +788,7 @@ function open_editor(
                   return [];
                 },
 
-                callback: function (element, payload) {
+                callback: function (self, element, payload) {
                   let this_cell = d3.select(element);
                   if (!is_node_editable(payload)) {
                     this_cell
@@ -844,7 +844,7 @@ function open_editor(
             generator: function (node) {
               return {
                 value: node,
-                callback: function (element, payload) {
+                callback: function (self, element, payload) {
                   var this_cell = d3.select(element);
                   if (!is_node_deletable(payload, created_by)) {
                     this_cell
@@ -886,7 +886,8 @@ function open_editor(
           extra_columns.splice(1, 1);
         }
 
-        self.draw_extended_node_table(
+        tables.draw_extended_node_table(
+          self,
           panel.network_nodes,
           table_container,
           extra_columns
@@ -2279,6 +2280,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     }*/
 
     tables.add_a_sortable_table(
+      self,
       container,
       headers,
       rows,
@@ -2316,13 +2318,13 @@ function draw_priority_set_table(self, container, priority_groups) {
 }
 
 function redraw_tables(self) {
-  tables.update_volatile_elements(self.cluster_table);
+  tables.update_volatile_elements(self, self.cluster_table);
   if (self.subcluster_table) {
-    tables.update_volatile_elements(self.subcluster_table);
+    tables.update_volatile_elements(self, self.subcluster_table);
   }
-  tables.update_volatile_elements(nodesTab.getNodeTable());
+  tables.update_volatile_elements(self, nodesTab.getNodeTable());
   if (self.priority_set_table) {
-    tables.update_volatile_elements(self.priority_set_table);
+    tables.update_volatile_elements(self, self.priority_set_table);
   }
 };
 
