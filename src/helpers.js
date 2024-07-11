@@ -84,7 +84,10 @@ var datamonkey_save_image = function (type, container) {
               // Import Rule
               process_stylesheet(rule.styleSheet);
               // hack for illustrator crashing on descendent selectors
-            } else if (rule.selectorText && rule.selectorText.indexOf(">") === -1) {
+            } else if (
+              rule.selectorText &&
+              rule.selectorText.indexOf(">") === -1
+            ) {
               styles += "\n" + rule.cssText;
             }
           }
@@ -251,9 +254,9 @@ function datamonkey_export_handler(data, filename, mimeType) {
     pom.setAttribute(
       "href",
       "data:" +
-      (mimeType || "text/plain") +
-      ";charset=utf-8," +
-      encodeURIComponent(data)
+        (mimeType || "text/plain") +
+        ";charset=utf-8," +
+        encodeURIComponent(data)
     );
     pom.setAttribute("download", filename || "download.tsv");
     pom.click();
@@ -322,42 +325,23 @@ function datamonkey_table_to_text(table_id, sep) {
   );
 }
 
-function get_unique_count(nodes, schema) {
-  let schema_keys = _.keys(schema);
-
-  let new_obj = {};
-  _.each(schema_keys, (sk) => (new_obj[sk] = []));
-
-  // get attribute diversity to sort on later
-  let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
-
-  _.each(pa, (p) => {
-    _.each(schema_keys, (sk) => {
-      new_obj[sk].push(p[sk]);
-    });
-  });
-
-  // Get uniques across all keys
-  return _.mapObject(new_obj, (val) => _.uniq(val).length);
-}
-
 function getUniqueValues(nodes, schema) {
   let schema_keys = _.keys(schema);
 
   let new_obj = {};
-  _.each(schema_keys, (sk) => (new_obj[sk] = []));
+  _.each(schema_keys, (sk) => (new_obj[sk] = new Set()));
 
   // get attribute diversity to sort on later
   let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
 
   _.each(pa, (p) => {
     _.each(schema_keys, (sk) => {
-      new_obj[sk].push(p[sk]);
+      new_obj[sk].add(p[sk]);
     });
   });
 
   // Get uniques across all keys
-  return _.mapObject(new_obj, (val) => _.uniq(val));
+  return _.mapObject(new_obj, (val) => [...val]);
 }
 
 function exportColorScheme(uniqValues, colorizer) {
@@ -425,7 +409,6 @@ module.exports.save_image = datamonkey_save_image;
 module.exports.describe_vector = datamonkey_describe_vector;
 module.exports.table_to_text = datamonkey_table_to_text;
 module.exports.export_handler = datamonkey_export_handler;
-module.exports.get_unique_count = get_unique_count;
 module.exports.getUniqueValues = getUniqueValues;
 module.exports.exportColorScheme = exportColorScheme;
 module.exports.copyToClipboard = copyToClipboard;
