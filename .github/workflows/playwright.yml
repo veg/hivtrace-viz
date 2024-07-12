@@ -5,6 +5,7 @@ on:
       - main
       - master
       - refactor
+      - 2024-refactoring-RF2
   pull_request:
     branches:
       - main
