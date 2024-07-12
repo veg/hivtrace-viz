@@ -13,6 +13,8 @@ import * as clustersOfInterest from "./clustersOfInterest.js";
 import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as misc from "./misc";
 import * as kGlobals from "./globals.js";
+import * as network from "./network.js";
+import * as HTX from "./hiv_tx_network.js";
 
 var hivtrace_cluster_network_graph = function (
   json,
@@ -38,45 +40,23 @@ var hivtrace_cluster_network_graph = function (
   // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
+  // unpack compact JSON if needed
   if (json.Settings && json.Settings.compact_json) {
-    _.each(["Nodes", "Edges"], (key) => {
-      var fields = _.keys(json[key]);
-      var expanded = [];
-      _.each(fields, (f, idx) => {
-        var field_values = json[key][f];
-        if (!_.isArray(field_values) && "values" in field_values) {
-          //console.log ('COMPRESSED');
-          var expanded_values = [];
-          _.each(field_values["values"], (v) => {
-            expanded_values.push(field_values["keys"][v]);
-          });
-          field_values = expanded_values;
-        }
-        _.each(field_values, (fv, j) => {
-          if (idx === 0) {
-            expanded.push({});
-          }
-          expanded[j][f] = fv;
-        });
-      });
-      json[key] = expanded;
-    });
+    network.unpack_compact_json(json);
   }
 
-  // if schema is not set, set to empty dictionary
+  // if schema is not set, set to an empty dictionary
   if (!json[kGlobals.network.GraphAttrbuteID]) {
     json[kGlobals.network.GraphAttrbuteID] = {};
   }
 
   // Make attributes case-insensitive by LowerCasing all keys in schema
-  const new_schema = Object.fromEntries(
+  json[kGlobals.network.GraphAttrbuteID] = Object.fromEntries(
     Object.entries(json[kGlobals.network.GraphAttrbuteID]).map(([k, v]) => [
       k.toLowerCase(),
       v,
     ])
   );
-
-  json[kGlobals.network.GraphAttrbuteID] = new_schema;
 
   // Attempt Translations
   $("#filter_input")
@@ -84,66 +64,32 @@ var hivtrace_cluster_network_graph = function (
     .attr("placeholder", __("network_tab")["text_in_attributes"]);
   $("#show_as").html(__("attributes_tab")["show_as"]);
 
-  // Make attributes case-insensitive by LowerCasing all keys in node attributes
-  const label_key_map = _.object(
-    _.map(json.patient_attribute_schema, (d, k) => [d.label, k])
-  );
-
-  _.each(json.Nodes, (n) => {
-    if ("patient_attributes" in n) {
-      let new_attrs = {};
-      if (n["patient_attributes"] !== null) {
-        new_attrs = Object.fromEntries(
-          Object.entries(n.patient_attributes).map(([k, v]) => [
-            k.toLowerCase(),
-            v,
-          ])
-        );
-      }
-
-      // Map attributes from patient_schema labels to keys, if necessary
-      const unrecognizedKeys = _.difference(
-        _.keys(new_attrs),
-        _.keys(json.patient_attribute_schema)
-      );
-
-      if (unrecognizedKeys.length) {
-        _.each(unrecognizedKeys, (k) => {
-          if (_.contains(_.keys(label_key_map), k)) {
-            new_attrs[label_key_map[k]] = new_attrs[k];
-            delete new_attrs[k];
-          }
-        });
-      }
-
-      n.patient_attributes = new_attrs;
-    }
-  });
-
-  // annotate each node with patient_attributes if does not exist
-  json.Nodes.forEach((n) => {
-    if (!n["attributes"]) {
-      n["attributes"] = [];
-    }
-
-    if (!n[kGlobals.network.NodeAttributeID]) {
-      n[kGlobals.network.NodeAttributeID] = [];
-    }
-  });
+  network.normalize_node_attributes(json);
+  network.ensure_node_attributes_exist(json);
 
   /** SLKP 20190902: somehow our networks have malformed edges! This will remove them */
   json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
 
-  var self = {};
+  var self = new HTX.HIVTxNetwork(json);
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
-  self._is_seguro = options && options["seguro"] ? true : false;
-  self._is_CDC_executive_mode =
-    options && options["cdc-executive-mode"] ? true : false;
+  self._is_seguro = network.check_network_option(
+    options,
+    "seguro",
+    false,
+    true
+  );
+  self._is_CDC_executive_mode = network.check_network_option(
+    options,
+    "cdc-executive-mode",
+    false,
+    true
+  );
 
-  self.json = json;
-
-  self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
+  self.uniqValues = helpers.getUniqueValues(
+    json.Nodes,
+    json[kGlobals.network.GraphAttrbuteID]
+  );
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
   self.schema = json[kGlobals.network.GraphAttrbuteID];
@@ -151,10 +97,13 @@ var hivtrace_cluster_network_graph = function (
   self.networkColorScheme = kGlobals.PresetColorSchemes;
   self.networkShapeScheme = kGlobals.PresetShapeSchemes;
 
-  self.ww =
-    options && options["width"]
-      ? options["width"]
-      : d3.select(parent_container).property("clientWidth");
+  self.ww = network.check_network_option(
+    options,
+    "width",
+    d3.select(parent_container).property("clientWidth"),
+    null
+  );
+
   self.container = network_container;
   self.nodes = [];
   self.edges = [];
@@ -163,79 +112,72 @@ var hivtrace_cluster_network_graph = function (
   self.cluster_mapping = {};
   self.percent_format = kGlobals.formats.PercentFormat;
   self.missing = kGlobals.missing.label;
-  self.cluster_attributes = json["Cluster description"]
-    ? json["Cluster description"]
-    : null;
+  self.cluster_attributes = json["Cluster description"] || null;
   self.warning_string = "";
-  self.precomputed_subclusters = json["Subclusters"]
-    ? json["Subclusters"]
-    : null;
+  self.precomputed_subclusters = json["Subclusters"] || null;
 
-  if (self.cluster_attributes) {
-    _.each(self.cluster_attributes, (cluster) => {
-      if ("old_size" in cluster && "size" in cluster) {
-        cluster["delta"] = cluster["size"] - cluster["old_size"];
-        cluster["deleted"] =
-          cluster["old_size"] +
-          (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
-          cluster["size"];
-      } else if (cluster["type"] === "new") {
-        cluster["delta"] = cluster["size"];
-        if ("moved" in cluster) {
-          cluster["delta"] -= cluster["moved"];
-        }
-      } else {
-        cluster["delta"] = 0;
-      }
-      cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
-      //console.log (cluster);
-    });
-  }
+  network.annotate_cluster_changes(self);
+
+  /** if there's a function passed as "init_code", run it now */
 
   if (options && _.isFunction(options["init_code"])) {
     options["init_code"].call(null, self, options);
   }
 
-  self.dom_prefix =
-    options && options["prefix"] ? options["prefix"] : "hiv-trace";
-  self.extra_cluster_table_columns =
-    options && options["cluster-table-columns"]
-      ? options["cluster-table-columns"]
-      : null;
+  self.dom_prefix = network.check_network_option(
+    options,
+    "prefix",
+    "hiv-trace",
+    null
+  );
+  self.extra_cluster_table_columns = network.check_network_option(
+    options,
+    "cluster-table-columns",
+    null,
+    null
+  );
 
   self.subcluster_table = null;
-  self.isPrimaryGraph = options && "secondary" in options ? false : true;
-  self.parent_graph_object =
-    options && "parent_graph" in options ? options["parent_graph"] : null;
+  self.isPrimaryGraph = network.check_network_option(
+    options,
+    "secondary",
+    true,
+    false
+  );
+  self.parent_graph_object = network.check_network_option(
+    options,
+    "parent_graph",
+    null,
+    null
+  );
+
+  /** set the TODAY date for the network*/
 
   if (json.Settings && json.Settings.created) {
     self.today = new Date(json.Settings.created);
   } else {
-    self.today =
-      options && options["today"]
-        ? options["today"]
-        : timeDateUtil.getCurrentDate();
+    self.today = network.check_network_option(
+      options,
+      "today",
+      timeDateUtil.getCurrentDate(),
+      null
+    );
   }
 
-  self.get_reference_date = function () {
-    if (!self.isPrimaryGraph && self.parent_graph_object)
-      return self.parent_graph_object.today;
-
-    return self.today;
-  };
+  /** get the reference (creation) date for the network.
+      it's the same as "today" for primary networks,
+      but is inherited from parent networks for secondary graphs (e.g. cluster or subcluster views)
+  */
 
   if (self._is_CDC_) {
     // define various CDC settings
 
-    self._is_CDC_auto_mode =
-      options && options["cdc-no-auto-priority-set-mode"] ? false : true;
-
-    self._lookup_option = function (key, default_value) {
-      if (self.json.Settings && self.json.Settings[key])
-        return self.json.Settings[key];
-      if (options && options[key]) return options[key];
-      return default_value;
-    };
+    self._is_CDC_auto_mode = network.check_network_option(
+      options,
+      "cdc-no-auto-priority-set-mode",
+      true,
+      false
+    );
 
     self.displayed_node_subset =
       options && options["node-attributes"]
@@ -255,15 +197,11 @@ var hivtrace_cluster_network_graph = function (
 
     self.extra_subcluster_table_columns = null;
 
-    var lookup_form_generator = function () {
-      return '<div><ul data-hivtrace-ui-role = "priority-membership-list"></ul></div>';
-    };
-
     // SLKP 20200727 issues
 
     self.CDC_data = {
       jurisdiction: self
-        ._lookup_option("jurisdiction", "unknown")
+        .lookup_option("jurisdiction", "unknown")
         .toLowerCase()
         .replace(/\s/g, ""),
       timestamp: self.today,
@@ -388,7 +326,7 @@ var hivtrace_cluster_network_graph = function (
                           placement: "right",
                           container: "body",
                           html: true,
-                          content: lookup_form_generator,
+                          content: HTX.HIVTxNetwork.lookup_form_generator,
                           trigger: "manual",
                         })
                         .on("shown.bs.popover", function (e) {
@@ -5379,29 +5317,6 @@ var hivtrace_cluster_network_graph = function (
       const moved = c_info["moved"];
       const deleted = c_info["deleted"];
       const new_count = c_info["new_nodes"] ? c_info["new_nodes"] : 0;
-
-      /*if (moved) {
-            if (d > 0) {
-                return "" + moved + " nodes moved +" + d + " new";
-            } else {
-                if (d === 0) {
-                    return "" + moved + " nodes moved";
-                } else {
-                    return "" + moved + " nodes moved " + (-d) + " removed";
-                }
-            }
-
-        } else {
-            if (d > 0) {
-                return "+" + d + " nodes";
-            } else {
-                if (d === 0) {
-                    return "no size change";
-                } else {
-                    return "" + (-d) + " nodes removed";
-                }
-            }
-        }*/
 
       let label_str = "";
       if (moved) label_str = " " + moved + " moved ";
