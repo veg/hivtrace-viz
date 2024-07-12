@@ -201,7 +201,7 @@ var hivtrace_cluster_network_graph = function (
 
     self.CDC_data = {
       jurisdiction: self
-        .lookup_option("jurisdiction", "unknown")
+        .lookup_option("jurisdiction", "unknown", options)
         .toLowerCase()
         .replace(/\s/g, ""),
       timestamp: self.today,
