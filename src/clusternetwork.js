@@ -41,6 +41,7 @@ var hivtrace_cluster_network_graph = function (
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
   // unpack compact JSON if needed
+
   if (json.Settings && json.Settings.compact_json) {
     network.unpack_compact_json(json);
   }
@@ -67,7 +68,7 @@ var hivtrace_cluster_network_graph = function (
   network.normalize_node_attributes(json);
   network.ensure_node_attributes_exist(json);
 
-  /** SLKP 20190902: somehow our networks have malformed edges! This will remove them */
+  /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
   json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
 
   var self = new HTX.HIVTxNetwork(json);
@@ -100,8 +101,7 @@ var hivtrace_cluster_network_graph = function (
   self.ww = network.check_network_option(
     options,
     "width",
-    d3.select(parent_container).property("clientWidth"),
-    null
+    d3.select(parent_container).property("clientWidth")
   );
 
   self.container = network_container;
@@ -127,27 +127,26 @@ var hivtrace_cluster_network_graph = function (
   self.dom_prefix = network.check_network_option(
     options,
     "prefix",
-    "hiv-trace",
-    null
+    "hiv-trace"
   );
   self.extra_cluster_table_columns = network.check_network_option(
     options,
     "cluster-table-columns",
-    null,
     null
   );
 
   self.subcluster_table = null;
+
   self.isPrimaryGraph = network.check_network_option(
     options,
     "secondary",
     true,
     false
   );
+
   self.parent_graph_object = network.check_network_option(
     options,
     "parent_graph",
-    null,
     null
   );
 
@@ -159,8 +158,7 @@ var hivtrace_cluster_network_graph = function (
     self.today = network.check_network_option(
       options,
       "today",
-      timeDateUtil.getCurrentDate(),
-      null
+      timeDateUtil.getCurrentDate()
     );
   }
 

@@ -26,6 +26,7 @@
     "js-convert-case": "^4.2.0",
     "jspanel4": "4.16.1",
     "latest": "^0.2.0",
+    "playwright": "^1.45.1",
     "sass": "^1.77.2",
     "topojson": "3.x",
     "underscore": "1.x"
