@@ -922,8 +922,7 @@ function open_editor(
     },
     onbeforeclose: function () {
       if (!this.saved) {
-        if (confirm("Close cluster of interest editor?")) {
-          //console.log ("Closing...");
+        if (confirm("Close cluster of interest editor? Unsaved changes will be lost.")) {
           if (existing_set) {
             const existing_nodes = new Set(
               _.map(existing_set.nodes, (n) => n.name)
@@ -998,6 +997,7 @@ function load_priority_sets(self, url, is_writeable) {
       self.priority_set_table_writeable = is_writeable === "writeable";
 
       priority_groups_validate(
+        self,
         defined_priority_groups,
         self._is_CDC_auto_mode
       );
@@ -1049,7 +1049,7 @@ function load_priority_sets(self, url, is_writeable) {
                   return;
                 }
 
-                const autoname = _generate_auto_id(subcluster_data.cluster_id);
+                const autoname = _generate_auto_id(self, subcluster_data.cluster_id);
                 self.auto_create_priority_sets.push({
                   name: autoname,
                   description:
@@ -1118,7 +1118,7 @@ function load_priority_sets(self, url, is_writeable) {
         d3.select("#banner_coi_counts").text(left_to_review);
       }
 
-      priority_groups_validate(defined_priority_groups);
+      priority_groups_validate(self, defined_priority_groups);
       _.each(self.auto_create_priority_sets, (pg) =>
         priority_groups_update_node_sets(self, pg.name, "insert")
       );
