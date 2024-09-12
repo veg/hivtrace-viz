@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
     errors.push(err.message);
   })
 
-  await page.goto('http://127.0.0.1:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
+  await page.goto('http://127.0.0.1:8080/html/priority-sets-args.html?network=/ui-tests/data/network.json');
 });
 
 test.afterEach(async ({ page }) => {

@@ -977,167 +977,167 @@ function load_priority_sets(self, url, is_writeable) {
   d3.json(url, (error, results) => {
     if (error) {
       throw Error("Failed loading cluster of interest file " + error.responseURL);
-    } else {
-      let latest_date = new Date();
-      latest_date.setFullYear(1900);
-      defined_priority_groups = _.clone(results);
-      _.each(defined_priority_groups, (pg) => {
-        _.each(pg.nodes, (n) => {
-          try {
-            n.added = clusterNetwork._defaultDateFormats[0].parse(n.added);
-            if (n.added > latest_date) {
-              latest_date = n.added;
-            }
-          } catch {
-            // do nothing
+    }
+
+    let latest_date = new Date();
+    latest_date.setFullYear(1900);
+    defined_priority_groups = _.clone(results);
+    _.each(defined_priority_groups, (pg) => {
+      _.each(pg.nodes, (n) => {
+        try {
+          n.added = clusterNetwork._defaultDateFormats[0].parse(n.added);
+          if (n.added > latest_date) {
+            latest_date = n.added;
           }
-        });
+        } catch {
+          // do nothing
+        }
       });
+    });
 
-      self.priority_set_table_writeable = is_writeable === "writeable";
+    self.priority_set_table_writeable = is_writeable === "writeable";
 
-      priority_groups_validate(
-        self,
-        defined_priority_groups,
-        self._is_CDC_auto_mode
-      );
+    priority_groups_materialize(
+      self,
+      defined_priority_groups,
+      self._is_CDC_auto_mode
+    );
 
-      self.auto_create_priority_sets = [];
-      // propose some
-      const today_string = clusterNetwork._defaultDateFormats[0](self.today);
-      const node_id_to_object = {};
+    self.auto_create_priority_sets = [];
+    // propose some
+    const today_string = clusterNetwork._defaultDateFormats[0](self.today);
+    const node_id_to_object = {};
 
-      _.each(self.json.Nodes, (n, i) => {
-        node_id_to_object[n.id] = n;
-      });
+    _.each(self.json.Nodes, (n, i) => {
+      node_id_to_object[n.id] = n;
+    });
 
-      if (self._is_CDC_auto_mode) {
-        _.each(self.clusters, (cluster_data, cluster_id) => {
-          _.each(cluster_data.subclusters, (subcluster_data) => {
-            _.each(subcluster_data.priority_score, (priority_score, i) => {
-              if (
-                priority_score.length >=
-                self.CDC_data["autocreate-priority-set-size"]
-              ) {
-                // only generate a new set if it doesn't match what is already there
-                const node_set = {};
-                _.each(subcluster_data.recent_nodes[i], (n) => {
-                  node_set[n] = 1;
-                });
+    if (self._is_CDC_auto_mode) {
+      _.each(self.clusters, (cluster_data, cluster_id) => {
+        _.each(cluster_data.subclusters, (subcluster_data) => {
+          _.each(subcluster_data.priority_score, (priority_score, i) => {
+            if (
+              priority_score.length >=
+              self.CDC_data["autocreate-priority-set-size"]
+            ) {
+              // only generate a new set if it doesn't match what is already there
+              const node_set = {};
+              _.each(subcluster_data.recent_nodes[i], (n) => {
+                node_set[n] = 1;
+              });
 
-                const matched_groups = _.filter(
-                  _.filter(
-                    defined_priority_groups,
-                    (pg) =>
-                      pg.kind in clusterNetwork._cdcPrioritySetKindAutoExpand &&
-                      pg.createdBy === clusterNetwork._cdcCreatedBySystem &&
-                      pg.tracking === clusterNetwork._cdcTrackingOptionsDefault
-                  ),
-                  (pg) => {
-                    const matched = _.countBy(
-                      _.map(pg.nodes, (pn) => pn.name in node_set)
-                    );
-                    //if (pg.name === 'FL_201709_141.1') console.log (matched);
-                    return (
-                      //matched[true] === subcluster_data.recent_nodes[i].length
-                      matched[true] >= 1
-                    );
-                  }
-                );
-
-                if (matched_groups.length >= 1) {
-                  return;
+              const matched_groups = _.filter(
+                _.filter(
+                  defined_priority_groups,
+                  (pg) =>
+                    pg.kind in clusterNetwork._cdcPrioritySetKindAutoExpand &&
+                    pg.createdBy === clusterNetwork._cdcCreatedBySystem &&
+                    pg.tracking === clusterNetwork._cdcTrackingOptionsDefault
+                ),
+                (pg) => {
+                  const matched = _.countBy(
+                    _.map(pg.nodes, (pn) => pn.name in node_set)
+                  );
+                  //if (pg.name === 'FL_201709_141.1') console.log (matched);
+                  return (
+                    //matched[true] === subcluster_data.recent_nodes[i].length
+                    matched[true] >= 1
+                  );
                 }
+              );
 
-                const autoname = _generate_auto_id(self, subcluster_data.cluster_id);
-                self.auto_create_priority_sets.push({
-                  name: autoname,
-                  description:
-                    "Automatically created cluster of interest " + autoname,
-                  nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
-                    priority_group_node_record(n, self.today)
-                  ),
-                  created: today_string,
-                  kind: clusterNetwork._cdcPrioritySetKindAutomaticCreation,
-                  tracking: clusterNetwork._cdcTrackingOptions[0],
-                  createdBy: clusterNetwork._cdcCreatedBySystem,
-                  autocreated: true,
-                  autoexpanded: false,
-                  pending: true,
-                });
+              if (matched_groups.length >= 1) {
+                return;
               }
-            });
+
+              const autoname = _generate_auto_id(self, subcluster_data.cluster_id);
+              self.auto_create_priority_sets.push({
+                name: autoname,
+                description:
+                  "Automatically created cluster of interest " + autoname,
+                nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
+                  priority_group_node_record(n, self.today)
+                ),
+                created: today_string,
+                kind: clusterNetwork._cdcPrioritySetKindAutomaticCreation,
+                tracking: clusterNetwork._cdcTrackingOptions[0],
+                createdBy: clusterNetwork._cdcCreatedBySystem,
+                autocreated: true,
+                autoexpanded: false,
+                pending: true,
+              });
+            }
           });
         });
-      }
-
-      if (self.auto_create_priority_sets.length) {
-        // SLKP 20200727 now check to see if any of the priority sets
-        // need to be auto-generated
-        //console.log (self.auto_create_priority_sets);
-        defined_priority_groups.push(...self.auto_create_priority_sets);
-      }
-      const autocreated = defined_priority_groups.filter(
-        (pg) => pg.autocreated
-      ).length,
-        autoexpanded = defined_priority_groups.filter(
-          (pg) => pg.autoexpanded
-        ).length,
-        automatic_action_taken = autocreated + autoexpanded > 0,
-        left_to_review = defined_priority_groups.filter(
-          (pg) => pg.pending
-        ).length;
-
-      if (automatic_action_taken) {
-        self.warning_string +=
-          "<br/>Automatically created <b>" +
-          autocreated +
-          "</b> and expanded <b>" +
-          autoexpanded +
-          "</b> clusters of interest." +
-          (left_to_review > 0
-            ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
-            : "");
-        self.display_warning(self.warning_string, true);
-      }
-
-      const tab_pill = helpers.get_ui_element_selector_by_role("priority_set_counts")
-
-      if (!self.priority_set_table_writeable) {
-        const rationale =
-          is_writeable === "old"
-            ? "the network is <b>older</b> than some of the Clusters of Interest"
-            : "the network was ran in <b>standalone</b> mode so no data is stored";
-        self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
-        self.display_warning(self.warning_string, true);
-        if (tab_pill) {
-          d3.select(tab_pill).text("Read-only");
-        }
-      } else if (tab_pill && left_to_review > 0) {
-        d3.select(tab_pill).text(left_to_review);
-        d3.select("#banner_coi_counts").text(left_to_review);
-      }
-
-      priority_groups_validate(self, defined_priority_groups);
-      _.each(self.auto_create_priority_sets, (pg) =>
-        priority_groups_update_node_sets(self, pg.name, "insert")
-      );
-      const groups_that_expanded = defined_priority_groups.filter(
-        (pg) => pg.expanded
-      );
-      _.each(groups_that_expanded, (pg) =>
-        priority_groups_update_node_sets(self, pg.name, "update")
-      );
-
-      draw_priority_set_table(self);
-      if (
-        self.showing_diff &&
-        has_network_attribute(self, "subcluster_or_priority_node")
-      ) {
-        self.handle_attribute_categorical("subcluster_or_priority_node");
-      }
-      //self.update();
+      });
     }
+
+    if (self.auto_create_priority_sets.length) {
+      // SLKP 20200727 now check to see if any of the priority sets
+      // need to be auto-generated
+      //console.log (self.auto_create_priority_sets);
+      defined_priority_groups.push(...self.auto_create_priority_sets);
+    }
+    const autocreated = defined_priority_groups.filter(
+      (pg) => pg.autocreated
+    ).length,
+      autoexpanded = defined_priority_groups.filter(
+        (pg) => pg.autoexpanded
+      ).length,
+      automatic_action_taken = autocreated + autoexpanded > 0,
+      left_to_review = defined_priority_groups.filter(
+        (pg) => pg.pending
+      ).length;
+
+    if (automatic_action_taken) {
+      self.warning_string +=
+        "<br/>Automatically created <b>" +
+        autocreated +
+        "</b> and expanded <b>" +
+        autoexpanded +
+        "</b> clusters of interest." +
+        (left_to_review > 0
+          ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
+          : "");
+      self.display_warning(self.warning_string, true);
+    }
+
+    const tab_pill = helpers.get_ui_element_selector_by_role("priority_set_counts")
+
+    if (!self.priority_set_table_writeable) {
+      const rationale =
+        is_writeable === "old"
+          ? "the network is <b>older</b> than some of the Clusters of Interest"
+          : "the network was ran in <b>standalone</b> mode so no data is stored";
+      self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
+      self.display_warning(self.warning_string, true);
+      if (tab_pill) {
+        d3.select(tab_pill).text("Read-only");
+      }
+    } else if (tab_pill && left_to_review > 0) {
+      d3.select(tab_pill).text(left_to_review);
+      d3.select("#banner_coi_counts").text(left_to_review);
+    }
+
+    priority_groups_materialize(self, defined_priority_groups);
+    _.each(self.auto_create_priority_sets, (pg) =>
+      priority_groups_update_node_sets(self, pg.name, "insert")
+    );
+    const groups_that_expanded = defined_priority_groups.filter(
+      (pg) => pg.expanded
+    );
+    _.each(groups_that_expanded, (pg) =>
+      priority_groups_update_node_sets(self, pg.name, "update")
+    );
+
+    draw_priority_set_table(self);
+    if (
+      self.showing_diff &&
+      has_network_attribute(self, "subcluster_or_priority_node")
+    ) {
+      self.handle_attribute_categorical("subcluster_or_priority_node");
+    }
+    //self.update();
   });
 };
 
@@ -1369,6 +1369,8 @@ function priority_groups_export(group_set, include_unvalidated) {
       description: g.description,
       nodes: g.nodes,
       modified: clusterNetwork._defaultDateFormats[0](g.modified),
+      active: g.active,
+      site_id: g.site_id,
       kind: g.kind,
       created: clusterNetwork._defaultDateFormats[0](g.created),
       createdBy: g.createdBy,
@@ -1376,11 +1378,12 @@ function priority_groups_export(group_set, include_unvalidated) {
       autocreated: g.autocreated,
       autoexpanded: g.autoexpanded,
       pending: g.pending,
+      history: g.history,
     })
   );
 };
 
-function priority_groups_validate(self, groups, auto_extend) {
+function priority_groups_materialize(self, groups, auto_extend) {
   /**
     groups is a list of priority groups
 
@@ -1627,16 +1630,42 @@ function priority_groups_validate(self, groups, auto_extend) {
         pg.meets_priority_def = _.some(priority_subclusters, (ps) => (
           _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
         ));
-        const cutoff12 = helpers.getNMonthsAgo(self.get_reference_date(), 12);
-        pg.last12 = _.filter(pg.node_objects, (n) =>
-          self._filter_by_date(
-            cutoff12,
-            helpers._networkCDCDateField,
-            self.today,
-            n,
-            false
-          )
-        ).length;
+
+        // compute recent dx (diagnosis) counts
+        const recent_dx_cutoffs = [{
+          field_name: 'cluster_dx_recent12_mo',
+          months: 12,
+        }, {
+          field_name: 'cluster_dx_recent36_mo',
+          months: 36,
+        }];
+
+        for (let dx of recent_dx_cutoffs) {
+          pg[dx.field_name] = _.filter(pg.node_objects, (n) =>
+            self._filter_by_date(
+              helpers.getNMonthsAgo(self.get_reference_date(), dx.months),
+              helpers._networkCDCDateField,
+              self.today,
+              n,
+              false
+            )
+          ).length;
+        }
+
+        // create / update history field of priority group
+        pg.history = pg.history || [];
+
+        const history_entry = {
+          date: self.today,
+          size: pg.nodes.length,
+          // TODO determine new nodes
+          new_nodes: 0,
+          national_priority: pg.meets_priority_def,
+          cluster_dx_recent12_mo: pg.cluster_dx_recent12_mo,
+          cluster_dx_recent36_mo: pg.cluster_dx_recent36_mo,
+        }
+
+        pg.history.push(history_entry);
       }
     });
   }
@@ -2082,7 +2111,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         },
         {
           width: 50,
-          value: pg.last12,
+          value: pg.cluster_dx_recent12_mo,
         },
         {
           width: 140,
@@ -2584,7 +2613,7 @@ function priority_groups_add_set(
 
   op_code = op_code || "insert";
   if (not_validated) {
-    priority_groups_validate(self, [nodeset]);
+    priority_groups_materialize(self, [nodeset]);
   }
   if (prior_name) {
     let prior_index = _.findIndex(
@@ -2773,7 +2802,7 @@ function generate_coi_temporal_report(self, ref_set, D) {
     //console.log (nodesD2);
 
     info_by_event[DT] = {
-      connected_componets: _.map(nodesD2, (nd) => nd.length),
+      connected_components: _.map(nodesD2, (nd) => nd.length),
       priority_nodes: _.map(nodesD2, (nd) =>
         _.map(_.filter(nd, n_filter1), (n) => n.id)
       ),
@@ -2849,7 +2878,8 @@ function priority_groups_export_nodes(
             cluster_growth: clusterNetwork._cdcConciseTrackingOptions[g.tracking],
             national_priority: g.meets_priority_def,
             cluster_current_size: g.nodes.length,
-            cluster_dx_recent12_mo: g.last12,
+            cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+            cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
             cluster_overlap: g.overlap.sets,
           })
         );
@@ -2871,7 +2901,8 @@ function priority_groups_export_sets() {
         cluster_growth: clusterNetwork._cdcConciseTrackingOptions[g.tracking],
         cluster_current_size: g.nodes.length,
         national_priority: g.meets_priority_def,
-        cluster_dx_recent12_mo: g.last12,
+        cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+        cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
         cluster_overlap: g.overlap.sets,
       })
     )
@@ -2885,7 +2916,7 @@ export {
   open_editor,
   load_priority_sets,
   priority_groups_compute_node_membership,
-  priority_groups_validate,
+  priority_groups_materialize,
   priority_set_view,
   draw_priority_set_table,
   priority_set_inject_node_attibutes,

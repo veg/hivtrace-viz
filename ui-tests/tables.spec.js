@@ -43,7 +43,7 @@ test('cluster table loads and works', async ({ page }) => {
 });
 
 test('subclusters table loads and works', async ({ page }) => {
-  await page.goto('http://localhost:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
+  await page.goto('http://localhost:8080/html/priority-sets-args.html?network=/ui-tests/data/network.json');
 
   await expect(page.locator("#subclusters-tab")).toBeVisible();
   await page.locator("#subclusters-tab").click();
@@ -74,7 +74,7 @@ test('node table loads and works', async ({ page }) => {
 
 test('node table sorting and filtering works', async ({ page }) => {
   // sorting
-  await page.goto('http://localhost:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json');
+  await page.goto('http://localhost:8080/html/priority-sets-args.html?network=/ui-tests/data/network.json');
   await expect(page.locator("#nodes-tab")).toBeVisible();
   await page.locator("#nodes-tab").click();
 

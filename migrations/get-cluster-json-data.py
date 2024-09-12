@@ -30,13 +30,16 @@ args = arg_parser.parse_args()
 
 options = Options()
 
-if not os.path.exists(args.download_dir):
-    os.makedirs(args.download_dir)
+network_dirname = os.path.basename(args.network_file).split(".")[0]
+network_dir = os.path.join(args.download_dir, network_dirname)
+
+if not os.path.exists(network_dir):
+    os.makedirs(network_dir)
 
 options.add_experimental_option(
     "prefs",
     {
-        "download.default_directory": args.download_dir,
+        "download.default_directory": network_dir,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
     },
@@ -49,7 +52,6 @@ driver.get(
 )
 
 driver.find_element(By.ID, "priority-set-tab").click()
-driver.find_element(By.CLASS_NAME, "view-edit-cluster").click()
-driver.find_element(By.XPATH, "//*[text()='View history over time']").click()
+driver.find_element(By.XPATH, "//*[text()='Export to JSON']").click()
 time.sleep(args.download_wait_duration)
 driver.quit()

@@ -742,7 +742,7 @@ function hivtrace_plot_coi_timeseries(cluster, element, plot_width) {
     .attr("cy", (d, i) => y(data.length))
     .attr(
       "r",
-      (d) => 2 + Math.sqrt(d3.sum(cluster.event_info[d[0]].connected_componets))
+      (d) => 2 + Math.sqrt(d3.sum(cluster.event_info[d[0]].connected_components))
     )
     .on("mouseover", (d, e) => {
       const ed = cluster.event_info[d[0]];
@@ -796,9 +796,9 @@ function hivtrace_plot_coi_timeseries(cluster, element, plot_width) {
         text += "National priority clusterOI. ";
       }
       text +=
-        String(d3.sum(ed.connected_componets)) +
+        String(d3.sum(ed.connected_components)) +
         " nodes in " +
-        ed.connected_componets.length +
+        ed.connected_components.length +
         " components. ";
       text +=
         "A total of " +

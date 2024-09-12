@@ -6,7 +6,7 @@
   <title>HIV-TRACE</title>
 
   <!-- Latest compiled and minified CSS -->
-  <link href="../dist/hivtrace.css" rel="stylesheet" />
+  <link href="/dist/hivtrace.css" rel="stylesheet" />
 
   <!-- no favicon, prevent 404 errors -->
   <link rel="shortcut icon" href="#" />
@@ -484,7 +484,7 @@
   <img class="hidden" id="hyphy-chart-image" />
   <canvas class="hidden" id="hyphy-chart-canvas"></canvas>
 
-  <script src="../dist/hivtrace.js"></script>
+  <script src="/dist/hivtrace.js"></script>
 
   <script>
     var network_container = "#network_tag",
@@ -632,7 +632,7 @@
 
     var initialize_cluster_network_graphs = function () {
       //Initialize clusternetworkgraph with json url
-      url = "example.json";
+      url = "/test/example/example.json";
       //url = "test/LA.json"
 
       d3.json(url, function (error, results) {
