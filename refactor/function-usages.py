@@ -4,7 +4,7 @@ import re
 import argparse
 
 # Define the regex pattern
-regex = re.escape("self.") + "[a-zA-Z0-9_]+" + re.escape("(")
+regex = r"self\.[a-zA-Z0-9_]+\("
 
 parser = argparse.ArgumentParser(description='Find function usages in a list of files')
 # optional regex pattern

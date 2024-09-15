@@ -8,8 +8,8 @@ import argparse
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument(
     "--download-dir",
-    help="Path to download directory (DEFAULT: ./coi-history/)",
-    default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "coi-history"),
+    help="Path to download directory (DEFAULT: ./output/)",
+    default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "output"),
 )
 arg_parser.add_argument(
     "--network-file",

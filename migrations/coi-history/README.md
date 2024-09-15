@@ -31,6 +31,6 @@ python get-cluster-json-data.py --network-file "/ui-tests/data/dummy_data_networ
 **Note the file URL here is respective to the html/priority-sets-args.html file, with the root directory (`/`) being the root of the project.**
 
 ```
-python mongodb-insert-cluster-json-data.py --input-file "coi-history/dummy_data_network/2024-09-10.json" --database "datamonkey-dev"
+python mongodb-insert-cluster-json-data.py --input-file "output/dummy_data_network/2024-09-10.json" --database "datamonkey-dev"
 ```
 
