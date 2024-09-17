@@ -656,7 +656,7 @@
 
     var initialize_cluster_network_graphs = function () {
       //Initialize clusternetworkgraph with json url
-      url = "/workshop/SocialDemoFiles/SocialNetwork.trace.json";
+      url = "/sample_data/workshop/SocialDemoFiles/SocialNetwork.trace.json";
       //url = "sample_data/LA.json"
 
       d3.json(url, function (error, results) {
@@ -826,11 +826,11 @@
         }
       });
 
-      d3.csv("workshop/SocialDemoFiles/SocialAttributes.csv", function (
+      d3.csv("sample_data/workshop/SocialDemoFiles/SocialAttributes.csv", function (
         error,
         nodes
       ) {
-        d3.csv("workshop/SocialDemoFiles/SocialEdges.csv", function (
+        d3.csv("sample_data/workshop/SocialDemoFiles/SocialEdges.csv", function (
           error,
           edges
         ) {
