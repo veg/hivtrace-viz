@@ -5,7 +5,7 @@
     <title>CDC HIV-TRACE Workshop</title>
 
     <!-- Latest compiled and minified CSS -->
-    <link href="../dist/hivtrace.css" rel="stylesheet" />
+    <link href="/dist/hivtrace.css" rel="stylesheet" />
 
     <!-- no favicon, prevent 404 errors -->
     <link rel="shortcut icon" href="#" />
@@ -72,9 +72,10 @@
             </li>
           </ul>
 
-          <form class="navbar-form navbar-right">
-            <div class="form-group" id="network_status_string"></div>
-          </form>
+          <div
+            class="navbar-form navbar-right"
+            id="network_status_string"
+          ></div>
         </div>
         <!-- /.navbar-collapse -->
       </div>
@@ -775,7 +776,7 @@
     <img class="hidden" id="hyphy-chart-image" />
     <canvas class="hidden" id="hyphy-chart-canvas"></canvas>
 
-    <script src="../dist/hivtrace.js"></script>
+    <script src="/dist/hivtrace.js"></script>
 
     <script>
       var network_container = "#network_tag",
@@ -854,15 +855,15 @@
                 d3.select(d3.select(this).attr("href")).style("display", null);
               });
 
-            hivtrace.misc.export_table_to_text(
+            hivtrace.helpers.render_button_export_table_to_text(
               "#cluster-table-export",
               cluster_table
             );
-            hivtrace.misc.export_table_to_text(
+            hivtrace.helpers.render_button_export_table_to_text(
               "#subcluster-table-export",
               subcluster_table
             );
-            hivtrace.misc.export_table_to_text(
+            hivtrace.helpers.render_button_export_table_to_text(
               "#node-table-export",
               node_table
             );
@@ -926,7 +927,7 @@
 
       var initialize_cluster_network_graphs = function () {
         //Initialize clusternetworkgraph with json url
-        url = "/workshop/SocialDemoFiles/SocialNetwork.trace.json";
+        url = "/sample_data/workshop/SocialDemoFiles/SocialNetwork.trace.json";
         //url = "sample_data/LA.json"
 
         d3.json(url, function (error, results) {
@@ -1097,10 +1098,10 @@
         });
 
         d3.csv(
-          "workshop/SocialDemoFiles/SocialAttributes.csv",
+          "sample_data/workshop/SocialDemoFiles/SocialAttributes.csv",
           function (error, nodes) {
             d3.csv(
-              "workshop/SocialDemoFiles/SocialEdges.csv",
+              "sample_data/workshop/SocialDemoFiles/SocialEdges.csv",
               function (error, edges) {
                 _loaded_network_data["nodes"] = nodes;
                 _loaded_network_data["edges"] = edges;
