@@ -5,6 +5,7 @@
 
 var d3 = require("d3"),
   _ = require("underscore"),
+  clustersOfInterest = require("./clustersOfInterest.js"),
   kGlobals = require("./globals.js");
 
 function unpack_compact_json(json) {
@@ -148,7 +149,7 @@ function check_network_option(options, key, if_absent, if_present) {
     Given a dictionary option list (can be null) and a key
     checks to see if the key is present
     
-        if the key is absent or options is null, the return value will be "if_absent" (null by default)
+        if the key is absent or "options" is null, the return value will be "if_absent" (null by default)
         if the key is present, and `if_present` is set, will return the if_present value, otherwise will return options[key]
 */
 
@@ -160,10 +161,150 @@ function check_network_option(options, key, if_absent, if_present) {
   return if_absent;
 }
 
+function handle_cluster_click(self, cluster, release) {
+  /**
+    handle_cluster_click
+    
+    Handle contextual menus for clusters and cluster drag 
+    
+    @param self: network object
+    @param cluster [optional]: the cluster object to act on
+    @param release [optional]: the cluster object to release the "fixed" flag from
+*/
+
+  var container = d3.select(self.container);
+  var id = "d3_context_menu_id";
+  var menu_object = container.select("#" + id);
+
+  if (menu_object.empty()) {
+    menu_object = container
+      .append("ul")
+      .attr("id", id)
+      .attr("class", "dropdown-menu")
+      .attr("role", "menu");
+  }
+
+  menu_object.selectAll("li").remove();
+
+  var already_fixed = cluster && cluster.fixed;
+
+  if (cluster) {
+    menu_object
+      .append("li")
+      .append("a")
+      .attr("tabindex", "-1")
+      .text("Expand cluster")
+      .on("click", (d) => {
+        cluster.fixed = 0;
+        self.expand_cluster_handler(cluster, true);
+        menu_object.style("display", "none");
+      });
+
+    menu_object
+      .append("li")
+      .append("a")
+      .attr("tabindex", "-1")
+      .text("Center on screen")
+      .on("click", (d) => {
+        cluster.fixed = 0;
+        center_cluster_handler(cluster);
+        menu_object.style("display", "none");
+      });
+
+    menu_object
+      .append("li")
+      .append("a")
+      .attr("tabindex", "-1")
+      .text((d) => {
+        if (cluster.fixed) return "Allow cluster to float";
+        return "Hold cluster at current position";
+      })
+      .on("click", (d) => {
+        cluster.fixed = !cluster.fixed;
+        menu_object.style("display", "none");
+      });
+
+    if (self.isPrimaryGraph) {
+      menu_object
+        .append("li")
+        .append("a")
+        .attr("tabindex", "-1")
+        .text((d) => "Show this cluster in separate tab")
+        .on("click", (d) => {
+          self.open_exclusive_tab_view(
+            cluster.cluster_id,
+            null,
+            null,
+            self._distance_gate_options()
+          );
+          menu_object.style("display", "none");
+        });
+    }
+
+    if (clustersOfInterest.get_editor()) {
+      menu_object
+        .append("li")
+        .append("a")
+        .attr("tabindex", "-1")
+        .text((d) => "Add this cluster to the cluster of interest")
+        .on("click", (d) => {
+          clustersOfInterest
+            .get_editor()
+            .append_nodes(_.map(cluster.children, (c) => c.id));
+        });
+    }
+
+    // Only show the "Show on map" option for clusters with valid country info (for now just 2 letter codes) for each node.
+    const show_on_map_enabled = _.every(
+      cluster.children,
+      (node) => self._get_node_country(node).length === 2
+    );
+
+    if (show_on_map_enabled) {
+      menu_object
+        .append("li")
+        .append("a")
+        .attr("tabindex", "-1")
+        .text("Show on map")
+        .on("click", (d) => {
+          //console.log(cluster)
+          self.open_exclusive_tab_view(
+            cluster.cluster_id,
+            null,
+            (cluster_id) => "Map of cluster: " + cluster_id,
+            { showing_on_map: true }
+          );
+        });
+    }
+
+    //cluster.fixed = 1;
+
+    menu_object
+      .style("position", "absolute")
+      .style("left", String(d3.event.offsetX) + "px")
+      .style("top", String(d3.event.offsetY) + "px")
+      .style("display", "block");
+  } else {
+    if (release) {
+      release.fixed = 0;
+    }
+    menu_object.style("display", "none");
+  }
+
+  container.on(
+    "click",
+    (d) => {
+      handle_cluster_click(self, null, already_fixed ? null : cluster);
+    },
+    true
+  );
+}
+
 module.exports = {
   annotate_cluster_changes,
   check_network_option,
   ensure_node_attributes_exist,
   normalize_node_attributes,
   unpack_compact_json,
+  handle_cluster_click,
 };

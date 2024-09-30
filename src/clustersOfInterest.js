@@ -1274,7 +1274,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         {
           value: [
             pg.node_objects.length,
-            _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(pg, g))
+            _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g))
               .length,
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,

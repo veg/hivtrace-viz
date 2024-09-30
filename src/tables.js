@@ -1,8 +1,8 @@
 const d3 = require("d3");
 const _ = require("underscore");
 const utils = require("./utils.js");
-const timeDateUtil = require('./timeDateUtil.js');
-const nodesTab = require('./nodesTab.js');
+const timeDateUtil = require("./timeDateUtil.js");
+const nodesTab = require("./nodesTab.js");
 
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
@@ -47,10 +47,12 @@ function add_a_sortable_table(
       .data((d) => d)
       .enter()
       .append("td")
-      .call((selection) => selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, priority_set_editor);
-      }));
+      .call((selection) =>
+        selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, priority_set_editor);
+        })
+      );
     container.node().appendChild(tbody.node());
   }
 
@@ -67,10 +69,12 @@ function add_a_sortable_table(
       .data((d) => d)
       .enter()
       .append("th")
-      .call((selection) => selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, priority_set_editor);
-      }));
+      .call((selection) =>
+        selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, priority_set_editor);
+        })
+      );
   }
   //'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes');
 
@@ -125,21 +129,24 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         add_to_ps.on("click", (d) => {
           let node_ids = [];
-          nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
-            let this_row = d3.select(this);
-            if (this_row.style("display") !== "none") {
-              this_row.selectAll("td").each((d, j) => {
-                if (j === data.column_id) {
-                  let marker_index = d.value.indexOf(_networkNewNodeMarker);
-                  if (marker_index > 0) {
-                    node_ids.push(d.value.substring(0, marker_index));
-                  } else {
-                    node_ids.push(d.value);
+          nodesTab
+            .getNodeTable()
+            .selectAll("tr")
+            .each(function (d, i) {
+              let this_row = d3.select(this);
+              if (this_row.style("display") !== "none") {
+                this_row.selectAll("td").each((d, j) => {
+                  if (j === data.column_id) {
+                    let marker_index = d.value.indexOf(_networkNewNodeMarker);
+                    if (marker_index > 0) {
+                      node_ids.push(d.value.substring(0, marker_index));
+                    } else {
+                      node_ids.push(d.value);
+                    }
                   }
-                }
-              });
-            }
-          });
+                });
+              }
+            });
           priority_set_editor.append_nodes(node_ids);
         });
       }
@@ -153,8 +160,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
       .style("margin-left", "0.2em");
 
     var search_form_generator = function () {
-      return (
-        `<form class="form-inline"> 
+      return `<form class="form-inline"> 
                         <div class="form-group"> 
                             <div class="input-group">
                             <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
@@ -187,8 +193,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                         to search numerical columns<p/>
                       </div>
                     </div>
-                    `
-      );
+                    `;
     };
 
     var search_popover = $(clicker.node())
@@ -322,7 +327,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                   if (_.has(d, "action") && d["action"]) {
                     d["action"](this_button, d["label"]);
                   } else if (b.action) {
-                    b.action(this_button, get_item_text(d))
+                    b.action(this_button, get_item_text(d));
                   }
                 });
               });
@@ -523,13 +528,17 @@ function filter_parse(filter_value) {
           if (is_range) {
             return {
               type: "date",
-              value: _.map([is_range[1], is_range[2]], (d) => new Date(
-                d.substring(0, 4) +
-                "-" +
-                d.substring(4, 6) +
-                "-" +
-                d.substring(6, 8)
-              )),
+              value: _.map(
+                [is_range[1], is_range[2]],
+                (d) =>
+                  new Date(
+                    d.substring(0, 4) +
+                      "-" +
+                      d.substring(4, 6) +
+                      "-" +
+                      d.substring(6, 8)
+                  )
+              ),
             };
           }
         }
@@ -539,7 +548,7 @@ function filter_parse(filter_value) {
         value: new RegExp(d, "i"),
       };
     });
-};
+}
 
 /** element is the sortable clicker **/
 function sort_table_by_column(element, datum) {
@@ -577,10 +586,9 @@ function sort_table_by_column(element, datum) {
     d3.select(table_element[0])
       .select("tbody")
       .selectAll("tr")
-      .sort((a, b) => sorted_function(
-        sort_accessor(a[sort_on]),
-        sort_accessor(b[sort_on])
-      ));
+      .sort((a, b) =>
+        sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]))
+      );
 
     // select all other elements from thead and toggle their icons
 
@@ -618,5 +626,5 @@ module.exports = {
   format_a_cell,
   sort_table_by_column,
   sort_table_toggle_icon,
-}
-
+  filter_parse,
+};

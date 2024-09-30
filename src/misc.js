@@ -6,9 +6,10 @@ var hivtrace_generate_svg_polygon_lookup = {};
 
 _.each(_.range(3, 20), (d) => {
   var angle_step = (Math.PI * 2) / d;
-  hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), (i) =>
-    [Math.cos(angle_step * i), Math.sin(angle_step * i)]
-  );
+  hivtrace_generate_svg_polygon_lookup[d] = _.map(_.range(1, d), (i) => [
+    Math.cos(angle_step * i),
+    Math.sin(angle_step * i),
+  ]);
 });
 
 function hivtrace_generate_svg_symbol(type) {
@@ -81,7 +82,10 @@ var hivtrace_generate_svg_polygon = function () {
 
     if (self.sides in hivtrace_generate_svg_polygon_lookup) {
       path += hivtrace_generate_svg_polygon_lookup[self.sides]
-        .map((value) => " L" + self.radius * value[0] + " " + self.radius * value[1])
+        .map(
+          (value) =>
+            " L" + self.radius * value[0] + " " + self.radius * value[1]
+        )
         .join(" ");
     } else {
       var angle_step = (Math.PI * 2) / self.sides,
@@ -388,8 +392,12 @@ function hivtrace_plot_cluster_dynamics(
     min_diff *= 0.8; // convert to seconds and shrink a bit
   }
 
-  var min_x = d3.min(time_series, (d) => d["time"] < d["_bin"] ? d["time"] : d["_bin"]);
-  var max_x = d3.max(time_series, (d) => d["time"] > d["_bin"] ? d["time"] : d["_bin"]);
+  var min_x = d3.min(time_series, (d) =>
+    d["time"] < d["_bin"] ? d["time"] : d["_bin"]
+  );
+  var max_x = d3.max(time_series, (d) =>
+    d["time"] > d["_bin"] ? d["time"] : d["_bin"]
+  );
 
   if (do_barchart) {
     var max_x2 = new Date();
@@ -428,10 +436,10 @@ function hivtrace_plot_cluster_dynamics(
     .attr(
       "transform",
       "translate(" +
-      (options.left + options.font_size * 2.5) +
-      "," +
-      (options.top + options.font_size) +
-      ")"
+        (options.left + options.font_size * 2.5) +
+        "," +
+        (options.top + options.font_size) +
+        ")"
     );
 
   /* set the domain for the codons */
@@ -440,8 +448,8 @@ function hivtrace_plot_cluster_dynamics(
 
   var color_scale =
     "colorizer" in options &&
-      options["colorizer"] &&
-      y_key in options["colorizer"]
+    options["colorizer"] &&
+    y_key in options["colorizer"]
       ? options["colorizer"][y_key]
       : d3.scale.category10();
 
@@ -503,14 +511,16 @@ function hivtrace_plot_cluster_dynamics(
       .data((d) => [d])
       .enter()
       .append("text")
-      .attr("transform", (d, i, j) => (
-        "translate(" +
-        options.rect_size +
-        "," +
-        (options.rect_size * (plot_types.length - 1 - j) -
-          (options.rect_size - options.font_size)) +
-        ")"
-      ))
+      .attr(
+        "transform",
+        (d, i, j) =>
+          "translate(" +
+          options.rect_size +
+          "," +
+          (options.rect_size * (plot_types.length - 1 - j) -
+            (options.rect_size - options.font_size)) +
+          ")"
+      )
       .attr("dx", "0.2em")
       .style("font-size", options.font_size)
       .text((d) => d)
@@ -610,10 +620,10 @@ function hivtrace_plot_cluster_dynamics(
           .append("title")
           .text(
             plot_key +
-            " " +
-            new_y +
-            " cases in " +
-            (x_tick_format ? x_tick_format(d["time"]) : d["time"])
+              " " +
+              new_y +
+              " cases in " +
+              (x_tick_format ? x_tick_format(d["time"]) : d["time"])
           );
 
         d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
@@ -712,9 +722,11 @@ var hivtrace_cluster_depthwise_traversal = function (
   }
 
   if (white_list) {
-    edges = _.filter(edges, (e) => (
-      white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
-    ));
+    edges = _.filter(
+      edges,
+      (e) =>
+        white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
+    );
   }
 
   _.each(edges, (e) => {
@@ -722,7 +734,9 @@ var hivtrace_cluster_depthwise_traversal = function (
       adjacency[nodes[e.source].id].push([nodes[e.target], e]);
       adjacency[nodes[e.target].id].push([nodes[e.source], e]);
     } catch (err) {
-      throw Error("Edge does not map to an existing node " + e.source + " to " + e.target);
+      throw Error(
+        "Edge does not map to an existing node " + e.source + " to " + e.target
+      );
     }
   });
 
@@ -858,7 +872,9 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     .attr("dy", "0.35em")
     .attr("dx", "-0.25em")
     .attr("fill", "black")
-    .text((d) => d[0]);
+    .text((d) =>
+      d[0].indexOf(" ") < 0 ? _.map(d[0], (c) => "█").join("") : d[0]
+    );
 
   svg
     .append("g")
@@ -906,18 +922,19 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       });
 
       let fills = ["firebrick", "grey"];
-      time_boxes = _.map(years_ago, (sya, i) => svg
-        .append("g")
-        .selectAll("rect")
-        .data([d])
-        .enter()
-        .append("rect")
-        .attr("fill", fills[i])
-        .attr("x", (d) => x(sya))
-        .attr("y", (d) => y(0))
-        .attr("width", x(d[1]) - x(sya))
-        .attr("height", (d) => -y(0) + y(data.length - 1))
-        .attr("opacity", 0.25)
+      time_boxes = _.map(years_ago, (sya, i) =>
+        svg
+          .append("g")
+          .selectAll("rect")
+          .data([d])
+          .enter()
+          .append("rect")
+          .attr("fill", fills[i])
+          .attr("x", (d) => x(sya))
+          .attr("y", (d) => y(0))
+          .attr("width", x(d[1]) - x(sya))
+          .attr("height", (d) => -y(0) + y(data.length - 1))
+          .attr("opacity", 0.25)
       );
 
       lines
@@ -958,7 +975,27 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
 
 function edge_typer(e, edge_types, T) {
   return edge_types[e.length <= T ? 0 : 1];
-};
+}
+
+/**
+    function random_id generates a random string of a given length
+    from a specific alphabet
+    
+    @param alphabet (array) : the character alphabet to use, or "a-g" by default
+    @param length (int) : the length of the string (32 by default)
+    
+    @return the random strong
+*/
+function random_id(alphabet, length) {
+  alphabet = alphabet || ["a", "b", "c", "d", "e", "f", "g"];
+  length = length || 32;
+  var s = "";
+  for (var i = 0; i < length; i++) {
+    s += _.sample(alphabet);
+  }
+  console.log(s);
+  return s;
+}
 
 module.exports = {
   edge_typer,
@@ -972,4 +1009,5 @@ module.exports = {
   symbol: hivtrace_generate_svg_symbol,
   cluster_dynamics: hivtrace_plot_cluster_dynamics,
   hivtrace_cluster_depthwise_traversal,
-}
+  random_id,
+};

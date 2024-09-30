@@ -57,6 +57,23 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
   return "N/A";
 }
 
+function n_months_ago(reference_date, months) {
+  var past_date = new Date(reference_date);
+  var past_months = past_date.getMonth();
+  var diff_year = Math.floor(months / 12);
+  var left_over = months - diff_year * 12;
+
+  if (left_over > past_months) {
+    past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
+    past_date.setMonth(12 - (left_over - past_months));
+  } else {
+    past_date.setFullYear(past_date.getFullYear() - diff_year);
+    past_date.setMonth(past_months - left_over);
+  }
+
+  return past_date;
+}
+
 module.exports = {
   hivtrace_date_or_na_if_missing,
   _networkCDCDateField,
@@ -71,5 +88,6 @@ module.exports = {
   DateViewFormatMMDDYYY,
   DateViewFormatShort,
   DateViewFormatSlider,
+  n_months_ago,
   init,
 };
