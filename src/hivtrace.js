@@ -4,7 +4,7 @@ import { hivtraceClusterGraphSummary } from "./hivtraceClusterGraphSummary.js";
 import { histogram, histogramDistances } from "./histogram.js";
 import { scatterPlot } from "./scatterplot.js";
 
-const misc = require("./misc.js");
+const svgPlots = require("./svgPlots.js");
 const helpers = require("./helpers.js");
 const colorPicker = require("./colorPicker.js");
 const graphSummary = hivtraceClusterGraphSummary;
@@ -15,7 +15,7 @@ export {
   histogram,
   histogramDistances,
   helpers,
-  misc,
+  svgPlots,
   colorPicker,
   scatterPlot,
 };

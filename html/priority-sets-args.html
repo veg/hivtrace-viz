@@ -6,7 +6,7 @@
   <title>CDC HIV-TRACE Workshop</title>
 
   <!-- Latest compiled and minified CSS -->
-  <link href="../dist/hivtrace.css" rel="stylesheet" />
+  <link href="/dist/hivtrace.css" rel="stylesheet" />
 
   <!-- no favicon, prevent 404 errors -->
   <link rel="shortcut icon" href="#" />
@@ -55,9 +55,7 @@
           </li>
         </ul>
 
-        <form class="navbar-form navbar-right">
-          <div class="form-group" id="network_status_string"></div>
-        </form>
+        <div class="navbar-form navbar-right" id="network_status_string"></div>
       </div>
       <!-- /.navbar-collapse -->
     </div>
@@ -584,7 +582,7 @@
   <img class="hidden" id="hyphy-chart-image" />
   <canvas class="hidden" id="hyphy-chart-canvas"></canvas>
 
-  <script src="../dist/hivtrace.js"></script>
+  <script src="/dist/hivtrace.js"></script>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
@@ -673,17 +671,17 @@
               d3.select(d3.select(this).attr("href")).style("display", null);
             });
 
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#cluster-table-export",
             cluster_table,
             true
           );
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#subcluster-table-export",
             subcluster_table,
             true
           );
-          hivtrace.misc.export_table_to_text(
+          hivtrace.helpers.render_button_export_table_to_text(
             "#node-table-export",
             node_table,
             true

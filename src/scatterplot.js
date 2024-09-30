@@ -1,8 +1,8 @@
 var d3 = require("d3");
 
 function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
-  var _defaultFloatFormat = d3.format(",.2r");
-  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+  const _defaultFloatFormat = d3.format(",.2r");
+  const _defaultDateViewFormatShort = d3.time.format("%B %Y");
 
   var margin = {
     top: 10,

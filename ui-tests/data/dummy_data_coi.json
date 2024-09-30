@@ -1,0 +1,49 @@
+[
+  {
+    "name": "coi_1",
+    "description": "",
+    "nodes": [
+      {
+        "name": "Carlsbad_8500",
+        "added": "2024-09-11T01:07:41.142Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "66e0eda94a55cd22f4892c87"
+      },
+      {
+        "name": "Carlsbad_3905",
+        "added": "2024-09-11T01:07:41.142Z",
+        "kind": "01 through analysis/notification",
+        "_id": "66e0eda94a55cd22f4892c86"
+      },
+      {
+        "name": "Carlsbad_1834",
+        "added": "2024-09-11T01:07:41.142Z",
+        "kind": "01 through analysis/notification",
+        "_id": "66e0eda94a55cd22f4892c85"
+      },
+      {
+        "name": "Carlsbad_3836",
+        "added": "2024-09-11T01:07:41.142Z",
+        "kind": "01 through analysis/notification",
+        "_id": "66e0eda94a55cd22f4892c84"
+      },
+      {
+        "name": "Carlsbad_2602",
+        "added": "2024-09-11T01:07:41.142Z",
+        "kind": "01 through analysis/notification",
+        "_id": "66e0eda94a55cd22f4892c83"
+      }
+    ],
+    "modified": "2024-09-11T01:08:38.726Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "site_id": "acme",
+    "active": true,
+    "created": "2024-09-11T01:07:41.142Z",
+    "createdBy": "Manual",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false
+  }
+]
