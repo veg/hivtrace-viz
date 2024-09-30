@@ -1689,7 +1689,7 @@ function priority_set_view(self, priority_set, options) {
                 return viewEnum[0];
               }
               if (
-                self._filter_by_date(
+                self.filter_by_date(
                   reference_date,
                   timeDateUtil._networkCDCDateField,
                   current_time,

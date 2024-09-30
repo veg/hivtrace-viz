@@ -118,8 +118,8 @@ class HIVTxNetwork {
       this.mapProjection = d3.geo
         .mercator()
         .translate([
-          this.margin.left + self.width / 2,
-          this.margin.top + self.height / 2,
+          this.margin.left + this.width / 2,
+          this.margin.top + this.height / 2,
         ])
         .scale((150 * this.width) / 960);
       _.each(this.countryCentersObject, (value) => {
