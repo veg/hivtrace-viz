@@ -1656,7 +1656,7 @@ function priority_groups_materialize(self, groups, auto_extend) {
         pg.history = pg.history || [];
 
         const history_entry = {
-          date: self.today,
+          date: currDate,
           size: pg.nodes.length,
           // TODO determine new nodes
           new_nodes: 0,
@@ -1664,6 +1664,18 @@ function priority_groups_materialize(self, groups, auto_extend) {
           cluster_dx_recent12_mo: pg.cluster_dx_recent12_mo,
           cluster_dx_recent36_mo: pg.cluster_dx_recent36_mo,
         }
+
+        // remove any duplicate history entries from last 24 hours
+        // (retain entries within 24 hours only if they differ from the current entry)
+        const currDate = new Date();
+        pg.history = _.filter(pg.history, (h) => (
+          currDate - h.date > 24 * 60 * 60 * 1000 ||
+          (h.size !== history_entry.size ||
+            h.national_priority !== history_entry.national_priority ||
+            h.cluster_dx_recent12_mo !== history_entry.cluster_dx_recent12_mo ||
+            h.cluster_dx_recent36_mo !== history_entry.cluster_dx_recent36_mo ||
+            h.new_nodes !== history_entry.new_nodes)
+        ))
 
         pg.history.push(history_entry);
       }
