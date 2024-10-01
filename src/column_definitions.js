@@ -5,7 +5,8 @@
 var d3 = require("d3"),
   _ = require("underscore"),
   clustersOfInterest = require("./clustersOfInterest.js"),
-  HTX = require("./hiv_tx_network.js");
+  HTX = require("./hiv_tx_network.js"),
+  kGlobals = require("./globals.js");
 
 /**
     Column definitions for rendered tables
@@ -36,8 +37,36 @@ var d3 = require("d3"),
 */
 
 /**
-    Secure HIV-TRACE subcluster table columns
-*/
+ * Defines secure column definitions for HIV Trace subcluster data.
+
+ * @param {Object} self (optional) - The object containing context for calculations (presumably the component using this function).
+
+ * @returns {Array<Object>} An array of column definition objects. Each object has the following properties:
+ *   - `description`:
+ *     - `value`: (string) The human-readable name of the column.
+ *     - `sort`: (function) A function used to sort the column data.
+ *     - `presort` (string, optional): The default sort direction ("asc" or "desc").
+ *     - `help`: (string) Help text displayed when hovering over the column header.
+ *   - `generator`: (function) A function that generates the value and actions for each cluster based on the provided cluster object.
+ *     - The generator function receives the cluster object as an argument.
+ *     - It should return an object with the following properties:
+ *       - `html`: (boolean) Whether the column value should be rendered as HTML.
+ *       - `value`: (array|string) The actual data for the column.
+ *       - `volatile`: (boolean, optional) Whether the value needs to be recalculated frequently.
+ *       - `format`: (function, optional) A function used to format the column value for display.
+ *       - `actions`: (function, optional) A function used to generate actions for the column.
+ *         - The actions function receives two arguments:
+ *           - `item`: (object) The current cluster object.
+ *           - `value`: (array|string) The value of the column for the current cluster.
+ *         - It should return an array of action objects, each with the following properties:
+ *           - `icon`: (string) The icon class name to display for the action.
+ *           - `action`: (function) The function executed when the action is clicked.
+ *             - The action function receives two arguments:
+ *               - `button`: (jQuery object) The button element representing the action.
+ *               - `v`: (array|string) The value of the column for the current cluster.
+ *           - `help`: (string) The help text displayed when hovering over the action icon.
+ */
+
 function secure_hiv_trace_subcluster_columns(self) {
   return [
     /** definition for the column which shows the #of cases dx'ed within 36 months
@@ -297,86 +326,6 @@ function secure_hiv_trace_subcluster_columns(self) {
   ];
 }
 
-/**
-    Secure HIV-TRACE node table columns
-    SLKP: note that this seems to be fully deprecated.
-*/
-
-function secure_hiv_trace_node_columns(self) {
-  return [
-    {
-      description: {
-        value: "Recent and Rapid",
-        sort: "value",
-        help: "Is the node a member of a regular or recent & rapid subcluster?",
-      },
-      generator: function (node) {
-        return {
-          callback: function (element, payload) {
-            //payload = _.filter (payload, function (d) {return d});
-            var this_cell = d3.select(element);
-
-            var data_to_use = [
-              [payload[0][0], payload[0][1], payload[0][2]],
-              [payload[1][0] ? "36 months" : "", payload[1][1]],
-              [payload[2][0] ? "12 months" : "", payload[2][1]],
-              [
-                payload.length > 3 && payload[3][0]
-                  ? "Recent cluster >= 3"
-                  : "",
-                payload.length > 3 ? payload[3][1] : null,
-              ],
-            ];
-
-            this_cell.selectAll("span").remove();
-
-            _.each(data_to_use, (button_text) => {
-              //self.open_exclusive_tab_view (cluster_id)
-              if (button_text[0].length) {
-                var button_obj = this_cell
-                  .append("span")
-                  .classed("btn btn-xs btn-node-property", true)
-                  .classed(button_text[1], true)
-                  .text(button_text[0]);
-
-                if (_.isFunction(button_text[2])) {
-                  button_obj.on("click", button_text[2]);
-                } else {
-                  button_obj.attr("disabled", true);
-                }
-              }
-            });
-          },
-          value: function () {
-            return [
-              [
-                node.subcluster_label
-                  ? "Subcluster " + node.subcluster_label
-                  : "",
-                "btn-primary",
-                node.subcluster_label
-                  ? function () {
-                      self.view_subcluster(
-                        node.subcluster_label,
-                        (n) => n.subcluster_label === node.subcluster_label,
-                        "Subcluster " + node.subcluster_label
-                      );
-                    }
-                  : null,
-              ],
-
-              [node.priority_flag === 3, "btn-warning"],
-              [node.priority_flag === 1, "btn-danger"],
-              [node.priority_flag === 2, "btn-danger"],
-            ];
-          },
-        };
-      },
-    },
-  ];
-}
-
 module.exports = {
   secure_hiv_trace_subcluster_columns,
-  secure_hiv_trace_node_columns,
 };
