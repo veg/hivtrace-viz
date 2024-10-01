@@ -1,6 +1,16 @@
 var d3 = require("d3"),
   _ = require("underscore");
 
+/**
+ * Renders a histogram for a graph property and displays a descriptive label.
+
+ * @param {Object} graph - An object containing graph data, including distribution and fitted data for the property.
+ * @param {string} histogram_tag - The ID of the HTML element where the histogram will be rendered.
+ * @param {string} histogram_label - The ID of the HTML element where the descriptive label will be displayed.
+
+ * @returns {void}
+ */
+
 function hivtrace_histogram(graph, histogram_tag, histogram_label) {
   var defaultFloatFormat = d3.format(",.2f");
   var histogram_w = 300,
@@ -20,7 +30,6 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
     "</strong> model, with &rho; of " +
     defaultFloatFormat(graph["Degrees"]["rho"]);
 
-  console.log(graph["Degrees"]["rho CI"])
   if (graph["Degrees"]["rho CI"] !== undefined) {
     label +=
       " (95% CI " +
@@ -32,6 +41,16 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
 
   d3.select(histogram_label).html(label);
 }
+
+/**
+ * Renders a histogram for edge lengths (genetic distances) and displays a label.
+
+ * @param {Object} graph - An object containing graph data, including edges.
+ * @param {string} histogram_tag - The ID of the HTML element where the histogram will be rendered.
+ * @param {string} histogram_label - The ID of the HTML element where the descriptive label will be displayed.
+
+ * @returns {void}
+*/
 
 function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
   var histogram_w = 300,
@@ -50,13 +69,24 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
   d3.select(histogram_label).html(label);
 }
 
+/**
+ * Renders a histogram for continuous data using D3.js.
+
+ * @param {number[]} data - An array of numerical values.
+ * @param {number} w - The width of the plot area.
+ * @param {number} h - The height of the plot area.
+ * @param {string} id - The ID of the HTML element where the histogram will be rendered.
+
+ * @returns {void}
+ */
+
 function hivtrace_render_histogram_continuous(data, w, h, id) {
   var margin = {
-    top: 10,
-    right: 30,
-    bottom: 50,
-    left: 10,
-  },
+      top: 10,
+      right: 30,
+      bottom: 50,
+      left: 10,
+    },
     width = w - margin.right,
     height = h - margin.top - margin.bottom;
 
@@ -75,12 +105,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
 
     var y = d3.scale
       .linear()
-      .domain([
-        0,
-        d3.max(
-          _.map(histogram_data, (b) => b.y)
-        ),
-      ])
+      .domain([0, d3.max(_.map(histogram_data, (b) => b.y))])
       .range([height, 0]);
 
     margin.left +=
@@ -162,13 +187,25 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
   }
 }
 
+/**
+ * Renders a histogram for discrete data using D3.js.
+
+ * @param {number[]} counts - An array of counts for each category.
+ * @param {number[]} [fit] (optional) - An array of fitted values for each category.
+ * @param {number} w - The width of the plot area.
+ * @param {number} h - The height of the plot area.
+ * @param {string} id - The ID of the HTML element where the histogram will be rendered.
+
+ * @returns {void}
+ */
+
 function hivtrace_render_histogram(counts, fit, w, h, id) {
   var margin = {
-    top: 10,
-    right: 30,
-    bottom: 50,
-    left: 30,
-  },
+      top: 10,
+      right: 30,
+      bottom: 50,
+      left: 30,
+    },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 

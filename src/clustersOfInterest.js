@@ -3,7 +3,6 @@ import _ from "underscore";
 import { jsPanel } from "jspanel4";
 import autocomplete from "autocomplete.js";
 import * as timeDateUtil from "./timeDateUtil.js";
-import * as utils from "./utils.js";
 import * as tables from "./tables.js";
 import * as helpers from "./helpers.js";
 import * as misc from "./misc.js";
@@ -14,7 +13,7 @@ let priority_set_editor = null;
 
 function init(self) {
   if (self._is_CDC_ && self.isPrimaryGraph) {
-    let new_set = utils.get_ui_element_selector_by_role("new_priority_set");
+    let new_set = misc.get_ui_element_selector_by_role("new_priority_set");
     if (new_set) {
       window.addEventListener("beforeunload", (e) => {
         if (self.priority_groups_pending() > 0) {
@@ -30,13 +29,13 @@ function init(self) {
       });
     }
 
-    let merge_sets = utils.get_ui_element_selector_by_role(
+    let merge_sets = misc.get_ui_element_selector_by_role(
       "merge_priority_sets"
     );
 
     if (merge_sets) {
       d3.selectAll(merge_sets).on("click", (e) => {
-        $(utils.get_ui_element_selector_by_role("priority_set_merge")).modal();
+        $(misc.get_ui_element_selector_by_role("priority_set_merge")).modal();
       });
     }
   }
@@ -336,9 +335,7 @@ function open_editor(
               "priority-panel-tracking",
             ],
             (k) =>
-              $(
-                d3.select(utils.get_ui_element_selector_by_role(k)).node()
-              ).val()
+              $(d3.select(misc.get_ui_element_selector_by_role(k)).node()).val()
           );
 
           if (
@@ -413,7 +410,7 @@ function open_editor(
             panel_object.close();
             if (validation_mode === "validate") {
               if (self.priority_set_table_writeable) {
-                let tab_pill = utils.get_ui_element_selector_by_role(
+                let tab_pill = misc.get_ui_element_selector_by_role(
                     "priority_set_counts"
                   ),
                   tab_pill_select = d3.select(tab_pill),
@@ -426,7 +423,7 @@ function open_editor(
           panel_object.first_save = false;
         }
         let panel_to_focus = document.querySelector(
-          utils.get_ui_element_selector_by_role("priority-panel-name")
+          misc.get_ui_element_selector_by_role("priority-panel-name")
         );
         if (panel_to_focus) panel_to_focus.focus();
         return res;
@@ -505,7 +502,7 @@ function open_editor(
       }
 
       var auto_object = autocomplete(
-        utils.get_ui_element_selector_by_role("priority-panel-nodeids"),
+        misc.get_ui_element_selector_by_role("priority-panel-nodeids"),
         { hint: false },
         [
           {
@@ -957,10 +954,10 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
           "#" + clicked_object.attr("aria-describedby")
         );
         var textarea_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-form")
+          misc.get_ui_element_selector_by_role("priority-description-form")
         );
         var button_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-save")
+          misc.get_ui_element_selector_by_role("priority-description-save")
         );
         textarea_element.text(text);
         if (disabled) textarea_element.attr("disabled", true);
@@ -970,7 +967,7 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
           this_button.click();
         });
         button_element = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("priority-description-dismiss")
+          misc.get_ui_element_selector_by_role("priority-description-dismiss")
         );
         button_element.on("click", (d) => {
           d3.event.preventDefault();
@@ -1040,7 +1037,7 @@ function _action_drop_down(self, pg) {
       label: "View nodes in this cluster of interest",
       data: {
         toggle: "modal",
-        target: utils.get_ui_element_selector_by_role("cluster_list"),
+        target: misc.get_ui_element_selector_by_role("cluster_list"),
         priority_set: pg.name,
       },
     });
@@ -1355,7 +1352,7 @@ function draw_priority_set_table(self, container, priority_groups) {
                         data: {
                           toggle: "modal",
                           target:
-                            utils.get_ui_element_selector_by_role(
+                            misc.get_ui_element_selector_by_role(
                               "overlap_list"
                             ),
                           priority_set: pg.name,
@@ -1514,7 +1511,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     );
 
     d3.select(
-      utils.get_ui_element_selector_by_role("priority-subclusters-export")
+      misc.get_ui_element_selector_by_role("priority-subclusters-export")
     ).on("click", (d) => {
       helpers.export_json_button(
         self.priority_groups_export(),
@@ -1522,7 +1519,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       );
     });
     d3.select(
-      utils.get_ui_element_selector_by_role("priority-subclusters-export-csv")
+      misc.get_ui_element_selector_by_role("priority-subclusters-export-csv")
     ).on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_nodes(),

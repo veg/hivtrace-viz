@@ -1,5 +1,4 @@
-var utils = require("./utils.js"),
-  _ = require("underscore"),
+var _ = require("underscore"),
   timeDateUtil = require("./timeDateUtil.js"),
   kGlobals = require("./globals.js"),
   misc = require("./misc.js"),
@@ -224,7 +223,7 @@ class HIVTxNetwork {
     }
     return (
       (not_nested ? "" : "#" + this.button_bar_ui) +
-      utils.get_ui_element_selector_by_role(role)
+      misc.get_ui_element_selector_by_role(role)
     );
   }
 

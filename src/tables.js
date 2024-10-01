@@ -1,6 +1,6 @@
 const d3 = require("d3");
 const _ = require("underscore");
-const utils = require("./utils.js");
+const misc = require("./misc.js");
 const timeDateUtil = require("./timeDateUtil.js");
 const nodesTab = require("./nodesTab.js");
 
@@ -100,10 +100,10 @@ function add_a_sortable_table(
     table_caption.enter().insert("caption", ":first-child");
     table_caption.html((d) => d);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-total"))
+      .select(misc.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
   }
 }
@@ -266,18 +266,18 @@ function format_a_cell(data, index, item, priority_set_editor) {
         );
 
         var search_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-apply")
+          misc.get_ui_element_selector_by_role("table-filter-apply")
         );
         var reset_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-reset")
+          misc.get_ui_element_selector_by_role("table-filter-reset")
         );
         var search_box = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-term")
+          misc.get_ui_element_selector_by_role("table-filter-term")
         );
 
         search_box.property("value", data.filter_term);
 
-        $(utils.get_ui_element_selector_by_role("table-filter-term")).on(
+        $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
           "keydown",
           function (event) {
             if (event.key == "Enter") {
@@ -540,7 +540,7 @@ function filter_table(element) {
       });
     d3.select(table_element[0])
       .select("caption")
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
   }
 }

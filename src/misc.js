@@ -1141,6 +1141,17 @@ function hivtrace_plot_cluster_dynamics(
     .text(y_title); // beta - alpha
 }
 
+/** Retrieves a CSS selector for UI elements based on their `data-hivtrace-ui-role` attribute.
+
+ * @param {string} role - The value of the `data-hivtrace-ui-role` attribute.
+
+ * @returns {string} A CSS selector string targeting elements with the specified role.
+*/
+
+function get_ui_element_selector_by_role(role) {
+  return ` [data-hivtrace-ui-role='${role}']`;
+}
+
 module.exports = {
   edge_typer,
   coi_timeseries: hivtrace_coi_timeseries,
@@ -1150,4 +1161,5 @@ module.exports = {
   cluster_dynamics: hivtrace_plot_cluster_dynamics,
   hivtrace_cluster_depthwise_traversal,
   random_id,
+  get_ui_element_selector_by_role,
 };

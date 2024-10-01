@@ -5,7 +5,6 @@ import * as topojson from "topojson";
 import * as helpers from "./helpers.js";
 import * as colorPicker from "./colorPicker.js";
 import * as scatterPlot from "./scatterplot.js";
-import * as utils from "./utils.js";
 import * as tables from "./tables.js";
 import * as timeDateUtil from "./timeDateUtil.js";
 import * as nodesTab from "./nodesTab.js";
