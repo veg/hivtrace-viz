@@ -579,6 +579,7 @@ class HIVTxNetwork {
         autocreated: g.autocreated,
         autoexpanded: g.autoexpanded,
         pending: g.pending,
+        history: g.history,
       })
     );
   };
@@ -715,7 +716,7 @@ class HIVTxNetwork {
               cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
               national_priority: g.meets_priority_def,
               cluster_current_size: g.nodes.length,
-              cluster_dx_recent12_mo: g.last12,
+              cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
               cluster_overlap: g.overlap.sets,
             })
           );
@@ -746,7 +747,8 @@ class HIVTxNetwork {
           cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
           cluster_current_size: g.nodes.length,
           national_priority: g.meets_priority_def,
-          cluster_dx_recent12_mo: g.last12,
+          cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+          cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
           cluster_overlap: g.overlap.sets,
         })
       )
@@ -1092,19 +1094,68 @@ class HIVTxNetwork {
             (ps) =>
               _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
           );
-          const cutoff12 = timeDateUtil.n_months_ago(
-            this.get_reference_date(),
-            12
-          );
-          pg.last12 = _.filter(pg.node_objects, (n) =>
-            this.filter_by_date(
-              cutoff12,
-              timeDateUtil._networkCDCDateField,
+
+          const recent_dx_cutoffs = [
+            {
+              field_name: "cluster_dx_recent12_mo",
+              months: 12,
+            },
+            {
+              field_name: "cluster_dx_recent36_mo",
+              months: 36,
+            },
+          ];
+
+          const ref_date = this.get_reference_date();
+
+          for (let dx of recent_dx_cutoffs) {
+            const cutoff = timeDateUtil.n_months_ago(
               this.get_reference_date(),
-              n,
-              false
-            )
-          ).length;
+              dx.months
+            );
+
+            pg[dx.field_name] = _.filter(pg.node_objects, (n) =>
+              this.filter_by_date(
+                cutoff,
+                timeDateUtil._networkCDCDateField,
+                ref_date,
+                n,
+                false
+              )
+            ).length;
+          }
+
+          // create / update history field of priority group
+          pg.history = pg.history || [];
+
+          const currDate = new Date();
+
+          const history_entry = {
+            date: currDate,
+            size: pg.nodes.length,
+            // TODO determine new nodes
+            new_nodes: 0,
+            national_priority: pg.meets_priority_def,
+            cluster_dx_recent12_mo: pg.cluster_dx_recent12_mo,
+            cluster_dx_recent36_mo: pg.cluster_dx_recent36_mo,
+          };
+
+          // remove any duplicate history entries from last 24 hours
+          // (retain entries within 24 hours only if they differ from the current entry)
+          pg.history = _.filter(
+            pg.history,
+            (h) =>
+              currDate - h.date > 24 * 60 * 60 * 1000 ||
+              h.size !== history_entry.size ||
+              h.national_priority !== history_entry.national_priority ||
+              h.cluster_dx_recent12_mo !==
+                history_entry.cluster_dx_recent12_mo ||
+              h.cluster_dx_recent36_mo !==
+                history_entry.cluster_dx_recent36_mo ||
+              h.new_nodes !== history_entry.new_nodes
+          );
+
+          pg.history.push(history_entry);
         }
       });
     }
