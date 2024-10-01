@@ -855,15 +855,15 @@
                 d3.select(d3.select(this).attr("href")).style("display", null);
               });
 
-            hivtrace.helpers.render_button_export_table_to_text(
+            hivtrace.misc.export_table_to_text(
               "#cluster-table-export",
               cluster_table
             );
-            hivtrace.helpers.render_button_export_table_to_text(
+            hivtrace.misc.export_table_to_text(
               "#subcluster-table-export",
               subcluster_table
             );
-            hivtrace.helpers.render_button_export_table_to_text(
+            hivtrace.misc.export_table_to_text(
               "#node-table-export",
               node_table
             );
@@ -927,7 +927,8 @@
 
       var initialize_cluster_network_graphs = function () {
         //Initialize clusternetworkgraph with json url
-        url = "/sample_data/workshop/SocialDemoFiles/SocialNetwork.trace.json";
+        url =
+          "../sample_data/workshop/SocialDemoFiles/SocialNetwork.trace.json";
         //url = "sample_data/LA.json"
 
         d3.json(url, function (error, results) {
@@ -1098,10 +1099,10 @@
         });
 
         d3.csv(
-          "sample_data/workshop/SocialDemoFiles/SocialAttributes.csv",
+          "../sample_data/workshop/SocialDemoFiles/SocialAttributes.csv",
           function (error, nodes) {
             d3.csv(
-              "sample_data/workshop/SocialDemoFiles/SocialEdges.csv",
+              "../sample_data/workshop/SocialDemoFiles/SocialEdges.csv",
               function (error, edges) {
                 _loaded_network_data["nodes"] = nodes;
                 _loaded_network_data["edges"] = edges;
