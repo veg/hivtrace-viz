@@ -38,7 +38,7 @@ function hivtrace_generate_svg_symbol(type) {
   }
 }
 
-var hivtrace_generate_svg_ellipse = function () {
+function hivtrace_generate_svg_ellipse() {
   var self = this;
 
   self.ellipse = function () {
@@ -72,9 +72,9 @@ var hivtrace_generate_svg_ellipse = function () {
   self.ellipse.size(64);
 
   return self.ellipse;
-};
+}
 
-var hivtrace_generate_svg_polygon = function () {
+function hivtrace_generate_svg_polygon() {
   var self = this;
 
   self.polygon = function () {
@@ -131,7 +131,7 @@ var hivtrace_generate_svg_polygon = function () {
   self.sides = 6;
 
   return self.polygon;
-};
+}
 
 function hivtrace_compute_node_degrees(obj) {
   var nodes = obj.Nodes,
@@ -696,7 +696,7 @@ function hivtrace_plot_cluster_dynamics(
 }
 
 // TODO: convert and save this data rather than do it each time.
-var hivtrace_cluster_depthwise_traversal = function (
+function hivtrace_cluster_depthwise_traversal(
   nodes,
   edges,
   edge_filter,
@@ -769,7 +769,7 @@ var hivtrace_cluster_depthwise_traversal = function (
   });
 
   return clusters;
-};
+}
 
 function hivtrace_coi_timeseries(cluster, element, plot_width) {
   const margin = { top: 30, right: 60, bottom: 10, left: 120 };
@@ -993,7 +993,6 @@ function random_id(alphabet, length) {
   for (var i = 0; i < length; i++) {
     s += _.sample(alphabet);
   }
-  console.log(s);
   return s;
 }
 
