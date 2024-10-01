@@ -595,14 +595,14 @@ function edge_typer(e, edge_types, T) {
 }
 
 /**
-    function random_id generates a random string of a given length
-    from a specific alphabet
-    
-    @param alphabet (array) : the character alphabet to use, or "a-g" by default
-    @param length (int) : the length of the string (32 by default)
-    
-    @return the random strong
-*/
+ * Generates a random ID string using a specified alphabet and length.
+
+ * @param {string[]} [alphabet] - An optional array of characters to use in the ID. If not provided, a default alphabet of letters "a" to "g" is used.
+ * @param {number} [length] - An optional length for the ID. If not provided, a default length of 32 is used.
+
+ * @returns {string} A randomly generated ID string.
+ */
+
 function random_id(alphabet, length) {
   alphabet = alphabet || ["a", "b", "c", "d", "e", "f", "g"];
   length = length || 32;
