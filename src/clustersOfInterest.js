@@ -911,8 +911,11 @@ function open_editor(
     },
     onbeforeclose: function () {
       if (!this.saved) {
-        if (confirm("Close cluster of interest editor?")) {
-          //console.log ("Closing...");
+        if (
+          confirm(
+            "Close cluster of interest editor? Unsaved changes will be lost."
+          )
+        ) {
           if (existing_set) {
             const existing_nodes = new Set(
               _.map(existing_set.nodes, (n) => n.name)

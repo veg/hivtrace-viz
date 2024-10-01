@@ -160,12 +160,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
       .style("margin-left", "0.2em");
 
     var search_form_generator = function () {
-      return `<form class="form-inline"> 
+      return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
                         <div class="form-group"> 
                             <div class="input-group">
                             <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
+                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
                             <div class="input-group-addon">
                                 <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
         index +
@@ -217,6 +217,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
         var popover_div = d3.select(
           "#" + d3.select(this).attr("aria-describedby")
         );
+
         var search_click = popover_div.selectAll(
           utils.get_ui_element_selector_by_role("table-filter-apply")
         );
@@ -229,7 +230,29 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         search_box.property("value", data.filter_term);
 
-        search_click.on("click", (d) => {
+        var search_form = popover_div.selectAll(
+          utils.get_ui_element_selector_by_role("table-filter-form")
+        );
+
+        $(utils.get_ui_element_selector_by_role("table-filter-term")).on(
+          "keydown",
+          function (event) {
+            if (event.key == "Enter") {
+              update_term(search_box.property("value"));
+              filter_table(clicker.node());
+              event.preventDefault();
+            }
+          }
+        );
+
+        /*
+        search_box.on ("keydown", (d,e)=> {
+            console.log (d3);
+            console.log (d,e);
+        });
+        */
+
+        search_click.on("click", (e) => {
           update_term(search_box.property("value"));
           filter_table(clicker.node());
         });
