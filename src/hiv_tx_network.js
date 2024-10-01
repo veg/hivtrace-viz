@@ -827,23 +827,22 @@ class HIVTxNetwork {
   
       validate the list of CoI
   
-      @param groups [array] is a list of CoI
+      @param groups {array} is a list of CoI
+              name: unique string
+              description: string,
+              nodes: {
+                  {
+                      'id' : node id,
+                      'added' : date,
+                      'kind' :  _cdcPrioritySetNodeKind
+                  }
+              },
+              created: date,
+              kind:  kGlobals.CDCCOIKind,
+              tracking: kGlobals.CDCCOITrackingOptions
+              createdBy : kGlobals.CDCCOICreatedBySystem,kGlobals.CDCCOICreatedManually
 
-      name: unique string
-      description: string,
-      nodes: {
-          {
-              'id' : node id,
-              'added' : date,
-              'kind' : enum (one of _cdcPrioritySetNodeKind)
-          }
-      },
-      created: date,
-      kind: enum (one of kGlobals.CDCCOIKind),
-      tracking: enum (one of kGlobals.CDCCOITrackingOptions)
-      createdBy : enum (on of [kGlobals.CDCCOICreatedBySystem,kGlobals.CDCCOICreatedManually])
-
-      @param auto_extend [bool] : if true, automatically expand existing CoI
+      @param auto_extend {bool} : if true, automatically expand existing CoI
 
     */
   priority_groups_validate(groups, auto_extend) {
