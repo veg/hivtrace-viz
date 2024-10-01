@@ -24,6 +24,7 @@
     "i18next": "^22.0.6",
     "jquery": "^3.6.1",
     "js-convert-case": "^4.2.0",
+    "jslint": "^0.12.1",
     "jspanel4": "4.16.1",
     "latest": "^0.2.0",
     "topojson": "3.x",
