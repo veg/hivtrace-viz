@@ -3,6 +3,14 @@ var download = require("downloadjs");
 const _OTHER = __("general")["other"];
 const CATEGORY_UNIQUE_VALUE_LIMIT = 12;
 
+/**
+ * Converts a base64-encoded string to a Blob object.
+
+ * @param {string} b64 - The base64-encoded string.
+ * @param {Function} onsuccess - A callback function to be called when the conversion is successful.
+ * @param {Function} [onerror] - An optional callback function to be called if an error occurs.
+ */
+
 function b64toBlob(b64, onsuccess, onerror) {
   var img = new Image();
 
@@ -30,7 +38,16 @@ function b64toBlob(b64, onsuccess, onerror) {
   img.src = b64;
 }
 
-var datamonkey_export_csv_button = function (data, name) {
+/**
+ * Creates a downloadable CSV file for the provided data and adds a button to trigger the download.
+
+ * @param {Array<Object>} data - An array of objects representing the data to be exported.
+ * @param {string} [name] - An optional name for the exported CSV file. If not provided, defaults to "export.csv".
+
+ * @returns {void}
+ */
+
+function datamonkey_export_csv_button(data, name) {
   data = d3.csv.format(data);
   if (data !== null) {
     name = name ? name + ".csv" : "export.csv";
@@ -47,9 +64,18 @@ var datamonkey_export_csv_button = function (data, name) {
     pom.click();
     pom.remove();
   }
-};
+}
 
-var datamonkey_export_json_button = function (data, title) {
+/**
+ * Creates a downloadable JSON file for the provided data and adds a button to trigger the download.
+
+ * @param {Object|Array<Object>} data - The data to be exported, either a single object or an array of objects.
+ * @param {string} [title] - An optional title for the exported JSON file. If not provided, defaults to "export".
+
+ * @returns {void}
+ */
+
+function datamonkey_export_json_button(data, title) {
   if (data !== null) {
     title = title || "export";
     var pom = document.createElement("a");
@@ -65,9 +91,18 @@ var datamonkey_export_json_button = function (data, title) {
     pom.click();
     pom.remove();
   }
-};
+}
 
-var datamonkey_save_image = function (type, container) {
+/**
+ * Saves the contents of an SVG element as an image file.
+
+ * @param {string} type - The desired image format (either "svg" or "png").
+ * @param {jQuery|HTMLElement} container - A jQuery selector or element reference containing the SVG element.
+
+ * @returns {void}
+ */
+
+function datamonkey_save_image(type, container) {
   var prefix = {
     xmlns: "http://www.w3.org/2000/xmlns/",
     xlink: "http://www.w3.org/1999/xlink",
@@ -92,7 +127,7 @@ var datamonkey_save_image = function (type, container) {
             }
           }
         }
-      } catch (e) {
+      } catch {
         console.log("Could not process stylesheet : " + ss); // eslint-disable-line
       }
     }
@@ -174,7 +209,24 @@ var datamonkey_save_image = function (type, container) {
     pom.click();
     pom.remove();
   }
-};
+}
+
+/**
+ * Calculates descriptive statistics for a numerical vector.
+
+ * @param {number[]} vector - An array of numbers representing the data.
+ * @param {boolean} [as_list] - An optional flag indicating whether to return the statistics as a formatted string.
+
+ * @returns {Object|string}
+ *   - If `as_list` is false, returns an object with the following properties:
+ *     - `min`: The minimum value.
+ *     - `max`: The maximum value.
+ *     - `median`: The median value.
+ *     - `Q1`: The first quartile.
+ *     - `Q3`: The third quartile.
+ *     - `mean`: The mean value.
+ *   - If `as_list` is true, returns a formatted string representing the statistics.
+ */
 
 function datamonkey_describe_vector(vector, as_list) {
   let d;
@@ -231,6 +283,16 @@ function datamonkey_describe_vector(vector, as_list) {
 
   return d;
 }
+
+/**
+ * Handles exporting data to a file based on browser capabilities.
+
+ * @param {string} data - The data to be exported.
+ * @param {string} [filename] - The desired filename for the downloaded file. Defaults to "download.tsv".
+ * @param {string} [mimeType] - The MIME type of the data. Defaults to "text/plain" if not provided.
+
+ * @returns {void}
+ */
 
 function datamonkey_export_handler(data, filename, mimeType) {
   function msieversion() {
@@ -325,6 +387,15 @@ function datamonkey_table_to_text(table_id, sep) {
   );
 }
 
+/**
+ * Retrieves unique values for each attribute in a given dataset.
+
+ * @param {Object[]} nodes - An array of node objects, each containing patient attributes.
+ * @param {Object} schema - An object defining the schema for the patient attributes.
+
+ * @returns {Object} An object where each key represents an attribute name and the corresponding value is an array of unique values for that attribute.
+*/
+
 function getUniqueValues(nodes, schema) {
   let schema_keys = _.keys(schema);
 
@@ -344,6 +415,15 @@ function getUniqueValues(nodes, schema) {
   return _.mapObject(new_obj, (val) => [...val]);
 }
 
+/**
+ * Exports a color scheme based on unique values and a colorizer function.
+
+ * @param {Object} uniqValues - An object containing unique values for each attribute, as returned by `getUniqueValues`.
+ * @param {Function} colorizer - A colorizer function that maps values to colors.
+
+ * @returns {Object} An object where the keys are unique values and the values are the corresponding colors.
+*/
+
 function exportColorScheme(uniqValues, colorizer) {
   let colors = _.map(uniqValues[colorizer.category_id], (d) =>
     colorizer.category(d)
@@ -351,16 +431,33 @@ function exportColorScheme(uniqValues, colorizer) {
   return _.object(uniqValues[colorizer.category_id], colors);
 }
 
+/**
+ * Copies the given text to the clipboard.
+
+ * @param {string} text - The text to be copied.
+
+ * @returns {void}
+ */
+
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(
     () => {
       console.log("Copying to clipboard was successful!");
     },
-    () => {
+    (err) => {
       console.error("Could not copy text: ", err);
     }
   );
 }
+
+/**
+ * Collapses rare categories to "Other" category if there are >CATEGORY_UNIQUE_VALUE_LIMIT categories
+
+ * @param {Object[]} nodes - An array of node objects, each containing patient attributes.
+ * @param {Object} schema - An object defining the schema for the patient attributes.
+
+ * @returns {boolean} True if any categories were collapsed, false otherwise.
+ */
 
 function collapseLargeCategories(nodes, schema) {
   let schema_keys = _.keys(schema);
