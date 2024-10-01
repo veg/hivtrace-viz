@@ -7,6 +7,24 @@ const nodesTab = require("./nodesTab.js");
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
 
+/**
+ * Adds a sortable table to a D3 selection container.
+
+ * @param {d3.selection} container - The D3 selection representing the container element for the table.
+ * @param {string[]} headers - An array of strings representing the table headers.
+ * @param {Object[]} content - An array of objects representing the table content. Each object should have properties that map to table cells.
+ * @param {boolean} [overwrite] - An optional flag indicating whether to overwrite any existing table content (default: false).
+ * @param {string} [caption] - An optional caption for the table.
+ * @param {Function} [priority_set_editor] - An optional function used to customize cell formatting based on priority sets.
+ *   The function should accept four arguments:
+ *   - `d`: The data object for the current cell.
+ *   - `i`: The index of the current cell within its row.
+ *   - `cell`: The D3 selection of the current cell element (a `<td>` element).
+ *   - `priority_set_editor`: The `priority_set_editor` function passed to `add_a_sortable_table`.
+ *
+ * @returns {void}
+ */
+
 function add_a_sortable_table(
   container,
   headers,
@@ -76,7 +94,6 @@ function add_a_sortable_table(
         })
       );
   }
-  //'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes');
 
   if (caption) {
     var table_caption = container.selectAll("caption").data([caption]);
@@ -91,9 +108,39 @@ function add_a_sortable_table(
   }
 }
 
+/**
+ * Retrieves the value of a cell in a table data object.
+
+ * @param {Object} data - The data object representing the table cell. It should have a `value` property.
+
+ * @returns {*} The value of the cell, or the result of calling `data.value()` if it's a function.
+ */
+
 function table_get_cell_value(data) {
   return _.isFunction(data.value) ? data.value() : data.value;
 }
+
+/**
+ * Formats a cell in a table based on provided data.
+
+ * @param {Object} data - The data object representing the table cell. 
+ *   It should have properties like:
+ *     - `value`: The cell value.
+ *     - `format` (optional): A function used to format the value.
+ *     - `html` (optional): A flag indicating whether the value should be set as HTML.
+ *     - `callback` (optional): A function used to customize cell content and behavior.
+ *     - `filter` (optional): A flag indicating whether to enable filtering for the column.
+ *     - `column_id` (optional): The index of the column (used for filtering).
+ *     - `sort` (optional): A flag indicating whether to enable sorting for the column.
+ *     - `presort` (optional): A string ("asc" or "desc") for initial sort direction.
+ *     - `actions` (optional): An array of button configurations for cell actions.
+ *     - `help` (optional): A string describing the cell content (used as a tooltip).
+ * @param {number} index - The index of the cell within its row.
+ * @param {d3.selection} item - The D3 selection of the table cell element (a `<td>` element).
+ * @param {Function} [priority_set_editor] - An optional function used for priority set functionality (internal).
+
+ * @returns {void}
+*/
 
 function format_a_cell(data, index, item, priority_set_editor) {
   var this_sel = d3.select(item);
@@ -196,7 +243,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                     `;
     };
 
-    var search_popover = $(clicker.node())
+    $(clicker.node())
       .popover({
         html: true,
         sanitize: false,
@@ -230,10 +277,6 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         search_box.property("value", data.filter_term);
 
-        var search_form = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-form")
-        );
-
         $(utils.get_ui_element_selector_by_role("table-filter-term")).on(
           "keydown",
           function (event) {
@@ -266,7 +309,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
   }
 
   if (handle_sort && "sort" in data) {
-    var clicker = handle_sort
+    clicker = handle_sort
       .append("a")
       .property("href", "#")
       .on("click", function (d) {
@@ -322,7 +365,6 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .classed("dropdown-menu", true);
               //.attr("aria-labelledby", menu_id);
 
-              let is_option_array = _.isObject(b.dropdown[0]);
               let items = b.dropdown;
 
               function get_item_text(item) {
@@ -397,7 +439,20 @@ function format_a_cell(data, index, item, priority_set_editor) {
   }
 }
 
-/** element is the sortable clicker **/
+/**
+ * Filters a table based on specified conditions applied to a column.
+
+ * @param {*} datum - The data object representing a row in the table.
+ * @param {Object[]} conditions - An array of condition objects, each with the following properties:
+ *   - `type`: The type of condition ("re" for regular expression, "date" for date range, "distance" for numerical comparison).
+ *   - `value`: The value or range for the condition:
+ *     - For "re": A regular expression object.
+ *     - For "date": An array of two Date objects representing the start and end dates.
+ *     - For "distance": A number representing the threshold value.
+ *   - `greater_than` (optional): A boolean indicating whether to use greater-than comparison for "distance" conditions.
+
+ * @returns {boolean} True if the row matches at least one condition, false otherwise.
+*/
 
 function filter_table_by_column_handler(datum, conditions) {
   if (conditions.length) {
@@ -417,6 +472,14 @@ function filter_table_by_column_handler(datum, conditions) {
 
   return true;
 }
+
+/**
+ * Filters a D3 table based on user-defined filters in column headers.
+
+ * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing a table header cell that triggered the filter 
+
+ * @returns {void}
+*/
 
 function filter_table(element) {
   if (d3.event) {
@@ -479,26 +542,17 @@ function filter_table(element) {
       .select("caption")
       .select(utils.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
-
-    /*.selectAll("td").each (function (d, i) {
-          if (i === filter_on) {
-              var this_cell = d3.select (this);
-              d3.select (this).style ("display", filter_handler ())
-          }
-      });*/
-
-    // select all other elements from thead and toggle their icons
-
-    /*$(table_element)
-      .find("thead [data-column-id]")
-      .filter(function() {
-        return parseInt($(this).data("column-id")) !== sort_on;
-      })
-      .each(function() {
-        sort_table_toggle_icon(this, "unsorted");
-      });*/
   }
 }
+
+/**
+ * Parses a filter string into an array of filter objects.
+
+ * @param {string} filter_value - The filter string to be parsed.
+
+ * @returns {Object[]} An array of filter objects, each with a `type` property and a corresponding `value` property.
+ *   The `type` can be "re" for regular expression, "date" for date range, or "distance" for numerical comparison.
+ */
 
 function filter_parse(filter_value) {
   let search_terms = [];
@@ -573,7 +627,15 @@ function filter_parse(filter_value) {
     });
 }
 
-/** element is the sortable clicker **/
+/**
+ * Sorts a D3 table based on the clicked column header.
+
+ * @param {d3.selection|HTMLElement} element - HTML element representing the clicked column header.
+ * @param {*} datum (optional) - The data object associated with the table (used internally).
+
+ * @returns {void}
+ */
+
 function sort_table_by_column(element, datum) {
   if (d3.event) {
     d3.event.preventDefault();
@@ -583,7 +645,6 @@ function sort_table_by_column(element, datum) {
     var sort_on = parseInt($(element).data("column-id"));
     var sort_key = datum.sort;
 
-    var sorted_state = $(element).data("sorted");
     var sorted_function = sort_table_toggle_icon(element);
 
     var sort_accessor;
@@ -625,6 +686,17 @@ function sort_table_by_column(element, datum) {
       });
   }
 }
+
+/**
+ * Toggles the sort icon on a column header and returns a sorting function.
+
+ * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing the column header.
+ * @param {string} [value] (optional) - The desired sort direction ("asc", "desc", or "unsorted").
+
+ * @returns {Function|void}
+ *   - If `value` is provided, returns nothing.
+ *   - If `value` is not provided, returns a sorting function (`d3.ascending` or `d3.descending`) based on the current sort state.
+*/
 
 function sort_table_toggle_icon(element, value) {
   //console.log (value);
