@@ -8,8 +8,7 @@ var d3 = require("d3"),
   clustersOfInterest = require("./clustersOfInterest.js"),
   kGlobals = require("./globals.js");
 
-function unpack_compact_json(json) {
-  /**
+/**
     unpack_compact_json:
     If the input network JSON is in compact form, i.e. instead of storing 
         key : value
@@ -21,6 +20,8 @@ function unpack_compact_json(json) {
         
     The operation is performed in place on the `json` argument
 */
+
+function unpack_compact_json(json) {
   _.each(["Nodes", "Edges"], (key) => {
     var fields = _.keys(json[key]);
     var expanded = [];
@@ -44,14 +45,14 @@ function unpack_compact_json(json) {
   });
 }
 
-function normalize_node_attributes(json) {
-  /**
+/**
     normalize_node_attributes
     
     Iterate over node attributes, lower case all the keys for mapping.
     If attributes are found that are not in the data dictionary, attempt to map them using 
     "labels". 
 */
+function normalize_node_attributes(json) {
   const label_key_map = _.object(
     _.map(json[kGlobals.network.GraphAttrbuteID], (d, k) => [d.label, k])
   );
@@ -87,15 +88,14 @@ function normalize_node_attributes(json) {
     }
   });
 }
-
-function ensure_node_attributes_exist(json) {
-  /**
+/**
     ensure_node_attributes_exist
     
     Iterate over nodes in the network. If a node does not have an array of attributes or 
     data dictionary records, create an empty one. This makes error checking less complex downstream.
 */
 
+function ensure_node_attributes_exist(json) {
   const validate_these_keys = new Set([
     "attributes",
     kGlobals.network.NodeAttributeID,
@@ -107,39 +107,6 @@ function ensure_node_attributes_exist(json) {
       }
     }
   });
-}
-
-function annotate_cluster_changes(self) {
-  /**
-    annotate_cluster_changes
-    
-    If the network contains information about cluster changes (new/moved/deleted nodes, etc),
-    this function will annotate cluster objects (in place) with various attributes
-        "delta" : change in the size of the cluster
-        "flag"  : a status flag to be used in the cluster display table
-            if set to 2 then TBD
-            if set to 3 then TBD
-        
-*/
-  if (self.cluster_attributes) {
-    _.each(self.cluster_attributes, (cluster) => {
-      if ("old_size" in cluster && "size" in cluster) {
-        cluster["delta"] = cluster["size"] - cluster["old_size"];
-        cluster["deleted"] =
-          cluster["old_size"] +
-          (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
-          cluster["size"];
-      } else if (cluster["type"] === "new") {
-        cluster["delta"] = cluster["size"];
-        if ("moved" in cluster) {
-          cluster["delta"] -= cluster["moved"];
-        }
-      } else {
-        cluster["delta"] = 0;
-      }
-      cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
-    });
-  }
 }
 
 function check_network_option(options, key, if_absent, if_present) {
@@ -161,8 +128,13 @@ function check_network_option(options, key, if_absent, if_present) {
   return if_absent;
 }
 
-function handle_cluster_click(self, cluster, release) {
-  /**
+function center_cluster_handler(self, d) {
+  d.x = self.width / 2;
+  d.y = self.height / 2;
+  self.update(false, 0.4);
+}
+
+/**
     handle_cluster_click
     
     Handle contextual menus for clusters and cluster drag 
@@ -172,6 +144,7 @@ function handle_cluster_click(self, cluster, release) {
     @param release [optional]: the cluster object to release the "fixed" flag from
 */
 
+function handle_cluster_click(self, cluster, release) {
   var container = d3.select(self.container);
   var id = "d3_context_menu_id";
   var menu_object = container.select("#" + id);
@@ -207,7 +180,7 @@ function handle_cluster_click(self, cluster, release) {
       .text("Center on screen")
       .on("click", (d) => {
         cluster.fixed = 0;
-        center_cluster_handler(cluster);
+        center_cluster_handler(self, cluster);
         menu_object.style("display", "none");
       });
 
@@ -301,7 +274,6 @@ function handle_cluster_click(self, cluster, release) {
 }
 
 module.exports = {
-  annotate_cluster_changes,
   check_network_option,
   ensure_node_attributes_exist,
   normalize_node_attributes,
