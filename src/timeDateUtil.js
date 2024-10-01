@@ -1,5 +1,4 @@
-var d3 = require("d3"),
-  _ = require("underscore");
+var d3 = require("d3");
 
 const _networkCDCDateField = "hiv_aids_dx_dt";
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
@@ -49,6 +48,15 @@ function getAncientDate() {
   return new Date(1900, 0, 1);
 }
 
+/**
+ * Formats a date using a specified formatter, or returns "N/A" if the date is missing.
+
+ * @param {Date} date - The date object to be formatted.
+ * @param {Function} [formatter] - An optional formatter function used to format the date. If not provided, `DateViewFormatExport` is used.
+
+ * @returns {string} The formatted date string, or "N/A" if the date is missing.
+ */
+
 function hivtrace_date_or_na_if_missing(date, formatter) {
   if (date) {
     formatter = formatter || DateViewFormatExport;
@@ -56,6 +64,15 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
   }
   return "N/A";
 }
+
+/**
+ * Calculates a date that is `months` months ago from a given reference date.
+
+ * @param {Date} reference_date - The reference date from which to calculate the past date.
+ * @param {number} months - The number of months to go back.
+
+ * @returns {Date} A new Date object representing the date `months` months ago from the reference date.
+*/
 
 function n_months_ago(reference_date, months) {
   var past_date = new Date(reference_date);
