@@ -126,7 +126,7 @@ var hivtrace_cluster_network_graph = function (
   self.precomputed_subclusters = json["Subclusters"] || null;
   self.network_warning_tag = network_warning_tag;
 
-  network.annotate_cluster_changes(self);
+  self.annotate_cluster_changes();
 
   self.filter_edges = true;
   self.hide_hxb2 = false;
@@ -6620,12 +6620,6 @@ var hivtrace_cluster_network_graph = function (
     if (do_update) {
       self.update(false, 0.4);
     }
-  }
-
-  function center_cluster_handler(d) {
-    d.x = self.width / 2;
-    d.y = self.height / 2;
-    self.update(false, 0.4);
   }
 
   function cluster_box_size(c) {

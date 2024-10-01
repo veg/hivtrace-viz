@@ -2021,6 +2021,40 @@ class HIVTxNetwork {
       }
     }
   };
+
+  /**
+    annotate_cluster_changes
+    
+    If the network contains information about cluster changes (new/moved/deleted nodes, etc),
+    this function will annotate cluster objects (in place) with various attributes
+        "delta" : change in the size of the cluster
+        "flag"  : a status flag to be used in the cluster display table
+            if set to 2 then TBD
+            if set to 3 then TBD
+    
+  */
+
+  annotate_cluster_changes() {
+    if (this.cluster_attributes) {
+      _.each(this.cluster_attributes, (cluster) => {
+        if ("old_size" in cluster && "size" in cluster) {
+          cluster["delta"] = cluster["size"] - cluster["old_size"];
+          cluster["deleted"] =
+            cluster["old_size"] +
+            (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
+            cluster["size"];
+        } else if (cluster["type"] === "new") {
+          cluster["delta"] = cluster["size"];
+          if ("moved" in cluster) {
+            cluster["delta"] -= cluster["moved"];
+          }
+        } else {
+          cluster["delta"] = 0;
+        }
+        cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
+      });
+    }
+  }
 }
 
 module.exports = {
