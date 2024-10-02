@@ -11,6 +11,15 @@ var _ = require("underscore"),
      
 ------------------------------------------------------------*/
 
+/**
+ * Represents an HIV transmission network with annotations
+ *
+ * @class HIVTxNetwork
+ * @param {Object} json - A JSON object containing the network data.
+ * @param {HTMLElement} button_bar_ui - A UI element for interacting with the network.
+ * @param {Object} cluster_attributes - Attributes related to clusters within the network.
+ */
+
 class HIVTxNetwork {
   constructor(json, button_bar_ui) {
     this.json = json;
@@ -816,7 +825,7 @@ class HIVTxNetwork {
       if (node_dx instanceof Date) {
         return node_dx >= cutoff && node_dx <= start_date;
       }
-    } catch (err) {
+    } catch {
       return undefined;
     }
     return false;
@@ -1346,7 +1355,7 @@ class HIVTxNetwork {
               if (n.added > latest_date) {
                 latest_date = n.added;
               }
-            } catch (e) {
+            } catch {
               // do nothing
             }
           });
@@ -1852,7 +1861,7 @@ class HIVTxNetwork {
           }
 
           return value;
-        } catch (err) {
+        } catch {
           return kGlobals.missing.label;
         }
       },

@@ -6334,22 +6334,34 @@ var hivtrace_cluster_network_graph = function (
 
     if ("enum" in d) {
       d.discrete = true;
-      d["value_range"] = _.clone(d["enum"]);
-      if (!(kGlobals.missing.label in d["value_range"])) {
-        d["value_range"].push(kGlobals.missing.label);
-      }
-      d["dimension"] = d["value_range"].length;
-      d["no-sort"] = true;
-    } else {
-      if (d["type"] === "String") {
-        d.discrete = true;
-        d["value_range"] = _.keys(
-          _.countBy(graph_data.Nodes, (nd) =>
-            self.attribute_node_value_by_id(nd, k)
-          )
-        );
+      d["value_range"] = new Set(d["enum"]);
+      d["value_range"].add(kGlobals.missing.label);
+
+      if (
+        _.every(graph_data.Nodes, (nd) =>
+          d["value_range"].has(self.attribute_node_value_by_id(nd, k))
+        )
+      ) {
+        d["value_range"] = _.clone(d["enum"]);
+        if (!(kGlobals.missing.label in d["value_range"])) {
+          d["value_range"].push(kGlobals.missing.label);
+        }
         d["dimension"] = d["value_range"].length;
+        d["no-sort"] = true;
+        return d;
       }
+
+      // confirm that the values in the range are actually in the enum
+    }
+
+    if (d["type"] === "String") {
+      d.discrete = true;
+      d["value_range"] = _.keys(
+        _.countBy(graph_data.Nodes, (nd) =>
+          self.attribute_node_value_by_id(nd, k)
+        )
+      );
+      d["dimension"] = d["value_range"].length;
     }
     return d;
   };
@@ -6473,6 +6485,7 @@ var hivtrace_cluster_network_graph = function (
       _.each(values, (d2, i) => {
         map[d2] = i;
       });
+
       d["value_map"] = function (v, key) {
         if (key) {
           //console.log (key, map);
