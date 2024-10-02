@@ -1,11 +1,29 @@
 const d3 = require("d3");
 const _ = require("underscore");
-const utils = require("./utils.js");
-const timeDateUtil = require('./timeDateUtil.js');
-const nodesTab = require('./nodesTab.js');
+const misc = require("./misc.js");
+const timeDateUtil = require("./timeDateUtil.js");
+const nodesTab = require("./nodesTab.js");
 
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
+
+/**
+ * Adds a sortable table to a D3 selection container.
+
+ * @param {d3.selection} container - The D3 selection representing the container element for the table.
+ * @param {string[]} headers - An array of strings representing the table headers.
+ * @param {Object[]} content - An array of objects representing the table content. Each object should have properties that map to table cells.
+ * @param {boolean} [overwrite] - An optional flag indicating whether to overwrite any existing table content (default: false).
+ * @param {string} [caption] - An optional caption for the table.
+ * @param {Function} [priority_set_editor] - An optional function used to customize cell formatting based on priority sets.
+ *   The function should accept four arguments:
+ *   - `d`: The data object for the current cell.
+ *   - `i`: The index of the current cell within its row.
+ *   - `cell`: The D3 selection of the current cell element (a `<td>` element).
+ *   - `priority_set_editor`: The `priority_set_editor` function passed to `add_a_sortable_table`.
+ *
+ * @returns {void}
+ */
 
 function add_a_sortable_table(
   container,
@@ -47,10 +65,12 @@ function add_a_sortable_table(
       .data((d) => d)
       .enter()
       .append("td")
-      .call((selection) => selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, priority_set_editor);
-      }));
+      .call((selection) =>
+        selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, priority_set_editor);
+        })
+      );
     container.node().appendChild(tbody.node());
   }
 
@@ -67,29 +87,60 @@ function add_a_sortable_table(
       .data((d) => d)
       .enter()
       .append("th")
-      .call((selection) => selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, priority_set_editor);
-      }));
+      .call((selection) =>
+        selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, priority_set_editor);
+        })
+      );
   }
-  //'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes');
 
   if (caption) {
     var table_caption = container.selectAll("caption").data([caption]);
     table_caption.enter().insert("caption", ":first-child");
     table_caption.html((d) => d);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-total"))
+      .select(misc.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
     table_caption
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
   }
 }
 
+/**
+ * Retrieves the value of a cell in a table data object.
+
+ * @param {Object} data - The data object representing the table cell. It should have a `value` property.
+
+ * @returns {*} The value of the cell, or the result of calling `data.value()` if it's a function.
+ */
+
 function table_get_cell_value(data) {
   return _.isFunction(data.value) ? data.value() : data.value;
 }
+
+/**
+ * Formats a cell in a table based on provided data.
+
+ * @param {Object} data - The data object representing the table cell. 
+ *   It should have properties like:
+ *     - `value`: The cell value.
+ *     - `format` (optional): A function used to format the value.
+ *     - `html` (optional): A flag indicating whether the value should be set as HTML.
+ *     - `callback` (optional): A function used to customize cell content and behavior.
+ *     - `filter` (optional): A flag indicating whether to enable filtering for the column.
+ *     - `column_id` (optional): The index of the column (used for filtering).
+ *     - `sort` (optional): A flag indicating whether to enable sorting for the column.
+ *     - `presort` (optional): A string ("asc" or "desc") for initial sort direction.
+ *     - `actions` (optional): An array of button configurations for cell actions.
+ *     - `help` (optional): A string describing the cell content (used as a tooltip).
+ * @param {number} index - The index of the cell within its row.
+ * @param {d3.selection} item - The D3 selection of the table cell element (a `<td>` element).
+ * @param {Function} [priority_set_editor] - An optional function used for priority set functionality (internal).
+
+ * @returns {void}
+*/
 
 function format_a_cell(data, index, item, priority_set_editor) {
   var this_sel = d3.select(item);
@@ -125,21 +176,24 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
         add_to_ps.on("click", (d) => {
           let node_ids = [];
-          nodesTab.getNodeTable().selectAll("tr").each(function (d, i) {
-            let this_row = d3.select(this);
-            if (this_row.style("display") !== "none") {
-              this_row.selectAll("td").each((d, j) => {
-                if (j === data.column_id) {
-                  let marker_index = d.value.indexOf(_networkNewNodeMarker);
-                  if (marker_index > 0) {
-                    node_ids.push(d.value.substring(0, marker_index));
-                  } else {
-                    node_ids.push(d.value);
+          nodesTab
+            .getNodeTable()
+            .selectAll("tr")
+            .each(function (d, i) {
+              let this_row = d3.select(this);
+              if (this_row.style("display") !== "none") {
+                this_row.selectAll("td").each((d, j) => {
+                  if (j === data.column_id) {
+                    let marker_index = d.value.indexOf(_networkNewNodeMarker);
+                    if (marker_index > 0) {
+                      node_ids.push(d.value.substring(0, marker_index));
+                    } else {
+                      node_ids.push(d.value);
+                    }
                   }
-                }
-              });
-            }
-          });
+                });
+              }
+            });
           priority_set_editor.append_nodes(node_ids);
         });
       }
@@ -153,13 +207,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
       .style("margin-left", "0.2em");
 
     var search_form_generator = function () {
-      return (
-        `<form class="form-inline"> 
+      return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
                         <div class="form-group"> 
                             <div class="input-group">
                             <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
-                            <div class="input-group-addon"><a href = "#" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
+                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
                             <div class="input-group-addon">
                                 <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
         index +
@@ -187,11 +240,10 @@ function format_a_cell(data, index, item, priority_set_editor) {
                         to search numerical columns<p/>
                       </div>
                     </div>
-                    `
-      );
+                    `;
     };
 
-    var search_popover = $(clicker.node())
+    $(clicker.node())
       .popover({
         html: true,
         sanitize: false,
@@ -212,19 +264,38 @@ function format_a_cell(data, index, item, priority_set_editor) {
         var popover_div = d3.select(
           "#" + d3.select(this).attr("aria-describedby")
         );
+
         var search_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-apply")
+          misc.get_ui_element_selector_by_role("table-filter-apply")
         );
         var reset_click = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-reset")
+          misc.get_ui_element_selector_by_role("table-filter-reset")
         );
         var search_box = popover_div.selectAll(
-          utils.get_ui_element_selector_by_role("table-filter-term")
+          misc.get_ui_element_selector_by_role("table-filter-term")
         );
 
         search_box.property("value", data.filter_term);
 
-        search_click.on("click", (d) => {
+        $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
+          "keydown",
+          function (event) {
+            if (event.key == "Enter") {
+              update_term(search_box.property("value"));
+              filter_table(clicker.node());
+              event.preventDefault();
+            }
+          }
+        );
+
+        /*
+        search_box.on ("keydown", (d,e)=> {
+            console.log (d3);
+            console.log (d,e);
+        });
+        */
+
+        search_click.on("click", (e) => {
           update_term(search_box.property("value"));
           filter_table(clicker.node());
         });
@@ -238,7 +309,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
   }
 
   if (handle_sort && "sort" in data) {
-    var clicker = handle_sort
+    clicker = handle_sort
       .append("a")
       .property("href", "#")
       .on("click", function (d) {
@@ -294,7 +365,6 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .classed("dropdown-menu", true);
               //.attr("aria-labelledby", menu_id);
 
-              let is_option_array = _.isObject(b.dropdown[0]);
               let items = b.dropdown;
 
               function get_item_text(item) {
@@ -322,7 +392,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                   if (_.has(d, "action") && d["action"]) {
                     d["action"](this_button, d["label"]);
                   } else if (b.action) {
-                    b.action(this_button, get_item_text(d))
+                    b.action(this_button, get_item_text(d));
                   }
                 });
               });
@@ -369,7 +439,20 @@ function format_a_cell(data, index, item, priority_set_editor) {
   }
 }
 
-/** element is the sortable clicker **/
+/**
+ * Filters a table based on specified conditions applied to a column.
+
+ * @param {*} datum - The data object representing a row in the table.
+ * @param {Object[]} conditions - An array of condition objects, each with the following properties:
+ *   - `type`: The type of condition ("re" for regular expression, "date" for date range, "distance" for numerical comparison).
+ *   - `value`: The value or range for the condition:
+ *     - For "re": A regular expression object.
+ *     - For "date": An array of two Date objects representing the start and end dates.
+ *     - For "distance": A number representing the threshold value.
+ *   - `greater_than` (optional): A boolean indicating whether to use greater-than comparison for "distance" conditions.
+
+ * @returns {boolean} True if the row matches at least one condition, false otherwise.
+*/
 
 function filter_table_by_column_handler(datum, conditions) {
   if (conditions.length) {
@@ -389,6 +472,14 @@ function filter_table_by_column_handler(datum, conditions) {
 
   return true;
 }
+
+/**
+ * Filters a D3 table based on user-defined filters in column headers.
+
+ * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing a table header cell that triggered the filter 
+
+ * @returns {void}
+*/
 
 function filter_table(element) {
   if (d3.event) {
@@ -449,28 +540,19 @@ function filter_table(element) {
       });
     d3.select(table_element[0])
       .select("caption")
-      .select(utils.get_ui_element_selector_by_role("table-count-shown"))
+      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
-
-    /*.selectAll("td").each (function (d, i) {
-          if (i === filter_on) {
-              var this_cell = d3.select (this);
-              d3.select (this).style ("display", filter_handler ())
-          }
-      });*/
-
-    // select all other elements from thead and toggle their icons
-
-    /*$(table_element)
-      .find("thead [data-column-id]")
-      .filter(function() {
-        return parseInt($(this).data("column-id")) !== sort_on;
-      })
-      .each(function() {
-        sort_table_toggle_icon(this, "unsorted");
-      });*/
   }
 }
+
+/**
+ * Parses a filter string into an array of filter objects.
+
+ * @param {string} filter_value - The filter string to be parsed.
+
+ * @returns {Object[]} An array of filter objects, each with a `type` property and a corresponding `value` property.
+ *   The `type` can be "re" for regular expression, "date" for date range, or "distance" for numerical comparison.
+ */
 
 function filter_parse(filter_value) {
   let search_terms = [];
@@ -523,13 +605,17 @@ function filter_parse(filter_value) {
           if (is_range) {
             return {
               type: "date",
-              value: _.map([is_range[1], is_range[2]], (d) => new Date(
-                d.substring(0, 4) +
-                "-" +
-                d.substring(4, 6) +
-                "-" +
-                d.substring(6, 8)
-              )),
+              value: _.map(
+                [is_range[1], is_range[2]],
+                (d) =>
+                  new Date(
+                    d.substring(0, 4) +
+                      "-" +
+                      d.substring(4, 6) +
+                      "-" +
+                      d.substring(6, 8)
+                  )
+              ),
             };
           }
         }
@@ -539,9 +625,17 @@ function filter_parse(filter_value) {
         value: new RegExp(d, "i"),
       };
     });
-};
+}
 
-/** element is the sortable clicker **/
+/**
+ * Sorts a D3 table based on the clicked column header.
+
+ * @param {d3.selection|HTMLElement} element - HTML element representing the clicked column header.
+ * @param {*} datum (optional) - The data object associated with the table (used internally).
+
+ * @returns {void}
+ */
+
 function sort_table_by_column(element, datum) {
   if (d3.event) {
     d3.event.preventDefault();
@@ -551,7 +645,6 @@ function sort_table_by_column(element, datum) {
     var sort_on = parseInt($(element).data("column-id"));
     var sort_key = datum.sort;
 
-    var sorted_state = $(element).data("sorted");
     var sorted_function = sort_table_toggle_icon(element);
 
     var sort_accessor;
@@ -577,10 +670,9 @@ function sort_table_by_column(element, datum) {
     d3.select(table_element[0])
       .select("tbody")
       .selectAll("tr")
-      .sort((a, b) => sorted_function(
-        sort_accessor(a[sort_on]),
-        sort_accessor(b[sort_on])
-      ));
+      .sort((a, b) =>
+        sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]))
+      );
 
     // select all other elements from thead and toggle their icons
 
@@ -594,6 +686,17 @@ function sort_table_by_column(element, datum) {
       });
   }
 }
+
+/**
+ * Toggles the sort icon on a column header and returns a sorting function.
+
+ * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing the column header.
+ * @param {string} [value] (optional) - The desired sort direction ("asc", "desc", or "unsorted").
+
+ * @returns {Function|void}
+ *   - If `value` is provided, returns nothing.
+ *   - If `value` is not provided, returns a sorting function (`d3.ascending` or `d3.descending`) based on the current sort state.
+*/
 
 function sort_table_toggle_icon(element, value) {
   //console.log (value);
@@ -618,5 +721,5 @@ module.exports = {
   format_a_cell,
   sort_table_by_column,
   sort_table_toggle_icon,
-}
-
+  filter_parse,
+};

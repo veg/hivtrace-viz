@@ -5,396 +5,16 @@ import * as topojson from "topojson";
 import * as helpers from "./helpers.js";
 import * as colorPicker from "./colorPicker.js";
 import * as scatterPlot from "./scatterplot.js";
-import * as utils from "./utils.js";
 import * as tables from "./tables.js";
 import * as timeDateUtil from "./timeDateUtil.js";
 import * as nodesTab from "./nodesTab.js";
 import * as clustersOfInterest from "./clustersOfInterest.js";
 import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as misc from "./misc";
-
-const _networkSubclusterSeparator = ".";
-const _networkGraphAttrbuteID = "patient_attribute_schema";
-const _networkNodeAttributeID = "patient_attributes";
-export const _networkMissing = __("general")["missing"];
-const _networkReducedValue = "Different (other) value";
-const _networkMissingOpacity = "0.1";
-const _networkMissingColor = "#999";
-const _networkContinuousColorStops = 9;
-export const _networkWarnExecutiveMode =
-  "This feature is not available in the executive mode.";
-
-const _networkShapeOrdering = [
-  "circle",
-  "square",
-  "hexagon",
-  "diamond",
-  "cross",
-  "octagon",
-  "ellipse",
-  "pentagon",
-];
-
-const _defaultFloatFormat = d3.format(",.2r");
-export const _defaultPercentFormat = d3.format(",.3p");
-export const _defaultPercentFormatShort = d3.format(".2p");
-export const _defaultDateFormats = [d3.time.format.iso];
-
-export const _defaultDateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
-export const _defaultDateViewFormat = d3.time.format("%b %d, %Y");
-const _defaultDateViewFormatShort = d3.time.format("%B %Y");
-export const _defaultDateViewFormatSlider = d3.time.format("%Y-%m-%d");
-const _networkDotFormatPadder = d3.format("08d");
-const _defaultDateViewFormatExport = d3.time.format("%m/%d/%Y");
-const _defaultDateViewFormatClusterCreate = d3.time.format("%Y%m");
-
-const _networkCategoricalBase = [
-  "#a6cee3",
-  "#1f78b4",
-  "#b2df8a",
-  "#33a02c",
-  "#fb9a99",
-  "#e31a1c",
-  "#fdbf6f",
-  "#ff7f00",
-  "#cab2d6",
-  "#6a3d9a",
-  "#ffff99",
-  "#b15928",
-];
-
-const _networkEdgeColorBase = ["#000000", "#aaaaaa"];
-
-const _networkCategorical = [];
-
-_.each([0, -0.8], (k) => {
-  _.each(_networkCategoricalBase, (s) => {
-    _networkCategorical.push(d3.rgb(s).darker(k).toString());
-  });
-});
-
-const _maximumValuesInCategories = _networkCategorical.length;
-
-const _networkSequentialColor = {
-  2: ["#feb24c", "#e31a1c"],
-  3: ["#ffeda0", "#feb24c", "#f03b20"],
-  4: ["#ffffb2", "#fecc5c", "#fd8d3c", "#e31a1c"],
-  5: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
-  6: ["#ffffb2", "#fed976", "#feb24c", "#fd8d3c", "#f03b20", "#bd0026"],
-  7: [
-    "#ffffb2",
-    "#fed976",
-    "#feb24c",
-    "#fd8d3c",
-    "#fc4e2a",
-    "#e31a1c",
-    "#b10026",
-  ],
-  8: [
-    "#ffffcc",
-    "#ffeda0",
-    "#fed976",
-    "#feb24c",
-    "#fd8d3c",
-    "#fc4e2a",
-    "#e31a1c",
-    "#b10026",
-  ],
-  9: [
-    "#ffffcc",
-    "#ffeda0",
-    "#fed976",
-    "#feb24c",
-    "#fd8d3c",
-    "#fc4e2a",
-    "#e31a1c",
-    "#bd0026",
-    "#800026",
-  ],
-};
-
-/*
-Sex/Transmission Risk
-
-IDU= blue
-Heterosexual= green
-Perinatal, child= red
-MMSC= orange
-Other= grey (leave as-is)*/
-
-const _networkPresetColorSchemes = {
-  sex_trans: {
-    "MSM-Male": "#1f78b4",
-    "MMSC-Male": "#FFBF00",
-    "MSM-Unknown sex": "#1f78b4",
-    "MMSC-Unknown sex": "#FFBF00",
-    "Heterosexual Contact-Male": "#AAFF00",
-    "Heterosexual Contact-Female": "#AAFF00",
-    "Heterosexual Contact-Unknown sex": "#AAFF00",
-    "IDU-Male": "#0096FF",
-    "MSM & IDU-Male": "#33a02c",
-    "MMSC & IDU-Unknown sex": "#0096FF",
-    "MMSC & IDU-Male": "#FFBF00",
-    "IDU-Female": "#0096FF",
-    "IDU-Unknown sex": "#0096FF",
-    "Other/Unknown-Male": "#636363",
-    "Other/Unknown-Female": "#636363",
-    "Other-Male": "#636363",
-    "Other-Female": "#636363",
-    Missing: "#636363",
-    "": "#636363",
-    "Other/Unknown-Unknown sex": "#636363",
-    Perinatal: "#D2042D",
-    "Other/Unknown-Child": "#D2042D",
-    "Other-Child": "#D2042D",
-  },
-
-  race_cat: {
-    Asian: "#1f77b4",
-    "Black/African American": "#bcbd22",
-    "Hispanic/Latino": "#9467bd",
-    "American Indian/Alaska Native": "#2ca02c",
-    "Native Hawaiian/Other Pacific Islander": "#17becf",
-    "Multiple Races": "#e377c2",
-    Multiracial: "#e377c2",
-    "Multiple races": "#e377c2",
-    "Unknown race": "#999",
-    Missing: "#999",
-    missing: "#999",
-    White: "#d62728",
-  },
-  sex_birth: {
-    Male: "#FF6700",
-    Female: "#50c878",
-    Unknown: "#999",
-  },
-  birth_sex: {
-    Male: "#FF6700",
-    Female: "#50c878",
-    Unknown: "#999",
-  },
-
-  gender_identity: {
-    Woman: "#AAFF00",
-    "Transgender woman": "#228B22",
-    Man: "#FFBF00",
-    "Transgender man": "#FF5F1F",
-    "Declined to answer": "#FAFA33",
-    "Additional gender identity": "#D2042D",
-    Missing: "#999",
-    Unknown: "#999",
-  },
-};
-
-const _networkPresetShapeSchemes = {
-  birth_sex: {
-    Male: "square",
-    Female: "ellipse",
-    Missing: "diamond",
-    missing: "diamond",
-    Unknown: "diamond",
-  },
-  sex_birth: {
-    Male: "square",
-    Female: "ellipse",
-    Missing: "diamond",
-    missing: "diamond",
-    Unknown: "diamond",
-  },
-  gender_identity: {
-    Man: "square",
-    Woman: "ellipse",
-    "Transgender man": "hexagon",
-    "Transgender woman": "circle",
-    "Additional gender identity": "pentagon",
-    Unknown: "diamond",
-    "Declined to answer": "diamond",
-  },
-  race_cat: {
-    Asian: "hexagon",
-    "Black/African American": "square",
-    "Hispanic/Latino": "triangle",
-    "American Indian/Alaska Native": "pentagon",
-    "Native Hawaiian/Other Pacific Islander": "octagon",
-    "Multiple Races": "diamond",
-    "Unknown race": "diamond",
-    Missing: "diamond",
-    missing: "diamond",
-    White: "ellipse",
-  },
-  current_gender: {
-    Male: "square",
-    Female: "ellipse",
-    "Transgender-Male to Female": "hexagon",
-    "Transgender-Female to Male": "pentagon",
-    "Additional Gender Identity": "diamond",
-    Unknown: "diamond",
-    Missing: "diamond",
-    missing: "diamond",
-  },
-};
-
-export const _cdcPrioritySetKind = [
-  "01 state/local molecular cluster analysis",
-  "02 national molecular cluster analysis",
-  "03 state/local time-space cluster analysis",
-  "04 national time-space cluster analysis",
-  "05 provider notification",
-  "06 partner services notification",
-  "07 other",
-];
-
-export const _cdcTrackingOptions = [
-  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
-  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this cluster of interest",
-  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this cluster of interest",
-  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this cluster of interest",
-  "05. Do not add cases to this cluster of interest. I do not want to monitor growth in this cluster of interest over time.",
-];
-
-export const _cdcConciseTrackingOptions = {};
-_cdcConciseTrackingOptions[_cdcTrackingOptions[0]] = "3 years, 0.5% distance";
-_cdcConciseTrackingOptions[_cdcTrackingOptions[1]] = "0.5% distance";
-_cdcConciseTrackingOptions[_cdcTrackingOptions[2]] = "3 years, 1.5% distance";
-_cdcConciseTrackingOptions[_cdcTrackingOptions[3]] = "1.5% distance";
-_cdcConciseTrackingOptions[_cdcTrackingOptions[4]] = "None";
-
-const _cdcTrackingOptionsFilter = {};
-_cdcTrackingOptionsFilter[_cdcTrackingOptions[0]] = (e, d) => e.length < 0.005;
-_cdcTrackingOptionsFilter[_cdcTrackingOptions[1]] = (e, d) => e.length < 0.005;
-_cdcTrackingOptionsFilter[_cdcTrackingOptions[2]] = (e, d) => e.length < 0.015;
-_cdcTrackingOptionsFilter[_cdcTrackingOptions[3]] = (e, d) => e.length < 0.015;
-
-const _cdcTrackingOptionsCutoff = {};
-_cdcTrackingOptionsCutoff[_cdcTrackingOptions[0]] = 36;
-_cdcTrackingOptionsCutoff[_cdcTrackingOptions[1]] = 100000;
-_cdcTrackingOptionsCutoff[_cdcTrackingOptions[2]] = 36;
-_cdcTrackingOptionsCutoff[_cdcTrackingOptions[3]] = 100000;
-
-export const _cdcTrackingOptionsDefault = _cdcTrackingOptions[0];
-export const _cdcTrackingNone = _cdcTrackingOptions[4];
-
-export const _cdcCreatedBySystem = "System";
-export const _cdcCreatedByManual = "Manual";
-
-const _cdcPrioritySetKindAutoExpand = {
-  "01 state/local molecular cluster analysis": true,
-};
-
-export const _cdcPrioritySetNodeKind = [
-  "01 through analysis/notification",
-  "02 through investigation",
-];
-
-const _cdcPOImember = "Ever in national priority clusterOI?";
-
-const _cdcJurisdictionCodes = {
-  alabama: "al",
-  alaska: "ak",
-  americansamoa: "as",
-  arizona: "az",
-  arkansas: "ar",
-  california: "ca",
-  colorado: "co",
-  connecticut: "ct",
-  delaware: "de",
-  districtofcolumbia: "dc",
-  federatedstatesofmicronesia: "fm",
-  florida: "fl",
-  georgia: "ga",
-  guam: "gu",
-  hawaii: "hi",
-  houston: "hx",
-  idaho: "id",
-  illinois: "il",
-  indiana: "in",
-  iowa: "ia",
-  kansas: "ks",
-  kentucky: "ky",
-  louisiana: "la",
-  maine: "me",
-  marshallislands: "mh",
-  maryland: "md",
-  massachusetts: "ma",
-  michigan: "mi",
-  minnesota: "mn",
-  mississippi: "ms",
-  missouri: "mo",
-  montana: "mt",
-  nebraska: "ne",
-  nevada: "nv",
-  newhampshire: "nh",
-  newjersey: "nj",
-  newmexico: "nm",
-  newyorkstate: "ny",
-  nyc: "nx",
-  northcarolina: "nc",
-  north_dakota: "nd",
-  northernmarianaislands: "mp",
-  ohio: "oh",
-  oklahoma: "ok",
-  oregon: "or",
-  palau: "pw",
-  pennsylvania: "pa",
-  puertorico: "pr",
-  rhodeisland: "ri",
-  southcarolina: "sc",
-  southdakota: "sd",
-  tennessee: "tn",
-  texas: "tx",
-  utah: "ut",
-  vermont: "vt",
-  virginislands: "vi",
-  virginia: "va",
-  washington: "wa",
-  washingtondc: "dc",
-  westvirginia: "wv",
-  wisconsin: "wi",
-  wyoming: "wy",
-  chicago: "cx",
-  philadelphia: "px",
-  losangeles: "lx",
-  sanfrancisco: "sx",
-  republicofpalau: "pw",
-  "u.s.virginislands": "vi",
-};
-
-const _cdcJurisdictionLowMorbidity = new Set([
-  "alaska",
-  "delaware",
-  "hawaii",
-  "idaho",
-  "iowa",
-  "kansas",
-  "maine",
-  "montana",
-  "nebraska",
-  "new hampshire",
-  "new mexico",
-  "north dakota",
-  "rhode island",
-  "south dakota",
-  "utah",
-  "vermont",
-  "virgin islands",
-  "west virginia",
-  "wyoming",
-]);
-
-const _cdcPrioritySetKindAutomaticCreation = _cdcPrioritySetKind[0];
-export const _cdcPrioritySetDefaultNodeKind = _cdcPrioritySetNodeKind[0];
-
-// Constants for the map.
-
-var hivtrace_date_or_na_if_missing = (date, formatter) => {
-  formatter = formatter || _defaultDateViewFormatExport;
-  if (date) {
-    return formatter(date);
-  }
-  return "N/A";
-};
-
-const _networkUpperBoundOnDate = new Date().getFullYear();
+import * as kGlobals from "./globals.js";
+import * as network from "./network.js";
+import * as HTX from "./hiv_tx_network.js";
+import * as columnDefinitions from "./column_definitions.js";
 
 var hivtrace_cluster_network_graph = function (
   json,
@@ -420,45 +40,24 @@ var hivtrace_cluster_network_graph = function (
   // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
   // [OPT] attributes                  :          A JSON object with mapped node attributes
 
+  // unpack compact JSON if needed
+
   if (json.Settings && json.Settings.compact_json) {
-    _.each(["Nodes", "Edges"], (key) => {
-      var fields = _.keys(json[key]);
-      var expanded = [];
-      _.each(fields, (f, idx) => {
-        var field_values = json[key][f];
-        if (!_.isArray(field_values) && "values" in field_values) {
-          //console.log ('COMPRESSED');
-          var expanded_values = [];
-          _.each(field_values["values"], (v) => {
-            expanded_values.push(field_values["keys"][v]);
-          });
-          field_values = expanded_values;
-        }
-        _.each(field_values, (fv, j) => {
-          if (idx === 0) {
-            expanded.push({});
-          }
-          expanded[j][f] = fv;
-        });
-      });
-      json[key] = expanded;
-    });
+    network.unpack_compact_json(json);
   }
 
-  // if schema is not set, set to empty dictionary
-  if (!json[_networkGraphAttrbuteID]) {
-    json[_networkGraphAttrbuteID] = {};
+  // if schema is not set, set to an empty dictionary
+  if (!json[kGlobals.network.GraphAttrbuteID]) {
+    json[kGlobals.network.GraphAttrbuteID] = {};
   }
 
   // Make attributes case-insensitive by LowerCasing all keys in schema
-  const new_schema = Object.fromEntries(
-    Object.entries(json[_networkGraphAttrbuteID]).map(([k, v]) => [
+  json[kGlobals.network.GraphAttrbuteID] = Object.fromEntries(
+    Object.entries(json[kGlobals.network.GraphAttrbuteID]).map(([k, v]) => [
       k.toLowerCase(),
       v,
     ])
   );
-
-  json[_networkGraphAttrbuteID] = new_schema;
 
   // Attempt Translations
   $("#filter_input")
@@ -466,1504 +65,45 @@ var hivtrace_cluster_network_graph = function (
     .attr("placeholder", __("network_tab")["text_in_attributes"]);
   $("#show_as").html(__("attributes_tab")["show_as"]);
 
-  // Make attributes case-insensitive by LowerCasing all keys in node attributes
-  const label_key_map = _.object(
-    _.map(json.patient_attribute_schema, (d, k) => [d.label, k])
-  );
+  network.normalize_node_attributes(json);
+  network.ensure_node_attributes_exist(json);
 
-  _.each(json.Nodes, (n) => {
-    if ("patient_attributes" in n) {
-      let new_attrs = {};
-      if (n["patient_attributes"] !== null) {
-        new_attrs = Object.fromEntries(
-          Object.entries(n.patient_attributes).map(([k, v]) => [
-            k.toLowerCase(),
-            v,
-          ])
-        );
-      }
-
-      // Map attributes from patient_schema labels to keys, if necessary
-      const unrecognizedKeys = _.difference(
-        _.keys(new_attrs),
-        _.keys(json.patient_attribute_schema)
-      );
-
-      if (unrecognizedKeys.length) {
-        _.each(unrecognizedKeys, (k) => {
-          if (_.contains(_.keys(label_key_map), k)) {
-            new_attrs[label_key_map[k]] = new_attrs[k];
-            delete new_attrs[k];
-          }
-        });
-      }
-
-      n.patient_attributes = new_attrs;
-    }
-  });
-
-  // annotate each node with patient_attributes if does not exist
-  json.Nodes.forEach((n) => {
-    if (!n["attributes"]) {
-      n["attributes"] = [];
-    }
-
-    if (!n[_networkNodeAttributeID]) {
-      n[_networkNodeAttributeID] = [];
-    }
-  });
-
-  /** SLKP 20190902: somehow our networks have malformed edges! This will remove them */
+  /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
   json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
 
-  var self = {};
+  var self = new HTX.HIVTxNetwork(json, button_bar_ui);
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
-  self._is_seguro = options && options["seguro"] ? true : false;
-  self._is_CDC_executive_mode =
-    options && options["cdc-executive-mode"] ? true : false;
+  self._is_seguro = network.check_network_option(
+    options,
+    "seguro",
+    false,
+    true
+  );
+  self._is_CDC_executive_mode = network.check_network_option(
+    options,
+    "cdc-executive-mode",
+    false,
+    true
+  );
 
-  self.json = json;
+  self.uniqValues = helpers.getUniqueValues(
+    json.Nodes,
+    json[kGlobals.network.GraphAttrbuteID]
+  );
+  self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
-  self.uniqs = helpers.get_unique_count(json.Nodes, new_schema);
-  self.uniqValues = helpers.getUniqueValues(json.Nodes, new_schema);
-
-  self.schema = json[_networkGraphAttrbuteID];
+  self.schema = json[kGlobals.network.GraphAttrbuteID];
   // set initial color schemes
-  self.networkColorScheme = _networkPresetColorSchemes;
+  self.networkColorScheme = kGlobals.PresetColorSchemes;
+  self.networkShapeScheme = kGlobals.PresetShapeSchemes;
+
+  self.ww = network.check_network_option(
+    options,
+    "width",
+    d3.select(parent_container).property("clientWidth")
+  );
 
-  self.ww =
-    options && options["width"]
-      ? options["width"]
-      : d3.select(parent_container).property("clientWidth");
-  self.container = network_container;
-  self.nodes = [];
-  self.edges = [];
-  self.clusters = [];
-  self.cluster_sizes = [];
-  self.cluster_mapping = {};
-  self.percent_format = _defaultPercentFormat;
-  self.missing = _networkMissing;
-  self.cluster_attributes = json["Cluster description"]
-    ? json["Cluster description"]
-    : null;
-  self.warning_string = "";
-  self.precomputed_subclusters = json["Subclusters"]
-    ? json["Subclusters"]
-    : null;
-
-  if (self.cluster_attributes) {
-    _.each(self.cluster_attributes, (cluster) => {
-      if ("old_size" in cluster && "size" in cluster) {
-        cluster["delta"] = cluster["size"] - cluster["old_size"];
-        cluster["deleted"] =
-          cluster["old_size"] +
-          (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
-          cluster["size"];
-      } else if (cluster["type"] === "new") {
-        cluster["delta"] = cluster["size"];
-        if ("moved" in cluster) {
-          cluster["delta"] -= cluster["moved"];
-        }
-      } else {
-        cluster["delta"] = 0;
-      }
-      cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
-      //console.log (cluster);
-    });
-  }
-
-  if (options && _.isFunction(options["init_code"])) {
-    options["init_code"].call(null, self, options);
-  }
-
-  self.dom_prefix =
-    options && options["prefix"] ? options["prefix"] : "hiv-trace";
-  self.extra_cluster_table_columns =
-    options && options["cluster-table-columns"]
-      ? options["cluster-table-columns"]
-      : null;
-
-  self.subcluster_table = null;
-  self.isPrimaryGraph = options && "secondary" in options ? false : true;
-  self.parent_graph_object =
-    options && "parent_graph" in options ? options["parent_graph"] : null;
-
-  if (json.Settings && json.Settings.created) {
-    self.today = new Date(json.Settings.created);
-  } else {
-    self.today =
-      options && options["today"] ? options["today"] : timeDateUtil.getCurrentDate();
-  }
-
-  self.get_reference_date = function () {
-    if (!self.isPrimaryGraph && self.parent_graph_object)
-      return self.parent_graph_object.today;
-
-    return self.today;
-  };
-
-  if (self._is_CDC_) {
-    // define various CDC settings
-
-    self._is_CDC_auto_mode =
-      options && options["cdc-no-auto-priority-set-mode"] ? false : true;
-
-    self._lookup_option = function (key, default_value) {
-      if (self.json.Settings && self.json.Settings[key])
-        return self.json.Settings[key];
-      if (options && options[key]) return options[key];
-      return default_value;
-    };
-
-    self.displayed_node_subset =
-      options && options["node-attributes"]
-        ? options["node-attributes"]
-        : [
-          tables._networkNodeIDField,
-          "sex_trans",
-          "race_cat",
-          "hiv_aids_dx_dt",
-          "cur_city_name",
-        ];
-
-    self.subcluster_table =
-      options && options["subcluster-table"]
-        ? d3.select(options["subcluster-table"])
-        : null;
-
-    self.extra_subcluster_table_columns = null;
-
-    var lookup_form_generator = function () {
-      return '<div><ul data-hivtrace-ui-role = "priority-membership-list"></ul></div>';
-    };
-
-    // SLKP 20200727 issues
-
-    self.CDC_data = {
-      jurisdiction: self
-        ._lookup_option("jurisdiction", "unknown")
-        .toLowerCase()
-        .replace(/\s/g, ""),
-      timestamp: self.today,
-      "autocreate-priority-set-size": 5,
-    };
-
-    if (self.CDC_data.jurisdiction in _cdcJurisdictionCodes) {
-      self.CDC_data["jurisdiction_code"] =
-        _cdcJurisdictionCodes[self.CDC_data.jurisdiction].toUpperCase();
-    } else {
-      self.CDC_data["jurisdiction_code"] = "PG";
-    }
-
-    if (_cdcJurisdictionLowMorbidity.has(self.CDC_data["jurisdiction"])) {
-      self.CDC_data["autocreate-priority-set-size"] = 3;
-    }
-
-    const cdc_extra = [
-      {
-        description: {
-          value: "Cases dx within 36 months",
-          sort: function (c) {
-            return c.value.length ? c.value[0].length : 0;
-          },
-          help: "Number of cases diagnosed in the past 36 months connected only through cases diagnosed within the past 36 months",
-        },
-        generator: function (cluster) {
-          return {
-            html: true,
-            value: cluster.recent_nodes,
-            volatile: true,
-            format: function (v) {
-              v = v || [];
-              if (v.length) {
-                return _.map(v, (e) => e.length).join(", ");
-              }
-              return "";
-            },
-            actions: function (item, value) {
-              if (
-                !clustersOfInterest.get_editor() ||
-                cluster.recent_nodes.length === 0
-              ) {
-                return null;
-              }
-              return _.map(cluster.recent_nodes, (c) => {
-                const nodeset = new Set(c);
-                return {
-                  icon: "fa-plus",
-                  action: function (button, v) {
-                    if (clustersOfInterest.get_editor()) {
-                      clustersOfInterest.get_editor().append_node_objects(
-                        _.filter(cluster.children, (n) => nodeset.has(n.id) && n.priority_flag > 0)
-                      );
-                    }
-                    return false;
-                  },
-                  help: "Add to cluster of interest",
-                };
-              });
-            },
-          };
-        },
-      },
-      {
-        description: {
-          value: "Cases dx within 12 months",
-          //"value",
-          sort: function (c) {
-            const v = c.value || [];
-            return v.length > 0 ? v[0].length : 0;
-          },
-          presort: "desc",
-          help: "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months",
-        },
-        generator: function (cluster) {
-          const definition = {
-            html: true,
-            value: cluster.priority_score,
-            volatile: true,
-            format: function (v) {
-              v = v || [];
-              if (v.length) {
-                var str = _.map(v, (c) => c.length).join(", ");
-                if (
-                  v[0].length >= self.CDC_data["autocreate-priority-set-size"]
-                ) {
-                  var color = "red";
-                  return "<span style='color:" + color + "'>" + str + "</span>";
-                }
-                return str;
-              }
-              return "";
-            },
-          };
-
-          definition["actions"] = function (item, value) {
-            let result = [];
-
-            if (cluster.priority_score.length > 0) {
-              result = result.concat(
-                _.map(cluster.priority_score, (c) => ({
-                  icon: "fa-question",
-                  help:
-                    "Do some of these " +
-                    c.length +
-                    " nodes belong to a cluster of interest?",
-                  action: function (this_button, cv) {
-                    const nodeset = new Set(c);
-                    this_button = $(this_button.node());
-                    if (this_button.data("popover_shown") !== "shown") {
-                      const popover = this_button
-                        .popover({
-                          sanitize: false,
-                          placement: "right",
-                          container: "body",
-                          html: true,
-                          content: lookup_form_generator,
-                          trigger: "manual",
-                        })
-                        .on("shown.bs.popover", function (e) {
-                          var clicked_object = d3.select(this);
-                          var popover_div = d3.select(
-                            "#" + clicked_object.attr("aria-describedby")
-                          );
-                          var list_element = popover_div.selectAll(
-                            self.get_ui_element_selector_by_role(
-                              "priority-membership-list",
-                              true
-                            )
-                          );
-
-                          list_element.selectAll("li").remove();
-                          let check_membership = _.filter(
-                            _.map(self.defined_priority_groups, (g) =>
-                              //console.log(g);
-                              [
-                                g.name,
-                                _.filter(g.nodes, (n) => nodeset.has(n.name))
-                                  .length,
-                                _.filter(
-                                  g.partitioned_nodes[1]["new_direct"],
-                                  (n) => nodeset.has(n.id)
-                                ).length,
-                                _.filter(
-                                  g.partitioned_nodes[1]["new_indirect"],
-                                  (n) => nodeset.has(n.id)
-                                ).length,
-                              ]
-                            ),
-                            (gg) => gg[1] + gg[2] + gg[3] > 0
-                          );
-
-                          if (check_membership.length === 0) {
-                            check_membership = [
-                              [
-                                "No nodes belong to any cluster of interest or are linked to any of the clusters of interest.",
-                              ],
-                            ];
-                          } else {
-                            check_membership = _.map(
-                              check_membership,
-                              (m) => {
-                                let description = "";
-                                if (m[1]) {
-                                  description += " " + m[1] + " nodes belong";
-                                }
-                                if (m[2]) {
-                                  description +=
-                                    (description.length ? ", " : " ") +
-                                    m[2] +
-                                    " nodes are directly linked @ " +
-                                    _defaultPercentFormatShort(
-                                      self.subcluster_threshold
-                                    );
-                                }
-                                if (m[3]) {
-                                  description +=
-                                    (description.length ? ", " : " ") +
-                                    m[3] +
-                                    " nodes are indirectly linked @ " +
-                                    _defaultPercentFormatShort(
-                                      self.subcluster_threshold
-                                    );
-                                }
-
-                                description +=
-                                  " to cluster of interest <code>" +
-                                  m[0] +
-                                  "</code>";
-                                return description;
-                              }
-                            );
-                          }
-                          list_element = list_element
-                            .selectAll("li")
-                            .data(check_membership);
-                          list_element.enter().insert("li");
-                          list_element.html((d) => d);
-                        });
-
-                      popover.popover("show");
-                      this_button.data("popover_shown", "shown");
-                      this_button
-                        .off("hidden.bs.popover")
-                        .on("hidden.bs.popover", function () {
-                          $(this).data("popover_shown", "hidden");
-                        });
-                    } else {
-                      this_button.data("popover_shown", "hidden");
-                      this_button.popover("destroy");
-                    }
-                  },
-                }))
-              );
-            }
-
-            if (clustersOfInterest.get_editor() && cluster.priority_score.length > 0) {
-              result = result.concat(
-                _.map(cluster.priority_score, (c) => {
-                  const nodeset = new Set(c);
-                  return {
-                    icon: "fa-plus",
-                    action: function (button, v) {
-                      if (clustersOfInterest.get_editor()) {
-                        clustersOfInterest.get_editor().append_node_objects(
-                          _.filter(cluster.children, (n) => (
-                            nodeset.has(n.id) &&
-                            (n.priority_flag === 2 || n.priority_flag === 1)
-                          ))
-                        );
-                      }
-                      return false;
-                    },
-                    help: "Add to cluster of interest",
-                  };
-                })
-              );
-            }
-
-            return result;
-          };
-
-          return definition;
-        },
-      },
-    ];
-
-    if (self.subcluster_table) {
-      self.extra_subcluster_table_columns = cdc_extra;
-    } else if (self.extra_cluster_table_columns) {
-      self.extra_cluster_table_columns =
-        self.extra_cluster_table_columns.concat(cdc_extra);
-    } else {
-      self.extra_cluster_table_columns = cdc_extra;
-    }
-  } // end self._is_CDC_
-
-  self.node_label_drag = d3.behavior
-    .drag()
-    .on("drag", function (d) {
-      d.label_x += d3.event.dx;
-      d.label_y += d3.event.dy;
-      d3.select(this).attr(
-        "transform",
-        "translate(" +
-        (d.label_x + d.rendered_size * 1.25) +
-        "," +
-        (d.label_y + d.rendered_size * 0.5) +
-        ")"
-      );
-    })
-    .on("dragstart", () => {
-      d3.event.sourceEvent.stopPropagation();
-    })
-    .on("dragend", () => {
-      d3.event.sourceEvent.stopPropagation();
-    });
-
-  self.extra_node_table_columns = null;
-  if (options && options["node-table-columns"]) {
-    self.extra_node_table_columns = options["node-table-columns"];
-  } else if (self._is_CDC_) {
-    self.extra_node_table_columns = [
-      {
-        description: {
-          value: "Recent and Rapid",
-          sort: "value",
-          help: "Is the node a member of a regular or recent & rapid subcluster?",
-        },
-        generator: function (node) {
-          return {
-            callback: function (element, payload) {
-              //payload = _.filter (payload, function (d) {return d});
-              var this_cell = d3.select(element);
-
-              var data_to_use = [
-                [payload[0][0], payload[0][1], payload[0][2]],
-                [payload[1][0] ? "36 months" : "", payload[1][1]],
-                [payload[2][0] ? "12 months" : "", payload[2][1]],
-                [
-                  payload.length > 3 && payload[3][0]
-                    ? "Recent cluster >= 3"
-                    : "",
-                  payload.length > 3 ? payload[3][1] : null,
-                ],
-              ];
-
-              this_cell.selectAll("span").remove();
-
-              _.each(data_to_use, (button_text) => {
-                //self.open_exclusive_tab_view (cluster_id)
-                if (button_text[0].length) {
-                  var button_obj = this_cell
-                    .append("span")
-                    .classed("btn btn-xs btn-node-property", true)
-                    .classed(button_text[1], true)
-                    .text(button_text[0]);
-
-                  if (_.isFunction(button_text[2])) {
-                    button_obj.on("click", button_text[2]);
-                  } else {
-                    button_obj.attr("disabled", true);
-                  }
-                }
-              });
-            },
-            value: function () {
-              return [
-                [
-                  node.subcluster_label
-                    ? "Subcluster " + node.subcluster_label
-                    : "",
-                  "btn-primary",
-                  node.subcluster_label
-                    ? function () {
-                      self.view_subcluster(
-                        node.subcluster_label,
-                        (n) => n.subcluster_label === node.subcluster_label,
-                        "Subcluster " + node.subcluster_label
-                      );
-                    }
-                    : null,
-                ],
-
-                [node.priority_flag === 3, "btn-warning"],
-                [node.priority_flag === 1, "btn-danger"],
-                [node.priority_flag === 2, "btn-danger"],
-              ];
-            },
-          };
-        },
-      },
-    ]
-  }
-
-  self.colorizer = {
-    selected: function (d) {
-      return d === "selected" ? d3.rgb(51, 122, 183) : "#FFF";
-    },
-  };
-
-  self.subcluster_threshold =
-    options && options["subcluster-thershold"]
-      ? options["subcluster-thershold"]
-      : 0.005;
-
-  self.highlight_unsuppored_edges = true;
-
-  self.get_ui_element_selector_by_role = function (role, not_nested) {
-    if (not_nested && !this.isPrimaryGraph) {
-      return undefined;
-    }
-    return (
-      (not_nested ? "" : "#" + button_bar_ui) + utils.get_ui_element_selector_by_role(role)
-    );
-  };
-
-  //---------------------------------------------------------------------------------------------------
-  // BEGIN: NODE SET GROUPS
-  //---------------------------------------------------------------------------------------------------
-
-  self.defined_priority_groups = [];
-  /**
-    {
-         'name'  : 'unique name',
-         'nodes' : [
-          {
-              'node_id' : text,
-              'added' : date,
-              'kind' : text
-          }],
-         'created' : date,
-         'description' : 'text',
-         'modified' : date,
-         'kind' : 'text'
-     }
-  */
-
-  self.priority_groups_pending = function () {
-    return _.filter(self.defined_priority_groups, (pg) => pg.pending).length;
-  };
-  self.priority_groups_expanded = function () {
-    return _.filter(self.defined_priority_groups, (pg) => pg.expanded).length;
-  };
-  self.priority_groups_automatic = function () {
-    return _.filter(
-      self.defined_priority_groups,
-      (pg) => pg.createdBy === _cdcCreatedBySystem
-    ).length;
-  };
-
-  self._generate_auto_id = function (subcluster_id) {
-    const id =
-      self.CDC_data["jurisdiction_code"] +
-      "_" +
-      _defaultDateViewFormatClusterCreate(self.CDC_data["timestamp"]) +
-      "_" +
-      subcluster_id;
-    let suffix = "";
-    let k = 1;
-    let found = self.auto_create_priority_sets.find((d) => d.name === id + suffix)
-      || self.defined_priority_groups.find((d) => d.name === id + suffix);
-    while (found !== undefined) {
-      suffix = "_" + k;
-      k++;
-      found = self.auto_create_priority_sets.find((d) => d.name === id + suffix)
-        || self.defined_priority_groups.find((d) => d.name === id + suffix);
-    }
-    return id + suffix;
-  }
-
-  self.load_priority_sets = function (url, is_writeable) {
-    d3.json(url, (error, results) => {
-      if (error) {
-        throw Error("Failed loading cluster of interest file " + error.responseURL);
-      } else {
-        let latest_date = new Date();
-        latest_date.setFullYear(1900);
-        self.defined_priority_groups = _.clone(results);
-        _.each(self.defined_priority_groups, (pg) => {
-          _.each(pg.nodes, (n) => {
-            try {
-              n.added = _defaultDateFormats[0].parse(n.added);
-              if (n.added > latest_date) {
-                latest_date = n.added;
-              }
-            } catch (e) {
-              // do nothing
-            }
-          });
-        });
-
-        self.priority_set_table_writeable = is_writeable === "writeable";
-
-        self.priority_groups_validate(
-          self.defined_priority_groups,
-          self._is_CDC_auto_mode
-        );
-
-        self.auto_create_priority_sets = [];
-        // propose some
-        const today_string = _defaultDateFormats[0](self.today);
-        const node_id_to_object = {};
-
-        _.each(self.json.Nodes, (n, i) => {
-          node_id_to_object[n.id] = n;
-        });
-
-        if (self._is_CDC_auto_mode) {
-          _.each(self.clusters, (cluster_data, cluster_id) => {
-            _.each(cluster_data.subclusters, (subcluster_data) => {
-              _.each(subcluster_data.priority_score, (priority_score, i) => {
-                if (
-                  priority_score.length >=
-                  self.CDC_data["autocreate-priority-set-size"]
-                ) {
-                  // only generate a new set if it doesn't match what is already there
-                  const node_set = {};
-                  _.each(subcluster_data.recent_nodes[i], (n) => {
-                    node_set[n] = 1;
-                  });
-
-                  const matched_groups = _.filter(
-                    _.filter(
-                      self.defined_priority_groups,
-                      (pg) =>
-                        pg.kind in _cdcPrioritySetKindAutoExpand &&
-                        pg.createdBy === _cdcCreatedBySystem &&
-                        pg.tracking === _cdcTrackingOptionsDefault
-                    ),
-                    (pg) => {
-                      const matched = _.countBy(
-                        _.map(pg.nodes, (pn) => pn.name in node_set)
-                      );
-                      //if (pg.name === 'FL_201709_141.1') console.log (matched);
-                      return (
-                        //matched[true] === subcluster_data.recent_nodes[i].length
-                        matched[true] >= 1
-                      );
-                    }
-                  );
-
-                  if (matched_groups.length >= 1) {
-                    return;
-                  }
-
-                  const autoname = self._generate_auto_id(subcluster_data.cluster_id);
-                  self.auto_create_priority_sets.push({
-                    name: autoname,
-                    description:
-                      "Automatically created cluster of interest " + autoname,
-                    nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
-                      self.priority_group_node_record(n, self.today)
-                    ),
-                    created: today_string,
-                    kind: _cdcPrioritySetKindAutomaticCreation,
-                    tracking: _cdcTrackingOptions[0],
-                    createdBy: _cdcCreatedBySystem,
-                    autocreated: true,
-                    autoexpanded: false,
-                    pending: true,
-                  });
-                }
-              });
-            });
-          });
-        }
-
-        if (self.auto_create_priority_sets.length) {
-          // SLKP 20200727 now check to see if any of the priority sets
-          // need to be auto-generated
-          //console.log (self.auto_create_priority_sets);
-          self.defined_priority_groups.push(...self.auto_create_priority_sets);
-        }
-        const autocreated = self.defined_priority_groups.filter(
-          (pg) => pg.autocreated
-        ).length,
-          autoexpanded = self.defined_priority_groups.filter(
-            (pg) => pg.autoexpanded
-          ).length,
-          automatic_action_taken = autocreated + autoexpanded > 0,
-          left_to_review = self.defined_priority_groups.filter(
-            (pg) => pg.pending
-          ).length;
-
-        if (automatic_action_taken) {
-          self.warning_string +=
-            "<br/>Automatically created <b>" +
-            autocreated +
-            "</b> and expanded <b>" +
-            autoexpanded +
-            "</b> clusters of interest." +
-            (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
-              : "");
-          self.display_warning(self.warning_string, true);
-        }
-
-        const tab_pill = self.get_ui_element_selector_by_role(
-          "priority_set_counts",
-          true
-        );
-
-        if (!self.priority_set_table_writeable) {
-          const rationale =
-            is_writeable === "old"
-              ? "the network is <b>older</b> than some of the Clusters of Interest"
-              : "the network was ran in <b>standalone</b> mode so no data is stored";
-          self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
-          self.display_warning(self.warning_string, true);
-          if (tab_pill) {
-            d3.select(tab_pill).text("Read-only");
-          }
-        } else if (tab_pill && left_to_review > 0) {
-          d3.select(tab_pill).text(left_to_review);
-          d3.select("#banner_coi_counts").text(left_to_review);
-        }
-
-        self.priority_groups_validate(self.defined_priority_groups);
-        _.each(self.auto_create_priority_sets, (pg) =>
-          self.priority_groups_update_node_sets(pg.name, "insert")
-        );
-        const groups_that_expanded = self.defined_priority_groups.filter(
-          (pg) => pg.expanded
-        );
-        _.each(groups_that_expanded, (pg) =>
-          self.priority_groups_update_node_sets(pg.name, "update")
-        );
-
-        clustersOfInterest.draw_priority_set_table(self);
-        if (
-          self.showing_diff &&
-          self.has_network_attribute("subcluster_or_priority_node")
-        ) {
-          self.handle_attribute_categorical("subcluster_or_priority_node");
-        }
-        //self.update();
-      }
-    });
-  };
-
-  self.priority_groups_find_by_name = function (name) {
-    if (self.defined_priority_groups) {
-      return _.find(self.defined_priority_groups, (g) => g.name === name);
-    }
-    return null;
-  };
-
-  self.priority_groups_all_events = function () {
-    // generate a set of all unique temporal events (when new data were added to ANY PG)
-    const events = new Set();
-    if (self.defined_priority_groups) {
-      _.each(self.defined_priority_groups, (g) => {
-        _.each(g.nodes, (n) => {
-          events.add(_defaultDateViewFormatSlider(n.added));
-        });
-      });
-    }
-    return events;
-  };
-
-  self.priority_group_node_record = function (node_id, date, kind) {
-    return {
-      name: node_id,
-      added: date || self.today,
-      kind: kind || _cdcPrioritySetDefaultNodeKind,
-      autoadded: true,
-    };
-  };
-
-  self.priority_groups_compute_overlap = function (groups) {
-    /**
-        compute the overlap between priority sets (PS)
-        
-        1. Populate self.priority_node_overlap dictionary which
-           stores, for every node present in AT LEAST ONE PS, the set of all 
-           PGs it belongs to, as in "node-id" => set ("PG1", "PG2"...)
-           
-        2. For each PS, create and populate a member field, .overlaps
-           which is a dictionary that stores
-           {
-                sets : #of PS with which it shares nodes
-                nodes: the # of nodes contained in overlaps
-           }
-    
-    */
-    self.priority_node_overlap = {};
-    const size_by_pg = {};
-    _.each(groups, (pg) => {
-      size_by_pg[pg.name] = pg.nodes.length;
-      _.each(pg.nodes, (n) => {
-        if (!(n.name in self.priority_node_overlap)) {
-          self.priority_node_overlap[n.name] = new Set();
-        }
-        self.priority_node_overlap[n.name].add(pg.name);
-      });
-    });
-
-    _.each(groups, (pg) => {
-      const overlap = {
-        sets: new Set(),
-        nodes: 0,
-        supersets: [],
-        duplicates: [],
-      };
-
-      const by_set_count = {};
-      _.each(pg.nodes, (n) => {
-        if (self.priority_node_overlap[n.name].size > 1) {
-          overlap.nodes++;
-          self.priority_node_overlap[n.name].forEach((pgn) => {
-            if (pgn !== pg.name) {
-              if (!(pgn in by_set_count)) {
-                by_set_count[pgn] = [];
-              }
-              by_set_count[pgn].push(n.name);
-            }
-            overlap.sets.add(pgn);
-          });
-        }
-      });
-
-      _.each(by_set_count, (nodes, name) => {
-        if (nodes.length === pg.nodes.length) {
-          if (size_by_pg[name] === pg.nodes.length) {
-            overlap.duplicates.push(name);
-          } else {
-            overlap.supersets.push(name);
-          }
-        }
-      });
-
-      pg.overlap = {
-        nodes: overlap.nodes,
-        sets: Math.max(0, overlap.sets.size - 1),
-        superset: overlap.supersets,
-        duplicate: overlap.duplicates,
-      };
-    });
-  };
-
-  self.auto_expand_pg_handler = function (pg, nodeID2idx) {
-    if (!nodeID2idx) {
-      const nodeset = {};
-      nodeID2idx = {};
-      _.each(self.json.Nodes, (n, i) => {
-        nodeset[n.id] = n;
-        nodeID2idx[n.id] = i;
-      });
-    }
-
-    const core_node_set = new Set(_.map(pg.nodes, (n) => nodeID2idx[n.name]));
-    const added_nodes = new Set();
-    const filter = _cdcTrackingOptionsFilter[pg.tracking];
-
-    if (filter) {
-      const time_cutoff = _n_months_ago(
-        self.get_reference_date(),
-        _cdcTrackingOptionsCutoff[pg.tracking]
-      );
-      const expansion_test = hivtrace_cluster_depthwise_traversal(
-        self.json.Nodes,
-        self.json.Edges,
-        (e) => {
-          let pass = filter(e);
-          if (pass) {
-            if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
-              pass =
-                pass &&
-                self._filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  self.get_reference_date(),
-                  self.json.Nodes[e.source]
-                ) &&
-                self._filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  self.get_reference_date(),
-                  self.json.Nodes[e.target]
-                );
-            }
-          }
-          return pass;
-        },
-        false,
-        _.filter(
-          _.map([...core_node_set], (d) => self.json.Nodes[d]),
-          (d) => d
-        )
-      );
-
-      _.each(expansion_test, (c) => {
-        _.each(c, (n) => {
-          if (!core_node_set.has(nodeID2idx[n.id])) {
-            added_nodes.add(nodeID2idx[n.id]);
-          }
-        });
-      });
-    }
-    return added_nodes;
-  };
-
-  self.priority_groups_validate = function (groups, auto_extend) {
-    /**
-      groups is a list of priority groups
-
-      name: unique string
-      description: string,
-      nodes: {
-          {
-              'id' : node id,
-              'added' : date,
-              'kind' : enum (one of _cdcPrioritySetNodeKind)
-          }
-      },
-      created: date,
-      kind: enum (one of _cdcPrioritySetKind),
-      tracking: enum (one of _cdcTrackingOptions)
-      createdBy : enum (on of [_cdcCreatedBySystem,_cdcCreatedByManual])
-
-
-    */
-
-    if (_.some(groups, (g) => !g.validated)) {
-      const priority_subclusters = _.map(
-        _.filter(
-          _.flatten(
-            _.map(
-              _.flatten(
-                _.map(self.clusters, (c) =>
-                  _.filter(
-                    _.filter(c.subclusters, (sc) => sc.priority_score.length)
-                  )
-                )
-              ),
-              (d) => d.priority_score
-            ),
-            1
-          ),
-          (d) => d.length >= self.CDC_data["autocreate-priority-set-size"]
-        ),
-        (d) => new Set(d)
-      );
-
-      const nodeset = {};
-      const nodeID2idx = {};
-      _.each(self.json.Nodes, (n, i) => {
-        nodeset[n.id] = n;
-        nodeID2idx[n.id] = i;
-      });
-      _.each(groups, (pg) => {
-        if (!pg.validated) {
-          pg.node_objects = [];
-          pg.not_in_network = [];
-          pg.validated = true;
-          pg.created = _.isDate(pg.created)
-            ? pg.created
-            : _defaultDateFormats[0].parse(pg.created);
-          if (pg.modified) {
-            pg.modified = _.isDate(pg.modified) ? pg.modified : _defaultDateFormats[0].parse(pg.modified);
-          } else {
-            pg.modified = pg.created;
-          }
-          if (!pg.tracking) {
-            if (pg.kind === _cdcPrioritySetKind[0]) {
-              pg.tracking = _cdcTrackingOptions[0];
-            } else {
-              pg.tracking = _cdcTrackingOptions[4];
-            }
-          }
-          if (!pg.createdBy) {
-            if (pg.kind === _cdcPrioritySetKind[0]) {
-              pg.createdBy = _cdcCreatedBySystem;
-            } else {
-              pg.createdBy = _cdcCreatedByManual;
-            }
-          }
-
-          _.each(pg.nodes, (node) => {
-            const nodeid = node.name;
-            if (nodeid in nodeset) {
-              pg.node_objects.push(nodeset[nodeid]);
-            } else {
-              pg.not_in_network.push(nodeid);
-            }
-          });
-
-          /**     extract network data at 0.015 and subcluster thresholds
-                            filter on dates subsequent to created date
-                     **/
-
-          const my_nodeset = new Set(_.map(pg.node_objects, (n) => n.id));
-
-          const node_set15 = _.flatten(
-            hivtrace_cluster_depthwise_traversal(
-              json["Nodes"],
-              json["Edges"],
-              (e) => e.length <= 0.015,
-              null,
-              pg.node_objects
-            )
-          );
-
-          const saved_traversal_edges = auto_extend ? [] : null;
-
-          const node_set_subcluster = _.flatten(
-            hivtrace_cluster_depthwise_traversal(
-              json["Nodes"],
-              json["Edges"],
-              (e) => e.length <= self.subcluster_threshold,
-              saved_traversal_edges,
-              pg.node_objects
-            )
-          );
-
-          const direct_at_15 = new Set();
-
-          const json15 = _extract_single_cluster(
-            node_set15,
-            (e) => (
-              e.length <= 0.015 &&
-              (my_nodeset.has(json["Nodes"][e.target].id) ||
-                my_nodeset.has(json["Nodes"][e.source].id))
-            ),
-            //null,
-            true
-          );
-
-          _.each(json15["Edges"], (e) => {
-            _.each([e.source, e.target], (nid) => {
-              if (!my_nodeset.has(json15["Nodes"][nid].id)) {
-                direct_at_15.add(json15["Nodes"][nid].id);
-              }
-            });
-          });
-
-          const current_time = self.today;
-
-          const json_subcluster = _extract_single_cluster(
-            node_set_subcluster,
-            (e) => (
-              e.length <= self.subcluster_threshold &&
-              (my_nodeset.has(json["Nodes"][e.target].id) ||
-                my_nodeset.has(json["Nodes"][e.source].id))
-              /*|| (auto_extend && (self._filter_by_date(
-                  pg.modified || pg.created,
-                  timeDateUtil._networkCDCDateField,
-                  current_time,
-                  json["Nodes"][e.target],
-                  true
-                ) || self._filter_by_date(
-                  pg.modified || pg.created,
-                  timeDateUtil._networkCDCDateField,
-                  current_time,
-                  json["Nodes"][e.source],
-                  true
-                )))*/
-            ),
-            true
-          );
-
-          const direct_subcluster = new Set();
-          const direct_subcluster_new = new Set();
-          _.each(json_subcluster["Edges"], (e) => {
-            _.each([e.source, e.target], (nid) => {
-              if (!my_nodeset.has(json_subcluster["Nodes"][nid].id)) {
-                direct_subcluster.add(json_subcluster["Nodes"][nid].id);
-
-                if (
-                  self._filter_by_date(
-                    pg.modified || pg.created,
-                    timeDateUtil._networkCDCDateField,
-                    current_time,
-                    json_subcluster["Nodes"][nid],
-                    true
-                  )
-                )
-                  direct_subcluster_new.add(json_subcluster["Nodes"][nid].id);
-              }
-            });
-          });
-
-          pg.partitioned_nodes = _.map(
-            [
-              [node_set15, direct_at_15],
-              [node_set_subcluster, direct_subcluster],
-            ],
-            (ns) => {
-              const nodesets = {
-                existing_direct: [],
-                new_direct: [],
-                existing_indirect: [],
-                new_indirect: [],
-              };
-
-              _.each(ns[0], (n) => {
-                if (my_nodeset.has(n.id)) return;
-                let key;
-                if (
-                  self._filter_by_date(
-                    pg.modified || pg.created,
-                    timeDateUtil._networkCDCDateField,
-                    current_time,
-                    n,
-                    true
-                  )
-                ) {
-                  key = "new";
-                } else {
-                  key = "existing";
-                }
-
-                if (ns[1].has(n.id)) {
-                  key += "_direct";
-                } else {
-                  key += "_indirect";
-                }
-
-                nodesets[key].push(n);
-              });
-
-              return nodesets;
-            }
-          );
-
-          if (auto_extend && pg.tracking !== _cdcTrackingNone) {
-            const added_nodes = self.auto_expand_pg_handler(pg, nodeID2idx);
-
-            if (added_nodes.size) {
-              _.each([...added_nodes], (nid) => {
-                const n = self.json.Nodes[nid];
-                pg.nodes.push({
-                  name: n.id,
-                  added: current_time,
-                  kind: _cdcPrioritySetDefaultNodeKind,
-                  autoadded: true,
-                });
-                pg.node_objects.push(n);
-              });
-              pg.validated = false;
-              pg.autoexpanded = true;
-              pg.pending = true;
-              pg.expanded = added_nodes.size;
-              pg.modified = self.today;
-            }
-          }
-
-          const node_set = new Set(_.map(pg.nodes, (n) => n.name));
-          pg.meets_priority_def = _.some(priority_subclusters, (ps) => (
-            _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
-          ));
-          const cutoff12 = _n_months_ago(self.get_reference_date(), 12);
-          pg.last12 = _.filter(pg.node_objects, (n) =>
-            self._filter_by_date(
-              cutoff12,
-              timeDateUtil._networkCDCDateField,
-              self.today,
-              n,
-              false
-            )
-          ).length;
-        }
-      });
-    }
-  };
-
-  self.priority_groups_update_node_sets = function (name, operation) {
-    // name : the name of the priority group being added
-    // operation: one of
-    // "insert" , "delete", "update"
-
-    const sets = self.priority_groups_export().filter((pg) => pg.name === name);
-    const to_post = {
-      operation: operation,
-      name: name,
-      url: window.location.href,
-      sets: JSON.stringify(sets),
-    };
-
-    if (self.priority_set_table_write && self.priority_set_table_writeable) {
-      d3.text(self.priority_set_table_write)
-        .header("Content-Type", "application/json")
-        .post(JSON.stringify(to_post), (error, data) => {
-          if (error) {
-            console.log("received fatal error:", error);
-            /*
-            $(".container").html(
-              '<div class="alert alert-danger">FATAL ERROR. Please reload the page and contact help desk.</div>'
-            );
-            */
-          }
-        });
-    }
-  };
-
-  self.priority_groups_compute_node_membership = function () {
-    const pg_nodesets = [];
-
-    _.each(self.defined_priority_groups, (g) => {
-      pg_nodesets.push([
-        g.name,
-        g.createdBy === _cdcCreatedBySystem,
-        new Set(_.map(g.nodes, (n) => n.name)),
-      ]);
-    });
-
-    const pg_enum = [
-      "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
-      "Yes (dx>36 months)",
-      "No",
-    ];
-
-    _.each(
-      {
-        subcluster_or_priority_node: {
-          depends: [timeDateUtil._networkCDCDateField],
-          label: _cdcPOImember,
-          enum: pg_enum,
-          type: "String",
-          volatile: true,
-          color_scale: function () {
-            return d3.scale
-              .ordinal()
-              .domain(pg_enum.concat([_networkMissing]))
-              .range([
-                "red",
-                "orange",
-                "yellow",
-                "steelblue",
-                _networkMissingColor,
-              ]);
-          },
-          map: function (node) {
-            const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
-            if (npcoi) {
-              const cutoffs = [
-                _n_months_ago(self.get_reference_date(), 12),
-                _n_months_ago(self.get_reference_date(), 36),
-              ];
-
-              //const ysd = self.attribute_node_value_by_id(
-              //  node,
-              //  "years_since_dx"
-              //);
-
-              if (
-                self._filter_by_date(
-                  cutoffs[0],
-                  timeDateUtil._networkCDCDateField,
-                  self.get_reference_date(),
-                  node,
-                  false
-                )
-              )
-                return pg_enum[0];
-              if (
-                self._filter_by_date(
-                  cutoffs[1],
-                  timeDateUtil._networkCDCDateField,
-                  self.get_reference_date(),
-                  node,
-                  false
-                )
-              )
-                return pg_enum[1];
-              return pg_enum[2];
-            }
-            return pg_enum[3];
-          },
-        },
-        cluster_uid: {
-          depends: [timeDateUtil._networkCDCDateField],
-          label: "Clusters of Interest",
-          type: "String",
-          volatile: true,
-          map: function (node) {
-            const memberships = _.filter(pg_nodesets, (d) => d[2].has(node.id));
-            if (memberships.length === 1) {
-              return memberships[0][0];
-            } else if (memberships.length > 1) {
-              return "Multiple";
-            }
-            return "None";
-          },
-        },
-        subcluster_id: {
-          depends: [timeDateUtil._networkCDCDateField],
-          label: "Subcluster ID",
-          type: "String",
-          //label_format: d3.format(".2f"),
-          map: function (node) {
-            if (node) {
-              return node.subcluster_label || "None";
-            }
-            return _networkMissing;
-          },
-        },
-      },
-      self._aux_populated_predefined_attribute
-    );
-    self._aux_populate_category_menus();
-  };
-
-  self.priority_groups_edit_set_description = function (
-    name,
-    description,
-    update_table
-  ) {
-    if (self.defined_priority_groups) {
-      var idx = _.findIndex(
-        self.defined_priority_groups,
-        (g) => g.name === name
-      );
-      if (idx >= 0) {
-        self.defined_priority_groups[idx].description = description;
-        self.priority_groups_update_node_sets(name, "update");
-        if (update_table) {
-          clustersOfInterest.draw_priority_set_table(self);
-        }
-      }
-    }
-  };
-
-  self.priority_groups_remove_set = function (name, update_table) {
-    if (self.defined_priority_groups) {
-      var idx = _.findIndex(
-        self.defined_priority_groups,
-        (g) => g.name === name
-      );
-      if (idx >= 0) {
-        self.defined_priority_groups.splice(idx, 1);
-        self.priority_groups_update_node_sets(name, "delete");
-        if (update_table) {
-          clustersOfInterest.draw_priority_set_table(self);
-        }
-      }
-    }
-  };
-
-  self.priority_groups_export = function (group_set, include_unvalidated) {
-    group_set = group_set || self.defined_priority_groups;
-
-    return _.map(
-      _.filter(group_set, (g) => include_unvalidated || g.validated),
-      (g) => ({
-        name: g.name,
-        description: g.description,
-        nodes: g.nodes,
-        modified: _defaultDateFormats[0](g.modified),
-        kind: g.kind,
-        created: _defaultDateFormats[0](g.created),
-        createdBy: g.createdBy,
-        tracking: g.tracking,
-        autocreated: g.autocreated,
-        autoexpanded: g.autoexpanded,
-        pending: g.pending,
-      })
-    );
-  };
-
-  self.priority_groups_is_new_node = function (group_set, node) {
-    return node.autoadded;
-  };
-
-  self.priority_groups_export_nodes = function (
-    group_set,
-    include_unvalidated
-  ) {
-    group_set = group_set || self.defined_priority_groups;
-
-    return _.flatten(
-      _.map(
-        _.filter(group_set, (g) => include_unvalidated || g.validated),
-        (g) => {
-          //const refTime = g.modified.getTime();
-          //console.log ("GROUP: ",g.name, " = ", g.modified);
-
-          const exclude_nodes = new Set(g.not_in_network);
-          let cluster_detect_size = 0;
-          g.nodes.forEach((node) => {
-            if (node.added <= g.created) cluster_detect_size++;
-          });
-          return _.map(
-            _.filter(g.nodes, (gn) => !exclude_nodes.has(gn.name)),
-            (gn) => ({
-              eHARS_uid: gn.name,
-              cluster_uid: g.name,
-              cluster_ident_method: g.kind,
-              person_ident_method: gn.kind,
-              person_ident_dt: hivtrace_date_or_na_if_missing(gn.added),
-              new_linked_case: self.priority_groups_is_new_node(g, gn)
-                ? 1
-                : 0,
-              cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
-              network_date: hivtrace_date_or_na_if_missing(self.today),
-              cluster_detect_size: cluster_detect_size,
-              cluster_type: g.createdBy,
-              cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
-              cluster_growth: _cdcConciseTrackingOptions[g.tracking],
-              national_priority: g.meets_priority_def,
-              cluster_current_size: g.nodes.length,
-              cluster_dx_recent12_mo: g.last12,
-              cluster_overlap: g.overlap.sets,
-            })
-          );
-        }
-      )
-    );
-  };
-
-  self.priority_groups_export_sets = function () {
-    return _.flatten(
-      _.map(
-        _.filter(self.defined_priority_groups, (g) => g.validated),
-        (g) => ({
-          cluster_type: g.createdBy,
-          cluster_uid: g.name,
-          cluster_modified_dt: hivtrace_date_or_na_if_missing(g.modified),
-          cluster_created_dt: hivtrace_date_or_na_if_missing(g.created),
-          cluster_ident_method: g.kind,
-          cluster_growth: _cdcConciseTrackingOptions[g.tracking],
-          cluster_current_size: g.nodes.length,
-          national_priority: g.meets_priority_def,
-          cluster_dx_recent12_mo: g.last12,
-          cluster_overlap: g.overlap.sets,
-        })
-      )
-    );
-  };
-
-  //---------------------------------------------------------------------------------------------------
-  // END: NODE SET GROUPS
-  //---------------------------------------------------------------------------------------------------
-
-  //---------------------------------------------------------------------------------------------------
-  // BEGIN: NODE SET EDITOR
-  //---------------------------------------------------------------------------------------------------
-
-  clustersOfInterest.init(self);
-
-  //---------------------------------------------------------------------------------------------------
-  // END: NODE SET EDITOR
-  //---------------------------------------------------------------------------------------------------
-
-  //---------------------------------------------------------------------------------------------------
-
-  self.node_shaper = {
-    id: null,
-    shaper: function () {
-      return "circle";
-    },
-  };
-
-  nodesTab.init(d3.select(nodes_table));
-
-  self.filter_edges = true;
-  self.hide_hxb2 = false;
-  self.charge_correction = 5;
   self.margin = {
     top: 20,
     right: 10,
@@ -1972,64 +112,234 @@ var hivtrace_cluster_network_graph = function (
   };
   self.width = self.ww - self.margin.left - self.margin.right;
   self.height = (self.width * 9) / 16;
+
+  self.container = network_container;
+  self.nodes = [];
+  self.edges = [];
+  self.clusters = [];
+  self.cluster_sizes = [];
+  self.cluster_mapping = {};
+  self.percent_format = kGlobals.formats.PercentFormat;
+  self.missing = kGlobals.missing.label;
+  self.cluster_attributes = json["Cluster description"] || null;
+  self.precomputed_subclusters = json["Subclusters"] || null;
+  self.network_warning_tag = network_warning_tag;
+
+  self.annotate_cluster_changes();
+
+  self.filter_edges = true;
+  self.hide_hxb2 = false;
   self.cluster_table = d3.select(clusters_table);
-  self.priority_set_table =
-    self._is_CDC_ && options && options["priority-table"]
-      ? d3.select(options["priority-table"])
-      : null;
-  self.priority_set_table_write =
-    self._is_CDC_ && options && options["priority-table-writeback"]
-      ? options["priority-table-writeback"]
-      : null;
+
+  if (self._is_CDC_) {
+    self.priority_set_table = network.check_network_option(
+      options,
+      "priority-table"
+    );
+    self.priority_set_table_write = network.check_network_option(
+      options,
+      "priority-table-writeback"
+    );
+    if (self.priority_set_table)
+      self.priority_set_table = d3.select(self.priority_set_table);
+  } else {
+    self.priority_set_table = null;
+    self.priority_set_table_write = null;
+  }
+
   self.needs_an_update = false;
   self.hide_unselected = false;
   self.show_percent_in_pairwise_table = false;
-  self.gradient_id = 0;
 
   self.priority_set_table_writeable = true;
 
-  self._calc_country_nodes = function (calc_options) {
-    if (calc_options && "country-centers" in calc_options) {
-      self.mapProjection = d3.geo
-        .mercator()
-        .translate([
-          self.margin.left + self.width / 2,
-          self.margin.top + self.height / 2,
-        ])
-        .scale((150 * self.width) / 960);
-      _.each(self.countryCentersObject, (value) => {
-        value.countryXY = self.mapProjection([value.longt, value.lat]);
-      });
-    }
-  };
+  /** if there's a function passed as "init_code", run it now */
 
-  if (
-    options &&
-    "country-centers" in options &&
-    "country-outlines" in options
-  ) {
-    self.countryCentersObject = options["country-centers"];
-    self.countryOutlines = options["country-outlines"];
-    self._calc_country_nodes(options);
-    //console.log (self.countryCentersObject);
-    self.showing_on_map = options.showing_on_map;
-    //console.log (self.showing_on_map);
+  if (options && _.isFunction(options["init_code"])) {
+    options["init_code"].call(null, self, options);
+  }
+
+  /** Whenever the code creates a DOM element, it will be done using this prefix 
+      to generate element IDs
+   */
+
+  self.dom_prefix = network.check_network_option(
+    options,
+    "prefix",
+    "hiv-trace"
+  );
+
+  /** Retrieve additional columns (as dict, see comments further down in the code)
+      for the "clusters" table
+  
+   */
+  self.extra_cluster_table_columns = network.check_network_option(
+    options,
+    "cluster-table-columns",
+    null
+  );
+
+  /** Not primary networks are individual cluster/subcluster views.
+      They don't interfere with the primary network object, and UI elements
+  
+   */
+
+  self.isPrimaryGraph = network.check_network_option(
+    options,
+    "secondary",
+    true,
+    false
+  );
+
+  self.parent_graph_object = network.check_network_option(
+    options,
+    "parent_graph",
+    null
+  );
+
+  /** set the TODAY date for the network*/
+
+  if (json.Settings && json.Settings.created) {
+    self.today = new Date(json.Settings.created);
   } else {
-    self.countryCentersObject = null;
+    self.today = network.check_network_option(
+      options,
+      "today",
+      timeDateUtil.getCurrentDate()
+    );
+  }
+
+  /** get the reference (creation) date for the network.
+      it's the same as "today" for primary networks,
+      but is inherited from parent networks for secondary graphs (e.g. cluster or subcluster views)
+  */
+
+  if (self._is_CDC_) {
+    // define various CDC settings
+
+    /** Do not automatically create CoI */
+    self._is_CDC_auto_mode = network.check_network_option(
+      options,
+      "cdc-no-auto-priority-set-mode",
+      true,
+      false
+    );
+
+    /** these are the default columns selected in the "nodes" table */
+
+    self.displayed_node_subset = network.check_network_option(
+      options,
+      "node-attributes",
+      [
+        tables._networkNodeIDField,
+        "sex_trans",
+        "race_cat",
+        "hiv_aids_dx_dt",
+        "cur_city_name",
+      ]
+    );
+
+    /** retrieve the target DOM ID for placing the "subcluster" table into */
+    self.subcluster_table = network.check_network_option(
+      options,
+      "subcluster-table",
+      null,
+      d3.select(options["subcluster-table"])
+    );
+
+    /** extra column definitions for the subcluster table */
+    self.extra_subcluster_table_columns = null;
+
+    // SLKP 20200727 issues
+
+    /** Secure HIV-TRACE specific settings */
+    self.CDC_data = {
+      jurisdiction: self
+        .lookup_option("jurisdiction", "unknown", options)
+        .toLowerCase()
+        .replace(/\s/g, ""),
+      timestamp: self.today,
+      "autocreate-priority-set-size": 5,
+    };
+
+    /** What jurisdiction are we using for Secure HIV-TRACE?
+        This determines the two-letter prefix for auto-naming Clusters of Interest
+        If none, use PG prefix
+     */
+
+    if (self.CDC_data.jurisdiction in kGlobals.CDCJurisdictionCodes) {
+      self.CDC_data["jurisdiction_code"] =
+        kGlobals.CDCJurisdictionCodes[self.CDC_data.jurisdiction].toUpperCase();
+    } else {
+      self.CDC_data["jurisdiction_code"] = "PG";
+    }
+
+    /** Check if this is a low morbidity jurisdiction */
+    if (
+      kGlobals.CDCJurisdictionLowMorbidity.has(self.CDC_data["jurisdiction"])
+    ) {
+      self.CDC_data["autocreate-priority-set-size"] = 3;
+    }
+
+    /** Populate column table definitions */
+    if (self.subcluster_table) {
+      self.extra_subcluster_table_columns =
+        columnDefinitions.secure_hiv_trace_subcluster_columns(self);
+    } else if (self.extra_cluster_table_columns) {
+      self.extra_cluster_table_columns =
+        self.extra_cluster_table_columns.concat(
+          columnDefinitions.secure_hiv_trace_subcluster_columns(self)
+        );
+    } else {
+      self.extra_cluster_table_columns =
+        columnDefinitions.secure_hiv_trace_subcluster_columns(self);
+    }
+  } // end self._is_CDC_
+
+  if (self._is_CDC_) {
+    self.extra_node_table_columns = null;
+  } else {
+    self.extra_node_table_columns = network.check_network_option(
+      options,
+      "node-table-columns"
+    );
+  }
+
+  /** default subcluster definition threshold */
+  self.subcluster_threshold = network.check_network_option(
+    options,
+    "subcluster-thershold",
+    0.005
+  );
+
+  clustersOfInterest.init(self);
+  nodesTab.init(d3.select(nodes_table));
+
+  self.countryCentersObject = network.check_network_option(
+    options,
+    "country-centers"
+  );
+  self.countryOutlines = network.check_network_option(
+    options,
+    "country-outlines"
+  );
+
+  if (self.countryCentersObject && self.countryOutlines) {
+    self._calc_country_nodes(options);
+    self.showing_on_map = options.showing_on_map;
+  } else {
     self.showing_on_map = false;
   }
 
-  self._additional_node_pop_fields = [];
   /** this array contains fields that will be appended to node pop-overs in the network tab
       they will precede all the fields that are shown based on selected labeling */
+  self._additional_node_pop_fields = [];
 
-  if (options && "minimum size" in options) {
-    self.minimum_cluster_size = options["minimum size"];
-  } else if (self._is_CDC_) {
-    self.minimum_cluster_size = 5;
-  } else {
-    self.minimum_cluster_size = 5;
-  }
+  self.minimum_cluster_size = network.check_network_option(
+    options,
+    "minimum size",
+    5
+  );
 
   timeDateUtil.init(options, self._is_CDC_, timeDateUtil._networkCDCDateField);
 
@@ -2037,48 +347,23 @@ var hivtrace_cluster_network_graph = function (
     self._additional_node_pop_fields.push(timeDateUtil._networkCDCDateField);
   }
 
-  if (options && "core-link" in options) {
-    self.core_link_length = options["core-link"];
-  } else {
-    self.core_link_length = -1;
-  }
-
-  if (options && "edge-styler" in options) {
-    self.additional_edge_styler = options["edge-styler"];
-  } else {
-    self.additional_edge_styler = null;
-  }
-
-  self.filter_by_size = function (cluster, value) {
-    return cluster.children.length >= self.minimum_cluster_size;
-  };
-
-  self.filter_singletons = function (cluster, value) {
-    return cluster.children.length > 1;
-  };
-
-  self.filter_if_added = function (cluster) {
-    return self.cluster_attributes[cluster.cluster_id].type !== "existing";
-  };
-
-  self.filter_time_period = function (cluster) {
-    return _.some(self.nodes_by_cluster[cluster.cluster_id], (n) =>
-      self.attribute_node_value_by_id(n, timeDateUtil.getClusterTimeScale()) >=
-      self.using_time_filter
-    );
-  };
-
-  self.cluster_filtering_functions = {
-    size: self.filter_by_size,
-    singletons: self.filter_singletons,
-  };
-
-  self.using_time_filter = null;
+  self.core_link_length = network.check_network_option(
+    options,
+    "core-link",
+    -1
+  );
+  self.additional_edge_styler = network.check_network_option(
+    options,
+    "edge-styler"
+  );
 
   if (self.json.Notes) {
     _.each(self.json.Notes, (s) => (self.warning_string += s + "<br>"));
   }
 
+  /**
+    the true branch is taken if the network JSON contains "Cluster description"
+  */
   if (self.cluster_attributes) {
     self.warning_string += __("network_tab")["cluster_display_info"];
     self.showing_diff = true;
@@ -2099,426 +384,43 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
-  self.cluster_display_filter = function (cluster) {
-    return _.every(self.cluster_filtering_functions, (filter) => filter(cluster));
-  };
-
   self.initial_packed =
     options && options["initial_layout"] === "tiled" ? false : true;
-
-  self.recent_rapid_definition_simple = function (network, date) {
-    // date = date || self.get_reference_date(); // not used
-
-    var subcluster_enum_simple = [
-      "Not a member of national priority clusterOI", // 1,4,5,6
-      "12 months and in national priority clusterOI", // 2
-      "36 months and in national priority clusterOI", // 3
-      ">36 months and in national priority clusterOI", // 0
-    ];
-
-    return {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "Subcluster or Priority Node",
-      enum: subcluster_enum_simple,
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(subcluster_enum_simple.concat([_networkMissing]))
-          .range(
-            _.union(
-              ["#CCCCCC", "red", "blue", "#9A4EAE"],
-              [_networkMissingColor]
-            )
-          );
-      },
-
-      map: function (node) {
-        if (node.subcluster_label) {
-          if (node.nationalCOI) {
-            return subcluster_enum_simple[node.nationalCOI];
-          }
-        }
-        return subcluster_enum_simple[0];
-      },
-    };
-  };
-
-  self.recent_rapid_definition = function (network, date) {
-    date = date || self.get_reference_date();
-    var subcluster_enum = [
-      "No, dx>36 months", // 0
-      "No, but dx≤12 months",
-      "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
-      "Future node", // 4
-      "Not a member of subcluster", // 5
-      "Not in a subcluster",
-      "No, but 12<dx≤ 36 months",
-    ];
-
-    return {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "ClusterOI membership as of " + _defaultDateViewFormat(date),
-      enum: subcluster_enum,
-      //type: "String",
-      volatile: true,
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(subcluster_enum.concat([_networkMissing]))
-          .range(
-            _.union(
-              [
-                "steelblue",
-                "pink",
-                "red",
-                "#FF8C00",
-                "#9A4EAE",
-                "yellow",
-                "#FFFFFF",
-                "#FFD580",
-              ],
-              [_networkMissingColor]
-            )
-          );
-      },
-
-      map: function (node) {
-        if (node.subcluster_label) {
-          if (node.priority_flag > 0) {
-            return subcluster_enum[node.priority_flag];
-          }
-          return subcluster_enum[0];
-        }
-        return subcluster_enum[6];
-      },
-    };
-  };
 
   self._networkPredefinedAttributeTransforms = {
     /** runtime computed node attributes, e.g. transforms of existing attributes */
 
-    binned_vl_recent_value: {
-      depends: ["vl_recent_value"],
-      label: "binned_vl_recent_value",
-      enum: ["<200", "200-10000", ">10000"],
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(["<200", "200-10000", ">10000", _networkMissing])
-          .range(_.union(_networkSequentialColor[3], [_networkMissingColor]));
-      },
+    binned_vl_recent_value: self.define_attribute_binned_vl(
+      "vl_recent_value",
+      "Most Recent Viral Load Category Binned"
+    ),
 
-      map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(
-          node,
-          "vl_recent_value",
-          true
-        );
-        if (vl_value !== _networkMissing) {
-          if (vl_value <= 200) {
-            return "<200";
-          }
-          if (vl_value <= 10000) {
-            return "200-10000";
-          }
-          return ">10000";
-        }
-        return _networkMissing;
-      },
-    },
+    binned_vl_recent_value_adj: self.define_attribute_binned_vl(
+      "vl_recent_value_adj",
+      "Most Recent Viral Load Category Binned"
+    ),
 
-    binned_vl_recent_value_adj: {
-      depends: ["vl_recent_value_adj"],
-      label: "Most Recent Viral Load Category Binned",
-      enum: ["<200", "200-10000", ">10000"],
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(["<200", "200-10000", ">10000", _networkMissing])
-          .range(_.union(_networkSequentialColor[3], [_networkMissingColor]));
-      },
+    vl_result_interpretation: self.define_attribute_vl_interpretaion(),
 
-      map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(
-          node,
-          "vl_recent_value_adj",
-          true
-        );
-        if (vl_value !== _networkMissing) {
-          if (vl_value <= 200) {
-            return "<200";
-          }
-          if (vl_value <= 10000) {
-            return "200-10000";
-          }
-          return ">10000";
-        }
-        return _networkMissing;
-      },
-    },
+    age_dx_normalized: self.define_attribute_age_dx(),
 
-    vl_result_interpretation: {
-      depends: ["vl_recent_value", "result_interpretation"],
-      label: "vl_result_interpretation",
-      color_stops: 6,
-      scale: d3.scale.log(10).domain([10, 1e6]).range([0, 5]),
-      category_values: ["Suppressed", "Viremic (above assay limit)"],
-      type: "Number-categories",
-      color_scale: function (attr) {
-        var color_scale_d3 = d3.scale
-          .linear()
-          .range([
-            "#d53e4f",
-            "#fc8d59",
-            "#fee08b",
-            "#e6f598",
-            "#99d594",
-            "#3288bd",
-          ])
-          .domain(_.range(_networkContinuousColorStops, -1, -1));
+    years_since_dx: self.define_attribute_dx_years(
+      true,
+      "Years since diagnosis"
+    ),
 
-        return function (v) {
-          if (_.isNumber(v)) {
-            return color_scale_d3(attr.scale(v));
-          }
-          switch (v) {
-            case attr.category_values[0]:
-              return color_scale_d3(0);
-            case attr.category_values[1]:
-              return color_scale_d3(5);
-            default:
-              return _networkMissingColor;
-          }
-        };
-      },
-      label_format: d3.format(",.0f"),
-      map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(
-          node,
-          "vl_recent_value",
-          true
-        );
-        var result_interpretation = self.attribute_node_value_by_id(
-          node,
-          "result_interpretation"
-        );
-
-        if (
-          vl_value !== _networkMissing ||
-          result_interpretation !== _networkMissing
-        ) {
-          if (result_interpretation !== _networkMissing) {
-            if (result_interpretation === "<") {
-              return "Suppressed";
-            }
-            if (result_interpretation === ">") {
-              return "Viremic (above assay limit)";
-            }
-            if (vl_value !== _networkMissing) {
-              return vl_value;
-            }
-          } else {
-            return vl_value;
-          }
-        }
-
-        return _networkMissing;
-      },
-    },
-
-    //subcluster_or_priority_node_simple: self.recent_rapid_definition_simple,
-    //subcluster_or_priority_node: self.recent_rapid_definition,
-
-    /*subcluster_index: {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "Subcluster ID",
-      type: "String",
-
-      map: function (node) {
-        return node.subcluster_label;
-      },
-    },*/
-
-    age_dx_normalized: {
-      depends: ["age_dx"],
-      overwrites: "age_dx",
-      label: "Age at Diagnosis",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain([
-            "<13",
-            "13-19",
-            "20-29",
-            "30-39",
-            "40-49",
-            "50-59",
-            "≥60",
-            _networkMissing,
-          ])
-          .range([
-            "#b10026",
-            "#e31a1c",
-            "#fc4e2a",
-            "#fd8d3c",
-            "#feb24c",
-            "#fed976",
-            "#ffffb2",
-            "#636363",
-          ]);
-      },
-      map: function (node) {
-        var vl_value = self.attribute_node_value_by_id(node, "age_dx");
-        if (vl_value === ">=60") {
-          return "≥60";
-        }
-        if (vl_value === "\ufffd60") {
-          return "≥60";
-        }
-        if (Number(vl_value) >= 60) {
-          return "≥60";
-        }
-        return vl_value;
-      },
-    },
-
-    years_since_dx: {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "Years since diagnosis",
-      type: "Number",
-      label_format: d3.format(".2f"),
-      map: function (node) {
-        try {
-          var value = self._parse_dates(
-            self.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField)
-          );
-
-          if (value) {
-            value = (self.today - value) / 31536000000;
-          } else {
-            value = _networkMissing;
-          }
-
-          return value;
-        } catch (err) {
-          return _networkMissing;
-        }
-      },
-      color_scale: function (attr) {
-        var range_without_missing = _.without(
-          attr.value_range,
-          _networkMissing
-        );
-        var color_scale = _.compose(
-          d3.interpolateRgb("#ffffcc", "#800026"),
-          d3.scale
-            .linear()
-            .domain([
-              range_without_missing[0],
-              range_without_missing[range_without_missing.length - 1],
-            ])
-            .range([0, 1])
-        );
-        return function (v) {
-          if (v === _networkMissing) {
-            return _networkMissingColor;
-          }
-          return color_scale(v);
-        };
-      },
-    },
-
-    hiv_aids_dx_dt_year: {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "Diagnosis Year",
-      type: "Number",
-      label_format: d3.format(".0f"),
-      map: function (node) {
-        try {
-          var value = self._parse_dates(
-            self.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField)
-          );
-          if (value) {
-            value = String(value.getFullYear());
-          } else {
-            value = _networkMissing;
-          }
-          return value;
-        } catch (err) {
-          return _networkMissing;
-        }
-      },
-      color_scale: function (attr) {
-        var range_without_missing = _.without(
-          attr.value_range,
-          _networkMissing
-        );
-        var color_scale = _.compose(
-          d3.interpolateRgb("#ffffcc", "#800026"),
-          d3.scale
-            .linear()
-            .domain([
-              range_without_missing[0],
-              range_without_missing[range_without_missing.length - 1],
-            ])
-            .range([0, 1])
-        );
-        return function (v) {
-          if (v === _networkMissing) {
-            return _networkMissingColor;
-          }
-          return color_scale(v);
-        };
-      },
-    },
+    hiv_aids_dx_dt_year: self.define_attribute_dx_years(
+      false,
+      "Diagnosis Year"
+    ),
   };
 
   if (self.cluster_attributes) {
-    self._networkPredefinedAttributeTransforms["_newly_added"] = {
-      label: "Compared to previous network",
-      enum: ["Existing", "New", "Moved clusters"],
-      type: "String",
-      map: function (node) {
-        if (node.attributes.indexOf("new_node") >= 0) {
-          return "New";
-        }
-        if (node.attributes.indexOf("moved_clusters") >= 0) {
-          return "Moved clusters";
-        }
-        return "Existing";
-      },
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(["Existing", "New", "Moved clusters", _networkMissing])
-          .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]);
-      },
-    };
+    self._networkPredefinedAttributeTransforms["_newly_added"] =
+      self.define_attribute_network_update();
   }
 
-  if (self.precomputed_subclusters) {
-    _.each(self.precomputed_subclusters, (v, k) => {
-      self._networkPredefinedAttributeTransforms["_subcluster" + k] = {
-        label: "Subcluster @" + d3.format("p")(Number(k)),
-        type: "String",
-        map: function (node) {
-          if ("subcluster" in node) {
-            var sub_at_k = _.find(node.subcluster, (t) => t[0] === k);
-            if (sub_at_k) {
-              return sub_at_k[1];
-            }
-          }
-          return "Not in a subcluster";
-        },
-      };
-    });
-  }
+  /** inject any attributes passed through "computed-attributes" */
 
   if (options && options["computed-attributes"]) {
     _.extend(
@@ -2527,167 +429,11 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
-  self._parse_dates = function (value) {
-    if (value instanceof Date) {
-      return value;
-    }
-    var parsed_value = null;
-
-    var passed = _.any(_defaultDateFormats, (f) => {
-      parsed_value = f.parse(value);
-      return parsed_value;
-    });
-
-    //console.log (value + " mapped to " + parsed_value);
-
-    if (passed) {
-      if (
-        self._is_CDC_ &&
-        (parsed_value.getFullYear() < 1970 ||
-          parsed_value.getFullYear() > _networkUpperBoundOnDate)
-      ) {
-        throw Error("Invalid date");
-      }
-      return parsed_value;
-    }
-
-    throw Error("Invalid date");
-  };
-
   /*------------ Network layout code ---------------*/
-  var handle_cluster_click = function (cluster, release) {
-    var container = d3.select(self.container);
-    var id = "d3_context_menu_id";
-    var menu_object = container.select("#" + id);
-
-    if (menu_object.empty()) {
-      menu_object = container
-        .append("ul")
-        .attr("id", id)
-        .attr("class", "dropdown-menu")
-        .attr("role", "menu");
-    }
-
-    menu_object.selectAll("li").remove();
-
-    var already_fixed = cluster && cluster.fixed === 1;
-
-    if (cluster) {
-      menu_object
-        .append("li")
-        .append("a")
-        .attr("tabindex", "-1")
-        .text("Expand cluster")
-        .on("click", (d) => {
-          cluster.fixed = 0;
-          self.expand_cluster_handler(cluster, true);
-          menu_object.style("display", "none");
-        });
-
-      menu_object
-        .append("li")
-        .append("a")
-        .attr("tabindex", "-1")
-        .text("Center on screen")
-        .on("click", (d) => {
-          cluster.fixed = 0;
-          center_cluster_handler(cluster);
-          menu_object.style("display", "none");
-        });
-
-      menu_object
-        .append("li")
-        .append("a")
-        .attr("tabindex", "-1")
-        .text((d) => {
-          if (cluster.fixed) return "Allow cluster to float";
-          return "Hold cluster at current position";
-        })
-        .on("click", (d) => {
-          cluster.fixed = !cluster.fixed;
-          menu_object.style("display", "none");
-        });
-
-      if (self.isPrimaryGraph) {
-        menu_object
-          .append("li")
-          .append("a")
-          .attr("tabindex", "-1")
-          .text((d) => "Show this cluster in separate tab")
-          .on("click", (d) => {
-            self.open_exclusive_tab_view(
-              cluster.cluster_id,
-              null,
-              null,
-              self._distance_gate_options()
-            );
-            menu_object.style("display", "none");
-          });
-      }
-
-      if (clustersOfInterest.get_editor()) {
-        menu_object
-          .append("li")
-          .append("a")
-          .attr("tabindex", "-1")
-          .text((d) => "Add this cluster to the cluster of interest")
-          .on("click", (d) => {
-            clustersOfInterest
-              .get_editor()
-              .append_nodes(_.map(cluster.children, (c) => c.id));
-          });
-      }
-
-      // Only show the "Show on map" option for clusters with valid country info (for now just 2 letter codes) for each node.
-      const show_on_map_enabled = _.every(cluster.children, (node) => self._get_node_country(node).length === 2);
-
-      if (show_on_map_enabled) {
-        menu_object
-          .append("li")
-          .append("a")
-          .attr("tabindex", "-1")
-          .text("Show on map")
-          .on("click", (d) => {
-            //console.log(cluster)
-            self.open_exclusive_tab_view(
-              cluster.cluster_id,
-              null,
-              (cluster_id) => "Map of cluster: " + cluster_id,
-              { showing_on_map: true }
-            );
-          });
-      }
-
-      cluster.fixed = 1;
-
-      menu_object
-        .style("position", "absolute")
-        .style("left", String(d3.event.offsetX) + "px")
-        .style("top", String(d3.event.offsetY) + "px")
-        .style("display", "block");
-    } else {
-      if (release) {
-        release.fixed = 0;
-      }
-      menu_object.style("display", "none");
-    }
-
-    container.on(
-      "click",
-      (d) => {
-        handle_cluster_click(null, already_fixed ? null : cluster);
-      },
-      true
-    );
-  };
-
-  /*self._handle_inline_charts = function (e) {
-
-  }*/
 
   self._get_node_country = function (node) {
     var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
-    if (countryCodeAlpha2 === _networkMissing) {
+    if (countryCodeAlpha2 === kGlobals.missing.label) {
       countryCodeAlpha2 = self.attribute_node_value_by_id(node, "Country");
     }
     return countryCodeAlpha2;
@@ -2737,88 +483,6 @@ var hivtrace_cluster_network_graph = function (
     return self;
   };
 
-  self._check_for_time_series = function (export_items) {
-    var event_handler = function (network, e) {
-      if (e) {
-        e = d3.select(e);
-      }
-      if (!network.network_cluster_dynamics) {
-        network.network_cluster_dynamics = network.network_svg
-          .append("g")
-          .attr("id", self.dom_prefix + "-dynamics-svg")
-          .attr("transform", "translate (" + network.width * 0.45 + ",0)");
-
-        network.handle_inline_charts = function (plot_filter) {
-          var attr = null;
-          var color = null;
-          if (
-            network.colorizer["category_id"] &&
-            !network.colorizer["continuous"]
-          ) {
-            var attr_desc =
-              network.json[_networkGraphAttrbuteID][
-              network.colorizer["category_id"]
-              ];
-            attr = {};
-            attr[network.colorizer["category_id"]] = attr_desc["label"];
-            color = {};
-            color[attr_desc["label"]] = network.colorizer["category"];
-          }
-
-          misc.cluster_dynamics(
-            network.extract_network_time_series(
-              timeDateUtil.getClusterTimeScale(),
-              attr,
-              plot_filter
-            ),
-            network.network_cluster_dynamics,
-            "Quarter of Diagnosis",
-            "Number of Cases",
-            null,
-            null,
-            {
-              base_line: 20,
-              top: network.margin.top,
-              right: network.margin.right,
-              bottom: 3 * 20,
-              left: 5 * 20,
-              font_size: 12,
-              rect_size: 14,
-              width: network.width / 2,
-              height: network.height / 2,
-              colorizer: color,
-              prefix: network.dom_prefix,
-              barchart: true,
-              drag: {
-                x: network.width * 0.45,
-                y: 0,
-              },
-            }
-          );
-        };
-        network.handle_inline_charts();
-        if (e) {
-          e.text("Hide time-course plots");
-        }
-      } else {
-        if (e) {
-          e.text("Show time-course plots");
-        }
-        network.network_cluster_dynamics.remove();
-        network.network_cluster_dynamics = null;
-        network.handle_inline_charts = null;
-      }
-    };
-
-    if (timeDateUtil.getClusterTimeScale()) {
-      if (export_items) {
-        export_items.push(["Show time-course plots", event_handler]);
-      } else {
-        event_handler(self);
-      }
-    }
-  };
-
   self.open_exclusive_tab_close = function (
     tab_element,
     tab_content,
@@ -2837,7 +501,10 @@ var hivtrace_cluster_network_graph = function (
     additional_options,
     include_injected_edges
   ) {
-    var cluster = _.find(self.clusters, (c) => String(c.cluster_id) === String(cluster_id));
+    var cluster = _.find(
+      self.clusters,
+      (c) => String(c.cluster_id) === String(cluster_id)
+    );
 
     if (!cluster) {
       return;
@@ -2847,7 +514,7 @@ var hivtrace_cluster_network_graph = function (
 
     additional_options["parent_graph"] = self;
 
-    var filtered_json = _extract_single_cluster(
+    var filtered_json = self.extract_single_cluster(
       custom_filter
         ? _.filter(self.json.Nodes, custom_filter)
         : cluster.children,
@@ -2857,12 +524,12 @@ var hivtrace_cluster_network_graph = function (
       include_injected_edges
     );
 
-    if (_networkGraphAttrbuteID in json) {
-      filtered_json[_networkGraphAttrbuteID] = {};
+    if (kGlobals.network.GraphAttrbuteID in json) {
+      filtered_json[kGlobals.network.GraphAttrbuteID] = {};
       $.extend(
         true,
-        filtered_json[_networkGraphAttrbuteID],
-        json[_networkGraphAttrbuteID]
+        filtered_json[kGlobals.network.GraphAttrbuteID],
+        json[kGlobals.network.GraphAttrbuteID]
       );
     }
 
@@ -2903,24 +570,12 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
-  self._random_id = function (alphabet, length) {
-    alphabet = alphabet || ["a", "b", "c", "d", "e", "f", "g"];
-    length = length || 32;
-    var s = "";
-    for (var i = 0; i < length; i++) {
-      s += _.sample(alphabet);
-    }
-    return s;
-  };
-
   self.open_exclusive_tab_view_aux = function (
     filtered_json,
     title,
     option_extras
   ) {
-    var letters = ["a", "b", "c", "d", "e", "f", "g"];
-
-    var random_prefix = self._random_id(letters, 32);
+    var random_prefix = misc.random_id();
     var random_tab_id = random_prefix + "_tab";
     var random_content_id = random_prefix + "_div";
     var random_button_bar = random_prefix + "_ui";
@@ -2930,7 +585,7 @@ var hivtrace_cluster_network_graph = function (
       $("#" + random_content_id).length ||
       $("#" + random_button_bar).length
     ) {
-      random_prefix = self._random_id(letters, 32);
+      random_prefix = misc.random_id();
       random_tab_id = random_prefix + "_tab";
       random_content_id = random_prefix + "_div";
       random_button_bar = random_prefix + "_ui";
@@ -3126,7 +781,7 @@ var hivtrace_cluster_network_graph = function (
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => node.show_label ? "Hide text label" : "Show text label")
+        .text((d) => (node.show_label ? "Hide text label" : "Show text label"))
         .on("click", (d) => {
           node.fixed = 0;
           //node.show_label = !node.show_label;
@@ -3198,21 +853,21 @@ var hivtrace_cluster_network_graph = function (
 
     var treemap = packed
       ? d3.layout
-        .pack()
-        .size([self.width, self.height])
-        //.sticky(true)
-        .children((d) => d.children)
-        .value((d) => d.parent.children.length ** 1.5)
-        .sort((a, b) => b.value - a.value)
-        .padding(5)
+          .pack()
+          .size([self.width, self.height])
+          //.sticky(true)
+          .children((d) => d.children)
+          .value((d) => d.parent.children.length ** 1.5)
+          .sort((a, b) => b.value - a.value)
+          .padding(5)
       : d3.layout
-        .treemap()
-        .size([self.width, self.height])
-        //.sticky(true)
-        .children((d) => d.children)
-        .value((d) => d.parent.children.length ** 1.0)
-        .sort((a, b) => a.value - b.value)
-        .ratio(1);
+          .treemap()
+          .size([self.width, self.height])
+          //.sticky(true)
+          .children((d) => d.children)
+          .value((d) => d.parent.children.length ** 1.0)
+          .sort((a, b) => a.value - b.value)
+          .ratio(1);
 
     var clusters = treemap.nodes(d_clusters);
     _.each(clusters, (c) => {
@@ -3278,16 +933,21 @@ var hivtrace_cluster_network_graph = function (
   }
 
   self._refresh_subcluster_view = function (set_date) {
-    self.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12, set_date);
+    self.annotate_priority_clusters(
+      timeDateUtil._networkCDCDateField,
+      36,
+      12,
+      set_date
+    );
 
-    var field_def = self.recent_rapid_definition(self, set_date);
+    var field_def = self.define_attribute_COI_membership(self, set_date);
 
     //console.log (field_def.dimension);
 
     if (field_def) {
       _.each(self.nodes, (node) => {
         const attr_v = field_def["map"](node, self);
-        inject_attribute_node_value_by_id(
+        HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
           node,
           "subcluster_temporal_view",
           attr_v
@@ -3323,10 +983,9 @@ var hivtrace_cluster_network_graph = function (
         nodes = _.filter(self.json.Nodes, custom_filter);
       }
     }
-    var filtered_json = _extract_single_cluster(
+    var filtered_json = self.extract_single_cluster(
       nodes,
-      custom_edge_filter ||
-      ((e) => e.length <= length_threshold),
+      custom_edge_filter || ((e) => e.length <= length_threshold),
       false,
       null,
       include_injected_edges
@@ -3336,12 +995,12 @@ var hivtrace_cluster_network_graph = function (
       n.subcluster_label = "1.1";
     });
 
-    if (_networkGraphAttrbuteID in json) {
-      filtered_json[_networkGraphAttrbuteID] = {};
+    if (kGlobals.network.GraphAttrbuteID in json) {
+      filtered_json[kGlobals.network.GraphAttrbuteID] = {};
       $.extend(
         true,
-        filtered_json[_networkGraphAttrbuteID],
-        json[_networkGraphAttrbuteID]
+        filtered_json[kGlobals.network.GraphAttrbuteID],
+        json[kGlobals.network.GraphAttrbuteID]
       );
     }
 
@@ -3361,20 +1020,24 @@ var hivtrace_cluster_network_graph = function (
             .append("input")
             .attr("type", "date")
             .classed("form-control", true)
-            .attr("value", _defaultDateViewFormatSlider(self.today))
-            .attr("max", _defaultDateViewFormatSlider(self.today))
+            .attr("value", timeDateUtil.DateViewFormatSlider(self.today))
+            .attr("max", timeDateUtil.DateViewFormatSlider(self.today))
             .attr(
               "min",
-              _defaultDateViewFormatSlider(
-                d3.min(network.nodes, (node) => network.attribute_node_value_by_id(
-                  node,
-                  timeDateUtil._networkCDCDateField
-                ))
+              timeDateUtil.DateViewFormatSlider(
+                d3.min(network.nodes, (node) =>
+                  network.attribute_node_value_by_id(
+                    node,
+                    timeDateUtil._networkCDCDateField
+                  )
+                )
               )
             )
             .on("change", function (e) {
               //d3.event.preventDefault();
-              var set_date = _defaultDateViewFormatSlider.parse(this.value);
+              var set_date = timeDateUtil.DateViewFormatSlider.parse(
+                this.value
+              );
               if (this.value) {
                 network._refresh_subcluster_view(set_date);
 
@@ -3446,24 +1109,6 @@ var hivtrace_cluster_network_graph = function (
     });*/
   };
 
-  function _n_months_ago(reference_date, months) {
-    var past_date = new Date(reference_date);
-    var past_months = past_date.getMonth();
-    var diff_year = Math.floor(months / 12);
-    var left_over = months - diff_year * 12;
-
-    if (left_over > past_months) {
-      past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
-      past_date.setMonth(12 - (left_over - past_months));
-    } else {
-      past_date.setFullYear(past_date.getFullYear() - diff_year);
-      past_date.setMonth(past_months - left_over);
-    }
-
-    //past_date.setTime (past_date.getTime () - months * 30 * 24 * 3600000);
-    return past_date;
-  }
-
   var oldest_nodes_first = function (n1, n2) {
     const date_field = date_field || timeDateUtil._networkCDCDateField;
 
@@ -3475,33 +1120,6 @@ var hivtrace_cluster_network_graph = function (
       return n1.id < n2.id ? -1 : 1;
     }
     return node1_dx < node2_dx ? -1 : 1;
-  };
-
-  self._filter_by_date = function (
-    cutoff,
-    date_field,
-    start_date,
-    node,
-    count_newly_added
-  ) {
-    if (count_newly_added && self._is_new_node(node)) {
-      return true;
-    }
-    var node_dx = self.attribute_node_value_by_id(node, date_field);
-    if (node_dx instanceof Date) {
-      return node_dx >= cutoff && node_dx <= start_date;
-    }
-    try {
-      node_dx = self._parse_dates(
-        self.attribute_node_value_by_id(node, date_field)
-      );
-      if (node_dx instanceof Date) {
-        return node_dx >= cutoff && node_dx <= start_date;
-      }
-    } catch (err) {
-      return undefined;
-    }
-    return false;
   };
 
   self.annotate_priority_clusters = function (
@@ -3535,8 +1153,8 @@ var hivtrace_cluster_network_graph = function (
     try {
       start_date = start_date || self.get_reference_date();
 
-      var cutoff_long = _n_months_ago(start_date, span_months);
-      var cutoff_short = _n_months_ago(start_date, recent_months);
+      var cutoff_long = timeDateUtil.n_months_ago(start_date, span_months);
+      var cutoff_short = timeDateUtil.n_months_ago(start_date, recent_months);
 
       var node_iterator;
 
@@ -3547,7 +1165,7 @@ var hivtrace_cluster_network_graph = function (
         beginning_of_time.setYear(1900);
         node_iterator = [];
         _.each(self.nodes, (node) => {
-          var filter_result = self._filter_by_date(
+          var filter_result = self.filter_by_date(
             beginning_of_time,
             date_field,
             start_date,
@@ -3607,7 +1225,7 @@ var hivtrace_cluster_network_graph = function (
 
       const cluster_id_match =
         self.precomputed_subclusters &&
-          self.subcluster_threshold in self.precomputed_subclusters
+        self.subcluster_threshold in self.precomputed_subclusters
           ? self.precomputed_subclusters
           : null;
 
@@ -3615,7 +1233,7 @@ var hivtrace_cluster_network_graph = function (
         /** extract subclusters; all nodes at given threshold */
         /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
 
-        //var cluster_nodes       = _extract_single_cluster (cluster.children, null, true);
+        //var cluster_nodes       = self.extract_single_cluster (cluster.children, null, true);
 
         var array_index = self.cluster_mapping[cluster_index];
 
@@ -3659,7 +1277,7 @@ var hivtrace_cluster_network_graph = function (
                 );
                 if (sub_at_k) {
                   precomputed_values[
-                    sub_at_k[1].split(_networkSubclusterSeparator)[1]
+                    sub_at_k[1].split(kGlobals.SubclusterSeparator)[1]
                   ] = 1;
                   return;
                 }
@@ -3684,7 +1302,7 @@ var hivtrace_cluster_network_graph = function (
 
           var label =
             self.clusters[array_index].cluster_id +
-            _networkSubclusterSeparator +
+            kGlobals.SubclusterSeparator +
             subcluster_id;
 
           _.each(c, (n) => {
@@ -3724,9 +1342,9 @@ var hivtrace_cluster_network_graph = function (
           // extract nodes based on dates
 
           const date_filter = (n) =>
-            self._filter_by_date(cutoff_long, date_field, start_date, n);
+            self.filter_by_date(cutoff_long, date_field, start_date, n);
 
-          var subcluster_json = _extract_single_cluster(
+          var subcluster_json = self.extract_single_cluster(
             _.filter(sub.children, date_filter),
             null,
             true,
@@ -3736,7 +1354,10 @@ var hivtrace_cluster_network_graph = function (
           var rr_cluster = _.filter(
             hivtrace_cluster_depthwise_traversal(
               subcluster_json.Nodes,
-              _.filter(subcluster_json.Edges, (e) => e.length <= self.subcluster_threshold)
+              _.filter(
+                subcluster_json.Edges,
+                (e) => e.length <= self.subcluster_threshold
+              )
             ),
             (cc) => cc.length > 1
           );
@@ -3752,22 +1373,22 @@ var hivtrace_cluster_network_graph = function (
 
           _.each(rr_cluster, (recent_cluster) => {
             var priority_nodes = _.groupBy(recent_cluster, (n) =>
-              self._filter_by_date(cutoff_short, date_field, start_date, n)
+              self.filter_by_date(cutoff_short, date_field, start_date, n)
             );
 
             sub.recent_nodes.push(_.map(recent_cluster, (n) => n.id));
             const meets_priority_def =
               true in priority_nodes &&
               priority_nodes[true].length >=
-              (self.CDC_data
-                ? self.CDC_data["autocreate-priority-set-size"]
-                : 3);
+                (self.CDC_data
+                  ? self.CDC_data["autocreate-priority-set-size"]
+                  : 3);
 
             if (true in priority_nodes) {
               // recent
               sub.priority_score.push(_.map(priority_nodes[true], (n) => n.id));
               _.each(priority_nodes[true], (n) => {
-                n.priority_flag = self._filter_by_date(
+                n.priority_flag = self.filter_by_date(
                   start_date,
                   date_field,
                   future_date,
@@ -3792,7 +1413,7 @@ var hivtrace_cluster_network_graph = function (
 
                 if (meets_priority_def) {
                   if (
-                    self._filter_by_date(cutoff_long, date_field, start_date, n)
+                    self.filter_by_date(cutoff_long, date_field, start_date, n)
                   ) {
                     n.nationalCOI = 2;
                   } else {
@@ -3820,7 +1441,9 @@ var hivtrace_cluster_network_graph = function (
     var init_layout = get_initial_xy(packed);
 
     if (self.clusters.length === 0) {
-      self.clusters = init_layout.filter((v, i, obj) => !(typeof v.cluster_id === "undefined"));
+      self.clusters = init_layout.filter(
+        (v, i, obj) => !(typeof v.cluster_id === "undefined")
+      );
     } else {
       var coordinate_update = {};
       _.each(self.clusters, (c) => {
@@ -3837,13 +1460,13 @@ var hivtrace_cluster_network_graph = function (
 
     var set_init_coords = packed
       ? function (n) {
-        n.x += n.r * 0.5;
-        n.y += n.r * 0.5;
-      }
+          n.x += n.r * 0.5;
+          n.y += n.r * 0.5;
+        }
       : function (n) {
-        n.x += n.dx * 0.5;
-        n.y += n.dy * 0.5;
-      };
+          n.x += n.dx * 0.5;
+          n.y += n.dy * 0.5;
+        };
 
     _.each([self.nodes, self.clusters], (list) => {
       _.each(list, set_init_coords);
@@ -3865,19 +1488,15 @@ var hivtrace_cluster_network_graph = function (
       self.width += delta;
       self.height += delta;
 
-      var rescale_x = d3.scale.linear().domain(
-        d3.extent(network_layout.nodes(), (node) => node.x)
-      );
-      rescale_x.range(
-        _.map(rescale_x.domain(), (v) => v * x_scale)
-      );
+      var rescale_x = d3.scale
+        .linear()
+        .domain(d3.extent(network_layout.nodes(), (node) => node.x));
+      rescale_x.range(_.map(rescale_x.domain(), (v) => v * x_scale));
       //.range ([50,self.width-50]),
-      var rescale_y = d3.scale.linear().domain(
-        d3.extent(network_layout.nodes(), (node) => node.y)
-      );
-      rescale_y.range(
-        _.map(rescale_y.domain(), (v) => v * y_scale)
-      );
+      var rescale_y = d3.scale
+        .linear()
+        .domain(d3.extent(network_layout.nodes(), (node) => node.y));
+      rescale_y.range(_.map(rescale_y.domain(), (v) => v * y_scale));
 
       _.each(network_layout.nodes(), (node) => {
         node.x = rescale_x(node.x);
@@ -4068,20 +1687,15 @@ var hivtrace_cluster_network_graph = function (
 
     /* add buttons and handlers */
     /* clusters first */
-    self._is_new_node = function (n) {
-      return n.attributes.indexOf("new_node") >= 0;
-    };
 
     self._extract_attributes_for_nodes = function (nodes, column_names) {
-      var result = [
-        _.map(column_names, (c) => c.raw_attribute_key),
-      ];
+      var result = [_.map(column_names, (c) => c.raw_attribute_key)];
 
       _.each(nodes, (n) => {
         result.push(
           _.map(column_names, (c) => {
             if (c.raw_attribute_key === tables._networkNodeIDField) {
-              if (self._is_new_node(n)) {
+              if (HTX.HIVTxNetwork.is_new_node(n)) {
                 return n.id + tables._networkNewNodeMarker;
               }
               return n.id;
@@ -4127,14 +1741,22 @@ var hivtrace_cluster_network_graph = function (
       }
 
       return_array.push(
-        _.filter(self.json[_networkGraphAttrbuteID], (d) => d.type in allowed_types)
+        _.filter(
+          self.json[kGlobals.network.GraphAttrbuteID],
+          (d) => d.type in allowed_types
+        )
       );
 
       return _.flatten(return_array, true);
     };
 
     self._extract_nodes_by_id = function (id) {
-      return _.filter(self.nodes, (n) => n.cluster.toString() === id.toString() || n.subcluster_label === id.toString());
+      return _.filter(
+        self.nodes,
+        (n) =>
+          n.cluster.toString() === id.toString() ||
+          n.subcluster_label === id.toString()
+      );
     };
 
     self._cluster_list_view_render = function (
@@ -4162,7 +1784,7 @@ var hivtrace_cluster_network_graph = function (
         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
       ).on("click", (d) => {
         if (self._is_CDC_executive_mode) {
-          alert(_networkWarnExecutiveMode);
+          alert(kGlobals.network.WarnExecutiveMode);
         } else {
           helpers.export_csv_button(
             self._extract_attributes_for_nodes(cluster_nodes, column_ids)
@@ -4172,7 +1794,9 @@ var hivtrace_cluster_network_graph = function (
 
       if (group_by_attribute) {
         _.each(column_ids, (column) => {
-          var binned = _.groupBy(cluster_nodes, (n) => self.attribute_node_value_by_id(n, column.raw_attribute_key));
+          var binned = _.groupBy(cluster_nodes, (n) =>
+            self.attribute_node_value_by_id(n, column.raw_attribute_key)
+          );
           var sorted_keys = _.keys(binned).sort();
           var attribute_record = the_list.append("li");
           attribute_record
@@ -4183,9 +1807,9 @@ var hivtrace_cluster_network_graph = function (
             .classed("dl-horizontal", true);
           _.each(sorted_keys, (key) => {
             attribute_list.append("dt").text(key);
-            attribute_list.append("dd").text(
-              _.map(binned[key], (n) => n.id).join(", ")
-            );
+            attribute_list
+              .append("dd")
+              .text(_.map(binned[key], (n) => n.id).join(", "));
           });
         });
       } else {
@@ -4253,9 +1877,9 @@ var hivtrace_cluster_network_graph = function (
             .selectAll(".modal-title")
             .text(
               __("clusters_tab")["listing_nodes"] +
-              (priority_list
-                ? " in cluster of interest " + priority_list
-                : " " + __("general")["cluster"] + " " + cluster_id)
+                (priority_list
+                  ? " in cluster of interest " + priority_list
+                  : " " + __("general")["cluster"] + " " + cluster_id)
             );
 
           var view_toggle = $(
@@ -4303,8 +1927,8 @@ var hivtrace_cluster_network_graph = function (
             .selectAll(".modal-title")
             .text(
               "View how nodes in cluster of interest " +
-              priority_list +
-              " overlap with other clusterOI"
+                priority_list +
+                " overlap with other clusterOI"
             );
 
           const ps = self.priority_groups_find_by_name(priority_list);
@@ -4440,19 +2064,19 @@ var hivtrace_cluster_network_graph = function (
               });
               desc.html(
                 "Merge " +
-                current_selection.size +
-                " clusterOI with " +
-                clusterOITotalNOdes +
-                " nodes, creating a new clusterOI with " +
-                current_node_set.size +
-                " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
+                  current_selection.size +
+                  " clusterOI with " +
+                  clusterOITotalNOdes +
+                  " nodes, creating a new clusterOI with " +
+                  current_node_set.size +
+                  " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
               );
               proceed_btn.attr("disabled", null);
             } else {
               desc.text("Select two or more clusters of interest to merge");
               proceed_btn.attr("disabled", "disabled");
             }
-          }
+          };
 
           const handle_merge = () => {
             if (current_node_set) {
@@ -4467,7 +2091,7 @@ var hivtrace_cluster_network_graph = function (
                 .append_nodes([...current_node_set], current_node_objects);
             }
             $(modal.node()).modal("hide");
-          }
+          };
 
           proceed_btn.attr("disabled", "disabled").on("click", handle_merge);
 
@@ -4742,9 +2366,11 @@ var hivtrace_cluster_network_graph = function (
           "Add filtered objects to cluster of interest",
           function (item) {
             if (clustersOfInterest.get_editor())
-              clustersOfInterest.get_editor().append_node_objects(
-                _.filter(json["Nodes"], (n) => n.match_filter)
-              );
+              clustersOfInterest
+                .get_editor()
+                .append_node_objects(
+                  _.filter(json["Nodes"], (n) => n.match_filter)
+                );
           },
           clustersOfInterest.get_editor,
           "hivtrace-add-filtered-to-panel",
@@ -4843,7 +2469,7 @@ var hivtrace_cluster_network_graph = function (
             .attr("title", __("network_tab")["toggle_epicurve"])
             .attr("id", "hivtrace-toggle-epi-curve")
             .on("click", (d) => {
-              self._check_for_time_series();
+              self.check_for_time_series();
             })
             .append("i")
             .classed("fa fa-line-chart", true);
@@ -4905,7 +2531,7 @@ var hivtrace_cluster_network_graph = function (
           "input propertychange",
           _.throttle(function (e) {
             var filter_value = $(this).val();
-            self.filter(self.filter_parse(filter_value));
+            self.filter(tables.filter_parse(filter_value));
           }, 250)
         );
 
@@ -4961,8 +2587,8 @@ var hivtrace_cluster_network_graph = function (
         );
     }
 
-    if (_networkGraphAttrbuteID in json) {
-      attributes = json[_networkGraphAttrbuteID];
+    if (kGlobals.network.GraphAttrbuteID in json) {
+      attributes = json[kGlobals.network.GraphAttrbuteID];
     } else if (attributes && "hivtrace" in attributes) {
       attributes = attributes["hivtrace"];
     }
@@ -4989,7 +2615,9 @@ var hivtrace_cluster_network_graph = function (
       return false;
     });
 
-    self.edges = graph_data.Edges.filter((v, i) => v.source in connected_links && v.target in connected_links);
+    self.edges = graph_data.Edges.filter(
+      (v, i) => v.source in connected_links && v.target in connected_links
+    );
 
     self.edges = self.edges.map((v, i) => {
       var cp_v = _.clone(v);
@@ -5057,27 +2685,26 @@ var hivtrace_cluster_network_graph = function (
         //console.log ("self._aux_populate_category_menus");
         var valid_cats = _.filter(
           _.map(
-            graph_data[_networkGraphAttrbuteID],
+            graph_data[kGlobals.network.GraphAttrbuteID],
             self._aux_populate_category_fields
           ),
           (d) =>
-          /*if (d.discrete) {
+            /*if (d.discrete) {
               console.log (d["value_range"].length);
           }*/
-          (
             d.discrete &&
             "value_range" in d &&
-            /*d["value_range"].length <= _maximumValuesInCategories &&*/
+            /*d["value_range"].length <= kGlobals.MaximumValuesInCategories &&*/
             !d["_hidden_"]
-          )
-
         );
 
-        var valid_shapes = _.filter(valid_cats, (d) => (
-          (d.discrete && d.dimension <= 7) ||
-          (d["raw_attribute_key"] in _networkPresetShapeSchemes &&
-            !d["_hidden_"])
-        ));
+        var valid_shapes = _.filter(
+          valid_cats,
+          (d) =>
+            (d.discrete && d.dimension <= 7) ||
+            (d["raw_attribute_key"] in self.networkShapeScheme &&
+              !d["_hidden_"])
+        );
 
         // sort values alphabetically for consistent coloring
 
@@ -5086,15 +2713,19 @@ var hivtrace_cluster_network_graph = function (
         });
 
         const colorStopsPath = [
-          _networkGraphAttrbuteID,
+          kGlobals.network.GraphAttrbuteID,
           self.colorizer["category_id"],
-          "color_stops"
+          "color_stops",
         ];
 
-        const color_stops = _.get(graph_data, colorStopsPath, _networkContinuousColorStops);
+        const color_stops = _.get(
+          graph_data,
+          colorStopsPath,
+          kGlobals.network.ContinuousColorStops
+        );
 
         var valid_scales = _.filter(
-          _.map(graph_data[_networkGraphAttrbuteID], (d, k) => {
+          _.map(graph_data[kGlobals.network.GraphAttrbuteID], (d, k) => {
             function determine_scaling(d, values, scales) {
               var low_var = Infinity;
               _.each(scales, (scl, i) => {
@@ -5106,7 +2737,10 @@ var hivtrace_cluster_network_graph = function (
                 });
 
                 var mean = values.length / color_stops;
-                var vrnc = _.reduce(bins, (p, c) => p + (c - mean) * (c - mean));
+                var vrnc = _.reduce(
+                  bins,
+                  (p, c) => p + (c - mean) * (c - mean)
+                );
 
                 if (vrnc < low_var) {
                   low_var = vrnc;
@@ -5119,11 +2753,9 @@ var hivtrace_cluster_network_graph = function (
 
             if (d.type === "Number" || d.type === "Number-categories") {
               var values = _.filter(
-                _.map(graph_data.Nodes, (nd) => self.attribute_node_value_by_id(
-                  nd,
-                  k,
-                  d.type === "Number"
-                )),
+                _.map(graph_data.Nodes, (nd) =>
+                  self.attribute_node_value_by_id(nd, k, d.type === "Number")
+                ),
                 (v) => _.isNumber(v)
               );
               // automatically determine the scale and see what spaces the values most evenly
@@ -5148,21 +2780,21 @@ var hivtrace_cluster_network_graph = function (
                     if (d.raw_attribute_key === "hiv_aids_dx_dt") {
                       //console.log (nd, k, a_date);
                     }
-                    inject_attribute_node_value_by_id(
+                    HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
                       nd,
                       k,
-                      self._parse_dates(a_date)
+                      this.parse_dates(a_date)
                     );
                   } catch (err) {
-                    inject_attribute_node_value_by_id(
+                    HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
                       nd,
                       k,
-                      _networkMissing
+                      kGlobals.missing.label
                     );
                   }
                   return self.attribute_node_value_by_id(nd, k);
                 }),
-                (v) => v === _networkMissing ? null : v
+                (v) => (v === kGlobals.missing.label ? null : v)
               );
               // automatically determine the scale and see what spaces the values most evenly
               if (values.length === 0) {
@@ -5174,15 +2806,15 @@ var hivtrace_cluster_network_graph = function (
             }
             return d;
           }),
-          (d) => (
+          (d) =>
             (d.type === "Number" ||
               d.type === "Date" ||
               d.type === "Number-categories") &&
             !d["_hidden_"]
-          )
         );
 
-        const _menu_label_gen = (d) => (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
+        const _menu_label_gen = (d) =>
+          (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
 
         //console.log (valid_scales);
         //valid_cats.splice (0,0, {'label' : 'None', 'index' : -1});
@@ -5245,7 +2877,9 @@ var hivtrace_cluster_network_graph = function (
             .enter()
             .append("li")
             .classed("disabled", (d) => d[0][1] === "heading")
-            .style("font-variant", (d) => d[0][1] < -1 ? "small-caps" : "normal");
+            .style("font-variant", (d) =>
+              d[0][1] < -1 ? "small-caps" : "normal"
+            );
 
           cat_menu
             .selectAll("a")
@@ -5256,11 +2890,11 @@ var hivtrace_cluster_network_graph = function (
               let htm = d[0];
               let type = "unknown";
 
-              if (_.contains(_.keys(self.schema), d[1])) {
+              if (d[1] in self.schema) {
                 type = self.schema[d[1]].type;
               }
 
-              if (_.contains(_.keys(self.uniqs), d[1]) && type === "String") {
+              if (d[1] in self.uniqs && type === "String") {
                 htm =
                   htm +
                   '<span title="Number of unique values" class="badge pull-right">' +
@@ -5288,33 +2922,37 @@ var hivtrace_cluster_network_graph = function (
         [d3.select(self.get_ui_element_selector_by_role("shapes"))].forEach(
           (m) => {
             m.selectAll("li").remove();
-            var cat_menu = m.selectAll("li").data(
-              [
+            var cat_menu = m
+              .selectAll("li")
+              .data(
                 [
                   [
-                    "None",
-                    null,
-                    _.partial(self.handle_shape_categorical, null),
+                    [
+                      "None",
+                      null,
+                      _.partial(self.handle_shape_categorical, null),
+                    ],
                   ],
-                ],
-              ].concat(
-                valid_shapes.map((d, i) => [
-                  [
-                    _menu_label_gen(d),
-                    d["raw_attribute_key"],
-                    _.partial(
-                      self.handle_shape_categorical,
-                      d["raw_attribute_key"]
-                    ),
-                  ],
-                ])
-              )
-            );
+                ].concat(
+                  valid_shapes.map((d, i) => [
+                    [
+                      _menu_label_gen(d),
+                      d["raw_attribute_key"],
+                      _.partial(
+                        self.handle_shape_categorical,
+                        d["raw_attribute_key"]
+                      ),
+                    ],
+                  ])
+                )
+              );
 
             cat_menu
               .enter()
               .append("li")
-              .style("font-variant", (d) => d[0][1] < -1 ? "small-caps" : "normal");
+              .style("font-variant", (d) =>
+                d[0][1] < -1 ? "small-caps" : "normal"
+              );
 
             cat_menu
               .selectAll("a")
@@ -5371,10 +3009,10 @@ var hivtrace_cluster_network_graph = function (
           .off("click")
           .on("click", function (e) {
             if (self.colorizer["category_id"]) {
-              graph_data[_networkGraphAttrbuteID][
+              graph_data[kGlobals.network.GraphAttrbuteID][
                 self.colorizer["category_id"]
               ]["scale"].range(
-                graph_data[_networkGraphAttrbuteID][
+                graph_data[kGlobals.network.GraphAttrbuteID][
                   self.colorizer["category_id"]
                 ]["scale"]
                   .range()
@@ -5395,33 +3033,37 @@ var hivtrace_cluster_network_graph = function (
         [d3.select(self.get_ui_element_selector_by_role("opacity"))].forEach(
           (m) => {
             m.selectAll("li").remove();
-            var cat_menu = m.selectAll("li").data(
-              [
+            var cat_menu = m
+              .selectAll("li")
+              .data(
                 [
                   [
-                    "None",
-                    null,
-                    _.partial(self.handle_attribute_opacity, null),
+                    [
+                      "None",
+                      null,
+                      _.partial(self.handle_attribute_opacity, null),
+                    ],
                   ],
-                ],
-              ].concat(
-                valid_scales.map((d, i) => [
-                  [
-                    d["label"],
-                    d["raw_attribute_key"],
-                    _.partial(
-                      self.handle_attribute_opacity,
-                      d["raw_attribute_key"]
-                    ),
-                  ],
-                ])
-              )
-            );
+                ].concat(
+                  valid_scales.map((d, i) => [
+                    [
+                      d["label"],
+                      d["raw_attribute_key"],
+                      _.partial(
+                        self.handle_attribute_opacity,
+                        d["raw_attribute_key"]
+                      ),
+                    ],
+                  ])
+                )
+              );
 
             cat_menu
               .enter()
               .append("li")
-              .style("font-variant", (d) => d[0][1] < -1 ? "small-caps" : "normal");
+              .style("font-variant", (d) =>
+                d[0][1] < -1 ? "small-caps" : "normal"
+              );
             cat_menu
               .selectAll("a")
               .data((d) => d)
@@ -5445,87 +3087,48 @@ var hivtrace_cluster_network_graph = function (
       }
     };
 
-    self._aux_populated_predefined_attribute = function (computed, key) {
-      if (_.isFunction(computed)) {
-        computed = computed(self);
-      }
-
-      if (
-        !computed["depends"] ||
-        _.every(computed["depends"], (d) =>
-          _.has(graph_data[_networkGraphAttrbuteID], d)
-        )
-      ) {
-        var extension = {};
-        extension[key] = computed;
-        _.extend(graph_data[_networkGraphAttrbuteID], extension);
-        self.inject_attribute_description(key, computed);
-        _.each(graph_data.Nodes, (node) => {
-          inject_attribute_node_value_by_id(
-            node,
-            key,
-            computed["map"](node, self)
-          );
-        });
-
-        // add unique values
-        if (computed.enum) {
-          self.uniqValues[key] = computed.enum;
-        } else {
-          self.uniqValues[key] = _.uniq(
-            _.map(graph_data.Nodes, (n) =>
-              self.attribute_node_value_by_id(n, key, computed.Type === "Number")
-            )
-          );
-        }
-
-        if (computed["overwrites"]) {
-          if (
-            _.has(graph_data[_networkGraphAttrbuteID], computed["overwrites"])
-          ) {
-            graph_data[_networkGraphAttrbuteID][computed["overwrites"]][
-              "_hidden_"
-            ] = true;
-          }
-        }
-      }
-    };
-
     if (attributes) {
       /*
          map attributes into nodes and into the graph object itself using
-         _networkGraphAttrbuteID as the key
+         kGlobals.network.GraphAttrbuteID as the key
       */
 
       if ("attribute_map" in attributes) {
         var attribute_map = attributes["attribute_map"];
 
         if ("map" in attribute_map && attribute_map["map"].length > 0) {
-          graph_data[_networkGraphAttrbuteID] = attribute_map["map"].map(
-            (a, i) => ({
-              label: a,
-              type: null,
-              values: {},
-              index: i,
-              range: 0,
-            })
-          );
+          graph_data[kGlobals.network.GraphAttrbuteID] = attribute_map[
+            "map"
+          ].map((a, i) => ({
+            label: a,
+            type: null,
+            values: {},
+            index: i,
+            range: 0,
+          }));
 
           graph_data.Nodes.forEach((n) => {
-            n[_networkGraphAttrbuteID] = n.id.split(attribute_map["delimiter"]);
-            n[_networkGraphAttrbuteID].forEach((v, i) => {
-              if (i < graph_data[_networkGraphAttrbuteID].length) {
-                if (!(v in graph_data[_networkGraphAttrbuteID][i]["values"])) {
-                  graph_data[_networkGraphAttrbuteID][i]["values"][v] =
-                    graph_data[_networkGraphAttrbuteID][i]["range"];
-                  graph_data[_networkGraphAttrbuteID][i]["range"] += 1;
+            n[kGlobals.network.GraphAttrbuteID] = n.id.split(
+              attribute_map["delimiter"]
+            );
+            n[kGlobals.network.GraphAttrbuteID].forEach((v, i) => {
+              if (i < graph_data[kGlobals.network.GraphAttrbuteID].length) {
+                if (
+                  !(
+                    v in
+                    graph_data[kGlobals.network.GraphAttrbuteID][i]["values"]
+                  )
+                ) {
+                  graph_data[kGlobals.network.GraphAttrbuteID][i]["values"][v] =
+                    graph_data[kGlobals.network.GraphAttrbuteID][i]["range"];
+                  graph_data[kGlobals.network.GraphAttrbuteID][i]["range"] += 1;
                 }
               }
-              //graph_data [_networkGraphAttrbuteID][i]["values"][v] = 1 + (graph_data [_networkGraphAttrbuteID][i]["values"][v] ? graph_data [_networkGraphAttrbuteID][i]["values"][v] : 0);
+              //graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] = 1 + (graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] ? graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] : 0);
             });
           });
 
-          graph_data[_networkGraphAttrbuteID].forEach((d) => {
+          graph_data[kGlobals.network.GraphAttrbuteID].forEach((d) => {
             if (
               d["range"] < graph_data.Nodes.length &&
               d["range"] > 1 &&
@@ -5537,10 +3140,12 @@ var hivtrace_cluster_network_graph = function (
         }
       }
 
-      _.each(
-        self._networkPredefinedAttributeTransforms,
-        self._aux_populated_predefined_attribute
-      );
+      for (const [key, def] of Object.entries(
+        self._networkPredefinedAttributeTransforms
+      )) {
+        self.populate_predefined_attribute(def, key);
+      }
+
       self._aux_populate_category_menus();
 
       // populate the UI elements
@@ -5647,29 +3252,6 @@ var hivtrace_cluster_network_graph = function (
       const deleted = c_info["deleted"];
       const new_count = c_info["new_nodes"] ? c_info["new_nodes"] : 0;
 
-      /*if (moved) {
-            if (d > 0) {
-                return "" + moved + " nodes moved +" + d + " new";
-            } else {
-                if (d === 0) {
-                    return "" + moved + " nodes moved";
-                } else {
-                    return "" + moved + " nodes moved " + (-d) + " removed";
-                }
-            }
-
-        } else {
-            if (d > 0) {
-                return "+" + d + " nodes";
-            } else {
-                if (d === 0) {
-                    return "no size change";
-                } else {
-                    return "" + (-d) + " nodes removed";
-                }
-            }
-        }*/
-
       let label_str = "";
       if (moved) label_str = " " + moved + " moved ";
       if (new_count) label_str += "+" + new_count + " new ";
@@ -5691,9 +3273,9 @@ var hivtrace_cluster_network_graph = function (
       } else if (payload[4]["type"] === "merged") {
         labels.push([
           "Merged " +
-          payload[4]["old_clusters"].join(", ") +
-          " " +
-          label_diff(payload[4]),
+            payload[4]["old_clusters"].join(", ") +
+            " " +
+            label_diff(payload[4]),
           payload["4"]["flag"],
         ]);
       }
@@ -5726,7 +3308,7 @@ var hivtrace_cluster_network_graph = function (
         return d[0];
       })*/
       .style("margin-right", "0.25em")
-      .attr("disabled", (d) => d[1] === 1 ? "disabled" : null)
+      .attr("disabled", (d) => (d[1] === 1 ? "disabled" : null))
       .on("click", (d) => {
         if (d[1] === 0) {
           if (payload[0]) {
@@ -5750,9 +3332,15 @@ var hivtrace_cluster_network_graph = function (
               null,
               (cluster_id) => "Cluster " + cluster_id + " [changes view]",
               self._social_view_options(link_class, shown_types, (e) => {
-                if (_.isObject(e.source) && self._is_new_node(e.source))
+                if (
+                  _.isObject(e.source) &&
+                  HTX.HIVTxNetwork.is_new_node(e.source)
+                )
                   return "Newly added";
-                if (_.isObject(e.target) && self._is_new_node(e.target))
+                if (
+                  _.isObject(e.target) &&
+                  HTX.HIVTxNetwork.is_new_node(e.target)
+                )
                   return "Newly added";
 
                 return e.attributes.indexOf("added-to-prior") >= 0
@@ -5772,73 +3360,10 @@ var hivtrace_cluster_network_graph = function (
         var i_span = this_e.selectAll("i").data([d[0]]);
         i_span.enter().append("i");
         i_span
-          .attr(
-            "class",
-            (d) => "fa " + d[1],
-            true
-          )
+          .attr("class", (d) => "fa " + d[1], true)
           .attr("title", (d) => d[0]);
       }
     });
-  }
-
-  function _extract_single_cluster(
-    nodes,
-    filter,
-    no_clone,
-    given_json,
-    include_extra_edges
-  ) {
-    /**
-        Extract the nodes and edges between them into a separate objects
-        @param nodes [array]  the list of nodes to extract
-        @param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
-        @param no_clone [bool] if set to T, node objects are not shallow cloned in the return object
-
-        @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
-
-    */
-
-    var cluster_json = {};
-    var map_to_id = {};
-
-    cluster_json.Nodes = _.map(nodes, (c, i) => {
-      map_to_id[c.id] = i;
-
-      if (no_clone) {
-        return c;
-      }
-      var cc = _.clone(c);
-      cc.cluster = 1;
-      return cc;
-    });
-
-    given_json = given_json || json;
-
-    cluster_json.Edges = _.filter(given_json.Edges, (e) => {
-      if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
-        return false;
-      }
-
-      return (
-        given_json.Nodes[e.source].id in map_to_id &&
-        given_json.Nodes[e.target].id in map_to_id &&
-        (include_extra_edges || !self.is_edge_injected(e))
-      );
-    });
-
-    if (filter) {
-      cluster_json.Edges = _.filter(cluster_json.Edges, filter);
-    }
-
-    cluster_json.Edges = _.map(cluster_json.Edges, (e) => {
-      var ne = _.clone(e);
-      ne.source = map_to_id[given_json.Nodes[e.source].id];
-      ne.target = map_to_id[given_json.Nodes[e.target].id];
-      return ne;
-    });
-
-    return cluster_json;
   }
 
   function _node_table_draw_buttons(element, payload) {
@@ -5872,7 +3397,9 @@ var hivtrace_cluster_network_graph = function (
       .classed("btn-primary", true)
       //.classed(function (d) {return d.length >=3 ? d[2] : "";}, function (d) {return d.length >= 3;})
       .text((d) => d[0])
-      .attr("disabled", (d) => d[1] && !_.isFunction(d[1]) ? "disabled" : null)
+      .attr("disabled", (d) =>
+        d[1] && !_.isFunction(d[1]) ? "disabled" : null
+      )
       .on("click", (d) => {
         if (_.isFunction(d[1])) {
           d[1].call(d);
@@ -5913,7 +3440,7 @@ var hivtrace_cluster_network_graph = function (
       .selectAll("td, th")
       .filter((d) => "volatile" in d)
       .each(function (d, i) {
-        // TODO: QUESTION: Should this have priority_set_editor arg passed in as well? 
+        // TODO: QUESTION: Should this have priority_set_editor arg passed in as well?
         tables.format_a_cell(d, i, this);
       });
   };
@@ -5960,92 +3487,95 @@ var hivtrace_cluster_network_graph = function (
         self.displayed_node_subset
       );
       node_data.splice(0, 1);
-      var table_headers = _.map(
-        self.displayed_node_subset,
-        (n, col_id) => ({
-          value: n.raw_attribute_key,
-          sort: "value",
-          filter: true,
-          volatile: true,
-          help: "label" in n ? n.label : n.raw_attribute_key,
-          //format: (d) => "label" in d ? d.label : d.raw_attribute_key,
-          callback: function (element, payload) {
-            var dropdown = d3
-              .select(element)
-              .append("div")
-              .classed("dropdown", true);
-            var menu_id = "hivtrace_node_column_" + payload;
-            var dropdown_button = dropdown
-              .append("button")
-              .classed({
-                btn: true,
-                "btn-default": true,
-                "btn-xs": true,
-                "dropdown-toggle": true,
-              })
-              .attr("type", "button")
-              .attr("data-toggle", "dropdown")
-              .attr("aria-haspopup", "true")
-              .attr("aria-expanded", "false")
-              .attr("id", menu_id);
+      var table_headers = _.map(self.displayed_node_subset, (n, col_id) => ({
+        value: n.raw_attribute_key,
+        sort: "value",
+        filter: true,
+        volatile: true,
+        help: "label" in n ? n.label : n.raw_attribute_key,
+        //format: (d) => "label" in d ? d.label : d.raw_attribute_key,
+        callback: function (element, payload) {
+          var dropdown = d3
+            .select(element)
+            .append("div")
+            .classed("dropdown", true);
+          // add col_id to ensure that the dropdowns are unique
+          var menu_id = "hivtrace_node_column_" + payload + "_" + col_id;
+          var dropdown_button = dropdown
+            .append("button")
+            .classed({
+              btn: true,
+              "btn-default": true,
+              "btn-xs": true,
+              "dropdown-toggle": true,
+            })
+            .attr("type", "button")
+            .attr("data-toggle", "dropdown")
+            .attr("aria-haspopup", "true")
+            .attr("aria-expanded", "false")
+            .attr("id", menu_id);
 
-            function format_key(key) {
-              const formattedKey = jsConvert.toHeaderCase(key);
-              const words = formattedKey.split(" ");
-              const mappedWords = _.map(words, (word) => {
-                if (word.toLowerCase() === "hivtrace") {
-                  return "HIV-TRACE";
-                }
-                if (word.toLowerCase() === "id") {
-                  return "ID";
-                }
+          function format_key(key) {
+            const formattedKey = jsConvert.toHeaderCase(key);
+            const words = formattedKey.split(" ");
+            const mappedWords = _.map(words, (word) => {
+              if (word.toLowerCase() === "hivtrace") {
+                return "HIV-TRACE";
+              }
+              if (word.toLowerCase() === "id") {
+                return "ID";
+              }
 
-                return word;
-              });
-              return mappedWords.join(" ");
-            }
-
-            function get_text_label(key) {
-              return key in json.patient_attribute_schema
-                ? json.patient_attribute_schema[key].label
-                : format_key(key);
-            }
-
-            dropdown_button.text(get_text_label(payload));
-
-            dropdown_button.append("i").classed({
-              fa: true,
-              "fa-caret-down": true,
-              "fa-lg": true,
+              return word;
             });
-            var dropdown_list = dropdown
-              .append("ul")
-              .classed("dropdown-menu", true)
-              .attr("aria-labelledby", menu_id);
+            return mappedWords.join(" ");
+          }
 
-            dropdown_list = dropdown_list.selectAll("li").data(
-              _.filter(column_ids, (alt) => alt.raw_attribute_key !== n.raw_attribute_key)
+          function get_text_label(key) {
+            return key in json.patient_attribute_schema
+              ? json.patient_attribute_schema[key].label
+              : format_key(key);
+          }
+
+          dropdown_button.text(get_text_label(payload));
+
+          dropdown_button.append("i").classed({
+            fa: true,
+            "fa-caret-down": true,
+            "fa-lg": true,
+          });
+          var dropdown_list = dropdown
+            .append("ul")
+            .classed("dropdown-menu", true)
+            .attr("aria-labelledby", menu_id);
+
+          dropdown_list = dropdown_list
+            .selectAll("li")
+            .data(
+              _.filter(
+                column_ids,
+                (alt) => alt.raw_attribute_key !== n.raw_attribute_key
+              )
             );
-            dropdown_list.enter().append("li");
-            dropdown_list.each(function (data, i) {
-              var handle_change = d3
-                .select(this)
-                .append("a")
-                .attr("href", "#")
-                .text((data) => get_text_label(data.raw_attribute_key));
-              handle_change.on("click", (d) => {
-                self.displayed_node_subset[col_id] = d;
-                self.draw_extended_node_table(
-                  node_list,
-                  container,
-                  extra_columns
-                );
-              });
+          dropdown_list.enter().append("li");
+          dropdown_list.each(function (data, i) {
+            var handle_change = d3
+              .select(this)
+              .append("a")
+              .attr("href", "#")
+              .text((data) => get_text_label(data.raw_attribute_key));
+            handle_change.on("click", (d) => {
+              self.displayed_node_subset[col_id] = d;
+              self.draw_extended_node_table(
+                node_list,
+                container,
+                extra_columns
+              );
             });
-            return dropdown;
-          },
-        })
-      );
+          });
+          return dropdown;
+        },
+      }));
 
       if (extra_columns) {
         _.each(extra_columns, (d) => {
@@ -6066,10 +3596,10 @@ var hivtrace_cluster_network_graph = function (
             cell_definition = {
               value: cell,
               format: function (v) {
-                if (v === _networkMissing) {
+                if (v === kGlobals.missing.label) {
                   return v;
                 }
-                return _defaultDateViewFormatSlider(v);
+                return timeDateUtil.DateViewFormatSlider(v);
               },
             };
           } else if (self.displayed_node_subset[c].type === "Number") {
@@ -6143,7 +3673,7 @@ var hivtrace_cluster_network_graph = function (
     );
 
     const full_subclusters = _.map(nodesD, (cc) =>
-      _extract_single_cluster(cc, (e) => e.length <= D)
+      self.extract_single_cluster(cc, (e) => e.length <= D)
     );
     // the nodes in full_subclusters are now shallow clones
     // const nodeid2cc = _.chain(nodesD) // unused var
@@ -6164,7 +3694,7 @@ var hivtrace_cluster_network_graph = function (
     var beginning_of_time = timeDateUtil.getCurrentDate();
     beginning_of_time.setFullYear(1900);
 
-    // unused var 
+    // unused var
     // const nodesD2 = _.map(full_subclusters, (fc, i) => hivtrace_cluster_depthwise_traversal(
     //   fc["Nodes"],
     //   fc["Edges"],
@@ -6178,27 +3708,27 @@ var hivtrace_cluster_network_graph = function (
     const info_by_event = {};
 
     _.each(network_events, (DT) => {
-      const event_date = _defaultDateViewFormatSlider.parse(DT);
-      const event_date_m3y = _defaultDateViewFormatSlider.parse(DT);
+      const event_date = timeDateUtil.DateViewFormatSlider.parse(DT);
+      const event_date_m3y = timeDateUtil.DateViewFormatSlider.parse(DT);
       event_date_m3y.setFullYear(event_date.getFullYear() - 3);
-      const event_date_m1y = _defaultDateViewFormatSlider.parse(DT);
+      const event_date_m1y = timeDateUtil.DateViewFormatSlider.parse(DT);
       event_date_m1y.setFullYear(event_date.getFullYear() - 1);
       const n_filter = (n) =>
-        self._filter_by_date(
+        self.filter_by_date(
           beginning_of_time,
           timeDateUtil._networkCDCDateField,
           event_date,
           n
         );
       const n_filter3 = (n) =>
-        self._filter_by_date(
+        self.filter_by_date(
           event_date_m3y,
           timeDateUtil._networkCDCDateField,
           event_date,
           n
         );
       const n_filter1 = (n) =>
-        self._filter_by_date(
+        self.filter_by_date(
           event_date_m1y,
           timeDateUtil._networkCDCDateField,
           event_date,
@@ -6213,11 +3743,10 @@ var hivtrace_cluster_network_graph = function (
         return hivtrace_cluster_depthwise_traversal(
           cc_nodes,
           fc["Edges"],
-          (e) => (
+          (e) =>
             e.length <= D &&
             n_filter3(cc_nodes[e.source]) &&
-            n_filter3(cc_nodes[e.target])
-          ),
+            n_filter3(cc_nodes[e.target]),
           null,
           _.filter(seed_nodes[i], n_filter),
           white_list
@@ -6243,7 +3772,7 @@ var hivtrace_cluster_network_graph = function (
     const report = {
       node_info: _.map(ref_set.node_objects, (n) => [
         n.id,
-        _defaultDateViewFormatSlider(
+        timeDateUtil.DateViewFormatSlider(
           self.attribute_node_value_by_id(n, timeDateUtil._networkCDCDateField)
         ),
       ]),
@@ -6262,7 +3791,7 @@ var hivtrace_cluster_network_graph = function (
           //console.log (report);
           */
 
-    helpers.export_json_button(report);
+    //helpers.export_json_button(report);
     return report;
   };
 
@@ -6391,8 +3920,8 @@ var hivtrace_cluster_network_graph = function (
             value: __("general")["cluster"] + " ID",
             sort: function (c) {
               return _.map(
-                c.value[0].split(_networkSubclusterSeparator),
-                (ss) => _networkDotFormatPadder(Number(ss))
+                c.value[0].split(kGlobals.SubclusterSeparator),
+                (ss) => kGlobals.formats.DotFormatPadder(Number(ss))
               ).join("|");
             },
             help: "Unique cluster ID",
@@ -6492,8 +4021,8 @@ var hivtrace_cluster_network_graph = function (
                   is_subcluster
                     ? null
                     : self.cluster_attributes
-                      ? self.cluster_attributes[actual_cluster.cluster_id]
-                      : null,
+                    ? self.cluster_attributes[actual_cluster.cluster_id]
+                    : null,
                 ];
               },
               callback: _cluster_table_draw_buttons,
@@ -6515,9 +4044,9 @@ var hivtrace_cluster_network_graph = function (
                   icon: "fa-plus",
                   action: function (button, v) {
                     if (clustersOfInterest.get_editor()) {
-                      clustersOfInterest.get_editor().append_node_objects(
-                        d.children
-                      );
+                      clustersOfInterest
+                        .get_editor()
+                        .append_node_objects(d.children);
                     }
                     return false;
                   },
@@ -6564,13 +4093,13 @@ var hivtrace_cluster_network_graph = function (
               format: function (d) {
                 try {
                   return (
-                    _defaultFloatFormat(d["mean"]) +
+                    kGlobals.formats.FloatFormat(d["mean"]) +
                     " [" +
-                    _defaultFloatFormat(d["median"]) +
+                    kGlobals.formats.FloatFormat(d["median"]) +
                     ", " +
-                    _defaultFloatFormat(d["Q1"]) +
+                    kGlobals.formats.FloatFormat(d["Q1"]) +
                     " - " +
-                    _defaultFloatFormat(d["Q3"]) +
+                    kGlobals.formats.FloatFormat(d["Q3"]) +
                     "]"
                   );
                 } catch (e) {
@@ -6583,13 +4112,13 @@ var hivtrace_cluster_network_graph = function (
               format: function (d) {
                 try {
                   return (
-                    _defaultFloatFormat(d["mean"]) +
+                    kGlobals.formats.FloatFormat(d["mean"]) +
                     " [" +
-                    _defaultFloatFormat(d["median"]) +
+                    kGlobals.formats.FloatFormat(d["median"]) +
                     ", " +
-                    _defaultFloatFormat(d["Q1"]) +
+                    kGlobals.formats.FloatFormat(d["Q1"]) +
                     " - " +
-                    _defaultFloatFormat(d["Q3"]) +
+                    kGlobals.formats.FloatFormat(d["Q3"]) +
                     "]"
                   );
                 } catch (e) {
@@ -6632,13 +4161,21 @@ var hivtrace_cluster_network_graph = function (
   /*------------ Update layout code ---------------*/
   function update_network_string(node_count, edge_count) {
     if (network_status_string) {
-      const clusters_shown = _.filter(self.clusters, (c) => !c.collapsed).length;
+      const clusters_shown = _.filter(
+        self.clusters,
+        (c) => !c.collapsed
+      ).length;
 
-      const clusters_selected = _.filter(self.clusters, (c) => (
-        !c.is_hidden && c.match_filter !== undefined && c.match_filter > 0
-      )).length;
+      const clusters_selected = _.filter(
+        self.clusters,
+        (c) =>
+          !c.is_hidden && c.match_filter !== undefined && c.match_filter > 0
+      ).length;
 
-      const nodes_selected = _.filter(self.nodes, (n) => n.match_filter && !n.is_hidden).length;
+      const nodes_selected = _.filter(
+        self.nodes,
+        (n) => n.match_filter && !n.is_hidden
+      ).length;
 
       // const clusters_removed = self.cluster_sizes.length - self.clusters.length;
       // const nodes_removed = graph_data.Nodes.length - singletons - self.nodes.length;
@@ -6708,10 +4245,10 @@ var hivtrace_cluster_network_graph = function (
             .attr(
               "transform",
               "translate(" +
-              node.rendered_size * 1.25 +
-              "," +
-              node.rendered_size * 0.5 +
-              ")"
+                node.rendered_size * 1.25 +
+                "," +
+                node.rendered_size * 0.5 +
+                ")"
             )
             .datum(node)
             .call(self.node_label_drag);
@@ -6723,7 +4260,10 @@ var hivtrace_cluster_network_graph = function (
       container
         //.attr("d", misc.symbol(symbol_type).size(node_size(node)))
         .attr("class", "node")
-        .classed("selected_object", (d) => d.match_filter && !self.hide_unselected)
+        .classed(
+          "selected_object",
+          (d) => d.match_filter && !self.hide_unselected
+        )
         .classed("injected_object", (d) => d.node_class === "injected")
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
         .style("opacity", (d) => node_opacity(d))
@@ -6799,16 +4339,19 @@ var hivtrace_cluster_network_graph = function (
 
     paths
       .classed("cluster", true)
-      .classed("hiv-trace-problematic", (d) => the_cluster.hxb2_linked && !d.rim)
+      .classed(
+        "hiv-trace-problematic",
+        (d) => the_cluster.hxb2_linked && !d.rim
+      )
       .classed("hiv-trace-selected", (d) => d.rim)
-      .attr("d", (d) => (
-        d.rim
+      .attr("d", (d) =>
+        (d.rim
           ? d3.svg
-            .arc()
-            .innerRadius(arc_radius + 2)
-            .outerRadius(arc_radius + 5)
-          : d3.svg.arc().innerRadius(0).outerRadius(arc_radius)
-      )(d))
+              .arc()
+              .innerRadius(arc_radius + 2)
+              .outerRadius(arc_radius + 5)
+          : d3.svg.arc().innerRadius(0).outerRadius(arc_radius))(d)
+      )
       .style("fill", (d, i) => {
         if (d.rim) {
           return self.colorizer["selected"](d.name);
@@ -6820,7 +4363,7 @@ var hivtrace_cluster_network_graph = function (
 
         return cluster_color(the_cluster, d.name);
       })
-      .style("stroke-linejoin", (d, i) => draw_from.length > 1 ? "round" : "")
+      .style("stroke-linejoin", (d, i) => (draw_from.length > 1 ? "round" : ""))
       .style("display", (d) => {
         if (the_cluster.is_hidden) return "none";
         return null;
@@ -6830,25 +4373,32 @@ var hivtrace_cluster_network_graph = function (
   function check_for_predefined_shapes(cat_id) {
     //console.log (cat_id);
 
-    if (cat_id in _networkPresetShapeSchemes) {
+    if (cat_id in self.networkShapeScheme) {
       var domain = _.range(
         0,
-        graph_data[_networkGraphAttrbuteID][cat_id]["value_range"].length
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_range"]
+          .length
       );
 
       return {
         domain: domain,
-        range: _.map(domain, (v) => _networkPresetShapeSchemes[
-          cat_id
-        ][graph_data[_networkGraphAttrbuteID][cat_id]["value_range"][v]]),
+        range: _.map(
+          domain,
+          (v) =>
+            self.networkShapeScheme[cat_id][
+              graph_data[kGlobals.network.GraphAttrbuteID][cat_id][
+                "value_range"
+              ][v]
+            ]
+        ),
       };
     }
     return {
       domain: _.range(
         0,
-        graph_data[_networkGraphAttrbuteID][cat_id].dimension
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id].dimension
       ),
-      range: _networkShapeOrdering,
+      range: kGlobals.ShapeOrdering,
     };
   }
 
@@ -6868,9 +4418,9 @@ var hivtrace_cluster_network_graph = function (
         });
       d3.select(self.get_ui_element_selector_by_role(lbl + "_label")).html(
         __("network_tab")["shape"] +
-        ": " +
-        set_attr +
-        ' <span class="caret"></span>'
+          ": " +
+          set_attr +
+          ' <span class="caret"></span>'
       );
     });
 
@@ -6884,19 +4434,19 @@ var hivtrace_cluster_network_graph = function (
       self.node_shaper["id"] = cat_id;
       self.node_shaper["shaper"] = function (d) {
         return shape_mapper(
-          graph_data[_networkGraphAttrbuteID][cat_id]["value_map"](
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_map"](
             self.attribute_node_value_by_id(d, cat_id)
           )
         );
       };
       self.node_shaper["category_map"] =
-        graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_map"];
     } else {
       self.node_shaper.id = null;
       self.node_shaper.shaper = () => "circle";
       self.node_shaper["category_map"] = null;
     }
-    //console.log (graph_data [_networkGraphAttrbuteID][cat_id]['value_map'], self.node_shaper.domain(), self.node_shaper.range());
+    //console.log (graph_data [kGlobals.network.GraphAttrbuteID][cat_id]['value_map'], self.node_shaper.domain(), self.node_shaper.range());
     self.draw_attribute_labels();
     self.update(true);
     d3.event.preventDefault();
@@ -6920,14 +4470,16 @@ var hivtrace_cluster_network_graph = function (
         // Set color in user-defined colorizer
         if (
           _.isUndefined(
-            graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+            graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"]
           )
         ) {
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"] = {};
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"] =
+            {};
         }
 
-        graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"][name] =
-          color;
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+          name
+        ] = color;
         self.handle_attribute_categorical(cat_id);
       });
     };
@@ -6957,24 +4509,26 @@ var hivtrace_cluster_network_graph = function (
         // Set color in user-defined colorizer
         if (
           _.isUndefined(
-            graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+            graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"]
           )
         ) {
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"] = {};
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"] =
+            {};
         }
 
         // get both for user-defined
-        graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"][name] =
-          color;
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+          name
+        ] = color;
         self.handle_attribute_continuous(cat_id);
       });
 
       // Set onchange event for items
       $(".hivtrace-color-stops").change((e) => {
         let num = parseInt(e.target.value);
-        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-          "color_stops"
-        ] = num;
+        graph_data[kGlobals.network.GraphAttrbuteID][
+          self.colorizer["category_id"]
+        ]["color_stops"] = num;
 
         self._aux_populate_category_menus();
         self.handle_attribute_continuous(cat_id);
@@ -6987,9 +4541,9 @@ var hivtrace_cluster_network_graph = function (
     } else if (type === "continuous") {
       renderColorPickerContinuous(
         cat_id,
-        graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-        "color_stops"
-        ]
+        graph_data[kGlobals.network.GraphAttrbuteID][
+          self.colorizer["category_id"]
+        ]["color_stops"]
       );
     } else {
       console.log("Error: type not recognized");
@@ -7010,7 +4564,7 @@ var hivtrace_cluster_network_graph = function (
         return field_data["label_format"];
       }
       if (field_data["type"] === "Date") {
-        return _defaultDateViewFormatShort;
+        return timeDateUtil.DateViewFormatShort;
       }
       return d3.format(",.4r");
     };
@@ -7075,26 +4629,29 @@ var hivtrace_cluster_network_graph = function (
         .append("text")
         .text(
           "Color: " +
-          self.json[_networkGraphAttrbuteID][self.colorizer["category_id"]]
-            .label
+            self.json[kGlobals.network.GraphAttrbuteID][
+              self.colorizer["category_id"]
+            ].label
         )
         .style("font-weight", "bold");
       offset += 18;
 
       if (self.colorizer["continuous"]) {
         var anchor_format = determine_label_format_cont(
-          graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]
+          graph_data[kGlobals.network.GraphAttrbuteID][
+            self.colorizer["category_id"]
+          ]
         );
 
         var color_stops =
-          graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-          "color_stops"
-          ] || _networkContinuousColorStops;
+          graph_data[kGlobals.network.GraphAttrbuteID][
+            self.colorizer["category_id"]
+          ]["color_stops"] || kGlobals.network.ContinuousColorStops;
 
         var scale =
-          graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-          "scale"
-          ];
+          graph_data[kGlobals.network.GraphAttrbuteID][
+            self.colorizer["category_id"]
+          ]["scale"];
 
         _.each(_.range(color_stops), (value) => {
           var x = scale.invert(value);
@@ -7119,12 +4676,14 @@ var hivtrace_cluster_network_graph = function (
 
         if (
           "category_values" in
-          graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]]
+          graph_data[kGlobals.network.GraphAttrbuteID][
+            self.colorizer["category_id"]
+          ]
         ) {
           _.each(
-            graph_data[_networkGraphAttrbuteID][self.colorizer["category_id"]][
-            "category_values"
-            ],
+            graph_data[kGlobals.network.GraphAttrbuteID][
+              self.colorizer["category_id"]
+            ]["category_values"],
             (value) => {
               self.legend_svg
                 .append("g")
@@ -7163,33 +4722,30 @@ var hivtrace_cluster_network_graph = function (
           .attr("cy", "-4")
           .attr("r", "8")
           .classed("legend", true)
-          .style("fill", _networkMissingColor);
+          .style("fill", kGlobals.missing.color);
 
         offset += 18;
       } else {
-        _.each(
-          self.colorizer["category_map"](null, "map"),
-          (value, key) => {
-            self.legend_svg
-              .append("g")
-              .classed("hiv-trace-legend", true)
-              .attr("transform", "translate(20," + offset + ")")
-              .append("text")
-              .text(key);
-            self.legend_svg
-              .append("g")
-              .classed("hiv-trace-legend", true)
-              .attr("transform", "translate(0," + offset + ")")
-              .append("circle")
-              .attr("cx", "8")
-              .attr("cy", "-4")
-              .attr("r", "8")
-              .classed("legend", true)
-              .style("fill", self.colorizer["category"](key));
+        _.each(self.colorizer["category_map"](null, "map"), (value, key) => {
+          self.legend_svg
+            .append("g")
+            .classed("hiv-trace-legend", true)
+            .attr("transform", "translate(20," + offset + ")")
+            .append("text")
+            .text(key);
+          self.legend_svg
+            .append("g")
+            .classed("hiv-trace-legend", true)
+            .attr("transform", "translate(0," + offset + ")")
+            .append("circle")
+            .attr("cx", "8")
+            .attr("cy", "-4")
+            .attr("r", "8")
+            .classed("legend", true)
+            .style("fill", self.colorizer["category"](key));
 
-            offset += 18;
-          }
-        );
+          offset += 18;
+        });
       }
     }
 
@@ -7201,7 +4757,8 @@ var hivtrace_cluster_network_graph = function (
         .append("text")
         .text(
           "Shape: " +
-          self.json[_networkGraphAttrbuteID][self.node_shaper["id"]].label
+            self.json[kGlobals.network.GraphAttrbuteID][self.node_shaper["id"]]
+              .label
         )
         .style("font-weight", "bold");
       offset += 18;
@@ -7212,29 +4769,26 @@ var hivtrace_cluster_network_graph = function (
         .domain(domain_range["domain"])
         .range(domain_range["range"]);
 
-      _.each(
-        self.node_shaper["category_map"](null, "map"),
-        (value, key) => {
-          self.legend_svg
-            .append("g")
-            .classed("hiv-trace-legend", true)
-            .attr("transform", "translate(20," + offset + ")")
-            .append("text")
-            .text(key);
+      _.each(self.node_shaper["category_map"](null, "map"), (value, key) => {
+        self.legend_svg
+          .append("g")
+          .classed("hiv-trace-legend", true)
+          .attr("transform", "translate(20," + offset + ")")
+          .append("text")
+          .text(key);
 
-          self.legend_svg
-            .append("g")
-            .classed("hiv-trace-legend", true)
-            .attr("transform", "translate(0," + offset + ")")
-            .append("path")
-            .attr("transform", "translate(5,-5)")
-            .attr("d", misc.symbol(shape_mapper(value)).size(128))
-            .classed("legend", true)
-            .style("fill", "none");
+        self.legend_svg
+          .append("g")
+          .classed("hiv-trace-legend", true)
+          .attr("transform", "translate(0," + offset + ")")
+          .append("path")
+          .attr("transform", "translate(5,-5)")
+          .attr("d", misc.symbol(shape_mapper(value)).size(128))
+          .classed("legend", true)
+          .style("fill", "none");
 
-          offset += 18;
-        }
-      );
+        offset += 18;
+      });
     }
 
     if (self.colorizer["opacity_id"]) {
@@ -7245,23 +4799,26 @@ var hivtrace_cluster_network_graph = function (
         .append("text")
         .text(
           __("network_tab")["opacity"] +
-          ": " +
-          self.json[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]
-            .label
+            ": " +
+            self.json[kGlobals.network.GraphAttrbuteID][
+              self.colorizer["opacity_id"]
+            ].label
         )
         .style("font-weight", "bold");
       offset += 18;
 
       anchor_format = determine_label_format_cont(
-        graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]]
+        graph_data[kGlobals.network.GraphAttrbuteID][
+          self.colorizer["opacity_id"]
+        ]
       );
 
       scale =
-        graph_data[_networkGraphAttrbuteID][self.colorizer["opacity_id"]][
-        "scale"
-        ];
+        graph_data[kGlobals.network.GraphAttrbuteID][
+          self.colorizer["opacity_id"]
+        ]["scale"];
 
-      _.each(_.range(_networkContinuousColorStops), (value) => {
+      _.each(_.range(kGlobals.network.ContinuousColorStops), (value) => {
         var x = scale.invert(value);
         self.legend_svg
           .append("g")
@@ -7300,7 +4857,7 @@ var hivtrace_cluster_network_graph = function (
         .attr("r", "8")
         .classed("legend", true)
         .style("fill", "black")
-        .style("opacity", _networkMissingOpacity);
+        .style("opacity", kGlobals.missing.opacity);
 
       offset += 18;
     }
@@ -7315,7 +4872,7 @@ var hivtrace_cluster_network_graph = function (
         .attr("id", id);
       var values = _.map(cluster.children, (node) => {
         var value = self.attribute_node_value_by_id(node, cat_id);
-        return value === _networkMissing ? Infinity : value;
+        return value === kGlobals.missing.label ? Infinity : value;
       }).sort((a, b) => 0 + a - (0 + b));
       var finite = _.filter(values, (d) => d < Infinity);
       var infinite = values.length - finite.length;
@@ -7324,11 +4881,11 @@ var hivtrace_cluster_network_graph = function (
         gradient
           .append("stop")
           .attr("offset", "0%")
-          .attr("stop-color", _networkMissingColor);
+          .attr("stop-color", kGlobals.missing.color);
         gradient
           .append("stop")
           .attr("offset", String((infinite / values.length) * 100) + "%")
-          .attr("stop-color", _networkMissingColor);
+          .attr("stop-color", kGlobals.missing.color);
       }
 
       _.each(finite, (value, index) => {
@@ -7363,9 +4920,9 @@ var hivtrace_cluster_network_graph = function (
         });
       d3.select(self.get_ui_element_selector_by_role(lbl + "_label")).html(
         __("network_tab")["opacity"] +
-        ": " +
-        set_attr +
-        ' <span class="caret"></span>'
+          ": " +
+          set_attr +
+          ' <span class="caret"></span>'
       );
     });
 
@@ -7376,14 +4933,14 @@ var hivtrace_cluster_network_graph = function (
 
     self.colorizer["opacity_id"] = cat_id;
     if (cat_id) {
-      var scale = graph_data[_networkGraphAttrbuteID][cat_id]["scale"];
+      var scale = graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["scale"];
       self.colorizer["opacity_scale"] = d3.scale
         .linear()
-        .domain([0, _networkContinuousColorStops - 1])
+        .domain([0, kGlobals.network.ContinuousColorStops - 1])
         .range([0.25, 1]);
       self.colorizer["opacity"] = function (v) {
-        if (v === _networkMissing) {
-          return _networkMissingOpacity;
+        if (v === kGlobals.missing.label) {
+          return kGlobals.missing.opacity;
         }
         return self.colorizer["opacity_scale"](scale(v));
       };
@@ -7437,13 +4994,16 @@ var hivtrace_cluster_network_graph = function (
     if (cat_id) {
       // map values to inverted scale
       const color_stops =
-        graph_data[_networkGraphAttrbuteID][cat_id]["color_stops"] ||
-        _networkContinuousColorStops;
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["color_stops"] ||
+        kGlobals.network.ContinuousColorStops;
 
-      if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
-        self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
-          cat_id
-        ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
+      if (graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["color_scale"]) {
+        self.colorizer["category"] = graph_data[
+          kGlobals.network.GraphAttrbuteID
+        ][cat_id]["color_scale"](
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id],
+          self
+        );
 
         self.uniqValues[cat_id]["min"] =
           self.colorizer["category"](color_stops);
@@ -7453,7 +5013,7 @@ var hivtrace_cluster_network_graph = function (
         self.colorizer["category"] = _.wrap(
           d3.scale
             .linear()
-            .domain(_.range(_networkContinuousColorStops))
+            .domain(_.range(kGlobals.network.ContinuousColorStops))
             .range(["#fff7ec", "#7f0000"])
             .interpolate(d3.interpolateRgb),
           (func, arg) => {
@@ -7461,28 +5021,36 @@ var hivtrace_cluster_network_graph = function (
             self.uniqValues[cat_id]["max"] = "#7f0000";
 
             return func(
-              graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg) *
-              (1 / _networkContinuousColorStops)
+              graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["scale"](
+                arg
+              ) *
+                (1 / kGlobals.network.ContinuousColorStops)
             );
           }
         );
       }
 
-      if (graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]) {
+      if (
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"]
+      ) {
         // get min and max
         const min =
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["min"] ||
-          self.uniqValues[cat_id]["min"];
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+            "min"
+          ] || self.uniqValues[cat_id]["min"];
         const max =
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["max"] ||
-          self.uniqValues[cat_id]["max"];
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+            "max"
+          ] || self.uniqValues[cat_id]["max"];
 
         self.uniqValues[cat_id]["min"] =
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["min"] ||
-          self.uniqValues[cat_id]["min"];
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+            "min"
+          ] || self.uniqValues[cat_id]["min"];
         self.uniqValues[cat_id]["max"] =
-          graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]["max"] ||
-          self.uniqValues[cat_id]["max"];
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"][
+            "max"
+          ] || self.uniqValues[cat_id]["max"];
 
         self.colorizer["category"] = _.wrap(
           d3.scale
@@ -7490,10 +5058,13 @@ var hivtrace_cluster_network_graph = function (
             .domain(_.range(color_stops))
             .range([min, max])
             .interpolate(d3.interpolateRgb),
-          (func, arg) => func(
-            graph_data[_networkGraphAttrbuteID][cat_id]["scale"](arg) *
-            (1 / color_stops)
-          )
+          (func, arg) =>
+            func(
+              graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["scale"](
+                arg
+              ) *
+                (1 / color_stops)
+            )
         );
       }
 
@@ -7507,17 +5078,17 @@ var hivtrace_cluster_network_graph = function (
 
       _.each(self.edges, (e) => {
         var src = self.attribute_node_value_by_id(
-          self.nodes[e.source],
-          cat_id,
-          true
-        ),
+            self.nodes[e.source],
+            cat_id,
+            true
+          ),
           tgt = self.attribute_node_value_by_id(
             self.nodes[e.target],
             cat_id,
             true
           );
 
-        if (src !== _networkMissing && tgt !== _networkMissing) {
+        if (src !== kGlobals.missing.label && tgt !== kGlobals.missing.label) {
           points.push({
             x: src,
             y: tgt,
@@ -7546,7 +5117,7 @@ var hivtrace_cluster_network_graph = function (
           x: "Source",
           y: "Target",
         },
-        graph_data[_networkGraphAttrbuteID][cat_id]["type"] === "Date"
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["type"] === "Date"
       );
     } else {
       self.colorizer["category"] = null;
@@ -7609,7 +5180,8 @@ var hivtrace_cluster_network_graph = function (
 
     if (cat_id) {
       if (cat_id in self.networkColorScheme) {
-        let cat_data = graph_data[_networkGraphAttrbuteID][cat_id]["enum"];
+        let cat_data =
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["enum"];
         if (cat_data) {
           cat_data = new Set(_.map(cat_data, (d) => d.toLowerCase()));
         }
@@ -7628,55 +5200,69 @@ var hivtrace_cluster_network_graph = function (
           .ordinal()
           .domain(domain)
           .range(range);
-      } else if (graph_data[_networkGraphAttrbuteID][cat_id]["color_scale"]) {
-        self.colorizer["category"] = graph_data[_networkGraphAttrbuteID][
-          cat_id
-        ]["color_scale"](graph_data[_networkGraphAttrbuteID][cat_id], self);
+      } else if (
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["color_scale"]
+      ) {
+        self.colorizer["category"] = graph_data[
+          kGlobals.network.GraphAttrbuteID
+        ][cat_id]["color_scale"](
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id],
+          self
+        );
       } else {
         self.colorizer["category"] = d3.scale
           .ordinal()
-          .range(_networkCategorical);
+          .range(kGlobals.Categorical);
 
         var extended_range = _.clone(self.colorizer["category"].range());
-        extended_range.push(_networkMissingColor);
+        extended_range.push(kGlobals.missing.color);
 
         self.colorizer["category"].domain(
-          _.range(_maximumValuesInCategories + 1)
+          _.range(kGlobals.MaximumValuesInCategories + 1)
         );
 
         self.colorizer["category"].range(extended_range);
 
-        if (graph_data[_networkGraphAttrbuteID][cat_id]["stable-ish order"]) {
+        if (
+          graph_data[kGlobals.network.GraphAttrbuteID][cat_id][
+            "stable-ish order"
+          ]
+        ) {
           self.colorizer["category"] = _.wrap(
             self.colorizer["category"],
             (func, arg) => {
-              if (arg === _networkMissing) {
-                return func(_maximumValuesInCategories);
+              if (arg === kGlobals.missing.label) {
+                return func(kGlobals.MaximumValuesInCategories);
               }
 
-              const ci = graph_data[_networkGraphAttrbuteID][cat_id];
+              const ci = graph_data[kGlobals.network.GraphAttrbuteID][cat_id];
 
               if (ci["reduced_value_range"]) {
                 if (!(arg in ci["reduced_value_range"])) {
-                  arg = _networkReducedValue;
+                  arg = kGlobals.network.ReducedValue;
                 }
               }
 
               return func(ci["stable-ish order"][arg]);
             }
           );
-          //console.log (graph_data[_networkGraphAttrbuteID][cat_id]['stable-ish order']);
+          //console.log (graph_data[kGlobals.network.GraphAttrbuteID][cat_id]['stable-ish order']);
         }
       }
 
-      if (graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]) {
+      if (
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["user-defined"]
+      ) {
         self.colorizer["category"] = _.wrap(
           self.colorizer["category"],
           (func, arg) => {
             if (
-              arg in graph_data[_networkGraphAttrbuteID][cat_id]["user-defined"]
+              arg in
+              graph_data[kGlobals.network.GraphAttrbuteID][cat_id][
+                "user-defined"
+              ]
             ) {
-              return graph_data[_networkGraphAttrbuteID][cat_id][
+              return graph_data[kGlobals.network.GraphAttrbuteID][cat_id][
                 "user-defined"
               ][arg];
             }
@@ -7687,10 +5273,10 @@ var hivtrace_cluster_network_graph = function (
 
       self.colorizer["category_id"] = cat_id;
       self.colorizer["category_map"] =
-        graph_data[_networkGraphAttrbuteID][cat_id]["value_map"];
+        graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_map"];
 
-      //console.log (cat_id, self.json[_networkGraphAttrbuteID][cat_id], graph_data[_networkGraphAttrbuteID][cat_id]["value_map"] (null, "lookup"));
-      //self.colorizer['category_map'][null] =  graph_data [_networkGraphAttrbuteID][cat_id]['range'];
+      //console.log (cat_id, self.json[kGlobals.network.GraphAttrbuteID][cat_id], graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_map"] (null, "lookup"));
+      //self.colorizer['category_map'][null] =  graph_data [kGlobals.network.GraphAttrbuteID][cat_id]['range'];
 
       //try {
       //console.log (self.colorizer["category_map"]);
@@ -7747,10 +5333,12 @@ var hivtrace_cluster_network_graph = function (
   self.filter = function (conditions, skip_update) {
     var anything_changed = false;
 
-    conditions = _.map(["re", "distance", "date"], (cnd) => _.map(
-      _.filter(conditions, (v) => v.type === cnd),
-      (v) => cnd === "distance" ? v : v.value
-    ));
+    conditions = _.map(["re", "distance", "date"], (cnd) =>
+      _.map(
+        _.filter(conditions, (v) => v.type === cnd),
+        (v) => (cnd === "distance" ? v : v.value)
+      )
+    );
 
     if (conditions[1].length) {
       self.nodes.forEach((n) => {
@@ -7758,7 +5346,9 @@ var hivtrace_cluster_network_graph = function (
       });
 
       _.each(self.edges, (e) => {
-        var did_match = _.some(conditions[1], (d) => d.greater_than ? e.length >= d.value : e.length < d.value);
+        var did_match = _.some(conditions[1], (d) =>
+          d.greater_than ? e.length >= d.value : e.length < d.value
+        );
 
         if (did_match) {
           self.nodes[e.source].length_filter = true;
@@ -7781,7 +5371,10 @@ var hivtrace_cluster_network_graph = function (
           n,
           timeDateUtil.getClusterTimeScale()
         );
-        n.date_filter = _.some(conditions[2], (d) => node_T >= d[0] && node_T <= d[1]);
+        n.date_filter = _.some(
+          conditions[2],
+          (d) => node_T >= d[0] && node_T <= d[1]
+        );
       });
     } else {
       self.nodes.forEach((n) => {
@@ -7800,10 +5393,14 @@ var hivtrace_cluster_network_graph = function (
     });
 
     self.nodes.forEach((n) => {
-      var did_match = _.some(conditions[0], (regexp) => (
-        regexp.test(n.id) ||
-        _.some(n[_networkNodeAttributeID], (attr) => regexp.test(attr))
-      ));
+      var did_match = _.some(
+        conditions[0],
+        (regexp) =>
+          regexp.test(n.id) ||
+          _.some(n[kGlobals.network.NodeAttributeID], (attr) =>
+            regexp.test(attr)
+          )
+      );
 
       did_match = did_match || n.length_filter || n.date_filter;
 
@@ -7832,23 +5429,6 @@ var hivtrace_cluster_network_graph = function (
 
   self.is_empty = function () {
     return self.cluster_sizes.length === 0;
-  };
-
-  self.display_warning = function (warning_string, is_html) {
-    if (network_warning_tag) {
-      if (warning_string.length) {
-        var warning_box = d3.select(network_warning_tag);
-        warning_box.selectAll("div").remove();
-        if (is_html) {
-          warning_box.append("div").html(warning_string);
-        } else {
-          warning_box.append("div").text(warning_string);
-        }
-        warning_box.style("display", "block");
-      } else {
-        d3.select(network_warning_tag).style("display", "none");
-      }
-    }
   };
 
   self.link_generator_function = function (d) {
@@ -7973,14 +5553,18 @@ var hivtrace_cluster_network_graph = function (
 
       link
         .classed("removed", (d) => self.highlight_unsuppored_edges && d.removed)
-        .classed("unsupported", (d) => (
-          self.highlight_unsuppored_edges &&
-          "support" in d &&
-          d["support"] > 0.05
-        ))
-        .classed("core-link", (d) =>
-          //console.log (d["length"] <= self.core_link_length);
-          d["length"] <= self.core_link_length
+        .classed(
+          "unsupported",
+          (d) =>
+            self.highlight_unsuppored_edges &&
+            "support" in d &&
+            d["support"] > 0.05
+        )
+        .classed(
+          "core-link",
+          (d) =>
+            //console.log (d["length"] <= self.core_link_length);
+            d["length"] <= self.core_link_length
           //return false;
         );
 
@@ -8013,7 +5597,7 @@ var hivtrace_cluster_network_graph = function (
         .append("g")
         .attr("class", "cluster-group")
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
-        .on("click", handle_cluster_click)
+        .on("click", (d) => network.handle_cluster_click(self, d))
         .on("mouseover", cluster_pop_on)
         .on("mouseout", cluster_pop_off)
         .call(network_layout.drag().on("dragstart", cluster_pop_off));
@@ -8032,7 +5616,11 @@ var hivtrace_cluster_network_graph = function (
         )
       ) {
         // compute priority clusters
-        self.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12);
+        self.annotate_priority_clusters(
+          timeDateUtil._networkCDCDateField,
+          36,
+          12
+        );
 
         try {
           if (self.isPrimaryGraph) {
@@ -8093,7 +5681,7 @@ var hivtrace_cluster_network_graph = function (
 
             var stats =
               self.json.subcluster_summary_stats[parent_cluster_id][
-              subcluster_id
+                subcluster_id
               ];
 
             return {
@@ -8171,7 +5759,9 @@ var hivtrace_cluster_network_graph = function (
       draw_a_cluster(this, d);
     });
 
-    link.style("opacity", (d) => Math.max(node_opacity(d.target), node_opacity(d.source)));
+    link.style("opacity", (d) =>
+      Math.max(node_opacity(d.target), node_opacity(d.source))
+    );
 
     if (self.additional_edge_styler) {
       link.each(function (d) {
@@ -8186,7 +5776,10 @@ var hivtrace_cluster_network_graph = function (
         }
         return null;
       })
-      .classed("selected_object", (d) => d.ref.length_filter && !self.hide_unselected);
+      .classed(
+        "selected_object",
+        (d) => d.ref.length_filter && !self.hide_unselected
+      );
 
     if (!soft) {
       currently_displayed_objects =
@@ -8225,19 +5818,21 @@ var hivtrace_cluster_network_graph = function (
             ")"
           );
         });
-        rendered_clusters.attr("transform", (d) => (
-          "translate(" +
-          (d.x = Math.max(
-            d.rendered_size,
-            Math.min(sizes[0] - d.rendered_size, d.x)
-          )) +
-          "," +
-          (d.y = Math.max(
-            d.rendered_size,
-            Math.min(sizes[1] - d.rendered_size, d.y)
-          )) +
-          ")"
-        ));
+        rendered_clusters.attr(
+          "transform",
+          (d) =>
+            "translate(" +
+            (d.x = Math.max(
+              d.rendered_size,
+              Math.min(sizes[0] - d.rendered_size, d.x)
+            )) +
+            "," +
+            (d.y = Math.max(
+              d.rendered_size,
+              Math.min(sizes[1] - d.rendered_size, d.y)
+            )) +
+            ")"
+        );
 
         link.each(self.link_generator_function);
       });
@@ -8276,22 +5871,22 @@ var hivtrace_cluster_network_graph = function (
 
   self.attribute_node_value_by_id = function (d, id, number) {
     try {
-      if (_networkNodeAttributeID in d && id) {
-        if (id in d[_networkNodeAttributeID]) {
+      if (kGlobals.network.NodeAttributeID in d && id) {
+        if (id in d[kGlobals.network.NodeAttributeID]) {
           let v;
 
-          if (self.json[_networkGraphAttrbuteID][id].volatile) {
-            v = self.json[_networkGraphAttrbuteID][id].map(d, self);
+          if (self.json[kGlobals.network.GraphAttrbuteID][id].volatile) {
+            v = self.json[kGlobals.network.GraphAttrbuteID][id].map(d, self);
           } else {
-            v = d[_networkNodeAttributeID][id];
+            v = d[kGlobals.network.NodeAttributeID][id];
           }
 
           if (_.isString(v)) {
             if (v.length === 0) {
-              return _networkMissing;
+              return kGlobals.missing.label;
             } else if (number) {
               v = Number(v);
-              return _.isNaN(v) ? _networkMissing : v;
+              return _.isNaN(v) ? kGlobals.missing.label : v;
             }
           }
           return v;
@@ -8300,29 +5895,14 @@ var hivtrace_cluster_network_graph = function (
     } catch (e) {
       console.log("self.attribute_node_value_by_id", e, d, id, number);
     }
-    return _networkMissing;
+    return kGlobals.missing.label;
   };
-
-  function inject_attribute_node_value_by_id(d, id, value) {
-    if (_networkNodeAttributeID in d && id) {
-      d[_networkNodeAttributeID][id] = value;
-    }
-  }
 
   self.has_network_attribute = function (key) {
-    if (_networkGraphAttrbuteID in self.json) {
-      return key in self.json[_networkGraphAttrbuteID];
+    if (kGlobals.network.GraphAttrbuteID in self.json) {
+      return key in self.json[kGlobals.network.GraphAttrbuteID];
     }
     return false;
-  };
-
-  self.inject_attribute_description = function (key, d) {
-    if (_networkGraphAttrbuteID in self.json) {
-      var new_attr = {};
-      new_attr[key] = d;
-      _.extend(self.json[_networkGraphAttrbuteID], new_attr);
-      //self.json[_networkGraphAttrbuteID][key] = _.clone (d);
-    }
   };
 
   function node_size(d) {
@@ -8341,8 +5921,8 @@ var hivtrace_cluster_network_graph = function (
     if (self.colorizer["category_id"]) {
       var v = self.attribute_node_value_by_id(d, self.colorizer["category_id"]);
       if (self.colorizer["continuous"]) {
-        if (v === _networkMissing) {
-          return _networkMissingColor;
+        if (v === kGlobals.missing.label) {
+          return kGlobals.missing.color;
         }
         //console.log (v, self.colorizer['category'](v));
       }
@@ -8384,7 +5964,7 @@ var hivtrace_cluster_network_graph = function (
         "Degree <em>" +
         n.degree +
         "</em><br>Clustering coefficient <em> " +
-        misc.format_value(n.lcc, _defaultFloatFormat) +
+        misc.format_value(n.lcc, kGlobals.formats.FloatFormat) +
         "</em>";
     } else {
       str = "# links <em>" + n.degree + "</em>";
@@ -8398,12 +5978,15 @@ var hivtrace_cluster_network_graph = function (
       ]),
       (key) => {
         if (key) {
-          if (key in graph_data[_networkGraphAttrbuteID]) {
+          if (key in graph_data[kGlobals.network.GraphAttrbuteID]) {
             var attribute = self.attribute_node_value_by_id(n, key);
 
-            if (graph_data[_networkGraphAttrbuteID][key]["type"] === "Date") {
+            if (
+              graph_data[kGlobals.network.GraphAttrbuteID][key]["type"] ===
+              "Date"
+            ) {
               try {
-                attribute = _defaultDateViewFormat(attribute);
+                attribute = timeDateUtil.DateViewFormat(attribute);
               } catch (err) {
                 // do nothing
               }
@@ -8411,7 +5994,7 @@ var hivtrace_cluster_network_graph = function (
             if (attribute) {
               str +=
                 "<br>" +
-                graph_data[_networkGraphAttrbuteID][key].label +
+                graph_data[kGlobals.network.GraphAttrbuteID][key].label +
                 " <em>" +
                 attribute +
                 "</em>";
@@ -8425,11 +6008,11 @@ var hivtrace_cluster_network_graph = function (
   }
 
   function edge_info_string(n) {
-    var str = "Length <em>" + _defaultFloatFormat(n.length) + "</em>";
+    var str = "Length <em>" + kGlobals.formats.FloatFormat(n.length) + "</em>";
     if ("support" in n) {
       str +=
         "<br>Worst triangle-based support (p): <em>" +
-        _defaultFloatFormat(n.support) +
+        kGlobals.formats.FloatFormat(n.support) +
         "</em>";
     }
 
@@ -8549,11 +6132,7 @@ var hivtrace_cluster_network_graph = function (
         .append("thead")
         .append("tr")
         .selectAll("th")
-        .data(
-          [""].concat(
-            matrix[0].map((d, i) => lookup[i])
-          )
-        );
+        .data([""].concat(matrix[0].map((d, i) => lookup[i])));
 
       headers.enter().append("th");
       headers
@@ -8568,21 +6147,17 @@ var hivtrace_cluster_network_graph = function (
         });
 
       if (self.show_percent_in_pairwise_table) {
-        var sum = _.map(matrix, (row) => _.reduce(
-          row,
-          (p, c) => p + c,
-          0
-        ));
+        var sum = _.map(matrix, (row) => _.reduce(row, (p, c) => p + c, 0));
 
-        matrix = _.map(matrix, (row, row_index) => _.map(row, (c) => c / sum[row_index]));
+        matrix = _.map(matrix, (row, row_index) =>
+          _.map(row, (c) => c / sum[row_index])
+        );
       }
 
       var rows = the_table
         .append("tbody")
         .selectAll("tr")
-        .data(
-          matrix.map((d, i) => [lookup[i]].concat(d))
-        );
+        .data(matrix.map((d, i) => [lookup[i]].concat(d)));
 
       rows.enter().append("tr");
       rows
@@ -8594,7 +6169,7 @@ var hivtrace_cluster_network_graph = function (
           if (i === 0) {
             return "<span>&nbsp;" + d + "</span>";
           } else if (self.show_percent_in_pairwise_table) {
-            return _defaultPercentFormat(d);
+            return kGlobals.formats.PercentFormat(d);
           }
 
           return d;
@@ -8672,8 +6247,8 @@ var hivtrace_cluster_network_graph = function (
             .filter((d) => d.source.index !== i && d.target.index !== i)
             .transition()
             .style("opacity", opacity);
-        }
-      }
+        };
+      };
 
       svg
         .append("g")
@@ -8756,27 +6331,44 @@ var hivtrace_cluster_network_graph = function (
       d["label"] = k;
     }
     d.discrete = false;
+
+    if ("enum" in d) {
+      d.discrete = true;
+      d["value_range"] = new Set(d["enum"]);
+      d["value_range"].add(kGlobals.missing.label);
+
+      if (
+        _.every(graph_data.Nodes, (nd) =>
+          d["value_range"].has(self.attribute_node_value_by_id(nd, k))
+        )
+      ) {
+        d["value_range"] = _.clone(d["enum"]);
+        if (!(kGlobals.missing.label in d["value_range"])) {
+          d["value_range"].push(kGlobals.missing.label);
+        }
+        d["dimension"] = d["value_range"].length;
+        d["no-sort"] = true;
+        return d;
+      }
+
+      // confirm that the values in the range are actually in the enum
+    }
+
     if (d["type"] === "String") {
       d.discrete = true;
       d["value_range"] = _.keys(
-        _.countBy(graph_data.Nodes, (nd) => self.attribute_node_value_by_id(nd, k))
+        _.countBy(graph_data.Nodes, (nd) =>
+          self.attribute_node_value_by_id(nd, k)
+        )
       );
       d["dimension"] = d["value_range"].length;
-    } else if ("enum" in d) {
-      d.discrete = true;
-      d["value_range"] = _.clone(d["enum"]);
-      if (!(_networkMissing in d["value_range"])) {
-        d["value_range"].push(_networkMissing);
-      }
-      d["dimension"] = d["value_range"].length;
-      d["no-sort"] = true;
     }
     return d;
   };
 
   self._aux_get_attribute_dimension = function (cat_id) {
-    if (cat_id in graph_data[_networkGraphAttrbuteID]) {
-      const cinfo = graph_data[_networkGraphAttrbuteID][cat_id];
+    if (cat_id in graph_data[kGlobals.network.GraphAttrbuteID]) {
+      const cinfo = graph_data[kGlobals.network.GraphAttrbuteID][cat_id];
       if ("reduced_value_range" in cinfo) {
         return _.size(cinfo["reduced_value_range"]);
       }
@@ -8795,12 +6387,11 @@ var hivtrace_cluster_network_graph = function (
     } else if (d["type"] === "String") {
       values = d["value_range"].sort();
 
-      if (d.dimension > _maximumValuesInCategories) {
+      if (d.dimension > kGlobals.MaximumValuesInCategories) {
         const compressed_values = _.chain(self.nodes)
-          .countBy((node) => self.attribute_node_value_by_id(
-            node,
-            d["raw_attribute_key"]
-          ))
+          .countBy((node) =>
+            self.attribute_node_value_by_id(node, d["raw_attribute_key"])
+          )
           .pairs()
           .sortBy((d) => -d[1])
           .value();
@@ -8808,16 +6399,16 @@ var hivtrace_cluster_network_graph = function (
         reduced_range = [];
         let i = 0;
         while (
-          reduced_range.length < _maximumValuesInCategories - 1 &&
+          reduced_range.length < kGlobals.MaximumValuesInCategories - 1 &&
           i < compressed_values.length
         ) {
-          if (compressed_values[i][0] !== _networkMissing) {
+          if (compressed_values[i][0] !== kGlobals.missing.label) {
             reduced_range.push(compressed_values[i][0]);
           }
           i++;
         }
         reduced_range = reduced_range.sort();
-        reduced_range.push(_networkReducedValue);
+        reduced_range.push(kGlobals.network.ReducedValue);
       }
 
       var string_hash = function (str) {
@@ -8835,7 +6426,7 @@ var hivtrace_cluster_network_graph = function (
       var available_keys = {};
       var reindexed = {};
 
-      for (var i = 0; i < _maximumValuesInCategories; i++) {
+      for (var i = 0; i < kGlobals.MaximumValuesInCategories; i++) {
         available_keys[i] = true;
       }
 
@@ -8844,7 +6435,7 @@ var hivtrace_cluster_network_graph = function (
           value = -value;
         }
 
-        var first_try = value % _maximumValuesInCategories;
+        var first_try = value % kGlobals.MaximumValuesInCategories;
         if (first_try in available_keys) {
           reindexed[use_these_values[index]] = first_try;
           delete available_keys[first_try];
@@ -8852,8 +6443,8 @@ var hivtrace_cluster_network_graph = function (
         }
 
         var second_try =
-          Math.floor(value / _maximumValuesInCategories) %
-          _maximumValuesInCategories;
+          Math.floor(value / kGlobals.MaximumValuesInCategories) %
+          kGlobals.MaximumValuesInCategories;
         if (second_try in available_keys) {
           reindexed[use_these_values[index]] = second_try;
           delete available_keys[second_try];
@@ -8877,7 +6468,7 @@ var hivtrace_cluster_network_graph = function (
         if (d2 in rrl) {
           map[d2] = rrl[d2];
         } else {
-          map[d2] = rrl[_networkReducedValue];
+          map[d2] = rrl[kGlobals.network.ReducedValue];
         }
       });
 
@@ -8894,6 +6485,7 @@ var hivtrace_cluster_network_graph = function (
       _.each(values, (d2, i) => {
         map[d2] = i;
       });
+
       d["value_map"] = function (v, key) {
         if (key) {
           //console.log (key, map);
@@ -8908,7 +6500,9 @@ var hivtrace_cluster_network_graph = function (
 
   function attribute_cluster_distribution(the_cluster, attribute_id) {
     if (attribute_id && the_cluster) {
-      return the_cluster.children.map((d) => self.attribute_node_value_by_id(d, attribute_id));
+      return the_cluster.children.map((d) =>
+        self.attribute_node_value_by_id(d, attribute_id)
+      );
     }
     return null;
   }
@@ -8925,7 +6519,7 @@ var hivtrace_cluster_network_graph = function (
         self.cluster_sizes[id - 1] +
         "</strong> individuals." +
         "<br>Mean links/individual <em> = " +
-        _defaultFloatFormat(the_cluster.degrees["mean"]) +
+        kGlobals.formats.FloatFormat(the_cluster.degrees["mean"]) +
         "</em>" +
         "<br>Max links/individual <em> = " +
         the_cluster.degrees["max"] +
@@ -8936,13 +6530,13 @@ var hivtrace_cluster_network_graph = function (
         self.cluster_sizes[id - 1] +
         "</strong> nodes." +
         "<br>Mean degree <em>" +
-        _defaultFloatFormat(the_cluster.degrees["mean"]) +
+        kGlobals.formats.FloatFormat(the_cluster.degrees["mean"]) +
         "</em>" +
         "<br>Max degree <em>" +
         the_cluster.degrees["max"] +
         "</em>" +
         "<br>Clustering coefficient <em> " +
-        misc.format_value(the_cluster.cc, _defaultFloatFormat) +
+        misc.format_value(the_cluster.cc, kGlobals.formats.FloatFormat) +
         "</em>";
     }
 
@@ -9006,7 +6600,7 @@ var hivtrace_cluster_network_graph = function (
   function show_sequences_in_cluster(d) {
     var sequences = {};
     _.each(
-      _extract_single_cluster(
+      self.extract_single_cluster(
         self.clusters[self.cluster_mapping[d.cluster]].children,
         null,
         true
@@ -9038,12 +6632,6 @@ var hivtrace_cluster_network_graph = function (
     if (do_update) {
       self.update(false, 0.4);
     }
-  }
-
-  function center_cluster_handler(d) {
-    d.x = self.width / 2;
-    d.y = self.height / 2;
-    self.update(false, 0.4);
   }
 
   function cluster_box_size(c) {
@@ -9091,7 +6679,9 @@ var hivtrace_cluster_network_graph = function (
   };
 
   self.select_some_clusters = function (condition) {
-    return self.clusters.filter((c, i) => _.some(c.children, (n) => condition(n)));
+    return self.clusters.filter((c, i) =>
+      _.some(c.children, (n) => condition(n))
+    );
   };
 
   self.collapse_some_clusters = function (subset) {
@@ -9160,11 +6750,6 @@ var hivtrace_cluster_network_graph = function (
     return array;
   }
 
-  self.is_edge_injected = function (e) {
-    //console.log (e, "edge_type" in e);
-    return "edge_type" in e;
-  };
-
   self._distance_gate_options = function (threshold) {
     threshold = threshold || 0.005;
 
@@ -9179,7 +6764,11 @@ var hivtrace_cluster_network_graph = function (
           d3.select(element).style(
             "stroke",
             network._edge_colorizer(
-              misc.edge_typer(d, network.edge_types, network.edge_cluster_threshold)
+              misc.edge_typer(
+                d,
+                network.edge_types,
+                network.edge_cluster_threshold
+              )
             )
           ); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
         }
@@ -9209,7 +6798,7 @@ var hivtrace_cluster_network_graph = function (
 
           network._edge_colorizer = d3.scale
             .ordinal()
-            .range(_networkEdgeColorBase)
+            .range(kGlobals.EdgeColorBase)
             .domain(network.edge_types);
           //network._edge_dasher   = _edge_dasher;
           network.shown_types = _.object(
@@ -9320,7 +6909,7 @@ var hivtrace_cluster_network_graph = function (
 
         network._edge_colorizer = d3.scale
           .ordinal()
-          .range(_networkCategoricalBase)
+          .range(kGlobals.CategoricalBase)
           .domain(edge_types);
         //network._edge_dasher   = _edge_dasher;
         network.shown_types = _.clone(shown_types);
@@ -9416,7 +7005,7 @@ var hivtrace_cluster_network_graph = function (
     const handle_node_attributes = (target, n) => {
       _.each(n, (attribute_value, attribute_key) => {
         if (attribute_key !== index_id) {
-          inject_attribute_node_value_by_id(
+          HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
             target,
             attribute_key,
             attribute_value
@@ -9432,7 +7021,7 @@ var hivtrace_cluster_network_graph = function (
         attributes: [],
         degree: 0,
       };
-      new_node[_networkNodeAttributeID] = {};
+      new_node[kGlobals.network.NodeAttributeID] = {};
       new_node.id = node_name;
       handle_node_attributes(new_node, n);
       node_name_2_id[node_name] = self.json.Nodes.length;
@@ -9444,7 +7033,7 @@ var hivtrace_cluster_network_graph = function (
       if (!(index_id in nodes_and_attributes[0])) {
         throw Error(
           index_id +
-          " is not one of the attributes in the imported node records"
+            " is not one of the attributes in the imported node records"
         );
       }
 
@@ -9573,7 +7162,7 @@ var hivtrace_cluster_network_graph = function (
 
       /*var _edge_dasher = d3.scale
         .ordinal()
-        .range(_networkCategoricalDashPatterns)
+        .range(kGlobals.CategoricalDashPatterns)
         .domain(edge_types);
       */
 
@@ -9602,7 +7191,7 @@ var hivtrace_cluster_network_graph = function (
       ) {
         function edge_filter_for_subclusters(edge) {
           return (
-            self.is_edge_injected(edge) ||
+            HTX.HIVTxNetwork.is_edge_injected(edge) ||
             edge.length <= self.subcluster_threshold
           );
         }
@@ -9650,7 +7239,9 @@ var hivtrace_cluster_network_graph = function (
         );
         //cv.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12);
         //cv.handle_attribute_categorical("recent_rapid");
-        cv._refresh_subcluster_view(self.today || timeDateUtil.getCurrentDate());
+        cv._refresh_subcluster_view(
+          self.today || timeDateUtil.getCurrentDate()
+        );
       };
 
       var injected_column_subcluster = [
@@ -9695,17 +7286,15 @@ var hivtrace_cluster_network_graph = function (
                     _.partial(
                       _injected_column_subcluster_button_handler,
                       payload,
-                      (edge) => (
+                      (edge) =>
                         self.json.Nodes[edge.target].id in node_ids ||
-                        self.json.Nodes[edge.source].id in node_ids
-                      ),
-                      (id) => (
+                        self.json.Nodes[edge.source].id in node_ids,
+                      (id) =>
                         "Subcluster " +
                         payload.cluster_id +
                         "[+ direct  " +
                         annotation +
                         "]"
-                      )
                     )
                   );
               },
@@ -9733,7 +7322,9 @@ var hivtrace_cluster_network_graph = function (
 
               callback: function (element, payload) {
                 var this_cell = d3.select(element);
-                this_cell.text(Number(payload[0]) + " " + annotation + " nodes. ");
+                this_cell.text(
+                  Number(payload[0]) + " " + annotation + " nodes. "
+                );
                 var other_clusters = [];
                 if (payload[1]) {
                   other_clusters = _.without(_.keys(payload[1]), payload[2]);
@@ -9742,9 +7333,7 @@ var hivtrace_cluster_network_graph = function (
                     this_cell
                       .append("span")
                       .classed("label label-info", true)
-                      .text(
-                        "Bridges to " + other_clusters.length + " clusters"
-                      )
+                      .text("Bridges to " + other_clusters.length + " clusters")
                       .attr("title", other_clusters.join(", "));
                   }
                 }
@@ -9783,10 +7372,9 @@ var hivtrace_cluster_network_graph = function (
                         hivtrace_cluster_depthwise_traversal(
                           self.json.Nodes,
                           self.json.Edges,
-                          (edge) => (
+                          (edge) =>
                             self.json.Nodes[edge.target].id in node_ids ||
-                            self.json.Nodes[edge.source].id in node_ids
-                          ),
+                            self.json.Nodes[edge.source].id in node_ids,
                           false,
                           cluster.children
                         );
@@ -9802,9 +7390,8 @@ var hivtrace_cluster_network_graph = function (
                         (n) => n.id in directly_linked_ids,
                         labeled_links,
                         shown_types,
-                        (id) => (
-                          "Cluster " + id + "[+ direct " + annotation + "]"
-                        ),
+                        (id) =>
+                          "Cluster " + id + "[+ direct " + annotation + "]",
                         e
                       );
                     });
@@ -9818,10 +7405,9 @@ var hivtrace_cluster_network_graph = function (
                       _.partial(
                         _social_view_handler,
                         payload[2],
-                        (n) => (
+                        (n) =>
                           n.extended_cluster &&
-                          payload[2] in n.extended_cluster
-                        ),
+                          payload[2] in n.extended_cluster,
                         labeled_links,
                         shown_types,
                         (id) => "Cluster " + id + "[+ " + annotation + "]"
@@ -9967,7 +7553,6 @@ var hivtrace_cluster_network_graph = function (
         container: container ? container : "body",
       });
 
-
       _.delay(_.bind(element.tooltip.tooltip, element.tooltip), 500, "show");
     } else if (!turn_on && element.tooltip) {
       element.tooltip.tooltip("destroy");
@@ -10004,8 +7589,8 @@ var hivtrace_cluster_network_graph = function (
       }
       return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
     })
-    .linkDistance((d) =>
-      link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
+    .linkDistance(
+      (d) => link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
     )
     .linkStrength((d) => {
       if (self.showing_on_map) {
@@ -10055,23 +7640,6 @@ var hivtrace_cluster_network_graph = function (
     .attr("transform", "translate(5," + legend_vertical_offset + ")")
     .call(legend_drag);
 
-  /*
-    self.network_svg
-    .append("defs")
-    .append("marker")
-    .attr("id", self.dom_prefix + "_arrowhead")
-    .attr("refX", 9)
-    .attr("refY", 2)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 4)
-    .attr("orient", "auto")
-    .attr("stroke", "#666666")
-    //.attr("markerUnits", "userSpaceOnUse")
-    .attr("fill", "#AAAAAA")
-    .append("path")
-    .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
-
-*/
   self.network_svg
     .append("defs")
     .append("marker")
@@ -10110,7 +7678,10 @@ var hivtrace_cluster_network_graph = function (
 
     if (_.isArray(options["expand"])) {
       self.expand_some_clusters(
-        _.filter(self.clusters, (c) => options["expand"].indexOf(c.cluster_id) >= 0)
+        _.filter(
+          self.clusters,
+          (c) => options["expand"].indexOf(c.cluster_id) >= 0
+        )
       );
     }
 
@@ -10131,4 +7702,7 @@ var hivtrace_cluster_network_graph = function (
   return self;
 };
 
-export { hivtrace_cluster_network_graph as clusterNetwork, hivtrace_cluster_depthwise_traversal as computeCluster };
+export {
+  hivtrace_cluster_network_graph as clusterNetwork,
+  hivtrace_cluster_depthwise_traversal as computeCluster,
+};
