@@ -11,6 +11,14 @@ import * as kGlobals from "./globals.js";
 
 let priority_set_editor = null;
 
+/**
+ * Initializes the component, setting up event listeners and UI elements.
+
+ * @param {Object} self - The component object itself.
+
+ * @returns {void}
+ */
+
 function init(self) {
   if (self._is_CDC_ && self.isPrimaryGraph) {
     let new_set = misc.get_ui_element_selector_by_role("new_priority_set");
@@ -18,7 +26,7 @@ function init(self) {
       window.addEventListener("beforeunload", (e) => {
         if (self.priority_groups_pending() > 0) {
           e.preventDefault();
-          return "There are cluster of interest that have not been confirmed. Closing the window now will not finalize their creation.";
+          return "There are clusters of interest that have not been confirmed. Closing the window now will not finalize their creation.";
         }
         return null;
       });
@@ -41,6 +49,21 @@ function init(self) {
   }
 }
 
+/**
+ * Checks if a provided name for a priority group is valid.
+
+ * @param {Object[]} defined_priority_groups - An array of existing priority group objects.
+ * @param {string} string - The name to be validated.
+ * @param {string} [prior_name] (optional) - The previous name of the priority group (used for edit case).
+
+ * @returns {boolean} True if the name is valid, false otherwise.
+
+ * @description
+ * A valid name must:
+ *  - Have a length between 1 and 35 characters.
+ *  - Not be a duplicate among existing priority groups (excluding itself if editing).
+ */
+
 function priority_groups_check_name(
   defined_priority_groups,
   string,
@@ -55,6 +78,21 @@ function priority_groups_check_name(
   }
   return false;
 }
+
+/**
+ * Opens a priority node set editor.
+
+ * @param {Object} self - The main network visualization object.
+ * @param {Array} node_set - An existing priority node set (optional).
+ * @param {string} name - Name of the priority node set (optional for new sets).
+ * @param {string} description - Description of the priority node set (optional).
+ * @param {string} cluster_kind - The method used to identify the cluster (optional).
+ * @param {Array} kind_options - Available options for cluster identification methods.
+ * @param {string} validation_mode - Indicates the mode (create, validate, revise).
+ * @param {Object} existing_set - Reference to the existing priority node set (for revisions).
+ * @param {string} cluster_tracking - Method for tracking cluster growth (optional).
+ * @param {string} created_by - Who created the node set (system or manual).
+ */
 
 function open_editor(
   self,
@@ -139,7 +177,8 @@ function open_editor(
         .classed("form-inline", true);
 
       var form_grp = form.append("div").classed("form-group", true);
-      var node_ids_selector = form_grp
+
+      form_grp
         .append("input")
         .classed("form-control input-sm", true)
         .attr("placeholder", "Add node by ID")
@@ -732,7 +771,7 @@ function open_editor(
                               timeDateUtil.DateViewFormatSlider.parse(
                                 $(d3.event.target).val()
                               );
-                          } catch (err) {
+                          } catch {
                             // do nothing
                           }
                         });
@@ -936,6 +975,16 @@ function open_editor(
   });
 }
 
+/**
+ * Handles inline confirmation popovers.
+
+ * @param {HTMLElement} this_button - The button element that triggers the popover.
+ * @param {Function} generator - A function that generates the HTML content for the popover body.
+ * @param {string} text - The initial text to display in the popover's text area (optional).
+ * @param {Function} action - A callback function to be executed when the user confirms the action. Takes the value from the text area as input.
+ * @param {boolean} disabled - A flag indicating if the text area should be disabled (optional).
+*/
+
 function handle_inline_confirm(this_button, generator, text, action, disabled) {
   this_button = $(this_button.node());
   if (this_button.data("popover_shown") !== "shown") {
@@ -985,6 +1034,14 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
     this_button.popover("destroy");
   }
 }
+
+/**
+ * Generates a dropdown menu for actions on a cluster of interest (COI).
+
+ * @param {Object} self - The main network visualization object.
+ * @param {Object} pg - The cluster of interest data.
+ * @returns {Array} An array of dropdown menu options.
+*/
 
 function _action_drop_down(self, pg) {
   let dropdown = _.flatten(
@@ -1092,6 +1149,14 @@ function _action_drop_down(self, pg) {
 
   return dropdown;
 }
+
+/**
+ * Draws a table of priority sets (clusters of interest).
+
+ * @param {Object} self - The main network visualization object.
+ * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
+ * @param {Array} priority_groups - An array of objects representing the priority sets (optional).
+*/
 
 function draw_priority_set_table(self, container, priority_groups) {
   container = container || self.priority_set_table;
@@ -1535,6 +1600,14 @@ function draw_priority_set_table(self, container, priority_groups) {
   }
 }
 
+/**
+ * Creates a subcluster view for a specific priority set.
+
+ * @param {Object} self - The main network visualization object.
+ * @param {Object} priority_set - The priority set object.
+ * @param {Object} options - Optional configuration options for the view.
+*/
+
 function priority_set_view(self, priority_set, options) {
   options = options || {};
 
@@ -1725,6 +1798,19 @@ function priority_set_view(self, priority_set, options) {
   });
 }
 
+/**
+ * Adds a new priority set to the network visualization.
+
+ * @param {Object} self - The main network visualization object.
+ * @param {Object} nodeset - The object representing the new priority set.
+ * @param {boolean} update_table - Flag indicating whether to update the priority set table. (optional)
+ * @param {boolean} not_validated - Flag indicating whether to perform validation before adding. (optional)
+ * @param {string} prior_name - Optional name of an existing priority set to replace.
+ * @param {string} op_code - Optional operation code (defaults to "insert").
+
+ * @returns {boolean} True if the set was added successfully, false otherwise.
+*/
+
 function priority_groups_add_set(
   self,
   nodeset,
@@ -1803,6 +1889,14 @@ function priority_groups_add_set(
   return true;
 }
 
+/**
+ * Injects priority set related attributes into network nodes.
+
+ * @param {Object} self - The main network visualization object.
+ * @param {Array} nodes - Array of network nodes.
+ * @param {Array} node_attributes - Array of priority set attributes for specific nodes (identified by name).
+*/
+
 function priority_set_inject_node_attibutes(self, nodes, node_attributes) {
   let attr_by_id = {};
   _.each(node_attributes, (n, i) => {
@@ -1818,6 +1912,12 @@ function priority_set_inject_node_attibutes(self, nodes, node_attributes) {
     }
   });
 }
+
+/**
+ * Gets the current priority set editor object.
+
+ * @returns {Object} The priority set editor object, or null if not open.
+ */
 
 function get_editor() {
   return priority_set_editor;
