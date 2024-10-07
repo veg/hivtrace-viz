@@ -122,7 +122,7 @@ function check_network_option(options, key, if_absent, if_present) {
 
   if (options) {
     if (key in options) {
-      return _.isUndefined(if_present) ? options[key] : if_present;
+      return if_present === undefined ? options[key] : if_present;
     }
   }
   return if_absent;
