@@ -105,6 +105,12 @@ circle.cluster {
   fill: none;
 }
 
+.mspp-link {
+  stroke: #666666;
+  stroke-width: 2px;
+  fill: none;
+}
+
 .core-link {
   stroke: #d9534f !important;
   stroke-width: 3px !important;
@@ -142,12 +148,12 @@ circle.cluster {
   margin-top: 5px;
 }
 
-#network_ui_bar>.input-group-btn {
+#network_ui_bar > .input-group-btn {
   padding-bottom: 5px;
   height: 36px !important;
 }
 
-#network_ui_bar>.input-group-btn>.btn {
+#network_ui_bar > .input-group-btn > .btn {
   height: 36px !important;
 }
 
@@ -169,9 +175,7 @@ input.form-control {
 }
 
 /* Internet Explorer specific definitions */
-@media all and (-ms-high-contrast: none),
-(-ms-high-contrast: active) {
-
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
   /* IE10+ specific styles go here */
   path.selected_object,
   circle.selected_object {
@@ -185,6 +189,14 @@ path.selected_object,
 circle.selected_object {
   stroke-width: 5px;
   stroke: #000;
+}
+
+g.multi_sequence,
+path.multi_sequence,
+circle.multi_sequence {
+  stroke-width: 3px;
+  stroke: #350e6b;
+  /*stroke-dasharray: 10 1;*/
 }
 
 path.injected_object,

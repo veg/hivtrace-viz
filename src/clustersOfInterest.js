@@ -1270,6 +1270,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     _.each(priority_groups, (pg) => {
       var this_row = [
         {
+          // created by icon
           value: pg.createdBy,
           html: true,
           width: 50,
@@ -1287,6 +1288,7 @@ function draw_priority_set_table(self, container, priority_groups) {
                 "></i>",
         },
         {
+          // name
           value: pg.name,
           width: 325,
           help:
@@ -1317,6 +1319,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           actions: [],
         },
         {
+          // modification / creation date
           width: 180,
           value: [pg.modified, pg.created],
           format: function (value) {
@@ -1329,6 +1332,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
         },
         {
+          // tracking mode
           width: 100,
           //text_wrap: true,
           value: pg.tracking,
@@ -1337,10 +1341,15 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
         },
         {
+          // size / new nodes
           value: [
-            pg.node_objects.length,
-            _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g))
-              .length,
+            self.unique_entity_list(pg.node_objects).length,
+            self.unique_entity_list_from_ids(
+              _.map(
+                _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g)),
+                (d) => d.name
+              )
+            ).length,
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,
           ],
@@ -1362,6 +1371,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           html: true,
         },
         {
+          // meets priority definition
           width: 60,
           value: pg.meets_priority_def ? "Yes" : "No",
         },

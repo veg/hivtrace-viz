@@ -93,6 +93,7 @@ function normalize_node_attributes(json) {
     
     Iterate over nodes in the network. If a node does not have an array of attributes or 
     data dictionary records, create an empty one. This makes error checking less complex downstream.
+    Also add a "missing_attributes" flag for nodes that are missing them
 */
 
 function ensure_node_attributes_exist(json) {

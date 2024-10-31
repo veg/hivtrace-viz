@@ -21,7 +21,7 @@ var _ = require("underscore"),
  */
 
 class HIVTxNetwork {
-  constructor(json, button_bar_ui) {
+  constructor(json, button_bar_ui, primary_key_function) {
     this.json = json;
     this.button_bar_ui = button_bar_ui;
     this.warning_string = "";
@@ -30,6 +30,16 @@ class HIVTxNetwork {
     this.priority_set_table_writeable = null;
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
+    /** SLKP 20241029 
+        this function is used to identify which nodes are duplicates
+        it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
+        all sequences/nodes that map to the same primary key are assumed to represent the same entity / individual
+    **/
+    this.primary_key = _.isFunction(primary_key_function)
+      ? primary_key_function
+      : (node) => node.id.split("|")[0];
+
+    this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
@@ -115,6 +125,70 @@ class HIVTxNetwork {
     };
   }
 
+  /**
+    Iterate over nodes in the network, identify all those which share the same 
+    primary key (i.e., the same individual), tabulate them, and collate node attributes
+  */
+
+  tabulate_multiple_sequences() {
+    /**
+        generate a primary key to node ID map
+        [primary key] => [array of IDs]
+    */
+    this.primary_key_list = {};
+    this.has_multiple_sequences = false;
+    _.each(this.json.Nodes, (n) => {
+      const p_key = this.primary_key(n);
+      if (!(p_key in this.primary_key_list)) {
+        this.primary_key_list[p_key] = [n];
+      } else {
+        this.primary_key_list[p_key].push(n);
+        this.has_multiple_sequences = true;
+      }
+    });
+
+    /**
+        iterate over all duplicate sequences, synchronize node attributes
+    */
+    if (this.has_multiple_sequences) {
+      _.each(this.primary_key_list, (seqs, primary_id) => {
+        if (seqs.length > 1) {
+          let consensus_attributes = {};
+
+          _.each(seqs, (seq_record) => {
+            _.each(seq_record[kGlobals.network.NodeAttributeID], (v, k) => {
+              if (!(k in consensus_attributes)) {
+                consensus_attributes[k] = [v];
+              } else {
+                consensus_attributes[k].push(v);
+              }
+            });
+          });
+
+          // only copy values if there's strict consensus
+
+          consensus_attributes = _.omit(
+            _.mapObject(consensus_attributes, (d, k) => {
+              let freq = _.countBy(d, (i) => i);
+              if (_.size(freq) == 1) {
+                return _.keys(freq)[0];
+              }
+              return null;
+            }),
+            (d) => !d
+          );
+
+          _.each(seqs, (seq_record) => {
+            _.extend(
+              seq_record[kGlobals.network.NodeAttributeID],
+              consensus_attributes
+            );
+          });
+        }
+      });
+    }
+  }
+
   /** 
       this is a function which calculates country node centers 
       for the (experimental) option of rendering networks with
@@ -155,6 +229,45 @@ class HIVTxNetwork {
 
   filter_by_size = (cluster) => {
     return cluster.children.length >= this.minimum_cluster_size;
+  };
+
+  /**
+        @node_list [array] : list of nodes
+        
+        returns the list of unique "individuals", collapsing nodes representing 
+        multiple sequences from the same entity into a single blob
+  */
+
+  unique_entity_list = (node_list) => {
+    return _.map(
+      _.groupBy(node_list, (n) => this.primary_key(n)),
+      (d, k) => k
+    );
+  };
+
+  /**
+        @node_list [array] : list of node IDs
+        
+        returns the list of unique "individuals", collapsing nodes representing 
+        multiple sequences from the same entity into a single blob
+  */
+
+  unique_entity_list_from_ids = (node_list) => {
+    return this.unique_entity_list(
+      _.map(node_list, (d) => {
+        return { id: d };
+      })
+    );
+  };
+
+  /**
+        @node_list [array] : list of nodes
+        
+        returns [primary key] => [objects] dict
+  */
+
+  unique_entity_object_list = (node_list) => {
+    return _.groupBy(node_list, (n) => this.primary_key(n));
   };
 
   /**
@@ -234,6 +347,243 @@ class HIVTxNetwork {
       (not_nested ? "" : "#" + this.button_bar_ui) +
       misc.get_ui_element_selector_by_role(role)
     );
+  }
+
+  /** 
+    Process the network to simplify multiple sequences per individual
+    
+    1. Identify null clusters, i.e., clusters that consist only of sequences with the same primary key (individual)
+        Delete ALL null clusters; remove all nodes and edges associated with them 
+        
+    2. Identify identical sequence sets, i.e., sequences with the same individual that have the same connection patterns, 
+        (a) All sequences in the set have the same primary key
+        (b) All sequences in the set are connected to each other (at length <= reduce_distance_within)
+        (c) All sequences in the set are connected to the same set of OTHER sequences (at length <= reduce_distance_between)
+        
+        All identical sequence sets are collapsed to a 
+    
+    
+  */
+  process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
+    if (this.has_multiple_sequences) {
+      reduce_distance_within = reduce_distance_within || 0.000001;
+      reduce_distance_between = reduce_distance_between || 0.015;
+
+      let clusters = misc.hivtrace_cluster_depthwise_traversal(
+        this.json.Nodes,
+        this.json.Edges
+      );
+      let complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
+        this.json.Nodes,
+        this.json.Edges,
+        (d) => d.length <= reduce_distance_within
+      );
+      let adjacency = misc.hivtrace_compute_adjacency(
+        this.json.Nodes,
+        this.json.Edges,
+        (d) => d.length <= reduce_distance_between
+      );
+      let nodes_to_delete = new Set();
+
+      _.each(clusters, (cluster, cluster_index) => {
+        let entity_list = this.unique_entity_list(cluster);
+        if (entity_list.length == 1) {
+          _.each(cluster, (ncn) => {
+            nodes_to_delete.add(ncn.id);
+            // these are all null nodes (clusters made of single individual sequences)
+          });
+        }
+      });
+
+      //let c95 = this.extract_single_cluster (clusters[95]);
+      //console.log (misc.hivtrace_cluster_depthwise_traversal (c95.Nodes, c95.Edges, (d)=>d.length <= reduce_distance_within));
+
+      let null_size = nodes_to_delete.size;
+      console.log("Marked ", null_size, " nodes in null clusters");
+
+      _.each(complete_clusters, (cluster, cluster_index) => {
+        if (cluster.length > 1) {
+          if (_.some(cluster, (n) => nodes_to_delete.has(n.id))) {
+            return;
+          }
+
+          let uel = this.unique_entity_object_list(cluster);
+
+          _.each(uel, (dup_seqs, uid) => {
+            if (dup_seqs.length > 1) {
+              let dup_ids = new Set(_.map(dup_seqs, (d) => d.id));
+              let neighborhood = new Set(
+                _.map(
+                  _.filter(
+                    [...adjacency[dup_seqs[0].id]],
+                    (d) => !dup_ids.has(d)
+                  )
+                )
+              );
+              let reduce = true;
+
+              //if (neighborhood.size > 0) {
+              for (let idx = 1; idx < dup_seqs.length; idx += 1) {
+                let other_nbhd = new Set(
+                  _.map(
+                    _.filter(
+                      [...adjacency[dup_seqs[idx].id]],
+                      (d) => !dup_ids.has(d)
+                    )
+                  )
+                );
+
+                if (
+                  !(
+                    other_nbhd.isSubsetOf(neighborhood) &&
+                    neighborhood.isSubsetOf(other_nbhd)
+                  )
+                ) {
+                  reduce = false;
+                  break;
+                }
+              }
+              //}
+              if (reduce) {
+                dup_seqs[0][kGlobals.network.AliasedSequencesID] = _.map(
+                  dup_seqs,
+                  (d) => d.id
+                );
+                _.each(dup_seqs, (d, i) => {
+                  if (i > 0) {
+                    nodes_to_delete.add(d.id);
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      console.log(
+        "Marked ",
+        nodes_to_delete.size - null_size,
+        " collapsible nodes"
+      );
+
+      /** now iterate over non-trivial clusters, and see if any nodes are collapsible **/
+
+      // delete designated nodes and update network structures
+      if (nodes_to_delete.size) {
+        let new_node_list = [];
+        let new_edge_set = [];
+        let old_node_idx_to_new_node_idx = [];
+        let new_counter = 0;
+
+        _.each(this.json.Nodes, (n, i) => {
+          if (nodes_to_delete.has(n.id)) {
+            old_node_idx_to_new_node_idx.push(-1);
+          } else {
+            new_node_list.push(n);
+            old_node_idx_to_new_node_idx.push(new_counter);
+            new_counter++;
+          }
+        });
+
+        _.each(this.json.Edges, (e, i) => {
+          let new_source = old_node_idx_to_new_node_idx[e.source],
+            new_target = old_node_idx_to_new_node_idx[e.target];
+
+          if (new_source >= 0 && new_target >= 0) {
+            e.source = new_source;
+            e.target = new_target;
+            new_edge_set.push(e);
+          }
+        });
+
+        //console.log (new_edge_set);
+
+        this.json.Nodes = new_node_list;
+        this.json.Edges = new_edge_set;
+
+        this.tabulate_multiple_sequences();
+      }
+    }
+  }
+
+  /**
+        When MSPP are present, this function will reduce the network 
+        encoded by .Nodes and .Edges in filtered_json, and 
+        reduce all sequences that represent the same entity into one node.
+        Such nodes inherit the union of their links (so at least of the sequences being 
+        collapsed link to X, the "joint" node will link to X).
+        
+        The joint nodes will also receive aggregated attributes; 
+        if the nodes being merged have different attributes values for a given key, the 
+        merged node will have a ';' separated list of attributes for the same key.
+  
+  */
+
+  simplify_multisequence_cluster(filtered_json) {
+    /**
+            20241030 SLKP 
+            Perform a greedy collapse of all the sequences that map to the same primary key
+            For a reduced cluster view
+        */
+
+    let reduced_nodes = _.pairs(
+      _.mapObject(
+        this.unique_entity_object_list(filtered_json.Nodes),
+        (v) => this.aggregate_indvidual_level_records(v)[0]
+      )
+    );
+
+    let uid_index = _.object(_.map(reduced_nodes, (d, i) => [d[0], i]));
+    let oui_index = {};
+
+    _.each(reduced_nodes, (d) => {
+      let aliased = d[1][kGlobals.network.AliasedSequencesID] || [d[1].id];
+      _.each(aliased, (nn) => {
+        oui_index[nn] = uid_index[d[0]];
+      });
+    });
+
+    let adjacency = misc.hivtrace_compute_adjacency(
+      filtered_json.Nodes,
+      filtered_json.Edges
+    );
+    let reduced_adjacency = _.map(uid_index, (d) =>
+      _.map(uid_index, (d2) => 0)
+    );
+    let reduced_lengths = _.map(uid_index, (d) => _.map(uid_index, (d2) => 0));
+
+    _.each(filtered_json.Edges, (e) => {
+      let reduced_src = oui_index[filtered_json.Nodes[e.source].id],
+        reduced_tgt = oui_index[filtered_json.Nodes[e.target].id];
+
+      if (reduced_src != reduced_tgt) {
+        reduced_adjacency[reduced_src][reduced_tgt] += 1;
+        reduced_adjacency[reduced_tgt][reduced_src] += 1;
+        reduced_lengths[reduced_src][reduced_tgt] += e.length;
+        reduced_lengths[reduced_tgt][reduced_src] += e.length;
+      }
+    });
+
+    let reduced_edges = [];
+
+    _.each(reduced_adjacency, (row, i) => {
+      for (let j = i + 1; j < row.length; j++) {
+        if (row[j] > 0) {
+          reduced_edges.push({
+            source: i,
+            target: j,
+            attributes: [],
+            length: reduced_lengths[i][j] / row[j],
+            weight: row[j],
+          });
+        }
+      }
+    });
+
+    filtered_json.Edges = reduced_edges;
+    filtered_json.Nodes = _.map(reduced_nodes, (d) => d[1]);
+
+    return filtered_json;
   }
 
   /** filter the list of CoI to return those which have not been reviewed/validated */
@@ -1381,8 +1731,11 @@ class HIVTxNetwork {
           _.each(this.clusters, (cluster_data, cluster_id) => {
             _.each(cluster_data.subclusters, (subcluster_data) => {
               _.each(subcluster_data.priority_score, (priority_score, i) => {
+                let priority_entities = this.unique_entity_list(
+                  _.map(priority_score, (d) => ({ id: d }))
+                );
                 if (
-                  priority_score.length >=
+                  priority_entities.length >=
                   this.CDC_data["autocreate-priority-set-size"]
                 ) {
                   // only generate a new set if it doesn't match what is already there
@@ -1442,7 +1795,7 @@ class HIVTxNetwork {
         if (this.auto_create_priority_sets.length) {
           // SLKP 20200727 now check to see if any of the priority sets
           // need to be auto-generated
-          //console.log (self.auto_create_priority_sets);
+          //console.log (this.auto_create_priority_sets);
           this.defined_priority_groups.push(...this.auto_create_priority_sets);
         }
         const autocreated = this.defined_priority_groups.filter(
@@ -1507,7 +1860,7 @@ class HIVTxNetwork {
         ) {
           this.handle_attribute_categorical("subcluster_or_priority_node");
         }
-        //self.update();
+        //this.update();
       }
     });
   }
@@ -1524,7 +1877,7 @@ class HIVTxNetwork {
       var new_attr = {};
       new_attr[key] = d;
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
-      //self.json[kGlobals.network.GraphAttrbuteID][key] = _.clone (d);
+      //this.json[kGlobals.network.GraphAttrbuteID][key] = _.clone (d);
     }
   }
 
@@ -1890,6 +2243,71 @@ class HIVTxNetwork {
     };
   }
 
+  /**
+        Retrieve the list of sequences associated with a node
+        @param pid: use this entity id
+              
+        @return list of sequence_ids 
+    */
+
+  fetch_sequences_for_pid(pid) {
+    if (this.has_multiple_sequences) {
+      return _.flatten(
+        _.map(this.primary_key_list[pid], (d) =>
+          d[kGlobals.network.AliasedSequencesID]
+            ? d[kGlobals.network.AliasedSequencesID]
+            : d.id
+        )
+      );
+    }
+    return this.primary_key_list[pid];
+  }
+
+  /**
+        define an attribute generator for the number of sequences associated with this node
+        
+        @param label: use this label
+              
+        @return attribute definition dict
+    */
+
+  define_attribute_sequence_count(label) {
+    return {
+      depends: [],
+      label: label,
+      type: "Number",
+      label_format: d3.format("d"),
+      map: (node) => {
+        if (this.has_multiple_sequences) {
+          return this.fetch_sequences_for_pid(this.primary_key(node)).length;
+        }
+        return 1;
+      },
+      color_scale: function (attr) {
+        const range_without_missing = _.without(
+          attr.value_range,
+          kGlobals.missing.label
+        );
+        const color_scale = _.compose(
+          d3.interpolateRgb("#ffffcc", "#800026"),
+          d3.scale
+            .linear()
+            .domain([
+              range_without_missing[0],
+              range_without_missing[range_without_missing.length - 1],
+            ])
+            .range([0, 1])
+        );
+        return function (v) {
+          if (v === kGlobals.missing.label) {
+            return kGlobals.missing.color;
+          }
+          return color_scale(v);
+        };
+      },
+    };
+  }
+
   define_attribute_age_dx() {
     return {
       depends: ["age_dx"],
@@ -2061,6 +2479,91 @@ class HIVTxNetwork {
         cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
       });
     }
+  }
+
+  /**
+    extract_individual_level_records
+    
+    for networks that have multiple sequences per individual, this function
+    will reduce the list of node records to only include those that have 
+    attribute data. If more than one node has attribute data, the first one
+    (chosen based on the sorting order when this.primary_key_list was initialized)
+    is returned.
+    
+  */
+
+  extract_individual_level_records() {
+    if (this.has_multiple_sequences && this.primary_key_list) {
+      let patient_records = [];
+      _.each(this.primary_key_list, (records, pkey) => {
+        if (records.length > 1) {
+          //console.log (_.find (records, (r)=> !r['missing_attributes']));
+          patient_records.push(
+            _.find(records, (r) => !r["missing_attributes"]) || records[0]
+          );
+        } else {
+          patient_records.push(records[0]);
+        }
+      });
+      return patient_records;
+    }
+    return this.json.Nodes;
+  }
+
+  /**
+    aggregate_indvidual_level_records
+    
+    for networks that have multiple sequences per individual, this function
+    will reduce the list of node records to only have one per primary key
+    all attributes where more than one value is present will be shown as ';' separated
+    
+  */
+
+  aggregate_indvidual_level_records(node_list) {
+    if (this.has_multiple_sequences) {
+      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
+      let new_list = [];
+      _.each(binned, (values, key) => {
+        if (values.length == 1) {
+          new_list.push(_.clone(values[0]));
+        } else {
+          let new_record = _.clone(values[0]);
+          new_record[kGlobals.network.NodeAttributeID] = _.object(
+            _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
+              return [
+                k,
+                _.map(
+                  _.countBy(
+                    values,
+                    (dn) => dn[kGlobals.network.NodeAttributeID][k]
+                  ),
+                  (d3, k3) => k3
+                ).join(";"),
+              ];
+            })
+          );
+          new_record[kGlobals.network.AliasedSequencesID] = _.map(
+            values,
+            (d) => d.id
+          );
+          new_list.push(new_record);
+        }
+      });
+      return new_list;
+    }
+    return node_list;
+  }
+
+  /**
+    generate an entity (primary key) id from node
+    
+    @param node (Object)
+    
+    returns [String] entity id
+  */
+
+  entity_id(node) {
+    return this.primary_key(node);
   }
 }
 
