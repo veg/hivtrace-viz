@@ -79,10 +79,10 @@ class HIVTxNetwork {
         d3.select(this).attr(
           "transform",
           "translate(" +
-            (d.label_x + d.rendered_size * 1.25) +
-            "," +
-            (d.label_y + d.rendered_size * 0.5) +
-            ")"
+          (d.label_x + d.rendered_size * 1.25) +
+          "," +
+          (d.label_y + d.rendered_size * 0.5) +
+          ")"
         );
       })
       .on("dragstart", () => {
@@ -1506,9 +1506,9 @@ class HIVTxNetwork {
               h.size !== history_entry.size ||
               h.national_priority !== history_entry.national_priority ||
               h.cluster_dx_recent12_mo !==
-                history_entry.cluster_dx_recent12_mo ||
+              history_entry.cluster_dx_recent12_mo ||
               h.cluster_dx_recent36_mo !==
-                history_entry.cluster_dx_recent36_mo ||
+              history_entry.cluster_dx_recent36_mo ||
               h.new_nodes !== history_entry.new_nodes
           );
 
@@ -1799,8 +1799,8 @@ class HIVTxNetwork {
           this.defined_priority_groups.push(...this.auto_create_priority_sets);
         }
         const autocreated = this.defined_priority_groups.filter(
-            (pg) => pg.autocreated
-          ).length,
+          (pg) => pg.autocreated
+        ).length,
           autoexpanded = this.defined_priority_groups.filter(
             (pg) => pg.autoexpanded
           ).length,
@@ -1843,15 +1843,16 @@ class HIVTxNetwork {
         }
 
         this.priority_groups_validate(this.defined_priority_groups);
-        _.each(this.auto_create_priority_sets, (pg) =>
-          this.priority_groups_update_node_sets(pg.name, "insert")
-        );
-        const groups_that_expanded = this.defined_priority_groups.filter(
-          (pg) => pg.expanded
-        );
-        _.each(groups_that_expanded, (pg) =>
-          this.priority_groups_update_node_sets(pg.name, "update")
-        );
+        // Update the DB with the new ClusterOI
+        const auto_create_priority_sets_names = this.auto_create_priority_sets.map(pg => pg.name);
+        _.each(this.defined_priority_groups, (pg) => {
+          if (pg.name in auto_create_priority_sets_names) {
+            this.priority_groups_update_node_sets(pg.name, "insert")
+          } else {
+            // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
+            this.priority_groups_update_node_sets(pg.name, "update")
+          }
+        });
 
         clustersOfInterest.draw_priority_set_table(this);
         if (
@@ -2385,7 +2386,7 @@ class HIVTxNetwork {
           ) {
             var attr_desc =
               network.json[kGlobals.network.GraphAttrbuteID][
-                network.colorizer["category_id"]
+              network.colorizer["category_id"]
               ];
             attr = {};
             attr[network.colorizer["category_id"]] = attr_desc["label"];

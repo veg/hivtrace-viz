@@ -89,8 +89,7 @@ var hivtrace_cluster_network_graph = function (
   self._is_CDC_executive_mode = network.check_network_option(
     options,
     "cdc-executive-mode",
-    false,
-    true
+    false
   );
 
   self.uniqValues = helpers.getUniqueValues(

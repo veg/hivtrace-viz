@@ -5,3 +5,5 @@ tags
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+docs/html
+docs/latex
