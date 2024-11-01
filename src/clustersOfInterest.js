@@ -408,17 +408,19 @@ function open_editor(
             if (tracking !== kGlobals.CDCCOITrackingOptionsNone) {
               let added_nodes = self.auto_expand_pg_handler(set_description);
               if (added_nodes.size) {
+                const added_node_objects = _.map([...added_nodes], (n) => {
+                  return self.json.Nodes[n];
+                });
                 if (
                   confirm(
                     'This cluster of interest does not include all the nodes in the current network that are eligible for membership by growth criterion  "' +
                       tracking +
                       '". These ' +
-                      added_nodes.size +
+                      self.unique_entity_list(added_node_objects).length +
                       " additional nodes will be automatically added to this cluster of interest when you save it. If you don’t want to add these nodes to the cluster of interest please select 'Cancel' and change the growth criterion."
                   )
                 ) {
-                  _.each([...added_nodes], (nid) => {
-                    let n = self.json.Nodes[nid];
+                  _.each(added_node_objects, (n) => {
                     set_description.nodes.push({
                       name: n.id,
                       added: timeDateUtil.getCurrentDate(),
@@ -685,9 +687,10 @@ function open_editor(
       };
 
       panel_object.remove_node = function (n) {
+        let entity_id = self.entity_id(n);
         panel_object.network_nodes = _.filter(
           panel_object.network_nodes,
-          (nn) => nn !== n
+          (nn) => self.entity_id(nn) !== entity_id
         );
         panel_object.table_handler(panel_object);
       };
@@ -913,7 +916,7 @@ function open_editor(
         }
 
         self.draw_extended_node_table(
-          panel.network_nodes,
+          self.aggregate_indvidual_level_records(panel.network_nodes),
           table_container,
           extra_columns
         );
@@ -1377,7 +1380,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         },
         {
           width: 50,
-          value: pg.last12,
+          value: pg.cluster_dx_recent12_mo,
         },
         {
           width: 140,
@@ -1734,6 +1737,7 @@ function priority_set_view(self, priority_set, options) {
       node_set,
       title,
       {
+        "simplified-mspp": true,
         skip_recent_rapid: true,
         init_code: function (network) {
           _.each(network.json.Edges, (e) => {

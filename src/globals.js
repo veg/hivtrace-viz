@@ -269,7 +269,7 @@ const CDCCOITrackingOptions = [
 */
 
 const CDCCOICanAutoExpand = {};
-CDCCOICanAutoExpand[CDCCOITrackingOptions[0]] = true;
+CDCCOICanAutoExpand[CDCCOIKind[0]] = true;
 
 /**
     CDCCOICanAutoExpand:

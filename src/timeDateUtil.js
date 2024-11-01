@@ -43,7 +43,8 @@ function getClusterTimeScale() {
 }
 
 function getCurrentDate() {
-  return new Date();
+  let cdate = new Date();
+  return cdate;
 }
 
 function getAncientDate() {
