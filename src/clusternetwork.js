@@ -1744,16 +1744,20 @@ var hivtrace_cluster_network_graph = function (
         }
         entity_count++;
       });
-      self.json["Network Summary"]["Nodes"] = entity_count;
-      self.json["Network Summary"]["Clusters"] = _.size(
-        self.cluster_sizes_in_entities
-      );
-      self.json["Cluster sizes"] = [];
-      _.each(self.cluster_sizes_in_entities, (d, c) => {
-        self.json["Cluster sizes"].push(d);
-      });
+      if (self.json["Network Summary"]) {
+        self.json["Network Summary"]["Nodes"] = entity_count;
+        self.json["Network Summary"]["Clusters"] = _.size(
+          self.cluster_sizes_in_entities
+        );
+        self.json["Cluster sizes"] = [];
+        _.each(self.cluster_sizes_in_entities, (d, c) => {
+          self.json["Cluster sizes"].push(d);
+        });
+      }
     } else {
-      self.json["Network Summary"]["Clusters"] = cluster_set.size;
+      if (self.json["Network Summary"]) {
+        self.json["Network Summary"]["Clusters"] = cluster_set.size;
+      }
     }
 
     /* add buttons and handlers */
