@@ -2617,6 +2617,21 @@ class HIVTxNetwork {
     return this.primary_key(node);
   }
 
+  apply_to_entities(cb) {
+    if (this.has_multiple_sequences) {
+      _.each(this.primary_key_list, (d, k) => {
+        cb(k, d);
+      });
+    }
+  }
+
+  /**
+    generate a list of sequence IDs represented by a node
+    
+    @param node (Object)
+    
+    returns [array] list of sequence ids
+  */
   list_of_aliased_sequences(node) {
     return node[kGlobals.network.AliasedSequencesID]
       ? node[kGlobals.network.AliasedSequencesID]

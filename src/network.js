@@ -209,7 +209,7 @@ function handle_cluster_click(self, cluster, release) {
             cluster.cluster_id,
             null,
             null,
-            self._distance_gate_options()
+            _.extend(self._distance_gate_options(), { "simplified-mspp": 1 })
           );
           menu_object.style("display", "none");
         });

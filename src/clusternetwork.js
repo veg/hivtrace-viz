@@ -1709,6 +1709,7 @@ var hivtrace_cluster_network_graph = function (
     self.exclude_cluster_ids = {};
     self.has_hxb2_links = false;
     self.cluster_sizes = [];
+    self.cluster_sizes_in_entities = {};
 
     graph_data.Nodes.forEach((d) => {
       if (typeof self.cluster_sizes[d.cluster - 1] === "undefined") {
@@ -1729,6 +1730,16 @@ var hivtrace_cluster_network_graph = function (
         d.hxb2_linked = true;
       }
     });
+
+    if (self.has_multiple_sequences) {
+      self.apply_to_entities((entity_id, nodes) => {
+        if (self.cluster_sizes_in_entities[nodes[0].cluster]) {
+          self.cluster_sizes_in_entities[nodes[0].cluster]++;
+        } else {
+          self.cluster_sizes_in_entities[nodes[0].cluster] = 1;
+        }
+      });
+    }
 
     /* add buttons and handlers */
     /* clusters first */
@@ -6653,8 +6664,15 @@ var hivtrace_cluster_network_graph = function (
     if (self._is_CDC_) {
       str =
         "<strong>" +
-        self.cluster_sizes[id - 1] +
+        (self.has_multiple_sequences
+          ? self.cluster_sizes_in_entities[id]
+          : self.cluster_sizes[id - 1]) +
         "</strong> individuals." +
+        (self.has_multiple_sequences
+          ? "<br><strong> " +
+            self.cluster_sizes[id - 1] +
+            "</strong> sequences."
+          : "") +
         "<br>Mean links/individual <em> = " +
         kGlobals.formats.FloatFormat(the_cluster.degrees["mean"]) +
         "</em>" +
@@ -6772,7 +6790,13 @@ var hivtrace_cluster_network_graph = function (
   }
 
   function cluster_box_size(c) {
-    return 8 * Math.sqrt(c.children.length);
+    let cc;
+    if (self.cluster_sizes_in_entities) {
+      cc = self.cluster_sizes_in_entities[c.cluster_id];
+    }
+    cc = cc || c.children.length;
+
+    return 8 * Math.sqrt(cc);
   }
 
   self.extract_network_time_series = function (
