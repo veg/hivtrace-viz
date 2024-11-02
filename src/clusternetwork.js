@@ -1711,12 +1711,15 @@ var hivtrace_cluster_network_graph = function (
     self.cluster_sizes = [];
     self.cluster_sizes_in_entities = {};
 
+    let cluster_set = new Set();
+
     graph_data.Nodes.forEach((d) => {
       if (typeof self.cluster_sizes[d.cluster - 1] === "undefined") {
         self.cluster_sizes[d.cluster - 1] = 1;
       } else {
         self.cluster_sizes[d.cluster - 1]++;
       }
+      cluster_set.add(d.cluster);
       if ("is_lanl" in d) {
         d.is_lanl = d.is_lanl === "true";
       }
@@ -1732,13 +1735,25 @@ var hivtrace_cluster_network_graph = function (
     });
 
     if (self.has_multiple_sequences) {
+      let entity_count = 0;
       self.apply_to_entities((entity_id, nodes) => {
         if (self.cluster_sizes_in_entities[nodes[0].cluster]) {
           self.cluster_sizes_in_entities[nodes[0].cluster]++;
         } else {
           self.cluster_sizes_in_entities[nodes[0].cluster] = 1;
         }
+        entity_count++;
       });
+      self.json["Network Summary"]["Nodes"] = entity_count;
+      self.json["Network Summary"]["Clusters"] = _.size(
+        self.cluster_sizes_in_entities
+      );
+      self.json["Cluster sizes"] = [];
+      _.each(self.cluster_sizes_in_entities, (d, c) => {
+        self.json["Cluster sizes"].push(d);
+      });
+    } else {
+      self.json["Network Summary"]["Clusters"] = cluster_set.size;
     }
 
     /* add buttons and handlers */
