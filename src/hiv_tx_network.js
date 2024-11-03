@@ -799,7 +799,8 @@ class HIVTxNetwork {
     filter,
     no_clone,
     given_json,
-    include_extra_edges
+    include_extra_edges,
+    edge_subset
   ) {
     var cluster_json = {};
     var map_to_id = {};
@@ -818,17 +819,20 @@ class HIVTxNetwork {
 
     given_json = given_json || this.json;
 
-    cluster_json.Edges = _.filter(given_json.Edges, (e) => {
-      if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
-        return false;
-      }
+    cluster_json.Edges = _.filter(
+      edge_subset ? edge_subset : given_json.Edges,
+      (e) => {
+        if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
+          return false;
+        }
 
-      return (
-        given_json.Nodes[e.source].id in map_to_id &&
-        given_json.Nodes[e.target].id in map_to_id &&
-        (include_extra_edges || !HIVTxNetwork.is_edge_injected(e))
-      );
-    });
+        return (
+          given_json.Nodes[e.source].id in map_to_id &&
+          given_json.Nodes[e.target].id in map_to_id &&
+          (include_extra_edges || !HIVTxNetwork.is_edge_injected(e))
+        );
+      }
+    );
 
     if (filter) {
       cluster_json.Edges = _.filter(cluster_json.Edges, filter);
@@ -1269,6 +1273,9 @@ class HIVTxNetwork {
         this.node_id_to_object[n.id] = n;
         nodeID2idx[n.id] = i;
       });
+
+      let traversal_cache = null;
+
       _.each(groups, (pg) => {
         if (!pg.validated) {
           pg.node_objects = [];
@@ -1318,17 +1325,35 @@ class HIVTxNetwork {
 
           /** all the network nodes connected to the nodes in the CoI at 1.5%; directly or indirectly*/
 
+          if (!traversal_cache) {
+            traversal_cache = [
+              misc.hivtrace_compute_adjacency_with_edges(
+                this.json["Nodes"],
+                this.json["Edges"],
+                (e) => e.length <= 0.015
+              ),
+              misc.hivtrace_compute_adjacency_with_edges(
+                this.json["Nodes"],
+                this.json["Edges"],
+                (e) => e.length <= this.subcluster_threshold
+              ),
+            ];
+          }
+
+          let saved_traversal_edges = [];
           const node_set15 = _.flatten(
             misc.hivtrace_cluster_depthwise_traversal(
               this.json["Nodes"],
               this.json["Edges"],
               (e) => e.length <= 0.015,
+              saved_traversal_edges,
+              pg.node_objects,
               null,
-              pg.node_objects
+              traversal_cache[0]
             )
           );
 
-          const saved_traversal_edges = auto_extend ? [] : null;
+          let saved_traversal_edges_sub = [];
 
           /** all the network nodes connected to the nodes in the subcluster threshold (0.5%);
               also saves all the edges that have been taken if auto_extend is true  */
@@ -1338,10 +1363,14 @@ class HIVTxNetwork {
               this.json["Nodes"],
               this.json["Edges"],
               (e) => e.length <= this.subcluster_threshold,
-              saved_traversal_edges,
-              pg.node_objects
+              saved_traversal_edges_sub,
+              pg.node_objects,
+              null,
+              traversal_cache[1]
             )
           );
+
+          //console.log (saved_traversal_edges)
 
           const direct_at_15 = new Set();
 
@@ -1354,7 +1383,8 @@ class HIVTxNetwork {
               (my_nodeset.has(this.json["Nodes"][e.target].id) ||
                 my_nodeset.has(this.json["Nodes"][e.source].id)),
             //null,
-            true
+            true,
+            saved_traversal_edges
           );
 
           /** all the network nodes connected to the nodes in the CoI at 1.5%; only directly */
@@ -1376,7 +1406,8 @@ class HIVTxNetwork {
               e.length <= this.subcluster_threshold &&
               (my_nodeset.has(this.json["Nodes"][e.target].id) ||
                 my_nodeset.has(this.json["Nodes"][e.source].id)),
-            true
+            true,
+            saved_traversal_edges_sub
           );
 
           const direct_subcluster = new Set();

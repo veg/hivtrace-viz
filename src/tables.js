@@ -37,6 +37,8 @@ function add_a_sortable_table(
     return;
   }
 
+  container.style("display", "none");
+
   var thead = container.selectAll("thead");
   var tbody = container.selectAll("tbody");
 
@@ -106,6 +108,8 @@ function add_a_sortable_table(
       .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
   }
+
+  container.style("display", null);
 }
 
 /**

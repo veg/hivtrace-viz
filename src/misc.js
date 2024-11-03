@@ -606,6 +606,44 @@ function hivtrace_compute_adjacency(nodes, edges, edge_filter) {
  *   referencing node IDs.
  * @param {Function} [edge_filter] - An optional filtering function applied to edges before traversal.
  *   The function should accept an edge object and return a boolean indicating whether to include the edge.
+
+    computes and returns an adjacency list in the form
+    
+    node id => set of adjacent (connected) node ids
+    
+
+*/
+
+function hivtrace_compute_adjacency_with_edges(nodes, edges, edge_filter) {
+  let adjacency = {};
+
+  _.each(edges, (e) => {
+    if (!edge_filter || edge_filter(e)) {
+      let src = nodes[e.source];
+      let tgt = nodes[e.target];
+
+      if (!(src.id in adjacency)) {
+        adjacency[src.id] = [];
+      }
+      adjacency[src.id].push([tgt, e]);
+
+      if (!(tgt.id in adjacency)) {
+        adjacency[tgt.id] = [];
+      }
+      adjacency[tgt.id].push([src, e]);
+    }
+  });
+  return adjacency;
+}
+
+/**
+ * Performs a depth-wise traversal on a cluster of nodes, considering edges and optional filters.
+ *
+ * @param {Object[]} nodes - An array of node objects. Each node should have an `id` property.
+ * @param {Object[]} edges - An array of edge objects. Each edge should have `source` and `target` properties
+ *   referencing node IDs.
+ * @param {Function} [edge_filter] - An optional filtering function applied to edges before traversal.
+ *   The function should accept an edge object and return a boolean indicating whether to include the edge.
  * @param {Function} [save_edges] - An optional function used to store traversed edges. It should be called with
  *   an array where each element represents the edges within a cluster.
  * @param {Object[]} [seed_nodes] - An optional array of node objects to use as starting points for traversal.
@@ -623,7 +661,8 @@ function hivtrace_cluster_depthwise_traversal(
   edge_filter,
   save_edges,
   seed_nodes,
-  white_list
+  white_list,
+  given_adjacency
   // an optional set of node IDs (a subset of 'nodes') that will be considered for traversal
   // it is further assumed that seed_nodes are a subset of white_list, if the latter is specified
 ) {
@@ -633,33 +672,44 @@ function hivtrace_cluster_depthwise_traversal(
 
   seed_nodes = seed_nodes || nodes;
 
-  _.each(nodes, (n) => {
-    n.visited = false;
-    adjacency[n.id] = [];
-  });
+  if (given_adjacency) {
+    _.each(nodes, (n) => {
+      n.visited = false;
+    });
+    adjacency = given_adjacency;
+  } else {
+    _.each(nodes, (n) => {
+      n.visited = false;
+      adjacency[n.id] = [];
+    });
 
-  if (edge_filter) {
-    edges = _.filter(edges, edge_filter);
-  }
+    if (edge_filter) {
+      edges = _.filter(edges, edge_filter);
+    }
 
-  if (white_list) {
-    edges = _.filter(
-      edges,
-      (e) =>
-        white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id)
-    );
-  }
-
-  _.each(edges, (e) => {
-    try {
-      adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-      adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-    } catch {
-      throw Error(
-        "Edge does not map to an existing node " + e.source + " to " + e.target
+    if (white_list) {
+      edges = _.filter(
+        edges,
+        (e) =>
+          white_list.has(nodes[e.source].id) &&
+          white_list.has(nodes[e.target].id)
       );
     }
-  });
+
+    _.each(edges, (e) => {
+      try {
+        adjacency[nodes[e.source].id].push([nodes[e.target], e]);
+        adjacency[nodes[e.target].id].push([nodes[e.source], e]);
+      } catch {
+        throw Error(
+          "Edge does not map to an existing node " +
+            e.source +
+            " to " +
+            e.target
+        );
+      }
+    });
+  }
 
   var traverse = function (node) {
     if (!(node.id in by_node)) {
@@ -1277,4 +1327,5 @@ module.exports = {
   get_ui_element_selector_by_role,
   hivtrace_cluster_complete_clusters,
   hivtrace_compute_adjacency,
+  hivtrace_compute_adjacency_with_edges,
 };
