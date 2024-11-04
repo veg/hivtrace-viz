@@ -1564,18 +1564,19 @@ class HIVTxNetwork {
 
           // remove any duplicate history entries from last 24 hours
           // (retain entries within 24 hours only if they differ from the current entry)
-          pg.history = _.filter(
-            pg.history,
-            (h) =>
-              currDate - h.date > 24 * 60 * 60 * 1000 ||
-              h.size !== history_entry.size ||
-              h.national_priority !== history_entry.national_priority ||
-              h.cluster_dx_recent12_mo !==
-                history_entry.cluster_dx_recent12_mo ||
-              h.cluster_dx_recent36_mo !==
-                history_entry.cluster_dx_recent36_mo ||
-              h.new_nodes !== history_entry.new_nodes
-          );
+          pg.history = pg.history.filter(function (h) {
+            if (h.size !== history_entry.size
+              || h.national_priority !== history_entry.national_priority
+              || h.cluster_dx_recent12_mo !== history_entry.cluster_dx_recent12_mo
+              || h.cluster_dx_recent36_mo !== history_entry.cluster_dx_recent36_mo
+              || h.new_nodes !== history_entry.new_nodes) {
+              return true;
+            }
+            if (new Date(h.date) < new Date(new Date(currDate) - 24 * 60 * 60 * 1000)) {
+              return true;
+            }
+            return false;
+          });
 
           pg.history.push(history_entry);
         }
