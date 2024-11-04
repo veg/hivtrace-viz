@@ -384,9 +384,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     .attr("dy", "0.35em")
     .attr("dx", "-0.25em")
     .attr("fill", "black")
-    .text((d) =>
-      d[0].indexOf(" ") < 0 ? _.map(d[0], (c) => "█").join("") : d[0]
-    );
+    .text((d) => d[0]);
 
   svg
     .append("g")

@@ -1132,7 +1132,7 @@ function _action_drop_down(self, pg) {
     },
   });
 
-  dropdown.push({
+  /**dropdown.push({
     label: "View history over time",
     action: function (button, value) {
       let ref_set = self.priority_groups_find_by_name(pg.name);
@@ -1148,7 +1148,7 @@ function _action_drop_down(self, pg) {
         1000
       );
     },
-  });
+  });*/
 
   return dropdown;
 }
