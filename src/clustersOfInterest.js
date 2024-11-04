@@ -408,17 +408,19 @@ function open_editor(
             if (tracking !== kGlobals.CDCCOITrackingOptionsNone) {
               let added_nodes = self.auto_expand_pg_handler(set_description);
               if (added_nodes.size) {
+                const added_node_objects = _.map([...added_nodes], (n) => {
+                  return self.json.Nodes[n];
+                });
                 if (
                   confirm(
                     'This cluster of interest does not include all the nodes in the current network that are eligible for membership by growth criterion  "' +
                       tracking +
                       '". These ' +
-                      added_nodes.size +
+                      self.unique_entity_list(added_node_objects).length +
                       " additional nodes will be automatically added to this cluster of interest when you save it. If you don’t want to add these nodes to the cluster of interest please select 'Cancel' and change the growth criterion."
                   )
                 ) {
-                  _.each([...added_nodes], (nid) => {
-                    let n = self.json.Nodes[nid];
+                  _.each(added_node_objects, (n) => {
                     set_description.nodes.push({
                       name: n.id,
                       added: timeDateUtil.getCurrentDate(),
@@ -685,9 +687,10 @@ function open_editor(
       };
 
       panel_object.remove_node = function (n) {
+        let entity_id = self.entity_id(n);
         panel_object.network_nodes = _.filter(
           panel_object.network_nodes,
-          (nn) => nn !== n
+          (nn) => self.entity_id(nn) !== entity_id
         );
         panel_object.table_handler(panel_object);
       };
@@ -913,7 +916,7 @@ function open_editor(
         }
 
         self.draw_extended_node_table(
-          panel.network_nodes,
+          self.aggregate_indvidual_level_records(panel.network_nodes),
           table_container,
           extra_columns
         );
@@ -1129,7 +1132,7 @@ function _action_drop_down(self, pg) {
     },
   });
 
-  dropdown.push({
+  /**dropdown.push({
     label: "View history over time",
     action: function (button, value) {
       let ref_set = self.priority_groups_find_by_name(pg.name);
@@ -1145,7 +1148,7 @@ function _action_drop_down(self, pg) {
         1000
       );
     },
-  });
+  });*/
 
   return dropdown;
 }
@@ -1270,6 +1273,7 @@ function draw_priority_set_table(self, container, priority_groups) {
     _.each(priority_groups, (pg) => {
       var this_row = [
         {
+          // created by icon
           value: pg.createdBy,
           html: true,
           width: 50,
@@ -1287,6 +1291,7 @@ function draw_priority_set_table(self, container, priority_groups) {
                 "></i>",
         },
         {
+          // name
           value: pg.name,
           width: 325,
           help:
@@ -1317,6 +1322,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           actions: [],
         },
         {
+          // modification / creation date
           width: 180,
           value: [pg.modified, pg.created],
           format: function (value) {
@@ -1329,6 +1335,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
         },
         {
+          // tracking mode
           width: 100,
           //text_wrap: true,
           value: pg.tracking,
@@ -1337,10 +1344,15 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
         },
         {
+          // size / new nodes
           value: [
-            pg.node_objects.length,
-            _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g))
-              .length,
+            self.unique_entity_list(pg.node_objects).length,
+            self.unique_entity_list_from_ids(
+              _.map(
+                _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g)),
+                (d) => d.name
+              )
+            ).length,
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,
           ],
@@ -1362,12 +1374,13 @@ function draw_priority_set_table(self, container, priority_groups) {
           html: true,
         },
         {
+          // meets priority definition
           width: 60,
           value: pg.meets_priority_def ? "Yes" : "No",
         },
         {
           width: 50,
-          value: pg.last12,
+          value: pg.cluster_dx_recent12_mo,
         },
         {
           width: 140,
@@ -1724,6 +1737,7 @@ function priority_set_view(self, priority_set, options) {
       node_set,
       title,
       {
+        "simplified-mspp": true,
         skip_recent_rapid: true,
         init_code: function (network) {
           _.each(network.json.Edges, (e) => {
