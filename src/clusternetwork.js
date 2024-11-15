@@ -540,6 +540,10 @@ var hivtrace_cluster_network_graph = function (
             For a reduced cluster view
         */
 
+      _.each(filtered_json.Nodes, (n) => {
+        if (n["multiple clusters"]) n["multiple_membership"] = true;
+      });
+
       if (additional_options["simplified-mspp"]) {
         filtered_json = self.simplify_multisequence_cluster(filtered_json);
       }
@@ -1017,8 +1021,13 @@ var hivtrace_cluster_network_graph = function (
       include_injected_edges
     );
 
-    if (self.has_multiple_sequences && view_sub_options["simplified-mspp"]) {
-      filtered_json = self.simplify_multisequence_cluster(filtered_json);
+    if (self.has_multiple_sequences) {
+      _.each(filtered_json.Nodes, (n) => {
+        if (n["multiple subclusters"]) n["multiple_membership"] = true;
+      });
+      if (view_sub_options["simplified-mspp"]) {
+        filtered_json = self.simplify_multisequence_cluster(filtered_json);
+      }
     }
 
     _.each(filtered_json.Nodes, (n) => {
@@ -3604,7 +3613,7 @@ var hivtrace_cluster_network_graph = function (
     container = container || nodesTab.getNodeTable();
 
     if (container) {
-      node_list = node_list || self.extract_individual_level_records();
+      node_list = node_list || self.aggregate_indvidual_level_records();
       var column_ids = self._extract_exportable_attributes(true);
 
       self.displayed_node_subset = _.filter(
@@ -5896,7 +5905,7 @@ var hivtrace_cluster_network_graph = function (
         );
       }
       if (self._is_CDC_) {
-        self.draw_extended_node_table(self.extract_individual_level_records());
+        self.draw_extended_node_table(self.aggregate_indvidual_level_records());
       } else {
         self.draw_node_table(self.extra_node_table_columns);
       }
@@ -6070,30 +6079,33 @@ var hivtrace_cluster_network_graph = function (
   }
 
   function node_color(d) {
-    /*if (d.match_filter) {
-        return "white";
-    }*/
+    var hms = (d, c) => {
+      if (d["multiple_membership"]) {
+        return "url(#" + self.generate_cross_hatch_pattern(c) + ")";
+      }
+      return c;
+    };
 
     if (self.colorizer["category_id"]) {
       var v = self.attribute_node_value_by_id(d, self.colorizer["category_id"]);
       if (self.colorizer["continuous"]) {
         if (v === kGlobals.missing.label) {
-          return kGlobals.missing.color;
+          return hms(d, kGlobals.missing.color);
         }
         //console.log (v, self.colorizer['category'](v));
       }
-      return self.colorizer["category"](v);
+      return hms(d, self.colorizer["category"](v));
     }
 
     if (d.hxb2_linked) {
-      return "black";
+      return hms(d, "black");
     }
 
     if (d.is_lanl) {
-      return "red";
+      return hms(d, "red");
     }
 
-    return "gray";
+    return hms(d, "gray");
   }
 
   function node_opacity(d) {
@@ -7302,7 +7314,7 @@ var hivtrace_cluster_network_graph = function (
 
       self.update_clusters_with_injected_nodes(null, null, annotation);
       if (self._is_CDC_) {
-        self.draw_extended_node_table(self.extract_individual_level_records());
+        self.draw_extended_node_table(self.aggregate_indvidual_level_records());
       } else {
         self.draw_node_table(self.extra_node_table_columns, self.json.Nodes);
       }
@@ -7873,6 +7885,10 @@ var hivtrace_cluster_network_graph = function (
     if (self.showing_diff) {
       self.handle_attribute_categorical("_newly_added");
     }
+  }
+
+  if (self.isPrimaryGraph) {
+    self.annotate_multiple_clusters_on_nodes();
   }
 
   self.draw_attribute_labels();

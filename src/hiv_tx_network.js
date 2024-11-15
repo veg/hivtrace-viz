@@ -507,6 +507,46 @@ class HIVTxNetwork {
   }
 
   /**
+        When MSPP are present, this function will annotate node objects with fields
+        that indicate whether or not the nodes belong to multiple clusters or subclusters
+  */
+
+  annotate_multiple_clusters_on_nodes() {
+    if (this.has_multiple_sequences) {
+      _.each(this.primary_key_list, (nodes, key) => {
+        if (nodes.length >= 2) {
+          let cl = _.groupBy(nodes, (n) => n.cluster);
+          if (_.size(cl) > 1) {
+            _.each(nodes, (n) => {
+              n["multiple clusters"] = _.keys(cl);
+            });
+          } else {
+            _.each(nodes, (n) => {
+              delete n["multiple clusters"];
+            });
+          }
+          cl = _.filter(
+            _.map(
+              _.groupBy(nodes, (n) => n.subcluster_label),
+              (d, k) => k
+            ),
+            (d) => d != "undefined"
+          );
+          if (_.size(cl) > 1) {
+            _.each(nodes, (n) => {
+              n["multiple subclusters"] = cl;
+            });
+          } else {
+            _.each(nodes, (n) => {
+              delete n["multiple subclusters"];
+            });
+          }
+        }
+      });
+    }
+  }
+
+  /**
         When MSPP are present, this function will reduce the network 
         encoded by .Nodes and .Edges in filtered_json, and 
         reduce all sequences that represent the same entity into one node.
@@ -584,6 +624,30 @@ class HIVTxNetwork {
     filtered_json.Nodes = _.map(reduced_nodes, (d) => d[1]);
 
     return filtered_json;
+  }
+
+  /**
+      generate a cross-hatch pattern for filling nodes with a specific color
+      and add it as a definition to the network SVG
+  */
+
+  generate_cross_hatch_pattern(color) {
+    let id = "id" + this.dom_prefix + "_diagonalHatch_" + color.substr(1, 10);
+    if (this.network_svg.select("#" + id).empty()) {
+      this.network_svg
+        .append("defs")
+        .append("pattern")
+        .attr("id", id)
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", "2")
+        .attr("height", "4")
+        .attr("patternTransform", "rotate(30 2 2)")
+        .append("path")
+        .attr("d", "M -1,2 l 6,0")
+        .attr("stroke", color)
+        .attr("stroke-width", "3"); //this is actual shape for arrowhead
+    }
+    return id;
   }
 
   /** filter the list of CoI to return those which have not been reviewed/validated */
@@ -1565,14 +1629,21 @@ class HIVTxNetwork {
           // remove any duplicate history entries from last 24 hours
           // (retain entries within 24 hours only if they differ from the current entry)
           pg.history = pg.history.filter(function (h) {
-            if (h.size !== history_entry.size
-              || h.national_priority !== history_entry.national_priority
-              || h.cluster_dx_recent12_mo !== history_entry.cluster_dx_recent12_mo
-              || h.cluster_dx_recent36_mo !== history_entry.cluster_dx_recent36_mo
-              || h.new_nodes !== history_entry.new_nodes) {
+            if (
+              h.size !== history_entry.size ||
+              h.national_priority !== history_entry.national_priority ||
+              h.cluster_dx_recent12_mo !==
+                history_entry.cluster_dx_recent12_mo ||
+              h.cluster_dx_recent36_mo !==
+                history_entry.cluster_dx_recent36_mo ||
+              h.new_nodes !== history_entry.new_nodes
+            ) {
               return true;
             }
-            if (new Date(h.date) < new Date(new Date(currDate) - 24 * 60 * 60 * 1000)) {
+            if (
+              new Date(h.date) <
+              new Date(new Date(currDate) - 24 * 60 * 60 * 1000)
+            ) {
               return true;
             }
             return false;
@@ -2588,6 +2659,22 @@ class HIVTxNetwork {
   */
 
   aggregate_indvidual_level_records(node_list) {
+    node_list = node_list || this.json.Nodes;
+
+    const aggregator = (values, key, record, store_key) => {
+      let unique_values = _.countBy(values, (dn) => dn[key]);
+
+      delete unique_values["undefined"];
+
+      if (_.size(unique_values) == 1) {
+        record[store_key] = values[0][key];
+      } else {
+        if (_.size(unique_values) > 0) {
+          record[store_key] = _.map(unique_values, (d3, k3) => k3).join(";");
+        }
+      }
+    };
+
     if (this.has_multiple_sequences) {
       let binned = _.groupBy(node_list, (n) => this.primary_key(n));
       let new_list = [];
@@ -2611,6 +2698,14 @@ class HIVTxNetwork {
                 return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
               }
             })
+          );
+
+          aggregator(values, "cluster", new_record, "cluster");
+          aggregator(
+            values,
+            "subcluster_label",
+            new_record,
+            "subcluster_label"
           );
 
           new_record[kGlobals.network.AliasedSequencesID] = _.map(

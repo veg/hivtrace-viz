@@ -1047,24 +1047,47 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
 */
 
 function _action_drop_down(self, pg) {
-  let dropdown = _.flatten(
-    [
-      _.map([self.subcluster_threshold, 0.015], (threshold) => ({
-        label:
-          "View this cluster of interest at link distance of " +
-          kGlobals.formats.PercentFormatShort(threshold),
-        action: function (button, value) {
-          priority_set_view(self, pg, {
-            timestamp: pg.modified || pg.created,
-            priority_set: pg,
-            "priority-edge-length": threshold,
-            title: pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
-          });
+  let dropdown = _.flatten([
+    _.map([self.subcluster_threshold, 0.015], (threshold) => {
+      let items = [
+        {
+          label:
+            "View this cluster of interest at link distance of " +
+            kGlobals.formats.PercentFormatShort(threshold),
+          action: function (button, value) {
+            priority_set_view(self, pg, {
+              timestamp: pg.modified || pg.created,
+              priority_set: pg,
+              "priority-edge-length": threshold,
+              title: pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
+            });
+          },
         },
-      })),
-    ],
-    true
-  );
+      ];
+      if (self.has_multiple_sequences) {
+        items.push({
+          label:
+            "View this cluster of interest at link distance of " +
+            kGlobals.formats.PercentFormatShort(threshold) +
+            " (sequence level)",
+          action: function (button, value) {
+            priority_set_view(self, pg, {
+              timestamp: pg.modified || pg.created,
+              priority_set: pg,
+              "priority-edge-length": threshold,
+              title:
+                pg.name +
+                " @" +
+                kGlobals.formats.PercentFormat(threshold) +
+                " (sequence level)",
+              raw_mspp: true,
+            });
+          },
+        });
+      }
+      return items;
+    }),
+  ]);
 
   if (!self._is_CDC_executive_mode) {
     dropdown.push({
@@ -1737,7 +1760,7 @@ function priority_set_view(self, priority_set, options) {
       node_set,
       title,
       {
-        "simplified-mspp": true,
+        "simplified-mspp": options["raw_mspp"] ? false : true,
         skip_recent_rapid: true,
         init_code: function (network) {
           _.each(network.json.Edges, (e) => {
