@@ -82,7 +82,14 @@ function secure_hiv_trace_subcluster_columns(self) {
       description: {
         value: "Cases dx within 36 months",
         sort: function (c) {
-          return c.value.length ? c.value[0].length : 0;
+          return c.value.length
+            ? d3.max(
+                _.map(
+                  c.value,
+                  (c2) => self.unique_entity_list_from_ids(c2).length
+                )
+              )
+            : 0;
         },
         help: "Number of cases diagnosed in the past 36 months connected only through cases diagnosed within the past 36 months",
       },
@@ -94,7 +101,10 @@ function secure_hiv_trace_subcluster_columns(self) {
           format: function (v) {
             v = v || [];
             if (v.length) {
-              return _.map(v, (e) => e.length).join(", ");
+              return _.map(
+                v,
+                (e) => self.unique_entity_list_from_ids(e).length
+              ).join(", ");
             }
             return "";
           },
@@ -143,7 +153,11 @@ function secure_hiv_trace_subcluster_columns(self) {
         //"value",
         sort: function (c) {
           const v = c.value || [];
-          return v.length > 0 ? v[0].length : 0;
+          return v.length > 0
+            ? d3.max(
+                _.map(v, (c) => self.unique_entity_list_from_ids(c).length)
+              )
+            : 0;
         },
         presort: "desc",
         help: "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months",
@@ -156,9 +170,14 @@ function secure_hiv_trace_subcluster_columns(self) {
           format: function (v) {
             v = v || [];
             if (v.length) {
-              var str = _.map(v, (c) => c.length).join(", ");
+              let entity_lengths = _.map(
+                v,
+                (c) => self.unique_entity_list_from_ids(c).length
+              );
+              var str = entity_lengths.join(", ");
               if (
-                v[0].length >= self.CDC_data["autocreate-priority-set-size"]
+                entity_lengths[0] >=
+                self.CDC_data["autocreate-priority-set-size"]
               ) {
                 var color = "red";
                 return "<span style='color:" + color + "'>" + str + "</span>";

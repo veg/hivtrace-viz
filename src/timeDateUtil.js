@@ -14,7 +14,9 @@ const DateViewFormatShort = d3.time.format("%B %Y");
 const DateViewFormat = d3.time.format("%b %d, %Y");
 /** Used to generate pop-over labels for node displays, and COI views*/
 
-const DateFormats = [d3.time.format.iso];
+/** SLKP 20241029; add another acceptable data time format */
+
+const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
 /** List of accepted time formats for attribute values*/
 
 const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
@@ -41,7 +43,8 @@ function getClusterTimeScale() {
 }
 
 function getCurrentDate() {
-  return new Date();
+  let cdate = new Date();
+  return cdate;
 }
 
 function getAncientDate() {

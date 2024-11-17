@@ -37,7 +37,7 @@ function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
   if (!summary_table.empty()) {
     _.each(graph["Network Summary"], (value, key) => {
       // Handle special case for cluster count
-      if (key === "Clusters") {
+      if (not_CDC && key === "Clusters") {
         value = _.size(graph["Cluster description"]);
       }
 
@@ -97,7 +97,7 @@ function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
     degrees["min"] + " - " + degrees["max"],
   ]);
   table_data.push([
-    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
+    "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "</i>",
     degrees["Q1"] + " - " + degrees["Q3"],
   ]);
 
@@ -123,7 +123,7 @@ function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
         _defaultPercentFormat(degrees["max"]),
     ]);
     table_data.push([
-      "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "range</i>",
+      "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "</i>",
       _defaultPercentFormat(degrees["Q1"]) +
         " - " +
         _defaultPercentFormat(degrees["Q3"]),

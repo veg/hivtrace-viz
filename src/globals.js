@@ -269,7 +269,7 @@ const CDCCOITrackingOptions = [
 */
 
 const CDCCOICanAutoExpand = {};
-CDCCOICanAutoExpand[CDCCOITrackingOptions[0]] = true;
+CDCCOICanAutoExpand[CDCCOIKind[0]] = true;
 
 /**
     CDCCOICanAutoExpand:
@@ -444,14 +444,21 @@ const CDCJurisdictionLowMorbidity = new Set([
   "montana",
   "nebraska",
   "new hampshire",
+  "newhampshire",
   "new mexico",
+  "newmexico",
   "north dakota",
+  "northdakota",
   "rhode island",
+  "rhodeisland",
   "south dakota",
+  "southdakota",
   "utah",
   "vermont",
   "virgin islands",
+  "virginislands",
   "west virginia",
+  "westvirginia",
   "wyoming",
 ]);
 
@@ -510,6 +517,7 @@ const network = {
   ReducedValue: "Different (other) value",
   ContinuousColorStops: 9,
   WarnExecutiveMode: "This feature is not available in the executive mode.",
+  AliasedSequencesID: "aliased_sequences",
 };
 
 /**
