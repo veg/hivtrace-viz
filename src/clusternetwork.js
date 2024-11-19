@@ -1863,7 +1863,13 @@ var hivtrace_cluster_network_graph = function (
       if (priority_group) {
         cluster_nodes = self.priority_groups_find_by_name(priority_group);
         if (cluster_nodes) {
-          cluster_nodes = cluster_nodes.node_objects;
+          if (self.has_multiple_sequences) {
+            cluster_nodes = self.aggregate_indvidual_level_records(
+              cluster_nodes.node_objects
+            );
+          } else {
+            cluster_nodes = cluster_nodes.node_objects;
+          }
         } else {
           return;
         }
@@ -2044,17 +2050,22 @@ var hivtrace_cluster_network_graph = function (
           var rows_for_export = [
             ["Overlapping Cluster of Interest", "Node", "Other clusterOI"],
           ];
-          _.each(ps.nodes, (n) => {
-            const overlap = self.priority_node_overlap[n.name];
-            let other_sets = "None";
-            if (overlap.size > 1) {
-              other_sets = _.sortBy(
-                _.filter([...overlap], (d) => d !== priority_list)
-              ).join("; ");
+
+          _.each(
+            self.aggregate_indvidual_level_records(ps.node_objects),
+            (n) => {
+              const eid = self.entity_id(n);
+              const overlap = self.priority_node_overlap[eid];
+              let other_sets = "None";
+              if (overlap.size > 1) {
+                other_sets = _.sortBy(
+                  _.filter([...overlap], (d) => d !== priority_list)
+                ).join("; ");
+              }
+              rows.push([{ value: eid }, { value: other_sets }]);
+              rows_for_export.push([ps.name, eid, other_sets]);
             }
-            rows.push([{ value: n.name }, { value: other_sets }]);
-            rows_for_export.push([ps.name, n.name, other_sets]);
-          });
+          );
 
           d3.select(
             self.get_ui_element_selector_by_role(
