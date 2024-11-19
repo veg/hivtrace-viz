@@ -1418,9 +1418,9 @@ function draw_priority_set_table(self, container, priority_groups) {
               return (
                 String(v[0]) +
                 (v[1]
-                  ? ' <span title="Number of nodes in the overlap" class="label label-default pull-right">' +
+                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
                     v[1] +
-                    " nodes</span>"
+                    " persons</span>"
                   : "") +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +

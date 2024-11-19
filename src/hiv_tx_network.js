@@ -711,14 +711,20 @@ class HIVTxNetwork {
 
   priority_groups_compute_overlap = function (groups) {
     this.priority_node_overlap = {};
-    const size_by_pg = {};
+
+    var entities_by_pg = {};
+    var size_by_pg = {};
     _.each(groups, (pg) => {
-      size_by_pg[pg.name] = pg.nodes.length;
-      _.each(pg.nodes, (n) => {
-        if (!(n.name in this.priority_node_overlap)) {
-          this.priority_node_overlap[n.name] = new Set();
+      entities_by_pg[pg.name] = this.aggregate_indvidual_level_records(
+        pg.node_objects
+      );
+      size_by_pg[pg.name] = entities_by_pg[pg.name].length;
+      _.each(entities_by_pg[pg.name], (n) => {
+        const entity_id = this.entity_id(n);
+        if (!(entity_id in this.priority_node_overlap)) {
+          this.priority_node_overlap[entity_id] = new Set();
         }
-        this.priority_node_overlap[n.name].add(pg.name);
+        this.priority_node_overlap[entity_id].add(pg.name);
       });
     });
 
@@ -731,15 +737,16 @@ class HIVTxNetwork {
       };
 
       const by_set_count = {};
-      _.each(pg.nodes, (n) => {
-        if (this.priority_node_overlap[n.name].size > 1) {
+      _.each(entities_by_pg[pg.name], (n) => {
+        const entity_id = this.entity_id(n);
+        if (this.priority_node_overlap[entity_id].size > 1) {
           overlap.nodes++;
-          this.priority_node_overlap[n.name].forEach((pgn) => {
+          this.priority_node_overlap[entity_id].forEach((pgn) => {
             if (pgn !== pg.name) {
               if (!(pgn in by_set_count)) {
                 by_set_count[pgn] = [];
               }
-              by_set_count[pgn].push(n.name);
+              by_set_count[pgn].push(entity_id);
             }
             overlap.sets.add(pgn);
           });
@@ -747,8 +754,8 @@ class HIVTxNetwork {
       });
 
       _.each(by_set_count, (nodes, name) => {
-        if (nodes.length === pg.nodes.length) {
-          if (size_by_pg[name] === pg.nodes.length) {
+        if (nodes.length == size_by_pg[pg.name]) {
+          if (size_by_pg[name] == size_by_pg[pg.name]) {
             overlap.duplicates.push(name);
           } else {
             overlap.supersets.push(name);
