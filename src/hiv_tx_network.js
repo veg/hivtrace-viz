@@ -2413,9 +2413,7 @@ class HIVTxNetwork {
 
   /**
         define an attribute generator for the number of sequences associated with this node
-        
         @param label: use this label
-              
         @return attribute definition dict
     */
 
@@ -2426,6 +2424,9 @@ class HIVTxNetwork {
       type: "Number",
       label_format: d3.format("d"),
       map: (node) => {
+        if (node[kGlobals.network.AliasedSequencesID]) {
+          return node[kGlobals.network.AliasedSequencesID].length;
+        }
         if (this.has_multiple_sequences) {
           return this.fetch_sequences_for_pid(this.primary_key(node)).length;
         }
