@@ -1206,7 +1206,9 @@ class HIVTxNetwork {
           ),
           cluster_ident_method: g.kind,
           cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-          cluster_current_size: g.nodes.length,
+          cluster_current_size: this.aggregate_indvidual_level_records(
+            g.node_objects
+          ).length,
           national_priority: g.meets_priority_def,
           cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
           cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
