@@ -3815,7 +3815,7 @@ var hivtrace_cluster_network_graph = function (
         [table_headers],
         table_rows,
         container,
-        'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network nodes'
+        'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network entities'
       );
     }
   };

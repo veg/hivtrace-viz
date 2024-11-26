@@ -1206,7 +1206,9 @@ class HIVTxNetwork {
           ),
           cluster_ident_method: g.kind,
           cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-          cluster_current_size: g.nodes.length,
+          cluster_current_size: this.aggregate_indvidual_level_records(
+            g.node_objects
+          ).length,
           national_priority: g.meets_priority_def,
           cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
           cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
@@ -1379,13 +1381,42 @@ class HIVTxNetwork {
 
           /** check for nodes that are in the CoI but may be missing from the network */
 
+          let updated_pg_record = false;
+          let inject_mspp_nodes = [];
+
           _.each(pg.nodes, (node) => {
             const nodeid = node.name;
             if (nodeid in this.node_id_to_object) {
               pg.node_objects.push(this.node_id_to_object[nodeid]);
             } else {
+              /* 20241125
+                    check to see if this might be an eHARS only CoI
+              */
+              if (this.has_multiple_sequences) {
+                const entities = this.primary_key_list[nodeid];
+                if (entities) {
+                  if (entities.length == 1) {
+                    node.name = entities[0].id;
+                    pg.node_objects.push(entities[0]);
+                    return;
+                  } else {
+                    node.name = entities[0].id;
+                    pg.node_objects.push(entities[0]);
+                    for (let i = 1; i < entities.length; i++) {
+                      pg.node_objects.push(entities[i]);
+                      let node_entry = _.clone(node);
+                      node_entry.added = this.get_reference_date();
+                      inject_mspp_nodes.push(node_entry);
+                    }
+                  }
+                }
+              }
               pg.not_in_network.push(nodeid);
             }
+          });
+
+          _.each(inject_mspp_nodes, (n) => {
+            pg.nodes.push(n);
           });
 
           /**     extract network data at 0.015 and subcluster thresholds
@@ -2411,9 +2442,7 @@ class HIVTxNetwork {
 
   /**
         define an attribute generator for the number of sequences associated with this node
-        
         @param label: use this label
-              
         @return attribute definition dict
     */
 
@@ -2424,6 +2453,9 @@ class HIVTxNetwork {
       type: "Number",
       label_format: d3.format("d"),
       map: (node) => {
+        if (node[kGlobals.network.AliasedSequencesID]) {
+          return node[kGlobals.network.AliasedSequencesID].length;
+        }
         if (this.has_multiple_sequences) {
           return this.fetch_sequences_for_pid(this.primary_key(node)).length;
         }
@@ -2715,10 +2747,15 @@ class HIVTxNetwork {
             "subcluster_label"
           );
 
-          new_record[kGlobals.network.AliasedSequencesID] = _.map(
-            values,
-            (d) => d.id
+          new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
+            _.map(values, (d) =>
+              d[kGlobals.network.AliasedSequencesID]
+                ? d[kGlobals.network.AliasedSequencesID]
+                : d.id
+            )
           );
+          new_record[kGlobals.network.NodeAttributeID]["sequence_count"] =
+            new_record[kGlobals.network.AliasedSequencesID].length;
           new_list.push(new_record);
         }
       });

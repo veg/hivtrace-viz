@@ -714,10 +714,14 @@ function open_editor(
           )
           .attr("id", "priority-panel-node-table");
 
+        const entities = self.aggregate_indvidual_level_records(
+          panel.network_nodes
+        );
+
         panel.setHeaderTitle(
           "clusterOI editor (" +
-            panel.network_nodes.length +
-            " nodes)" +
+            entities.length +
+            " persons)" +
             (validation_mode ? " [automatically created review] " : "")
         );
 
