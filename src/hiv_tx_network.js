@@ -373,15 +373,23 @@ class HIVTxNetwork {
         this.json.Nodes,
         this.json.Edges
       );
+
       let complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_within
       );
+
       let adjacency = misc.hivtrace_compute_adjacency(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_between
+      );
+
+      let adjacency05 = misc.hivtrace_compute_adjacency(
+        this.json.Nodes,
+        this.json.Edges,
+        (d) => d.length <= 0.005
       );
       let nodes_to_delete = new Set();
 
@@ -412,10 +420,19 @@ class HIVTxNetwork {
           _.each(uel, (dup_seqs, uid) => {
             if (dup_seqs.length > 1) {
               let dup_ids = new Set(_.map(dup_seqs, (d) => d.id));
+
               let neighborhood = new Set(
                 _.map(
                   _.filter(
                     [...adjacency[dup_seqs[0].id]],
+                    (d) => !dup_ids.has(d)
+                  )
+                )
+              );
+              let neighborhood05 = new Set(
+                _.map(
+                  _.filter(
+                    [...adjacency05[dup_seqs[0].id]],
                     (d) => !dup_ids.has(d)
                   )
                 )
@@ -432,11 +449,23 @@ class HIVTxNetwork {
                     )
                   )
                 );
+                let other_nbhd05 = new Set(
+                  _.map(
+                    _.filter(
+                      [...adjacency05[dup_seqs[idx].id]],
+                      (d) => !dup_ids.has(d)
+                    )
+                  )
+                );
 
                 if (
                   !(
                     other_nbhd.isSubsetOf(neighborhood) &&
                     neighborhood.isSubsetOf(other_nbhd)
+                  ) ||
+                  !(
+                    other_nbhd.isSubsetOf(neighborhood05) &&
+                    neighborhood.isSubsetOf(other_nbhd05)
                   )
                 ) {
                   reduce = false;
