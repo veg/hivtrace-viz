@@ -1714,6 +1714,7 @@ function priority_set_view(self, priority_set, options) {
 
   let viewEnum = [];
   let dateID = {};
+
   _.each(pgDates, (d, i) => {
     if (d) {
       if (pgDates.length > maxColors) {

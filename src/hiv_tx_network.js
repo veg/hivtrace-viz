@@ -1434,9 +1434,11 @@ class HIVTxNetwork {
                     for (let i = 1; i < entities.length; i++) {
                       pg.node_objects.push(entities[i]);
                       let node_entry = _.clone(node);
-                      node_entry.added = this.get_reference_date();
+                      node_entry.name = entities[i].id;
+                      node_entry.added = node.added;
                       inject_mspp_nodes.push(node_entry);
                     }
+                    return;
                   }
                 }
               }
