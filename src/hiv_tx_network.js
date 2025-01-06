@@ -1155,6 +1155,7 @@ class HIVTxNetwork {
           **/
 
           let entities = this.aggregate_indvidual_level_records(g.node_objects);
+
           cluster_detect_size = this.unique_entity_list_from_ids(
             _.map(
               _.filter(g.nodes, (node) => node.added <= g.created),
@@ -1184,6 +1185,9 @@ class HIVTxNetwork {
                 person_ident_method: entity_to_pg_records[eid][0].kind,
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
                   entity_to_pg_records[eid][0].added
+                ),
+                sample_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+                  this.attribute_node_value_by_id(gn, "sample_dt")
                 ),
                 new_linked_case: this.priority_groups_is_new_node(
                   entity_to_pg_records[eid][0]
@@ -2765,7 +2769,20 @@ class HIVTxNetwork {
               if (_.size(unique_values) == 1) {
                 return [k, values[0][kGlobals.network.NodeAttributeID][k]];
               } else {
-                return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                if (proto.type == "Date") {
+                  try {
+                    return [
+                      k,
+                      new Date(
+                        Date.parse(d3.min(_.map(unique_values, (d3, k3) => k3)))
+                      ),
+                    ];
+                  } catch {
+                    return [k, null];
+                  }
+                } else {
+                  return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                }
               }
             })
           );
