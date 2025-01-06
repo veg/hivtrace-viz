@@ -362,7 +362,7 @@ var _cdcJurisdictionCodes = {
   "u.s.virginislands": "vi",
 };
 
-var _cdcJurisdictionLowMorbidity = new Set([
+const CDCJurisdictionLowMorbidity = new Set([
   "alaska",
   "delaware",
   "hawaii",
@@ -373,14 +373,21 @@ var _cdcJurisdictionLowMorbidity = new Set([
   "montana",
   "nebraska",
   "new hampshire",
+  "newhampshire",
   "new mexico",
+  "newmexico",
   "north dakota",
+  "northdakota",
   "rhode island",
+  "rhodeisland",
   "south dakota",
+  "southdakota",
   "utah",
   "vermont",
   "virgin islands",
+  "virginislands",
   "west virginia",
+  "westvirginia",
   "wyoming",
 ]);
 
