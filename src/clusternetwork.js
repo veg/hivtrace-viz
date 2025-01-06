@@ -5915,6 +5915,7 @@ var hivtrace_cluster_network_graph = function (
           }
         );
       }
+
       if (self._is_CDC_) {
         self.draw_extended_node_table(self.aggregate_indvidual_level_records());
       } else {
