@@ -12,6 +12,42 @@ _.each(_.range(3, 20), (d) => {
   ]);
 });
 
+var hivtrace_generate_svg_ellipse = function () {
+  var self = this;
+
+  self.ellipse = function () {
+    var path =
+      "M " +
+      self.radius +
+      " 0 A " +
+      self.radius * 1 +
+      " " +
+      self.radius * 0.75 +
+      " 0 1 0 " +
+      self.radius +
+      " 0.00001";
+    return path;
+  };
+
+  self.ellipse.type = function () {
+    return self.ellipse;
+  };
+
+  self.ellipse.size = function (attr) {
+    if (_.isNumber(attr)) {
+      self.size = attr;
+      self.radius = Math.sqrt((1.25 * attr) / Math.PI);
+      return self.ellipse;
+    }
+
+    return self.size;
+  };
+
+  self.ellipse.size(64);
+
+  return self.ellipse;
+};
+
 /**
  * Creates and returns an SVG polygon generator.
  *

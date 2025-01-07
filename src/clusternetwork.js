@@ -2814,20 +2814,20 @@ var hivtrace_cluster_network_graph = function (
           _.each(list, self._aux_process_category_values);
         });
 
-        const colorStopsPath = [
+        /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
           self.colorizer["category_id"],
           "color_stops",
-        ];
-
-        const color_stops = _.get(
-          graph_data,
-          colorStopsPath,
-          kGlobals.network.ContinuousColorStops
-        );
+        ];*/
 
         var valid_scales = _.filter(
           _.map(graph_data[kGlobals.network.GraphAttrbuteID], (d, k) => {
+            let color_stops = _.get(
+              self.json,
+              [kGlobals.network.GraphAttrbuteID, k, "color_stops"],
+              kGlobals.network.ContinuousColorStops
+            );
+
             function determine_scaling(d, values, scales) {
               var low_var = Infinity;
               _.each(scales, (scl, i) => {
@@ -2862,16 +2862,20 @@ var hivtrace_cluster_network_graph = function (
               );
               // automatically determine the scale and see what spaces the values most evenly
               const range = d3.extent(values);
+
               const scales_to_consider = [d3.scale.linear()];
-              if (range[0] > 0) {
-                scales_to_consider.push(d3.scale.log());
-              }
-              if (range[0] >= 0) {
-                scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
-                scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
-                scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
-                scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
-                scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
+
+              if (!d.is_integer) {
+                if (range[0] > 0) {
+                  scales_to_consider.push(d3.scale.log());
+                }
+                if (range[0] >= 0) {
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
+                  scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
+                }
               }
               determine_scaling(d, values, scales_to_consider);
             } else if (d.type === "Date") {

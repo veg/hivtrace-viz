@@ -849,7 +849,7 @@ class HIVTxNetwork {
   
  */
 
-  attribute_node_value_by_id(d, id, number) {
+  attribute_node_value_by_id(d, id, number, is_date) {
     try {
       if (kGlobals.network.NodeAttributeID in d && id) {
         if (id in d[kGlobals.network.NodeAttributeID]) {
@@ -867,6 +867,8 @@ class HIVTxNetwork {
             } else if (number) {
               v = Number(v);
               return _.isNaN(v) ? kGlobals.missing.label : v;
+            } else if (date) {
+              return v.getTime();
             }
           }
           return v;
@@ -1764,8 +1766,8 @@ class HIVTxNetwork {
     });
 
     const pg_enum = [
-      "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
+      "Yes (dx�12 months)",
+      "Yes (12<dx� 36 months)",
       "Yes (dx>36 months)",
       "No",
     ];
@@ -2117,10 +2119,6 @@ class HIVTxNetwork {
         _.has(this.json[kGlobals.network.GraphAttrbuteID], d)
       )
     ) {
-      var extension = {};
-      extension[key] = computed;
-
-      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
       this.inject_attribute_description(key, computed);
       _.each(this.json.Nodes, (node) => {
         HIVTxNetwork.inject_attribute_node_value_by_id(
@@ -2135,14 +2133,47 @@ class HIVTxNetwork {
         this.uniqValues[key] = computed.enum;
       } else {
         var uniq_value_set = new Set();
-        _.each(this.json.Nodes, (n) =>
-          uniq_value_set.add(
-            this.attribute_node_value_by_id(n, key, computed.Type === "Number")
-          )
-        );
+
+        if (computed.type === "Date") {
+          _.each(this.json.Nodes, (n) =>
+            uniq_value_set.add(
+              this.attribute_node_value_by_id(n, key).getTime()
+            )
+          );
+        } else {
+          _.each(this.json.Nodes, (n) =>
+            uniq_value_set.add(
+              this.attribute_node_value_by_id(
+                n,
+                key,
+                computed.type === "Number"
+              )
+            )
+          );
+        }
+
         this.uniqValues[key] = [...uniq_value_set];
+        if (computed.type === "Number" || computed.type == "Date") {
+          var color_stops =
+            computed["color_stops"] || kGlobals.network.ContinuousColorStops;
+
+          if (color_stops > this.uniqValues[key].length) {
+            computed["color_stops"] = this.uniqValues[key].length;
+          }
+
+          if (computed.type === "Number") {
+            computed.is_integer = _.every(this.uniqValues[key], (d) =>
+              Number.isInteger(d)
+            );
+          }
+        }
       }
       this.uniqs[key] = this.uniqValues[key].length;
+
+      var extension = {};
+      extension[key] = computed;
+
+      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
 
       if (computed["overwrites"]) {
         if (
@@ -2196,13 +2227,13 @@ class HIVTxNetwork {
 
     const subcluster_enum = [
       "No, dx>36 months", // 0
-      "No, but dx≤12 months",
-      "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
+      "No, but dx�12 months",
+      "Yes (dx�12 months)",
+      "Yes (12<dx� 36 months)",
       "Future node", // 4
       "Not a member of subcluster", // 5
       "Not in a subcluster",
-      "No, but 12<dx≤ 36 months",
+      "No, but 12<dx� 36 months",
     ];
 
     return {
@@ -2407,7 +2438,7 @@ class HIVTxNetwork {
       depends: [timeDateUtil._networkCDCDateField],
       label: label,
       type: "Number",
-      label_format: d3.format(".2f"),
+      label_format: relative ? d3.format(".2f") : d3.format(".0f"),
       map: (node) => {
         try {
           var value = this.parse_dates(
@@ -2526,7 +2557,7 @@ class HIVTxNetwork {
       depends: ["age_dx"],
       overwrites: "age_dx",
       label: "Age at Diagnosis",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
       type: "String",
       color_scale: function () {
         return d3.scale
@@ -2538,7 +2569,7 @@ class HIVTxNetwork {
             "30-39",
             "40-49",
             "50-59",
-            "≥60",
+            "�60",
             kGlobals.missing.label,
           ])
           .range([
@@ -2555,13 +2586,13 @@ class HIVTxNetwork {
       map: (node) => {
         var vl_value = this.attribute_node_value_by_id(node, "age_dx");
         if (vl_value === ">=60") {
-          return "≥60";
+          return "�60";
         }
         if (vl_value === "\ufffd60") {
-          return "≥60";
+          return "�60";
         }
         if (Number(vl_value) >= 60) {
-          return "≥60";
+          return "�60";
         }
         return vl_value;
       },
