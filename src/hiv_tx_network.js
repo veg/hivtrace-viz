@@ -2135,11 +2135,13 @@ class HIVTxNetwork {
         var uniq_value_set = new Set();
 
         if (computed.type === "Date") {
-          _.each(this.json.Nodes, (n) =>
-            uniq_value_set.add(
-              this.attribute_node_value_by_id(n, key).getTime()
-            )
-          );
+          _.each(this.json.Nodes, (n) => {
+            try {
+              uniq_value_set.add(
+                this.attribute_node_value_by_id(n, key).getTime()
+              );
+            } catch {}
+          });
         } else {
           _.each(this.json.Nodes, (n) =>
             uniq_value_set.add(
