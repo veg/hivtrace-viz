@@ -706,16 +706,32 @@ function hivtrace_cluster_depthwise_traversal(
 
   seed_nodes = seed_nodes || nodes;
 
+  /*
+  var len = arr.length;
+while (len--) {
+    // blah blah
+}
+  */
+
   if (given_adjacency) {
-    _.each(nodes, (n) => {
-      n.visited = false;
-    });
+    var N = nodes.length;
+    while (N--) {
+      nodes[N].visited = false;
+    }
+    // _.each(nodes, (n) => {
+    //  n.visited = false;
+    //});
     adjacency = given_adjacency;
   } else {
-    _.each(nodes, (n) => {
-      n.visited = false;
-      adjacency[n.id] = [];
-    });
+    var N = nodes.length;
+    while (N--) {
+      nodes[N].visited = false;
+      adjacency[nodes[N].id] = [];
+    }
+    //_.each(nodes, (n) => {
+    //  n.visited = false;
+    //  adjacency[n.id] = [];
+    //});
 
     if (edge_filter) {
       edges = _.filter(edges, edge_filter);

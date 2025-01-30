@@ -37,8 +37,13 @@ class HIVTxNetwork {
     **/
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
-      : (node) => node.id.split("|")[0];
-
+      : (node) => {
+          const i = node.id.indexOf("|");
+          if (i >= 0) {
+            return node.id.substr(0, i);
+          }
+          return node.id;
+        };
     this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
@@ -1378,7 +1383,6 @@ class HIVTxNetwork {
       const nodeID2idx = {};
 
       _.each(this.json.Nodes, (n, i) => {
-        this.node_id_to_object[n.id] = n;
         nodeID2idx[n.id] = i;
       });
 
@@ -1757,17 +1761,26 @@ class HIVTxNetwork {
   priority_groups_compute_node_membership() {
     const pg_nodesets = [];
 
+    let node2set = {};
+
     _.each(this.defined_priority_groups, (g) => {
       pg_nodesets.push([
         g.name,
         g.createdBy === kGlobals.CDCCOICreatedBySystem,
-        new Set(_.map(g.nodes, (n) => n.name)),
       ]);
+
+      _.each(g.nodes, (n) => {
+        if (n.name in node2set) {
+          node2set[n.name].push(pg_nodesets.length - 1);
+        } else {
+          node2set[n.name] = [pg_nodesets.length - 1];
+        }
+      });
     });
 
     const pg_enum = [
-      "Yes (dx�12 months)",
-      "Yes (12<dx� 36 months)",
+      "Yes (dx≤12 months)",
+      "Yes (12<dx≤36 months)",
       "Yes (dx>36 months)",
       "No",
     ];
@@ -1797,7 +1810,10 @@ class HIVTxNetwork {
             ]);
         },
         map: function (node) {
-          const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
+          const npcoi =
+            node.id in node2set
+              ? _.some(node2set[node.id], (d) => pg_nodesets[d][1])
+              : false;
           if (npcoi) {
             const cutoffs = [
               timeDateUtil.n_months_ago(ref_date, 12),
@@ -1836,9 +1852,9 @@ class HIVTxNetwork {
         type: "String",
         volatile: true,
         map: function (node) {
-          const memberships = _.filter(pg_nodesets, (d) => d[2].has(node.id));
+          const memberships = node2set[node.id] || [];
           if (memberships.length === 1) {
-            return memberships[0][0];
+            return pg_nodesets[memberships[0]][0];
           } else if (memberships.length > 1) {
             return "Multiple";
           }
@@ -1859,11 +1875,16 @@ class HIVTxNetwork {
       },
     };
 
+    let subset = new Set();
+
     for (const [key, def] of Object.entries(attrib_defs)) {
+      subset.add(key);
       this.populate_predefined_attribute(def, key);
     }
 
+    //console.time ("SUBS");
     this._aux_populate_category_menus();
+    //console.timeEnd ("SUBS");
   }
 
   /** Add an attribute value to the node object
