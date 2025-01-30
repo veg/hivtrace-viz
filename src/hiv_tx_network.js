@@ -37,8 +37,13 @@ class HIVTxNetwork {
     **/
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
-      : (node) => node.id.split("|")[0];
-
+      : (node) => {
+          const i = node.id.indexOf("|");
+          if (i >= 0) {
+            return node.id.substr(0, i);
+          }
+          return node.id;
+        };
     this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
@@ -849,7 +854,7 @@ class HIVTxNetwork {
   
  */
 
-  attribute_node_value_by_id(d, id, number) {
+  attribute_node_value_by_id(d, id, number, is_date) {
     try {
       if (kGlobals.network.NodeAttributeID in d && id) {
         if (id in d[kGlobals.network.NodeAttributeID]) {
@@ -867,6 +872,8 @@ class HIVTxNetwork {
             } else if (number) {
               v = Number(v);
               return _.isNaN(v) ? kGlobals.missing.label : v;
+            } else if (date) {
+              return v.getTime();
             }
           }
           return v;
@@ -1155,6 +1162,7 @@ class HIVTxNetwork {
           **/
 
           let entities = this.aggregate_indvidual_level_records(g.node_objects);
+
           cluster_detect_size = this.unique_entity_list_from_ids(
             _.map(
               _.filter(g.nodes, (node) => node.added <= g.created),
@@ -1184,6 +1192,9 @@ class HIVTxNetwork {
                 person_ident_method: entity_to_pg_records[eid][0].kind,
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
                   entity_to_pg_records[eid][0].added
+                ),
+                sample_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+                  this.attribute_node_value_by_id(gn, "sample_dt")
                 ),
                 new_linked_case: this.priority_groups_is_new_node(
                   entity_to_pg_records[eid][0]
@@ -1372,7 +1383,6 @@ class HIVTxNetwork {
       const nodeID2idx = {};
 
       _.each(this.json.Nodes, (n, i) => {
-        this.node_id_to_object[n.id] = n;
         nodeID2idx[n.id] = i;
       });
 
@@ -1751,17 +1761,26 @@ class HIVTxNetwork {
   priority_groups_compute_node_membership() {
     const pg_nodesets = [];
 
+    let node2set = {};
+
     _.each(this.defined_priority_groups, (g) => {
       pg_nodesets.push([
         g.name,
         g.createdBy === kGlobals.CDCCOICreatedBySystem,
-        new Set(_.map(g.nodes, (n) => n.name)),
       ]);
+
+      _.each(g.nodes, (n) => {
+        if (n.name in node2set) {
+          node2set[n.name].push(pg_nodesets.length - 1);
+        } else {
+          node2set[n.name] = [pg_nodesets.length - 1];
+        }
+      });
     });
 
     const pg_enum = [
       "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
+      "Yes (12<dx≤36 months)",
       "Yes (dx>36 months)",
       "No",
     ];
@@ -1791,7 +1810,10 @@ class HIVTxNetwork {
             ]);
         },
         map: function (node) {
-          const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
+          const npcoi =
+            node.id in node2set
+              ? _.some(node2set[node.id], (d) => pg_nodesets[d][1])
+              : false;
           if (npcoi) {
             const cutoffs = [
               timeDateUtil.n_months_ago(ref_date, 12),
@@ -1830,9 +1852,9 @@ class HIVTxNetwork {
         type: "String",
         volatile: true,
         map: function (node) {
-          const memberships = _.filter(pg_nodesets, (d) => d[2].has(node.id));
+          const memberships = node2set[node.id] || [];
           if (memberships.length === 1) {
-            return memberships[0][0];
+            return pg_nodesets[memberships[0]][0];
           } else if (memberships.length > 1) {
             return "Multiple";
           }
@@ -1853,11 +1875,16 @@ class HIVTxNetwork {
       },
     };
 
+    let subset = new Set();
+
     for (const [key, def] of Object.entries(attrib_defs)) {
+      subset.add(key);
       this.populate_predefined_attribute(def, key);
     }
 
+    //console.time ("SUBS");
     this._aux_populate_category_menus();
+    //console.timeEnd ("SUBS");
   }
 
   /** Add an attribute value to the node object
@@ -2113,10 +2140,6 @@ class HIVTxNetwork {
         _.has(this.json[kGlobals.network.GraphAttrbuteID], d)
       )
     ) {
-      var extension = {};
-      extension[key] = computed;
-
-      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
       this.inject_attribute_description(key, computed);
       _.each(this.json.Nodes, (node) => {
         HIVTxNetwork.inject_attribute_node_value_by_id(
@@ -2131,14 +2154,49 @@ class HIVTxNetwork {
         this.uniqValues[key] = computed.enum;
       } else {
         var uniq_value_set = new Set();
-        _.each(this.json.Nodes, (n) =>
-          uniq_value_set.add(
-            this.attribute_node_value_by_id(n, key, computed.Type === "Number")
-          )
-        );
+
+        if (computed.type === "Date") {
+          _.each(this.json.Nodes, (n) => {
+            try {
+              uniq_value_set.add(
+                this.attribute_node_value_by_id(n, key).getTime()
+              );
+            } catch {}
+          });
+        } else {
+          _.each(this.json.Nodes, (n) =>
+            uniq_value_set.add(
+              this.attribute_node_value_by_id(
+                n,
+                key,
+                computed.type === "Number"
+              )
+            )
+          );
+        }
+
         this.uniqValues[key] = [...uniq_value_set];
+        if (computed.type === "Number" || computed.type == "Date") {
+          var color_stops =
+            computed["color_stops"] || kGlobals.network.ContinuousColorStops;
+
+          if (color_stops > this.uniqValues[key].length) {
+            computed["color_stops"] = this.uniqValues[key].length;
+          }
+
+          if (computed.type === "Number") {
+            computed.is_integer = _.every(this.uniqValues[key], (d) =>
+              Number.isInteger(d)
+            );
+          }
+        }
       }
       this.uniqs[key] = this.uniqValues[key].length;
+
+      var extension = {};
+      extension[key] = computed;
+
+      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
 
       if (computed["overwrites"]) {
         if (
@@ -2192,13 +2250,13 @@ class HIVTxNetwork {
 
     const subcluster_enum = [
       "No, dx>36 months", // 0
-      "No, but dx≤12 months",
-      "Yes (dx≤12 months)",
-      "Yes (12<dx≤ 36 months)",
+      "No, but dx�12 months",
+      "Yes (dx�12 months)",
+      "Yes (12<dx� 36 months)",
       "Future node", // 4
       "Not a member of subcluster", // 5
       "Not in a subcluster",
-      "No, but 12<dx≤ 36 months",
+      "No, but 12<dx� 36 months",
     ];
 
     return {
@@ -2403,7 +2461,7 @@ class HIVTxNetwork {
       depends: [timeDateUtil._networkCDCDateField],
       label: label,
       type: "Number",
-      label_format: d3.format(".2f"),
+      label_format: relative ? d3.format(".2f") : d3.format(".0f"),
       map: (node) => {
         try {
           var value = this.parse_dates(
@@ -2522,7 +2580,7 @@ class HIVTxNetwork {
       depends: ["age_dx"],
       overwrites: "age_dx",
       label: "Age at Diagnosis",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
       type: "String",
       color_scale: function () {
         return d3.scale
@@ -2534,7 +2592,7 @@ class HIVTxNetwork {
             "30-39",
             "40-49",
             "50-59",
-            "≥60",
+            "�60",
             kGlobals.missing.label,
           ])
           .range([
@@ -2551,13 +2609,13 @@ class HIVTxNetwork {
       map: (node) => {
         var vl_value = this.attribute_node_value_by_id(node, "age_dx");
         if (vl_value === ">=60") {
-          return "≥60";
+          return "�60";
         }
         if (vl_value === "\ufffd60") {
-          return "≥60";
+          return "�60";
         }
         if (Number(vl_value) >= 60) {
-          return "≥60";
+          return "�60";
         }
         return vl_value;
       },
@@ -2765,7 +2823,20 @@ class HIVTxNetwork {
               if (_.size(unique_values) == 1) {
                 return [k, values[0][kGlobals.network.NodeAttributeID][k]];
               } else {
-                return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                if (proto.type == "Date") {
+                  try {
+                    return [
+                      k,
+                      new Date(
+                        Date.parse(d3.min(_.map(unique_values, (d3, k3) => k3)))
+                      ),
+                    ];
+                  } catch {
+                    return [k, null];
+                  }
+                } else {
+                  return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                }
               }
             })
           );

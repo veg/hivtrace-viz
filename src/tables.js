@@ -31,7 +31,8 @@ function add_a_sortable_table(
   content,
   overwrite,
   caption,
-  priority_set_editor
+  priority_set_editor,
+  N
 ) {
   if (!container || !container.node()) {
     return;
@@ -107,6 +108,11 @@ function add_a_sortable_table(
     table_caption
       .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
+    if (N && N > content.length) {
+      table_caption
+        .select(misc.get_ui_element_selector_by_role("table-count-warning"))
+        .text("Truncated due to the large number of rows (" + N + ")");
+    }
   }
 
   container.style("display", null);
