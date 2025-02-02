@@ -728,7 +728,7 @@ var hivtrace_cluster_network_graph = function (
       }
 
       cluster_options["today"] = self.today;
-
+      cluster_options["auto_expand_single_cluster"] = true;
       cluster_view = hivtrace_cluster_network_graph(
         filtered_json,
         "#" + random_content_id,
@@ -763,7 +763,7 @@ var hivtrace_cluster_network_graph = function (
         cluster_view.handle_attribute_opacity(self.colorizer["opacity_id"]);
       }
 
-      cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
+      //cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
     } else {
       return new_tab_content.attr("id");
     }
@@ -3334,6 +3334,19 @@ var hivtrace_cluster_network_graph = function (
     });
     //self.clusters
 
+    if (
+      network.check_network_option(
+        options,
+        "auto_expand_single_cluster",
+        false,
+        true
+      )
+    ) {
+      if (self.clusters.length == 1) {
+        self.clusters[0].collapsed = false;
+      }
+    }
+
     self.update();
   }
 
@@ -4807,6 +4820,55 @@ var hivtrace_cluster_network_graph = function (
       offset += 18;
     }
 
+    if (
+      self.legend_multiple_sequences &&
+      self.rendered_object_counts &&
+      self.rendered_object_counts["nodes"] > 0
+    ) {
+      self.legend_svg
+        .append("g")
+        .classed("hiv-trace-legend multi_sequence", true)
+        .attr("transform", "translate(0," + offset + ")")
+        .append("circle")
+        .attr("cx", "8")
+        .attr("cy", "-4")
+        .attr("r", "8")
+        .style("fill", "none");
+      self.legend_svg
+        .append("g")
+        .classed("hiv-trace-legend", true)
+        .attr("transform", "translate(20," + offset + ")")
+        .append("text")
+        .text("Represents >1 sequence");
+      offset += 24;
+    }
+
+    if (
+      self.rendered_object_counts &&
+      self.rendered_object_counts.has_hatching
+    ) {
+      self.legend_svg
+        .append("g")
+        .classed("hiv-trace-legend", true)
+        .attr("transform", "translate(0," + offset + ")")
+        .append("circle")
+        .attr("cx", "8")
+        .attr("cy", "-4")
+        .attr("r", "8")
+        .classed("legend", true)
+        .style(
+          "fill",
+          "url(#" + self.generate_cross_hatch_pattern("#ccc") + ")"
+        );
+      self.legend_svg
+        .append("g")
+        .classed("hiv-trace-legend", true)
+        .attr("transform", "translate(20," + offset + ")")
+        .append("text")
+        .text("Contains sequences in >1 cluster/subcluster");
+      offset += 24;
+    }
+
     if (self.edge_legend) {
       self.legend_svg
         .append("g")
@@ -5982,8 +6044,17 @@ var hivtrace_cluster_network_graph = function (
       update_network_string(rendered_nodes.size(), link.size());
     }
 
+    self.rendered_object_counts = {
+      nodes: rendered_nodes.size(),
+      edges: link.size(),
+      clusters: rendered_clusters.size(),
+      has_hatching: false,
+    };
+
     rendered_nodes.each(function (d) {
       draw_a_node(this, d);
+      self.rendered_object_counts.has_hatching =
+        self.rendered_object_counts.has_hatching || node_multiple_membership(d);
     });
 
     rendered_clusters.each(function (d) {
@@ -6144,9 +6215,13 @@ var hivtrace_cluster_network_graph = function (
     return 4 * r * r;
   }
 
+  function node_multiple_membership(n) {
+    return n["multiple_membership"];
+  }
+
   function node_color(d) {
     var hms = (d, c) => {
-      if (d["multiple_membership"]) {
+      if (node_multiple_membership(d)) {
         return "url(#" + self.generate_cross_hatch_pattern(c) + ")";
       }
       return c;

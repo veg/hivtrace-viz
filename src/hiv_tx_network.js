@@ -149,6 +149,12 @@ class HIVTxNetwork {
       } else {
         this.primary_key_list[p_key].push(n);
         this.has_multiple_sequences = true;
+        this.legend_multiple_sequences = true;
+      }
+      if (!this.legend_multiple_sequences) {
+        if (n[kGlobals.network.AliasedSequencesID]) {
+          this.legend_multiple_sequences = true;
+        }
       }
     });
 
