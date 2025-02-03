@@ -90,7 +90,8 @@ function n_months_ago(reference_date, months) {
     past_date.setFullYear(past_date.getFullYear() - diff_year);
     past_date.setMonth(past_months - left_over);
   }
-
+  past_date.setDate(past_date.getDate() + 1); // exclusive
+  past_date.setUTCHours(0, 0, 0);
   return past_date;
 }
 
