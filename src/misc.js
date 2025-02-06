@@ -771,6 +771,20 @@ while (len--) {
     }
     node.visited = true;
 
+    var N = adjacency[node.id].length;
+    while (N--) {
+      let neighbor = adjacency[node.id][N];
+      if (!neighbor[0].visited) {
+        by_node[neighbor[0].id] = by_node[node.id];
+        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
+        if (save_edges) {
+          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
+        }
+        traverse(neighbor[0]);
+      }
+    }
+
+    /*
     _.each(adjacency[node.id], (neighbor) => {
       if (!neighbor[0].visited) {
         by_node[neighbor[0].id] = by_node[node.id];
@@ -781,6 +795,7 @@ while (len--) {
         traverse(neighbor[0]);
       }
     });
+    */
   };
 
   _.each(seed_nodes, (n) => {

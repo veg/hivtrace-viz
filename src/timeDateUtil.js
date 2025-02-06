@@ -22,6 +22,9 @@ const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
 const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
+const DateViewNodeSearch = d3.time.format("%Y/%m/%d");
+/** Used in many places where alpha-numerically sorted dates are desired*/
+
 const DateUpperBoundYear = new Date().getFullYear();
 /** Maximum year value (no future dates)*/
 
@@ -109,6 +112,7 @@ module.exports = {
   DateViewFormatMMDDYYY,
   DateViewFormatShort,
   DateViewFormatSlider,
+  DateViewNodeSearch,
   n_months_ago,
   init,
 };
