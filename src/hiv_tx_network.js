@@ -21,7 +21,7 @@ var _ = require("underscore"),
  */
 
 class HIVTxNetwork {
-  constructor(json, button_bar_ui, primary_key_function) {
+  constructor(json, button_bar_ui, primary_key_function, secondaryGraph) {
     this.json = json;
     this.button_bar_ui = button_bar_ui;
     this.warning_string = "";
@@ -30,6 +30,7 @@ class HIVTxNetwork {
     this.priority_set_table_writeable = null;
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
+    this.isPrimaryGraph = !secondaryGraph;
     /** SLKP 20241029 
         this function is used to identify which nodes are duplicates
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
@@ -376,7 +377,7 @@ class HIVTxNetwork {
     
   */
   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-    if (this.has_multiple_sequences) {
+    if (this.has_multiple_sequences && this.isPrimaryGraph) {
       reduce_distance_within = reduce_distance_within || 0.000001;
       reduce_distance_between = reduce_distance_between || 0.015;
 
@@ -966,9 +967,11 @@ class HIVTxNetwork {
         @return the set of added nodes (by numeric ID)
         @nodeID2idx : if provided, maps the name of the node to its index
                       in the `nodes` array; avoids repeated traversal if provided
+        @edgesByNode : if provided, maps the INDEX of the node to the list of edges in the entire network
+
   */
 
-  auto_expand_pg_handler = function (pg, nodeID2idx) {
+  auto_expand_pg_handler = function (pg, nodeID2idx, edgesByNode) {
     if (!nodeID2idx) {
       nodeID2idx = {};
       _.each(this.json.Nodes, (n, i) => {
@@ -988,9 +991,26 @@ class HIVTxNetwork {
         kGlobals.CDCCOITrackingOptionsDateFilter[pg.tracking]
       );
 
+      let edge_set;
+
+      if (edgesByNode) {
+        const existing_nodes = _.map(
+          _.filter([...core_node_set], (d) => d in this.json.Nodes),
+          (d) => edgesByNode[d]
+        );
+
+        edge_set = [
+          ...existing_nodes.reduce((acc, set) => {
+            return new Set([...acc, ...set]);
+          }, new Set()),
+        ];
+      } else {
+        edge_set = this.json.Edges;
+      }
+
       const expansion_test = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
-        this.json.Edges,
+        edge_set,
         (e) => {
           let pass = filter(e);
           if (pass) {
@@ -1387,9 +1407,16 @@ class HIVTxNetwork {
       this.map_ids_to_objects();
 
       const nodeID2idx = {};
+      const edgesByNode = {};
 
       _.each(this.json.Nodes, (n, i) => {
         nodeID2idx[n.id] = i;
+        edgesByNode[i] = new Set();
+      });
+
+      _.each(this.json.Edges, (e) => {
+        edgesByNode[e.source].add(e);
+        edgesByNode[e.target].add(e);
       });
 
       let traversal_cache = null;
@@ -1634,7 +1661,11 @@ class HIVTxNetwork {
             auto_extend &&
             pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
           ) {
-            const added_nodes = this.auto_expand_pg_handler(pg, nodeID2idx);
+            const added_nodes = this.auto_expand_pg_handler(
+              pg,
+              nodeID2idx,
+              edgesByNode
+            );
 
             if (added_nodes.size) {
               _.each([...added_nodes], (nid) => {

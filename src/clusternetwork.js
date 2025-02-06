@@ -15,6 +15,9 @@ import * as kGlobals from "./globals.js";
 import * as network from "./network.js";
 import * as HTX from "./hiv_tx_network.js";
 import * as columnDefinitions from "./column_definitions.js";
+import "jQuery-QueryBuilder";
+import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
+import "bootstrap-datepicker";
 
 var hivtrace_cluster_network_graph = function (
   json,
@@ -73,7 +76,19 @@ var hivtrace_cluster_network_graph = function (
   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
   json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
 
-  var self = new HTX.HIVTxNetwork(json, button_bar_ui);
+  /** Not primary networks are individual cluster/subcluster views.
+      They don't interfere with the primary network object, and UI elements
+  
+   */
+
+  const izPrimaryGraph = network.check_network_option(
+    options,
+    "secondary",
+    true,
+    false
+  );
+
+  var self = new HTX.HIVTxNetwork(json, button_bar_ui, null, !izPrimaryGraph);
 
   self.process_multiple_sequences();
 
@@ -184,18 +199,6 @@ var hivtrace_cluster_network_graph = function (
     options,
     "cluster-table-columns",
     null
-  );
-
-  /** Not primary networks are individual cluster/subcluster views.
-      They don't interfere with the primary network object, and UI elements
-  
-   */
-
-  self.isPrimaryGraph = network.check_network_option(
-    options,
-    "secondary",
-    true,
-    false
   );
 
   self.parent_graph_object = network.check_network_option(
@@ -1894,7 +1897,6 @@ var hivtrace_cluster_network_graph = function (
       } else {
         cluster_nodes = self._extract_nodes_by_id(cluster_id);
       }
-
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
       ).on("click", (d) => {
@@ -3874,7 +3876,7 @@ var hivtrace_cluster_network_graph = function (
 
       self.draw_node_table(
         null,
-        null,
+        node_list,
         [table_headers],
         table_rows,
         container,
@@ -4827,12 +4829,13 @@ var hivtrace_cluster_network_graph = function (
     ) {
       self.legend_svg
         .append("g")
-        .classed("hiv-trace-legend multi_sequence", true)
+        .classed("hiv-trace-legend", true)
         .attr("transform", "translate(0," + offset + ")")
         .append("circle")
         .attr("cx", "8")
         .attr("cy", "-4")
         .attr("r", "8")
+        .classed("multi_sequence", true)
         .style("fill", "none");
       self.legend_svg
         .append("g")
@@ -6033,7 +6036,248 @@ var hivtrace_cluster_network_graph = function (
       }
 
       if (self._is_CDC_) {
-        self.draw_extended_node_table(self.aggregate_indvidual_level_records());
+        self.node_search_div = self.get_ui_element_selector_by_role(
+          "node_search_div",
+          true
+        );
+
+        if (self.node_search_div && self.isPrimaryGraph) {
+          const compute_type = (t, d) => {
+            if (t == "String") return "string";
+            if (t == "Number") return d.is_integer ? "integer" : "double";
+            if (t == "Date") return "date";
+            return "string";
+          };
+
+          self.node_search_attributes =
+            self._extract_exportable_attributes(false);
+
+          self.qb_filter_def = _.sortBy(
+            _.map(self.node_search_attributes, (d) => {
+              let def = {
+                id: d.raw_attribute_key,
+                label: d.label,
+                type: compute_type(d.type, d),
+              };
+
+              if (def.type == "date") {
+                def.plugin = "datepicker";
+                def.plugin_config = {
+                  format: "yyyy/mm/dd",
+                  todayBtn: "linked",
+                  todayHighlight: true,
+                  autoclose: true,
+                };
+                def.operators = [
+                  "equal",
+                  "not equal",
+                  "less",
+                  "less_or_equal",
+                  "greater",
+                  "greater_or_equal",
+                ];
+              } else {
+                if (def.type == "string") {
+                  def.operators = [
+                    "equal",
+                    "not equal",
+                    "contains",
+                    "begins_with",
+                    "ends_with",
+                    "is_empty",
+                    "is_not_empty",
+                  ];
+                } else if (def.type == "integer" || def.type == "double") {
+                  def.operators = [
+                    "equal",
+                    "not equal",
+                    "less",
+                    "less_or_equal",
+                    "greater",
+                    "greater_or_equal",
+                    "between",
+                  ];
+                }
+              }
+
+              return def;
+            }),
+            (d) => d.label
+          );
+
+          let query_buttons = d3
+            .select(self.node_search_div)
+            .selectAll(
+              '[data-hivtrace-ui-role="node-selector-search-buttonbar"]'
+            );
+
+          if (query_buttons.empty()) {
+            d3.select(self.node_search_div)
+              .append("div")
+              .classed("alert alert-info alert-dismissible alert-small", true)
+              .text(
+                "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
+              )
+              .append("button")
+              .classed("close", true)
+              .attr("data-dismiss", "alert")
+              .append("span")
+              .html("&times;");
+
+            /*
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+                */
+
+            query_buttons = d3
+              .select(self.node_search_div)
+              .append("div")
+              .classed("btn-group btn-group-sm", true)
+              .attr("data-hivtrace-ui-role", "node-selector-search-buttonbar");
+            self.node_query_button_reset = query_buttons
+              .append("button")
+              .text("Reset")
+              .classed("btn btn-warning", true);
+            self.node_query_button_search = query_buttons
+              .append("button")
+              .text("Search")
+              .classed("btn btn-primary", true);
+          }
+
+          $(self.node_search_div).queryBuilder({
+            plugins: [
+              "filter-description",
+              "unique-filter",
+              "bt-tooltip-errors",
+              "invert",
+              "not-group",
+            ],
+            filters: self.qb_filter_def,
+          });
+
+          self.process_search_field = (value, condition) => {
+            switch (condition.type) {
+              case "string": {
+                if (!value) value = "";
+                value = value.toLowerCase();
+                switch (condition.operator) {
+                  case "equal":
+                    return value == condition.value;
+                  case "not equal":
+                    return value != condition.value;
+                  case "contains":
+                    return value.indexOf(condition.value) >= 0;
+                  case "begins_with":
+                    return value.indexOf(condition.value) == 0;
+                  case "ends_with":
+                    return (
+                      value.indexOf(condition.value) ==
+                      Math.max(0, value.length - condition.value.length)
+                    );
+                  case "is_not_empty":
+                    return value.length > 0;
+                  case "is_empty":
+                    return value.length == 0;
+                }
+                break;
+              }
+              case "date":
+              case "integer":
+              case "double": {
+                if (!value) return false;
+                switch (condition.operator) {
+                  case "equal":
+                    return value == condition.value;
+                  case "not equal":
+                    return value != condition.value;
+                  case "less":
+                    return value < condition.value;
+                  case "less_or_equal":
+                    return value <= condition.value;
+                  case "greater":
+                    return value > condition.value;
+                  case "greater_or_equal":
+                    return value >= condition.value;
+                  case "between":
+                    return (
+                      value >= condition.value[0] && value <= condition.value[1]
+                    );
+                }
+                break;
+              }
+            }
+            return false;
+          };
+
+          self.process_search = (data, rules) => {
+            let rule_results;
+            if (rules.rules) {
+              rule_results = _.map(rules.rules, (r) => {
+                return self.process_search(data, r);
+              });
+            } else {
+              return self.process_search_field(
+                self.attribute_node_value_by_id(
+                  data,
+                  rules.id,
+                  rules.type == "number"
+                ),
+                rules
+              );
+            }
+
+            if (rules.condition == "AND") {
+              rule_results = _.every(rule_results, (d) => d);
+            } else if (rules.condition == "OR") {
+              rule_results = _.some(rule_results, (d) => d);
+            } else {
+              rule_results = false;
+            }
+
+            return rules.not ? !rule_results : rule_results;
+          };
+
+          self.rule_lc = (rules) => {
+            if (rules.rules) {
+              _.each(rules.rules, (r) => {
+                self.rule_lc(r);
+              });
+            } else {
+              if (rules.value) {
+                if (rules.type == "string") {
+                  rules.value = rules.value.toLowerCase();
+                } else if (rules.type == "date") {
+                  rules.value = timeDateUtil.DateViewNodeSearch.parse(
+                    rules.value
+                  );
+                }
+              }
+            }
+          };
+
+          if (!self.aggregate_entity_data) {
+            self.aggregate_entity_data =
+              self.aggregate_indvidual_level_records();
+          }
+
+          self.node_query_button_reset.on("click", (d) =>
+            $(self.node_search_div).queryBuilder("reset")
+          );
+          self.node_query_button_search.on("click", (d) => {
+            var result = $(self.node_search_div).queryBuilder("getRules");
+            if (!$.isEmptyObject(result)) {
+              self.rule_lc(result);
+              self.draw_extended_node_table(
+                _.filter(self.aggregate_entity_data, (d) =>
+                  self.process_search(d, result)
+                )
+              );
+            }
+          });
+        }
+
+        self.draw_extended_node_table([]);
       } else {
         self.draw_node_table(self.extra_node_table_columns);
       }
@@ -7906,7 +8150,7 @@ var hivtrace_cluster_network_graph = function (
   var l_scale = 5000, // link scale
     graph_data = self.json, // the raw JSON network object
     max_points_to_render = 1536,
-    max_nodes_to_show = 16384,
+    max_nodes_to_show = 4096,
     singletons = 0,
     open_cluster_queue = [],
     currently_displayed_objects,
