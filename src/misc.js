@@ -771,7 +771,7 @@ while (len--) {
     }
     node.visited = true;
 
-    var N = adjacency[node.id].length;
+    var N = adjacency[node.id] ? adjacency[node.id].length : 0;
     while (N--) {
       let neighbor = adjacency[node.id][N];
       if (!neighbor[0].visited) {
