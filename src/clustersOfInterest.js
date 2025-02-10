@@ -612,7 +612,11 @@ function open_editor(
         const seqs_to_add = [];
 
         if (self.has_multiple_sequences) {
-          seqs_to_add.push(...self.primary_key_list[node.id]);
+          if (node.id in self.primary_key_list) {
+            seqs_to_add.push(...self.primary_key_list[node.id]);
+          } else {
+            seqs_to_add.push(node);
+          }
         } else {
           seqs_to_add.push(node);
         }
@@ -673,8 +677,13 @@ function open_editor(
           }
         });
 
+        nodes_to_add = _.flatten(
+          _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
+        );
+
         _.each(nodes_to_add, (n) => {
           if (!(n in existing_ids) && n in valid_ids) {
+            console.log(n);
             panel_object._append_node(valid_ids[n]);
             existing_ids[n] = 1;
             need_update = true;
