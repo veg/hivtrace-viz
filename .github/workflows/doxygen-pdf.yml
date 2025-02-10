@@ -35,7 +35,7 @@ jobs:
           cp ./docs/latex/refman.pdf ./out/refman.pdf
 
       # Step 7: Upload the PDF as an artifact for download from the Actions tab
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Doxygen-PDF
           path: out/refman.pdf
