@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: globals.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: globals.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+    Combined definitions and presets for various network components.
+    
+    
+*/
+
+var d3 = require("d3"),
+  _ = require("underscore");
+
+const CategoricalBase = [
+  "#a6cee3",
+  "#1f78b4",
+  "#b2df8a",
+  "#33a02c",
+  "#fb9a99",
+  "#e31a1c",
+  "#fdbf6f",
+  "#ff7f00",
+  "#cab2d6",
+  "#6a3d9a",
+  "#ffff99",
+  "#b15928",
+];
+
+/**
+    CategoricalBase:
+    The default set of colors used for displaying colors of categorical attributes
+*/
+
+const Categorical = [];
+
+_.each([0, -0.8], (k) => {
+  _.each(CategoricalBase, (s) => {
+    Categorical.push(d3.rgb(s).darker(k).toString());
+  });
+});
+
+/**
+    Categorical:
+    Expanded color range using darker shades based on `CategoricalBase`
+*/
+
+const MaximumValuesInCategories = Categorical.length;
+
+/**
+    MaximumValuesInCategories:
+    Maximum # of distinct values that can be rendered for categorical variables
+*/
+
+const EdgeColorBase = ["#000000", "#aaaaaa"];
+/**
+    EdgeColorBase:
+    The default color range for shading network EDGES
+*/
+
+const PresetColorSchemes = {
+  sex_trans: {
+    "MSM-Male": "#1f78b4",
+    "MMSC-Male": "#FFBF00",
+    "MSM-Unknown sex": "#1f78b4",
+    "MMSC-Unknown sex": "#FFBF00",
+    "Heterosexual Contact-Male": "#AAFF00",
+    "Heterosexual Contact-Female": "#AAFF00",
+    "Heterosexual Contact-Unknown sex": "#AAFF00",
+    "IDU-Male": "#0096FF",
+    "MSM &amp; IDU-Male": "#33a02c",
+    "MMSC &amp; IDU-Unknown sex": "#0096FF",
+    "MMSC &amp; IDU-Male": "#FFBF00",
+    "IDU-Female": "#0096FF",
+    "IDU-Unknown sex": "#0096FF",
+    "Other/Unknown-Male": "#636363",
+    "Other/Unknown-Female": "#636363",
+    "Other-Male": "#636363",
+    "Other-Female": "#636363",
+    Missing: "#636363",
+    "": "#636363",
+    "Other/Unknown-Unknown sex": "#636363",
+    Perinatal: "#D2042D",
+    "Other/Unknown-Child": "#D2042D",
+    "Other-Child": "#D2042D",
+  },
+
+  race_cat: {
+    Asian: "#1f77b4",
+    "Black/African American": "#bcbd22",
+    "Hispanic/Latino": "#9467bd",
+    "American Indian/Alaska Native": "#2ca02c",
+    "Native Hawaiian/Other Pacific Islander": "#17becf",
+    "Multiple Races": "#e377c2",
+    Multiracial: "#e377c2",
+    "Multiple races": "#e377c2",
+    "Unknown race": "#999",
+    Missing: "#999",
+    missing: "#999",
+    White: "#d62728",
+  },
+  sex_birth: {
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
+  },
+  birth_sex: {
+    Male: "#FF6700",
+    Female: "#50c878",
+    Unknown: "#999",
+  },
+
+  gender_identity: {
+    Woman: "#AAFF00",
+    "Transgender woman": "#228B22",
+    Man: "#FFBF00",
+    "Transgender man": "#FF5F1F",
+    "Declined to answer": "#FAFA33",
+    "Additional gender identity": "#D2042D",
+    Missing: "#999",
+    Unknown: "#999",
+  },
+};
+
+/**
+    PresetColorSchemes:
+    Predefined (hard-coded) color schemes for specific attribute fields.
+    Keys are exactly matched by categorical variable names
+    These should be updated if a specific attribute needs to use a particular color scheme for value rendering 
+*/
+
+const PresetShapeSchemes = {
+  birth_sex: {
+    Male: "square",
+    Female: "ellipse",
+    Missing: "diamond",
+    missing: "diamond",
+    Unknown: "diamond",
+  },
+  sex_birth: {
+    Male: "square",
+    Female: "ellipse",
+    Missing: "diamond",
+    missing: "diamond",
+    Unknown: "diamond",
+  },
+  gender_identity: {
+    Man: "square",
+    Woman: "ellipse",
+    "Transgender man": "hexagon",
+    "Transgender woman": "circle",
+    "Additional gender identity": "pentagon",
+    Unknown: "diamond",
+    "Declined to answer": "diamond",
+  },
+  race_cat: {
+    Asian: "hexagon",
+    "Black/African American": "square",
+    "Hispanic/Latino": "triangle",
+    "American Indian/Alaska Native": "pentagon",
+    "Native Hawaiian/Other Pacific Islander": "octagon",
+    "Multiple Races": "diamond",
+    "Unknown race": "diamond",
+    Missing: "diamond",
+    missing: "diamond",
+    White: "ellipse",
+  },
+  current_gender: {
+    Male: "square",
+    Female: "ellipse",
+    "Transgender-Male to Female": "hexagon",
+    "Transgender-Female to Male": "pentagon",
+    "Additional Gender Identity": "diamond",
+    Unknown: "diamond",
+    Missing: "diamond",
+    missing: "diamond",
+  },
+};
+
+/**
+    PresetShapeSchemes:
+    Predefined (hard-coded) shape schemes for specific attribute fields.
+    Keys are exactly matched by categorical variable names
+    These should be updated if a specific attribute needs to use a particular shape scheme for value rendering 
+*/
+
+const SequentialColor = {
+  2: ["#feb24c", "#e31a1c"],
+  3: ["#ffeda0", "#feb24c", "#f03b20"],
+  4: ["#ffffb2", "#fecc5c", "#fd8d3c", "#e31a1c"],
+  5: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
+  6: ["#ffffb2", "#fed976", "#feb24c", "#fd8d3c", "#f03b20", "#bd0026"],
+  7: [
+    "#ffffb2",
+    "#fed976",
+    "#feb24c",
+    "#fd8d3c",
+    "#fc4e2a",
+    "#e31a1c",
+    "#b10026",
+  ],
+  8: [
+    "#ffffcc",
+    "#ffeda0",
+    "#fed976",
+    "#feb24c",
+    "#fd8d3c",
+    "#fc4e2a",
+    "#e31a1c",
+    "#b10026",
+  ],
+  9: [
+    "#ffffcc",
+    "#ffeda0",
+    "#fed976",
+    "#feb24c",
+    "#fd8d3c",
+    "#fc4e2a",
+    "#e31a1c",
+    "#bd0026",
+    "#800026",
+  ],
+};
+
+/**
+    SequentialColor:
+    The default color ranges for a fixed number of values
+*/
+
+const ShapeOrdering = [
+  "circle",
+  "square",
+  "hexagon",
+  "diamond",
+  "cross",
+  "octagon",
+  "ellipse",
+  "pentagon",
+];
+
+/**
+    ShapeOrdering:
+    The range to which values for categorical/ordinal variables will be mapped using 
+    the "Shape" dropdown
+*/
+
+const CDCCOIKind = [
+  "01 state/local molecular cluster analysis",
+  "02 national molecular cluster analysis",
+  "03 state/local time-space cluster analysis",
+  "04 national time-space cluster analysis",
+  "05 provider notification",
+  "06 partner services notification",
+  "07 other",
+];
+
+/**
+    CDCCOIKind:
+    Available creation options for Clusters of Interest
+*/
+
+const CDCCOITrackingOptions = [
+  "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+  "02. Add cases (regardless of HIV diagnosis date) linked at 0.5% to a member in this cluster of interest",
+  "03. Add cases diagnosed in the past 3 years and linked at 1.5% to a member in this cluster of interest",
+  "04. Add cases (regardless of HIV diagnosis date) linked at 1.5% to a member in this cluster of interest",
+  "05. Do not add cases to this cluster of interest. I do not want to monitor growth in this cluster of interest over time.",
+];
+
+/**
+    CDCCOITrackingOptions:
+    Available tracking options for Clusters of Interest
+    Used as drop-downs for COI editors and automatic filling 
+*/
+
+const CDCCOICanAutoExpand = {};
+CDCCOICanAutoExpand[CDCCOIKind[0]] = true;
+
+/**
+    CDCCOICanAutoExpand:
+    The types of tracking modes which are subject to automatic growth tracking
+*/
+
+const CDCCOITrackingOptionsDefault = CDCCOITrackingOptions[0];
+
+/**
+    CDCCOITrackingOptionsDefault:
+    The default tracking option assigned to COI
+*/
+
+const CDCCOITrackingOptionsNone = CDCCOITrackingOptions[4];
+
+/**
+    CDCCOITrackingOptionsNone:
+    The "no-tracking" option assigned for COI
+*/
+
+const CDCCOITrackingOptionsDistanceFilter = {};
+CDCCOITrackingOptionsDistanceFilter[CDCCOITrackingOptions[0]] = (e, d) =>
+  e.length &lt; 0.005;
+CDCCOITrackingOptionsDistanceFilter[CDCCOITrackingOptions[1]] = (e, d) =>
+  e.length &lt; 0.005;
+CDCCOITrackingOptionsDistanceFilter[CDCCOITrackingOptions[2]] = (e, d) =>
+  e.length &lt; 0.015;
+CDCCOITrackingOptionsDistanceFilter[CDCCOITrackingOptions[3]] = (e, d) =>
+  e.length &lt; 0.015;
+
+/**
+    CDCCOITrackingOptionsFilter:
+    A filtering option is applied to cluster edges when computing COI membership under different tracking options
+    Selects edges of different lengths (0.5% vs 1.5%)
+*/
+
+const CDCCOITrackingOptionsDateFilter = {};
+CDCCOITrackingOptionsDateFilter[CDCCOITrackingOptions[0]] = 36;
+CDCCOITrackingOptionsDateFilter[CDCCOITrackingOptions[1]] = 100000;
+CDCCOITrackingOptionsDateFilter[CDCCOITrackingOptions[2]] = 36;
+CDCCOITrackingOptionsDateFilter[CDCCOITrackingOptions[3]] = 100000;
+
+/**
+    CDCCOITrackingOptionsDateFilter:
+    A filtering option applied to cluster nodes when computing COI membership under different tracking options
+    Specifies the maximum number of MONTHS (relative to the reference data) that a node age must fall into
+*/
+
+const CDCCOIConciseTrackingOptions = {};
+CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[0]] =
+  "3 years, 0.5% distance";
+CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[1]] = "0.5% distance";
+CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[2]] =
+  "3 years, 1.5% distance";
+CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[3]] = "1.5% distance";
+CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[4]] = "None";
+
+/**
+    CDCCOIConciseTrackingOptions:
+    Available shorter tracking options for Clusters of Interest
+    Used for COI exports
+*/
+
+const CDCCOINodeKind = [
+  "01 through analysis/notification",
+  "02 through investigation",
+];
+
+/**
+    CDCCOINodeKind:
+    Available options for how a COI member was identified
+    Used as drop-downs for COI editors and automatic filling 
+*/
+
+const CDCCOICreatedBySystem = "System";
+/**
+    CDCCOICreatedBySystem:
+    The value of "createdBy" in a COI record when the COI was created by the system (automatically)
+*/
+
+const CDCCOICreatedManually = "Manual";
+
+/**
+    CDCCOICreatedManually:
+    The value of "createdBy" in a COI record when the COI was created manually
+*/
+
+const CDCJurisdictionCodes = {
+  alabama: "al",
+  alaska: "ak",
+  americansamoa: "as",
+  arizona: "az",
+  arkansas: "ar",
+  california: "ca",
+  colorado: "co",
+  connecticut: "ct",
+  delaware: "de",
+  districtofcolumbia: "dc",
+  federatedstatesofmicronesia: "fm",
+  florida: "fl",
+  georgia: "ga",
+  guam: "gu",
+  hawaii: "hi",
+  houston: "hx",
+  idaho: "id",
+  illinois: "il",
+  indiana: "in",
+  iowa: "ia",
+  kansas: "ks",
+  kentucky: "ky",
+  louisiana: "la",
+  maine: "me",
+  marshallislands: "mh",
+  maryland: "md",
+  massachusetts: "ma",
+  michigan: "mi",
+  minnesota: "mn",
+  mississippi: "ms",
+  missouri: "mo",
+  montana: "mt",
+  nebraska: "ne",
+  nevada: "nv",
+  newhampshire: "nh",
+  newjersey: "nj",
+  newmexico: "nm",
+  newyorkstate: "ny",
+  nyc: "nx",
+  northcarolina: "nc",
+  north_dakota: "nd",
+  northernmarianaislands: "mp",
+  ohio: "oh",
+  oklahoma: "ok",
+  oregon: "or",
+  palau: "pw",
+  pennsylvania: "pa",
+  puertorico: "pr",
+  rhodeisland: "ri",
+  southcarolina: "sc",
+  southdakota: "sd",
+  tennessee: "tn",
+  texas: "tx",
+  utah: "ut",
+  vermont: "vt",
+  virginislands: "vi",
+  virginia: "va",
+  washington: "wa",
+  washingtondc: "dc",
+  westvirginia: "wv",
+  wisconsin: "wi",
+  wyoming: "wy",
+  chicago: "cx",
+  philadelphia: "px",
+  losangeles: "lx",
+  sanfrancisco: "sx",
+  republicofpalau: "pw",
+  "u.s.virginislands": "vi",
+};
+
+/**
+    CDCJurisdictionCodes:
+    Mapping from full names to two-letter codes for various Secure HIV-TRACE jurisdictions
+*/
+
+const CDCJurisdictionLowMorbidity = new Set([
+  "alaska",
+  "delaware",
+  "hawaii",
+  "idaho",
+  "iowa",
+  "kansas",
+  "maine",
+  "montana",
+  "nebraska",
+  "new hampshire",
+  "newhampshire",
+  "new mexico",
+  "newmexico",
+  "north dakota",
+  "northdakota",
+  "rhode island",
+  "rhodeisland",
+  "south dakota",
+  "southdakota",
+  "utah",
+  "vermont",
+  "virgin islands",
+  "virginislands",
+  "west virginia",
+  "westvirginia",
+  "wyoming",
+]);
+
+/**
+    CDCJurisdictionLowMorbidity:
+    The set of low-morbidity jurisdictions for Secure HIV TRACE
+*/
+
+const CDCCOIKindAutomaticCreation = CDCCOIKind[0];
+
+/**
+    CDCCOIKindAutomaticCreation:
+    The kind of COI that is automatically created by the system
+*/
+
+const CDCCOINodeKindDefault = CDCCOINodeKind[0];
+
+/**
+    CDCCOINodeKindDefault:
+    The method of node identification used by default (and it automatically created COI)
+*/
+
+const CDCNPMember = "Ever in national priority clusterOI?";
+
+/**
+    CDCNPMember:
+    The label for the auto-generated node attribute (ever in NP CoI)
+*/
+
+const missing = {
+  color: "#999",
+  opacity: "0.1",
+  label: __("general")["missing"],
+};
+
+/**
+    missing:
+    Values to use when displaying missing values
+*/
+
+const formats = {
+  FloatFormat: d3.format(",.2r"),
+  PercentFormat: d3.format(",.3p"),
+  PercentFormatShort: d3.format(".2p"),
+  DotFormatPadder: d3.format("08d"),
+};
+
+/**
+    formats:
+    Various formatters for numerical values
+*/
+
+const network = {
+  GraphAttrbuteID: "patient_attribute_schema",
+  NodeAttributeID: "patient_attributes",
+  ReducedValue: "Different (other) value",
+  ContinuousColorStops: 9,
+  WarnExecutiveMode: "This feature is not available in the executive mode.",
+  AliasedSequencesID: "aliased_sequences",
+};
+
+/**
+    network:
+    Attributes and string constants for the network object
+*/
+
+const SubclusterSeparator = ".";
+/**
+    the character used to define subclusters, e.g. the '.' in 2.13
+*/
+
+module.exports = {
+  Categorical,
+  CategoricalBase,
+  CDCCOICanAutoExpand,
+  CDCCOIConciseTrackingOptions,
+  CDCCOICreatedBySystem,
+  CDCCOICreatedManually,
+  CDCCOIKind,
+  CDCCOIKindAutomaticCreation,
+  CDCCOINodeKind,
+  CDCCOINodeKindDefault,
+  CDCCOITrackingOptions,
+  CDCCOITrackingOptionsDateFilter,
+  CDCCOITrackingOptionsDefault,
+  CDCCOITrackingOptionsDistanceFilter,
+  CDCCOITrackingOptionsNone,
+  CDCJurisdictionCodes,
+  CDCJurisdictionLowMorbidity,
+  CDCNPMember,
+  EdgeColorBase,
+  formats,
+  MaximumValuesInCategories,
+  missing,
+  network,
+  PresetColorSchemes,
+  PresetShapeSchemes,
+  SequentialColor,
+  ShapeOrdering,
+  SubclusterSeparator,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HIVTxNetwork.html">HIVTxNetwork</a></li><li><a href="hivtrace_generate_svg_polygon.html">hivtrace_generate_svg_polygon</a></li></ul><h3>Global</h3><ul><li><a href="global.html#CDCCOICanAutoExpand">CDCCOICanAutoExpand</a></li><li><a href="global.html#CDCCOIConciseTrackingOptions">CDCCOIConciseTrackingOptions</a></li><li><a href="global.html#CDCCOICreatedBySystem">CDCCOICreatedBySystem</a></li><li><a href="global.html#CDCCOICreatedManually">CDCCOICreatedManually</a></li><li><a href="global.html#CDCCOIKind">CDCCOIKind</a></li><li><a href="global.html#CDCCOIKindAutomaticCreation">CDCCOIKindAutomaticCreation</a></li><li><a href="global.html#CDCCOINodeKind">CDCCOINodeKind</a></li><li><a href="global.html#CDCCOINodeKindDefault">CDCCOINodeKindDefault</a></li><li><a href="global.html#CDCCOITrackingOptions">CDCCOITrackingOptions</a></li><li><a href="global.html#CDCCOITrackingOptionsDateFilter">CDCCOITrackingOptionsDateFilter</a></li><li><a href="global.html#CDCCOITrackingOptionsDefault">CDCCOITrackingOptionsDefault</a></li><li><a href="global.html#CDCCOITrackingOptionsDistanceFilter">CDCCOITrackingOptionsDistanceFilter</a></li><li><a href="global.html#CDCCOITrackingOptionsNone">CDCCOITrackingOptionsNone</a></li><li><a href="global.html#CDCJurisdictionCodes">CDCJurisdictionCodes</a></li><li><a href="global.html#CDCJurisdictionLowMorbidity">CDCJurisdictionLowMorbidity</a></li><li><a href="global.html#CDCNPMember">CDCNPMember</a></li><li><a href="global.html#Categorical">Categorical</a></li><li><a href="global.html#DateFormats">DateFormats</a></li><li><a href="global.html#DateUpperBoundYear">DateUpperBoundYear</a></li><li><a href="global.html#DateViewFormat">DateViewFormat</a></li><li><a href="global.html#DateViewFormatClusterCreate">DateViewFormatClusterCreate</a></li><li><a href="global.html#DateViewFormatShort">DateViewFormatShort</a></li><li><a href="global.html#DateViewFormatSlider">DateViewFormatSlider</a></li><li><a href="global.html#EdgeColorBase">EdgeColorBase</a></li><li><a href="global.html#MaximumValuesInCategories">MaximumValuesInCategories</a></li><li><a href="global.html#PresetColorSchemes">PresetColorSchemes</a></li><li><a href="global.html#PresetShapeSchemes">PresetShapeSchemes</a></li><li><a href="global.html#SequentialColor">SequentialColor</a></li><li><a href="global.html#ShapeOrdering">ShapeOrdering</a></li><li><a href="global.html#SubclusterSeparator">SubclusterSeparator</a></li><li><a href="global.html#_action_drop_down">_action_drop_down</a></li><li><a href="global.html#add_a_sortable_table">add_a_sortable_table</a></li><li><a href="global.html#b64toBlob">b64toBlob</a></li><li><a href="global.html#cluster_time_scale">cluster_time_scale</a></li><li><a href="global.html#collapseLargeCategories">collapseLargeCategories</a></li><li><a href="global.html#colorPickerInput">colorPickerInput</a></li><li><a href="global.html#colorPickerInputContinuous">colorPickerInputContinuous</a></li><li><a href="global.html#colorStops">colorStops</a></li><li><a href="global.html#copyToClipboard">copyToClipboard</a></li><li><a href="global.html#d3">d3</a></li><li><a href="global.html#datamonkey_describe_vector">datamonkey_describe_vector</a></li><li><a href="global.html#datamonkey_export_csv_button">datamonkey_export_csv_button</a></li><li><a href="global.html#datamonkey_export_handler">datamonkey_export_handler</a></li><li><a href="global.html#datamonkey_export_json_button">datamonkey_export_json_button</a></li><li><a href="global.html#datamonkey_save_image">datamonkey_save_image</a></li><li><a href="global.html#draw_priority_set_table">draw_priority_set_table</a></li><li><a href="global.html#edge_typer">edge_typer</a></li><li><a href="global.html#ensure_node_attributes_exist">ensure_node_attributes_exist</a></li><li><a href="global.html#exportColorScheme">exportColorScheme</a></li><li><a href="global.html#filter_parse">filter_parse</a></li><li><a href="global.html#filter_table">filter_table</a></li><li><a href="global.html#filter_table_by_column_handler">filter_table_by_column_handler</a></li><li><a href="global.html#format_a_cell">format_a_cell</a></li><li><a href="global.html#formats">formats</a></li><li><a href="global.html#getUniqueValues">getUniqueValues</a></li><li><a href="global.html#get_editor">get_editor</a></li><li><a href="global.html#get_ui_element_selector_by_role">get_ui_element_selector_by_role</a></li><li><a href="global.html#handle_cluster_click">handle_cluster_click</a></li><li><a href="global.html#handle_inline_confirm">handle_inline_confirm</a></li><li><a href="global.html#hiv_trace_export_table_to_text">hiv_trace_export_table_to_text</a></li><li><a href="global.html#hivtraceClusterGraphSummary">hivtraceClusterGraphSummary</a></li><li><a href="global.html#hivtrace_cluster_complete_clusters">hivtrace_cluster_complete_clusters</a></li><li><a href="global.html#hivtrace_cluster_depthwise_traversal">hivtrace_cluster_depthwise_traversal</a></li><li><a href="global.html#hivtrace_coi_timeseries">hivtrace_coi_timeseries</a></li><li><a href="global.html#hivtrace_compute_adjacency">hivtrace_compute_adjacency</a></li><li><a href="global.html#hivtrace_compute_adjacency_with_edges">hivtrace_compute_adjacency_with_edges</a></li><li><a href="global.html#hivtrace_compute_node_degrees">hivtrace_compute_node_degrees</a></li><li><a href="global.html#hivtrace_date_or_na_if_missing">hivtrace_date_or_na_if_missing</a></li><li><a href="global.html#hivtrace_generate_svg_symbol">hivtrace_generate_svg_symbol</a></li><li><a href="global.html#hivtrace_histogram">hivtrace_histogram</a></li><li><a href="global.html#hivtrace_histogram_distances">hivtrace_histogram_distances</a></li><li><a href="global.html#hivtrace_plot_cluster_dynamics">hivtrace_plot_cluster_dynamics</a></li><li><a href="global.html#hivtrace_render_histogram">hivtrace_render_histogram</a></li><li><a href="global.html#hivtrace_render_histogram_continuous">hivtrace_render_histogram_continuous</a></li><li><a href="global.html#hivtrace_render_scatterplot">hivtrace_render_scatterplot</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#missing">missing</a></li><li><a href="global.html#n_months_ago">n_months_ago</a></li><li><a href="global.html#network">network</a></li><li><a href="global.html#normalize_node_attributes">normalize_node_attributes</a></li><li><a href="global.html#open_editor">open_editor</a></li><li><a href="global.html#priority_groups_add_set">priority_groups_add_set</a></li><li><a href="global.html#priority_groups_check_name">priority_groups_check_name</a></li><li><a href="global.html#priority_set_inject_node_attibutes">priority_set_inject_node_attibutes</a></li><li><a href="global.html#priority_set_view">priority_set_view</a></li><li><a href="global.html#random_id">random_id</a></li><li><a href="global.html#secure_hiv_trace_subcluster_columns">secure_hiv_trace_subcluster_columns</a></li><li><a href="global.html#sort_table_by_column">sort_table_by_column</a></li><li><a href="global.html#sort_table_toggle_icon">sort_table_toggle_icon</a></li><li><a href="global.html#table_get_cell_value">table_get_cell_value</a></li><li><a href="global.html#unpack_compact_json">unpack_compact_json</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Feb 17 2025 15:34:25 GMT-0800 (Pacific Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

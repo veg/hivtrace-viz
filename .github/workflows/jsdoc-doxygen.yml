@@ -1,0 +1,83 @@
+name: Deploy Doxygen PDF and Update Docs
+on:
+  push:
+    branches: ["master"]
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: "docs"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 21
+
+      - name: Install JSDoc
+        run: npm install -g jsdoc
+
+      - name: Generate JSDoc
+        run: jsdoc -c jsdoc.json
+
+      - name: Copy JSDoc to output folder
+        run: |
+          mkdir jsdoc
+          cp -r ./docs/ jsdoc/
+
+      - name: Upload JSDoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: JSDoc
+          path: jsdoc/
+
+      - name: Install Doxygen
+        run: sudo apt-get install -y doxygen
+
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+
+      - name: Run Doxygen
+        run: doxygen Doxyfile
+
+      - name: Generate PDF using LaTeX Action
+        uses: xu-cheng/latex-action@v2
+        with:
+          working_directory: docs/latex/
+          root_file: refman.tex
+
+      - name: Copy PDF to output folder
+        run: |
+          mkdir doxygen
+          cp ./docs/latex/refman.pdf ./doxygen/hivtrace-viz-doxygen-docs.pdf
+
+      - name: Upload Doxygen Docs PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: Doxygen-PDF
+          path: doxygen/hivtrace-viz-doxygen-docs.pdf
+
+      - name: Push updated docs to master
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'action@github.com'
+          git add . 
+
+          # Check for changes
+          if git diff-index --quiet HEAD --; then
+            # No changes
+            echo "No changes to commit"
+          else
+            # Changes detected
+            git commit -m "Add offline mode zip"
+            git push origin master
+          fi
