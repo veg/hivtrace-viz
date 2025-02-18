@@ -28,6 +28,6 @@ The master branch of this repo should always be in sync with what is published t
 
 A basic JSDoc documentation of hivtrace-viz can be found at `docs/` and can be viewed by cloning the repository and opening `docs/index.html` in a browser (or running a basic web server in the `docs/` directory, e.g. `python -m http.server`).
 
-A PDF version of the documentation can be found at `docs/hivtrace-viz-doxygen-docs.pdf`.
+A Doxygen-based PDF version of the documentation can be found at `docs/hivtrace-viz-doxygen-docs.pdf`.
 
-This documentation is generated automatically using `jsdoc -c jsdoc.json` and ran automatically as part of the CI/CD pipeline (see `.github/workflows/jsdoc-doxygen.yml`).
+This documentation is generated automatically using `jsdoc -c jsdoc.json` and ran as part of the CI/CD pipeline (see `.github/workflows/jsdoc-doxygen.yml`).
