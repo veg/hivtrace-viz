@@ -55,9 +55,10 @@ jobs:
           working_directory: docs/latex/
           root_file: refman.tex
 
-      - name: Copy PDF to output folder
+      - name: Copy PDF to more visible location in docs and output folder
         run: |
           mkdir doxygen
+          cp ./docs/latex/refman.pdf ./docs/hivtrace-viz-doxygen-docs.pdf
           cp ./docs/latex/refman.pdf ./doxygen/hivtrace-viz-doxygen-docs.pdf
 
       - name: Upload Doxygen Docs PDF
@@ -70,7 +71,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'action@github.com'
-          git add . 
+          git add docs/
 
           # Check for changes
           if git diff-index --quiet HEAD --; then
@@ -78,6 +79,6 @@ jobs:
             echo "No changes to commit"
           else
             # Changes detected
-            git commit -m "Add offline mode zip"
+            git commit -m "Update JSDoc and Doxygen PDF"
             git push origin master
           fi
