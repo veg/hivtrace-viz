@@ -30,4 +30,4 @@ A basic JSDoc documentation of hivtrace-viz can be found at `docs/` and can be v
 
 A PDF version of the documentation can be found at `docs/hivtrace-viz-doxygen-docs.pdf`.
 
-This documentation is generated automatically using `jsdoc -c jsdoc.json` and ran automatically as part of the CI/CD pipeline (see `.github/workflows/jsdoc-doxygen.yml`).
+This documentation is generated automatically using JSDoc and Doxygen and ran automatically as part of the CI/CD pipeline (see `.github/workflows/jsdoc-doxygen.yml`). 
