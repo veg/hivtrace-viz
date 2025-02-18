@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: hivtrace_generate_svg_polygon</title>
+    <title>JSDoc: Source: timeDateUtil.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,307 +17,131 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: hivtrace_generate_svg_polygon</h1>
+    <h1 class="page-title">Source: timeDateUtil.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>hivtrace_generate_svg_polygon<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h2>
-        
-    
-</header>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var d3 = require("d3");
 
-<article>
-    <div class="container-overview">
-    
-        
+const _networkCDCDateField = "hiv_aids_dx_dt";
+const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
-    
+const DateViewFormatExport = d3.time.format("%m/%d/%Y");
 
-    
-    <h4 class="name" id="hivtrace_generate_svg_polygon"><span class="type-signature"></span>new hivtrace_generate_svg_polygon<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Creates and returns an SVG polygon generator.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>polygon</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Generates the SVG path for the polygon.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sides</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Gets or sets the number of sides of the polygon.
-  When called with a number > 2, sets the sides and returns the polygon generator.
-  When called without arguments, returns the current number of sides.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Returns the polygon generator function.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Gets or sets the size of the polygon.
-  When called with a number, sets the size and returns the polygon generator.
-  When called without arguments, returns the current size.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="misc.js.html">misc.js</a>, <a href="misc.js.html#line39">line 39</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-<h5>Requires:</h5>
-<ul>
-    <li>module:lodash</li>
-
-    <li>module:hivtrace_generate_svg_polygon_lookup</li>
-</ul>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    An object with methods to generate and manipulate an SVG polygon.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const polygonGenerator = hivtrace_generate_svg_polygon();
-const path = polygonGenerator();
-polygonGenerator.sides(8);
-polygonGenerator.size(100);</code></pre>
-
-
-
-    
-    </div>
-
-    
-
-    
-        <h3 class="subsection-title">Requires</h3>
-
-        <ul>
-            <li>module:lodash</li>
-        
-            <li>module:hivtrace_generate_svg_polygon_lookup</li>
-        </ul>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+const DateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
+/** this is currently used to display node addition dates to COI */
+
+const DateViewFormatShort = d3.time.format("%B %Y");
+/** Used to generate legend labels for date-valued attributes for network displayes*/
+
+const DateViewFormat = d3.time.format("%b %d, %Y");
+/** Used to generate pop-over labels for node displays, and COI views*/
+
+/** SLKP 20241029; add another acceptable data time format */
+
+const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
+/** List of accepted time formats for attribute values*/
+
+const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
+/** Used in many places where alpha-numerically sorted dates are desired*/
+
+const DateUpperBoundYear = new Date().getFullYear();
+/** Maximum year value (no future dates)*/
+
+const DateViewFormatClusterCreate = d3.time.format("%Y%m");
+/** used as a part of auto-named COI, e.g. NC_202105_44.1 */
+
+let cluster_time_scale;
+
+function init(options, isCDC) {
+  cluster_time_scale = options?.["cluster-time"];
+
+  if (isCDC &amp;&amp; !cluster_time_scale) {
+    cluster_time_scale = _networkCDCDateField;
+  }
+}
+
+function getClusterTimeScale() {
+  return cluster_time_scale;
+}
+
+function getCurrentDate() {
+  let cdate = new Date();
+  return cdate;
+}
+
+function getAncientDate() {
+  return new Date(1900, 0, 1);
+}
+
+/**
+ * Formats a date using a specified formatter, or returns "N/A" if the date is missing.
+
+ * @param {Date} date - The date object to be formatted.
+ * @param {Function} [formatter] - An optional formatter function used to format the date. If not provided, `DateViewFormatExport` is used.
+
+ * @returns {string} The formatted date string, or "N/A" if the date is missing.
+ */
+
+function hivtrace_date_or_na_if_missing(date, formatter) {
+  if (date) {
+    formatter = formatter || DateViewFormatExport;
+    return formatter(date);
+  }
+  return "N/A";
+}
+
+/**
+ * Calculates a date that is `months` months ago from a given reference date.
+
+ * @param {Date} reference_date - The reference date from which to calculate the past date.
+ * @param {number} months - The number of months to go back.
+
+ * @returns {Date} A new Date object representing the date `months` months ago from the reference date.
+*/
+
+function n_months_ago(reference_date, months) {
+  var past_date = new Date(reference_date);
+  var past_months = past_date.getMonth();
+  var diff_year = Math.floor(months / 12);
+  var left_over = months - diff_year * 12;
+
+  if (left_over > past_months) {
+    past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
+    past_date.setMonth(12 - (left_over - past_months));
+  } else {
+    past_date.setFullYear(past_date.getFullYear() - diff_year);
+    past_date.setMonth(past_months - left_over);
+  }
+
+  return past_date;
+}
+
+module.exports = {
+  hivtrace_date_or_na_if_missing,
+  _networkCDCDateField,
+  _networkTimeQuery,
+  getClusterTimeScale,
+  getCurrentDate,
+  getAncientDate,
+  DateFormats,
+  DateUpperBoundYear,
+  DateViewFormat,
+  DateViewFormatClusterCreate,
+  DateViewFormatMMDDYYY,
+  DateViewFormatShort,
+  DateViewFormatSlider,
+  n_months_ago,
+  init,
+};
+</code></pre>
+        </article>
+    </section>
 
 
 

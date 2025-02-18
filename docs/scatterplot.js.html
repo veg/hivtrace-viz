@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: hivtrace_generate_svg_polygon</title>
+    <title>JSDoc: Source: scatterplot.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,307 +17,135 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: hivtrace_generate_svg_polygon</h1>
+    <h1 class="page-title">Source: scatterplot.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>hivtrace_generate_svg_polygon<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h2>
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    
-    <h4 class="name" id="hivtrace_generate_svg_polygon"><span class="type-signature"></span>new hivtrace_generate_svg_polygon<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Creates and returns an SVG polygon generator.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>polygon</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Generates the SVG path for the polygon.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>sides</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Gets or sets the number of sides of the polygon.
-  When called with a number > 2, sets the sides and returns the polygon generator.
-  When called without arguments, returns the current number of sides.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Returns the polygon generator function.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Gets or sets the size of the polygon.
-  When called with a number, sets the size and returns the polygon generator.
-  When called without arguments, returns the current size.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="misc.js.html">misc.js</a>, <a href="misc.js.html#line39">line 39</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-<h5>Requires:</h5>
-<ul>
-    <li>module:lodash</li>
-
-    <li>module:hivtrace_generate_svg_polygon_lookup</li>
-</ul>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    An object with methods to generate and manipulate an SVG polygon.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const polygonGenerator = hivtrace_generate_svg_polygon();
-const path = polygonGenerator();
-polygonGenerator.sides(8);
-polygonGenerator.size(100);</code></pre>
-
-
-
-    
-    </div>
-
-    
-
-    
-        <h3 class="subsection-title">Requires</h3>
-
-        <ul>
-            <li>module:lodash</li>
-        
-            <li>module:hivtrace_generate_svg_polygon_lookup</li>
-        </ul>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var d3 = require("d3");
+
+/**
+ * Renders a scatter plot using D3.js.
+
+ * @param {Object[]} points - An array of data points, each with x and y coordinates (and optionally a title).
+ * @param {number} w - The width of the plot area.
+ * @param {number} h - The height of the plot area.
+ * @param {string} id - The ID of the HTML element where the plot will be rendered.
+ * @param {Object} labels - An object containing labels for the x and y axes.
+ * @param {boolean} [dates=false] - A flag indicating whether the x-axis should represent dates.
+
+ * @returns {void}
+ */
+
+function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
+  var _defaultFloatFormat = d3.format(",.2r");
+  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+
+  var margin = {
+      top: 10,
+      right: 10,
+      bottom: 100,
+      left: 100,
+    },
+    width = w - margin.left - margin.right,
+    height = h - margin.top - margin.bottom;
+
+  var x = (dates ? d3.time.scale() : d3.scale.linear())
+    .domain(d3.extent(points, (p) => p.x))
+    .range([0, width]);
+
+  var y = (dates ? d3.time.scale() : d3.scale.linear())
+    .domain(d3.extent(points, (p) => p.y))
+    .range([height, 0]);
+
+  var xAxis = d3.svg
+    .axis()
+    .scale(x)
+    .orient("bottom")
+    .tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
+
+  var yAxis = d3.svg
+    .axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
+
+  var histogram_svg = d3.select(id).selectAll("svg");
+
+  if (!histogram_svg.empty()) {
+    histogram_svg.remove();
+  }
+
+  histogram_svg = d3
+    .select(id)
+    .append("svg")
+    .attr("width", w)
+    .attr("height", h)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  points = histogram_svg.selectAll("circle").data(points);
+  points.enter().append("circle");
+
+  points
+    .attr("cx", (d) => x(d.x))
+    .attr("cy", (d) => y(d.y))
+    .attr("r", 3)
+    .classed("node scatter", true);
+
+  points.each(function (d) {
+    if ("title" in d) {
+      d3.select(this).append("title").text(d.title);
+    }
+  });
+
+  var x_axis = histogram_svg
+    .append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  x_axis
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .attr("dx", "-.5em")
+    .attr("dy", ".25em")
+    .style("text-anchor", "end");
+  x_axis
+    .append("text")
+    .text(labels.x)
+    .attr("transform", "translate(" + width + ",0)")
+    .attr("dy", "-1em")
+    .attr("text-anchor", "end");
+
+  var y_axis = histogram_svg
+    .append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(0," + 0 + ")")
+    .call(yAxis);
+
+  y_axis
+    .selectAll("text")
+    .attr("transform", "rotate(-45)")
+    .attr("dx", "-.5em")
+    .attr("dy", ".25em")
+    .style("text-anchor", "end");
+  y_axis
+    .append("text")
+    .text(labels.y)
+    .attr("transform", "rotate(-90)")
+    .attr("dy", "1em")
+    .attr("text-anchor", "end");
+}
+
+module.exports.scatterPlot = hivtrace_render_scatterplot;
+</code></pre>
+        </article>
+    </section>
 
 
 
