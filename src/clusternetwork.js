@@ -825,7 +825,9 @@ var hivtrace_cluster_network_graph = function (
           .attr("tabindex", "-1")
           .text((d) => "Add this node to the cluster of interest")
           .on("click", (d) => {
-            clustersOfInterest.get_editor().append_node(node.id, true);
+            clustersOfInterest
+              .get_editor()
+              .append_node(self.entity_id(node), true);
           });
       }
 
@@ -2146,8 +2148,8 @@ var hivtrace_cluster_network_graph = function (
                 sort: "value",
               },
               {
-                value: "Nodes",
-                help: "How many nodes are in this cluster of interest",
+                value: "Persons",
+                help: "How many persons are in this cluster of interest",
                 sort: "value",
               },
               {
@@ -2174,7 +2176,9 @@ var hivtrace_cluster_network_graph = function (
               current_node_objects = {};
               _.each(self.defined_priority_groups, (pg) => {
                 if (current_selection.has(pg.name)) {
-                  clusterOITotalNOdes += pg.nodes.length;
+                  clusterOITotalNOdes += self.unique_entity_list(
+                    pg.node_objects
+                  ).length;
                   _.each(pg.nodes, (n) => {
                     current_node_set.add(n.name);
                     current_node_objects[n.name] = {
@@ -2189,9 +2193,10 @@ var hivtrace_cluster_network_graph = function (
                   current_selection.size +
                   " clusterOI with " +
                   clusterOITotalNOdes +
-                  " nodes, creating a new clusterOI with " +
-                  current_node_set.size +
-                  " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
+                  " persons, creating a new clusterOI with " +
+                  self.unique_entity_list_from_ids([...current_node_set])
+                    .length +
+                  " persons. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
               );
               proceed_btn.attr("disabled", null);
             } else {
@@ -2210,7 +2215,11 @@ var hivtrace_cluster_network_graph = function (
               );
               clustersOfInterest
                 .get_editor()
-                .append_nodes([...current_node_set], current_node_objects);
+                .append_nodes(
+                  [...current_node_set],
+                  current_node_objects,
+                  true
+                );
             }
             $(modal.node()).modal("hide");
           };
@@ -2220,12 +2229,15 @@ var hivtrace_cluster_network_graph = function (
           var rows = [];
           _.each(self.defined_priority_groups, (pg) => {
             const my_overlaps = new Set();
-            _.each(pg.nodes, (n) => {
-              _.each([...self.priority_node_overlap[n.name]], (ps) => {
-                if (ps !== pg.name) {
-                  my_overlaps.add(ps);
+            _.each(pg.node_objects, (n) => {
+              _.each(
+                [...self.priority_node_overlap[self.entity_id(n)]],
+                (ps) => {
+                  if (ps !== pg.name) {
+                    my_overlaps.add(ps);
+                  }
                 }
-              });
+              );
             });
 
             rows.push([
@@ -2243,7 +2255,7 @@ var hivtrace_cluster_network_graph = function (
                 },
               },
               { value: pg.name },
-              { value: pg.nodes.length },
+              { value: self.unique_entity_list(pg.node_objects).length },
               {
                 value: [...my_overlaps],
                 format: (d) => d.join("<br>"),
@@ -4830,17 +4842,17 @@ var hivtrace_cluster_network_graph = function (
       self.legend_svg
         .append("g")
         .classed("hiv-trace-legend", true)
-        .attr("transform", "translate(0," + offset + ")")
+        .attr("transform", "translate(3," + (offset + 5) + ")")
         .append("circle")
-        .attr("cx", "8")
+        .attr("cx", "6")
         .attr("cy", "-4")
-        .attr("r", "8")
+        .attr("r", "6")
         .classed("multi_sequence", true)
         .style("fill", "none");
       self.legend_svg
         .append("g")
         .classed("hiv-trace-legend", true)
-        .attr("transform", "translate(20," + offset + ")")
+        .attr("transform", "translate(20," + (offset + 5) + ")")
         .append("text")
         .text("Represents >1 sequence");
       offset += 24;
@@ -4861,7 +4873,7 @@ var hivtrace_cluster_network_graph = function (
         .classed("legend", true)
         .style(
           "fill",
-          "url(#" + self.generate_cross_hatch_pattern("#ccc") + ")"
+          "url(#" + self.generate_cross_hatch_pattern("#cab") + ")"
         );
       self.legend_svg
         .append("g")
