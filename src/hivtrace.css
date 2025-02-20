@@ -1,17 +1,17 @@
 @keyframes selected_object_animation {
   from {
-    stroke-width: 1px;
-    stroke: #ccc;
+    stroke-width: 3px;
+    stroke: #350e6b;
   }
 
   50% {
     stroke-width: 5px;
-    stroke: #000;
+    stroke: #350e6b;
   }
 
   to {
-    stroke-width: 1px;
-    stroke: #ccc;
+    stroke-width: 3px;
+    stroke: #350e6b;
   }
 }
 
@@ -100,13 +100,13 @@ circle.cluster {
 }
 
 .link {
-  stroke: #aaaaaa;
+  stroke: #cccccc;
   stroke-width: 1.5px;
   fill: none;
 }
 
 .mspp-link {
-  stroke: #666666;
+  stroke: #aaaaaa;
   stroke-width: 2px;
   fill: none;
 }
@@ -194,8 +194,11 @@ circle.selected_object {
 g.multi_sequence,
 path.multi_sequence,
 circle.multi_sequence {
-  stroke-width: 3px;
+  stroke-width: 1px;
   stroke: #350e6b;
+  border-radius: 50%;
+  outline: 8px dotted black;
+  outline-offset: -0.2rem;
   /*stroke-dasharray: 10 1;*/
 }
 

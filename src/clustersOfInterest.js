@@ -655,7 +655,11 @@ function open_editor(
         }
       };
 
-      panel_object.append_nodes = function (nodes_to_add, existing_attributes) {
+      panel_object.append_nodes = function (
+        nodes_to_add,
+        existing_attributes,
+        mspp_raw
+      ) {
         if (!panel_object.can_add_nodes()) {
           return;
         }
@@ -667,6 +671,7 @@ function open_editor(
 
         let need_update = false;
         let valid_ids = {};
+
         _.each(self.json["Nodes"], (n) => {
           if (!existing_ids[n.id]) {
             if (existing_attributes) {
@@ -677,16 +682,19 @@ function open_editor(
           }
         });
 
-        nodes_to_add = _.flatten(
-          _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
-        );
+        if (!mspp_raw) {
+          nodes_to_add = _.flatten(
+            _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
+          );
+        }
 
         _.each(nodes_to_add, (n) => {
           if (!(n in existing_ids) && n in valid_ids) {
-            console.log(n);
             panel_object._append_node(valid_ids[n]);
             existing_ids[n] = 1;
             need_update = true;
+          } else {
+            console.log("***", n);
           }
         });
 

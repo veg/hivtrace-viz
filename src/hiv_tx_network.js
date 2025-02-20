@@ -675,9 +675,15 @@ class HIVTxNetwork {
   generate_cross_hatch_pattern(color) {
     let id = "id" + this.dom_prefix + "_diagonalHatch_" + color.substr(1, 10);
     if (this.network_svg.select("#" + id).empty()) {
-      this.network_svg
-        .append("defs")
-        .append("pattern")
+      function getComplementaryColor(backgroundColor) {
+        const color = d3.rgb(backgroundColor);
+        const luminance = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
+        return luminance > 128 ? "#000000" : "#ffffff";
+      }
+
+      let defs = this.network_svg.append("defs");
+
+      /*defs.append("pattern")
         .attr("id", id)
         .attr("patternUnits", "userSpaceOnUse")
         .attr("width", "2")
@@ -687,6 +693,29 @@ class HIVTxNetwork {
         .attr("d", "M -1,2 l 6,0")
         .attr("stroke", color)
         .attr("stroke-width", "3"); //this is actual shape for arrowhead
+        */
+
+      let pattern = defs
+        .append("pattern")
+        .attr("id", id)
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", "6")
+        .attr("height", "6")
+        .attr("patternTransform", "rotate(45)");
+
+      pattern
+        .append("rect")
+        .attr("width", "3")
+        .attr("height", "6")
+        .attr("fill", color)
+        .attr("transform", "translate(0,0)");
+
+      pattern
+        .append("rect")
+        .attr("width", "3")
+        .attr("height", "6")
+        .attr("fill", getComplementaryColor(color))
+        .attr("transform", "translate(3,0)");
     }
     return id;
   }
