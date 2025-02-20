@@ -79,6 +79,6 @@ jobs:
             echo "No changes to commit"
           else
             # Changes detected
-            git commit -m "Update JSDoc and Doxygen PDF"
+            git commit -m "Update Doxygen PDF"
             git push origin master
           fi
