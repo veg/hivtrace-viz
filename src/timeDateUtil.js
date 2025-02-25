@@ -66,7 +66,11 @@ function getAncientDate() {
 function hivtrace_date_or_na_if_missing(date, formatter) {
   if (date) {
     formatter = formatter || DateViewFormatExport;
-    return formatter(date);
+    try {
+      return formatter(date);
+    } catch {
+      console.log(date);
+    }
   }
   return "N/A";
 }
