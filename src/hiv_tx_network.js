@@ -1230,6 +1230,11 @@ class HIVTxNetwork {
             (nr) => this.entity_id_from_string(nr.name)
           );
 
+          const entity_to_g_records = _.groupBy(
+            _.filter(g.node_objects, (nr) => !exclude_nodes.has(nr.id)),
+            (nr) => this.entity_id_from_string(nr.id)
+          );
+
           return _.map(
             _.filter(entities, (gn) => {
               return (
@@ -1248,8 +1253,10 @@ class HIVTxNetwork {
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
                   entity_to_pg_records[eid][0].added
                 ),
-                sample_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-                  this.attribute_node_value_by_id(gn, "sample_dt")
+                sample_dt: d3.min(entity_to_g_records[eid], (g) =>
+                  timeDateUtil.hivtrace_date_or_na_if_missing(
+                    this.attribute_node_value_by_id(g, "sample_dt")
+                  )
                 ),
                 new_linked_case: this.priority_groups_is_new_node(
                   entity_to_pg_records[eid][0]
