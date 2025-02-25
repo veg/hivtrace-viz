@@ -542,6 +542,13 @@ function open_editor(
         $(grp_name_button.node()).trigger("input");
       }
 
+      panel_object.selectable_entities = self.has_multiple_sequences
+        ? _.map(self.primary_key_list, (n, k) => ({ id: k }))
+        : self.json["Nodes"];
+
+      //console.log (self.primary_key_list, selectable_entities);
+      //debugger;
+
       var auto_object = autocomplete(
         misc.get_ui_element_selector_by_role("priority-panel-nodeids"),
         { hint: false },
@@ -555,12 +562,14 @@ function open_editor(
               const pattern = new RegExp(escapeRegExp(query), "i");
               for (
                 var i = 0;
-                hits.length < 10 && i < self.json["Nodes"].length;
+                hits.length < 10 && i < panel_object.selectable_entities.length;
                 i++
               ) {
-                if (pattern.test(self.json["Nodes"][i].id)) {
-                  if (panel_object.can_add(self.json["Nodes"][i].id)) {
-                    hits.push(self.json["Nodes"][i].id);
+                if (pattern.test(panel_object.selectable_entities[i].id)) {
+                  if (
+                    panel_object.can_add(panel_object.selectable_entities[i].id)
+                  ) {
+                    hits.push(panel_object.selectable_entities[i].id);
                   }
                 }
               }
@@ -578,7 +587,7 @@ function open_editor(
       panel_object.validate_input = function (expression, skip_ui) {
         expression = expression || auto_object.autocomplete.getVal();
         const validator = _.filter(
-          self.json["Nodes"],
+          panel_object.selectable_entities,
           (n) => n.id === expression
         );
         if (validator.length === 1 && panel_object.can_add(validator[0].id)) {
@@ -599,7 +608,27 @@ function open_editor(
         if (!("_priority_set_kind" in node)) {
           node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
         }
-        panel_object.network_nodes.push(node);
+
+        const seqs_to_add = [];
+
+        if (self.has_multiple_sequences) {
+          if (node.id in self.primary_key_list) {
+            seqs_to_add.push(...self.primary_key_list[node.id]);
+          } else {
+            seqs_to_add.push(node);
+          }
+        } else {
+          seqs_to_add.push(node);
+        }
+        _.each(seqs_to_add, (node) => {
+          if (!("_priority_set_date" in node)) {
+            node["_priority_set_date"] = createdDate;
+          }
+          if (!("_priority_set_kind" in node)) {
+            node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
+          }
+        });
+        panel_object.network_nodes.push(...seqs_to_add);
       };
 
       panel_object.can_add_nodes = function () {
@@ -618,6 +647,7 @@ function open_editor(
         }
 
         var node_to_add = panel_object.validate_input(id, skip_ui);
+
         if (node_to_add) {
           panel_object._append_node(node_to_add);
           panel_object.table_handler(panel_object);
@@ -625,7 +655,11 @@ function open_editor(
         }
       };
 
-      panel_object.append_nodes = function (nodes_to_add, existing_attributes) {
+      panel_object.append_nodes = function (
+        nodes_to_add,
+        existing_attributes,
+        mspp_raw
+      ) {
         if (!panel_object.can_add_nodes()) {
           return;
         }
@@ -637,6 +671,7 @@ function open_editor(
 
         let need_update = false;
         let valid_ids = {};
+
         _.each(self.json["Nodes"], (n) => {
           if (!existing_ids[n.id]) {
             if (existing_attributes) {
@@ -647,11 +682,19 @@ function open_editor(
           }
         });
 
+        if (!mspp_raw) {
+          nodes_to_add = _.flatten(
+            _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
+          );
+        }
+
         _.each(nodes_to_add, (n) => {
           if (!(n in existing_ids) && n in valid_ids) {
             panel_object._append_node(valid_ids[n]);
             existing_ids[n] = 1;
             need_update = true;
+          } else {
+            console.log("***", n);
           }
         });
 
@@ -943,7 +986,6 @@ function open_editor(
           existing_set.nodes
         );
       }
-
       panel_object.table_handler(this);
     },
     dragit: {
@@ -1714,6 +1756,7 @@ function priority_set_view(self, priority_set, options) {
 
   let viewEnum = [];
   let dateID = {};
+
   _.each(pgDates, (d, i) => {
     if (d) {
       if (pgDates.length > maxColors) {

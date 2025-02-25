@@ -3,6 +3,7 @@ const _ = require("underscore");
 const misc = require("./misc.js");
 const timeDateUtil = require("./timeDateUtil.js");
 const nodesTab = require("./nodesTab.js");
+const kGlobals = require("./globals.js");
 
 const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
@@ -31,7 +32,8 @@ function add_a_sortable_table(
   content,
   overwrite,
   caption,
-  priority_set_editor
+  priority_set_editor,
+  N
 ) {
   if (!container || !container.node()) {
     return;
@@ -77,6 +79,7 @@ function add_a_sortable_table(
   }
 
   // head AFTER rows, so we can handle pre-sorting
+
   if (thead.empty() || overwrite) {
     thead.remove();
     thead = container.insert("thead", ":first-child");
@@ -92,7 +95,14 @@ function add_a_sortable_table(
       .call((selection) =>
         selection.each(function (d, i) {
           set_table_elements(d, this);
-          format_a_cell(d, i, this, priority_set_editor);
+          format_a_cell(
+            d,
+            i,
+            this,
+            (N && N > content.length) || content.length > kGlobals.CoIAddLimit
+              ? null
+              : priority_set_editor
+          );
         })
       );
   }
@@ -107,6 +117,12 @@ function add_a_sortable_table(
     table_caption
       .select(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
+    if (N && N > content.length) {
+      table_caption
+        .select(misc.get_ui_element_selector_by_role("table-count-warning"))
+        .style("color", "black")
+        .text("Truncated due to the large number of rows (" + N + ")");
+    }
   }
 
   container.style("display", null);
@@ -203,113 +219,115 @@ function format_a_cell(data, index, item, priority_set_editor) {
       }
     }
 
-    var clicker = handle_sort.append("a").property("href", "#");
+    if (data["filter"]) {
+      var clicker = handle_sort.append("a").property("href", "#");
 
-    clicker
-      .append("i")
-      .classed("fa fa-search", true)
-      .style("margin-left", "0.2em");
+      clicker
+        .append("i")
+        .classed("fa fa-search", true)
+        .style("margin-left", "0.2em");
 
-    var search_form_generator = function () {
-      return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
-                        <div class="form-group"> 
-                            <div class="input-group">
-                            <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
-                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
-                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
-                            <div class="input-group-addon">
-                                <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
-        index +
-        '"  aria-expanded="false" aria-controls="collapseExample"></i>
-                            </div> 
+      var search_form_generator = function () {
+        return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
+                            <div class="form-group"> 
+                                <div class="input-group">
+                                <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
+                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
+                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+                                <div class="input-group-addon">
+                                    <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
+            index +
+            '"  aria-expanded="false" aria-controls="collapseExample"></i>
+                                </div> 
+                            </div>
+                            </div>
+                        </form>
+                        <div class="collapse" id="filter-help-column' +
+            index +
+            '">
+                          <div class="well">
+                            Type in text to select columns which 
+                            <em>contain the term</em>. <br />
+                            For example, typing in <code>MSM</code> will select rows
+                            that have "MSM" as a part of the column value.
+                            <p />
+                            Type in space separated terms (<code>MSM IDU</code>) to
+                            search for <b>either</b> term. <p/>
+                            Type in terms in quotes (<code>"male"</code>) to search
+                            for this <b>exact</b> term. <p/>
+                            If columns have date information you can use
+                            <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>
+                            Use <code>&lt;value</code> or <code>&gt;value</code>
+                            to search numerical columns<p/>
+                          </div>
                         </div>
-                        </div>
-                    </form>
-                    <div class="collapse" id="filter-help-column' +
-        index +
-        '">
-                      <div class="well">
-                        Type in text to select columns which 
-                        <em>contain the term</em>. <br />
-                        For example, typing in <code>MSM</code> will select rows
-                        that have "MSM" as a part of the column value.
-                        <p />
-                        Type in space separated terms (<code>MSM IDU</code>) to
-                        search for <b>either</b> term. <p/>
-                        Type in terms in quotes (<code>"male"</code>) to search
-                        for this <b>exact</b> term. <p/>
-                        If columns have date information you can use
-                        <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>
-                        Use <code>&lt;value</code> or <code>&gt;value</code>
-                        to search numerical columns<p/>
-                      </div>
-                    </div>
-                    `;
-    };
+                        `;
+      };
 
-    $(clicker.node())
-      .popover({
-        html: true,
-        sanitize: false,
-        content: search_form_generator,
-        placement: "bottom",
-      })
-      .on("shown.bs.popover", function (e) {
-        var search_icon = d3.select(this);
+      $(clicker.node())
+        .popover({
+          html: true,
+          sanitize: false,
+          content: search_form_generator,
+          placement: "bottom",
+        })
+        .on("shown.bs.popover", function (e) {
+          var search_icon = d3.select(this);
 
-        const update_term = function (v) {
-          data.filter_term = v;
-          search_icon
-            .selectAll("i")
-            .classed("fa-search", !v.length)
-            .classed("fa-search-plus", v.length);
-        };
+          const update_term = function (v) {
+            data.filter_term = v;
+            search_icon
+              .selectAll("i")
+              .classed("fa-search", !v.length)
+              .classed("fa-search-plus", v.length);
+          };
 
-        var popover_div = d3.select(
-          "#" + d3.select(this).attr("aria-describedby")
-        );
+          var popover_div = d3.select(
+            "#" + d3.select(this).attr("aria-describedby")
+          );
 
-        var search_click = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("table-filter-apply")
-        );
-        var reset_click = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("table-filter-reset")
-        );
-        var search_box = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("table-filter-term")
-        );
+          var search_click = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("table-filter-apply")
+          );
+          var reset_click = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("table-filter-reset")
+          );
+          var search_box = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("table-filter-term")
+          );
 
-        search_box.property("value", data.filter_term);
+          search_box.property("value", data.filter_term);
 
-        $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
-          "keydown",
-          function (event) {
-            if (event.key == "Enter") {
-              update_term(search_box.property("value"));
-              filter_table(clicker.node());
-              event.preventDefault();
+          $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
+            "keydown",
+            function (event) {
+              if (event.key == "Enter") {
+                update_term(search_box.property("value"));
+                filter_table(clicker.node());
+                event.preventDefault();
+              }
             }
-          }
-        );
+          );
 
-        /*
-        search_box.on ("keydown", (d,e)=> {
-            console.log (d3);
-            console.log (d,e);
-        });
-        */
+          /*
+            search_box.on ("keydown", (d,e)=> {
+                console.log (d3);
+                console.log (d,e);
+            });
+            */
 
-        search_click.on("click", (e) => {
-          update_term(search_box.property("value"));
-          filter_table(clicker.node());
-        });
+          search_click.on("click", (e) => {
+            update_term(search_box.property("value"));
+            filter_table(clicker.node());
+          });
 
-        reset_click.on("click", (d) => {
-          search_box.property("value", "");
-          update_term("");
-          filter_table(clicker.node());
+          reset_click.on("click", (d) => {
+            search_box.property("value", "");
+            update_term("");
+            filter_table(clicker.node());
+          });
         });
-      });
+    }
   }
 
   if (handle_sort && "sort" in data) {

@@ -224,7 +224,7 @@ function handle_cluster_click(self, cluster, release) {
         .on("click", (d) => {
           clustersOfInterest
             .get_editor()
-            .append_nodes(_.map(cluster.children, (c) => c.id));
+            .append_nodes(_.map(cluster.children, (c) => self.entity_id(c)));
         });
     }
 

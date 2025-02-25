@@ -22,6 +22,9 @@ const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
 const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
+const DateViewNodeSearch = d3.time.format("%Y/%m/%d");
+/** Used in many places where alpha-numerically sorted dates are desired*/
+
 const DateUpperBoundYear = new Date().getFullYear();
 /** Maximum year value (no future dates)*/
 
@@ -90,7 +93,8 @@ function n_months_ago(reference_date, months) {
     past_date.setFullYear(past_date.getFullYear() - diff_year);
     past_date.setMonth(past_months - left_over);
   }
-
+  past_date.setDate(past_date.getDate() + 1); // exclusive
+  past_date.setUTCHours(0, 0, 0);
   return past_date;
 }
 
@@ -108,6 +112,7 @@ module.exports = {
   DateViewFormatMMDDYYY,
   DateViewFormatShort,
   DateViewFormatSlider,
+  DateViewNodeSearch,
   n_months_ago,
   init,
 };

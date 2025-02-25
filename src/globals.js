@@ -530,6 +530,11 @@ const SubclusterSeparator = ".";
     the character used to define subclusters, e.g. the '.' in 2.13
 */
 
+const CoIAddLimit = 128;
+/**
+    maximum number of nodes that can be added to a CoI from a table at once.
+*/
+
 module.exports = {
   Categorical,
   CategoricalBase,
@@ -559,4 +564,5 @@ module.exports = {
   SequentialColor,
   ShapeOrdering,
   SubclusterSeparator,
+  CoIAddLimit,
 };

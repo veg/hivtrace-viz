@@ -97,6 +97,12 @@ test("node table sorting and filtering works", async ({ page }) => {
   await expect(page.locator("#nodes-tab")).toBeVisible();
   await page.locator("#nodes-tab").click();
 
+  await page.locator(".rule-filter-container").locator("select").selectOption({
+    label: "Diagnosis Year",
+  });
+  await page.locator(".rule-value-container").locator("input").fill("2022");
+  await page.locator("[data-hivtrace-ui-role='node-selector-search-buttonbar']").click();
+
   await page.locator("#hivtrace_node_column_hiv_aids_dx_dt_3").click();
   await page
     .locator("[aria-labelledby='hivtrace_node_column_hiv_aids_dx_dt_3']")
