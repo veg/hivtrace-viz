@@ -1,6 +1,6 @@
 {
   "name": "hivtrace-viz",
-  "version": "1.2.4-alpha.7",
+  "version": "1.2.4",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
     "node": ">=18 || >20"
