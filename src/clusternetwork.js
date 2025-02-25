@@ -3666,12 +3666,14 @@ var hivtrace_cluster_network_graph = function (
     //var event = new CustomEvent('hiv-trace-viz-volatile-update', { detail: container });
     //container.node().dispatchEvent (event);
 
+    const coe = clustersOfInterest.get_editor();
+
     container
       .selectAll("td, th")
       .filter((d) => "volatile" in d)
       .each(function (d, i) {
         // TODO: QUESTION: Should this have priority_set_editor arg passed in as well?
-        tables.format_a_cell(d, i, this);
+        tables.format_a_cell(d, i, this, coe);
       });
   };
 
@@ -3680,6 +3682,7 @@ var hivtrace_cluster_network_graph = function (
     if (self.subcluster_table) {
       self.update_volatile_elements(self.subcluster_table);
     }
+    //console.log ("redraw_tables", clustersOfInterest.get_editor(), nodesTab.getNodeTable());
     self.update_volatile_elements(nodesTab.getNodeTable());
     if (self.priority_set_table) {
       self.update_volatile_elements(self.priority_set_table);
@@ -3689,9 +3692,11 @@ var hivtrace_cluster_network_graph = function (
   self.draw_extended_node_table = function (
     node_list,
     container,
-    extra_columns
+    extra_columns,
+    options
   ) {
     container = container || nodesTab.getNodeTable();
+    options = options || {};
 
     if (container) {
       node_list = node_list || self.aggregate_indvidual_level_records();
@@ -3724,13 +3729,13 @@ var hivtrace_cluster_network_graph = function (
         self.displayed_node_subset
       );
       node_data.splice(0, 1);
+
       var table_headers = _.map(self.displayed_node_subset, (n, col_id) => ({
         value: n.raw_attribute_key,
         sort: "value",
-        filter: true,
+        filter: options && options["no-filter"] ? false : true,
         volatile: true,
         help: "label" in n ? n.label : n.raw_attribute_key,
-        //format: (d) => "label" in d ? d.label : d.raw_attribute_key,
         callback: function (element, payload) {
           var dropdown = d3
             .select(element)
@@ -3806,7 +3811,8 @@ var hivtrace_cluster_network_graph = function (
               self.draw_extended_node_table(
                 node_list,
                 container,
-                extra_columns
+                extra_columns,
+                options
               );
             });
           });
@@ -6072,6 +6078,11 @@ var hivtrace_cluster_network_graph = function (
                 type: compute_type(d.type, d),
               };
 
+              if (d.enum) {
+                def.values = _.clone(d.enum);
+                def.input = "select";
+              }
+
               if (def.type == "date") {
                 def.plugin = "datepicker";
                 def.plugin_config = {
@@ -6111,7 +6122,6 @@ var hivtrace_cluster_network_graph = function (
                   ];
                 }
               }
-
               return def;
             }),
             (d) => d.label
@@ -6126,7 +6136,8 @@ var hivtrace_cluster_network_graph = function (
           if (query_buttons.empty()) {
             d3.select(self.node_search_div)
               .append("div")
-              .classed("alert alert-info alert-dismissible alert-small", true)
+              .classed("alert alert-info alert-dismissible", true)
+              .style("font-size", "150%")
               .text(
                 "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
               )
@@ -6157,16 +6168,31 @@ var hivtrace_cluster_network_graph = function (
               .classed("btn btn-primary", true);
           }
 
-          $(self.node_search_div).queryBuilder({
-            plugins: [
-              "filter-description",
-              "unique-filter",
-              "bt-tooltip-errors",
-              "invert",
-              "not-group",
-            ],
+          let qb = $(self.node_search_div).queryBuilder({
+            plugins: {
+              "filter-description": null,
+              "bt-tooltip-errors": null,
+              "not-group": null,
+            },
             filters: self.qb_filter_def,
           });
+
+          d3.select($(self.node_search_div).get(0))
+            .selectAll(".group-conditions")
+            .selectAll("label")
+            .classed("btn-primary", false)
+            .classed("btn-default", true);
+
+          $(self.node_search_div).on(
+            "afterInit.queryBuilder afterSetRules.queryBuilder afterAddGroup.queryBuilder",
+            function (e, level) {
+              d3.select($(self.node_search_div).get(0))
+                .selectAll(".group-conditions")
+                .selectAll("label")
+                .classed("btn-primary", false)
+                .classed("btn-default", true);
+            }
+          );
 
           self.process_search_field = (value, condition) => {
             switch (condition.type) {
@@ -6273,9 +6299,13 @@ var hivtrace_cluster_network_graph = function (
               self.aggregate_indvidual_level_records();
           }
 
-          self.node_query_button_reset.on("click", (d) =>
-            $(self.node_search_div).queryBuilder("reset")
-          );
+          self.node_query_button_reset.on("click", (d) => {
+            $(self.node_search_div).queryBuilder("reset");
+            self.draw_extended_node_table([], null, null, {
+              "no-filter": true,
+            });
+          });
+
           self.node_query_button_search.on("click", (d) => {
             var result = $(self.node_search_div).queryBuilder("getRules");
             if (!$.isEmptyObject(result)) {
@@ -6283,15 +6313,20 @@ var hivtrace_cluster_network_graph = function (
               self.draw_extended_node_table(
                 _.filter(self.aggregate_entity_data, (d) =>
                   self.process_search(d, result)
-                )
+                ),
+                null,
+                null,
+                { "no-filter": true }
               );
             }
           });
         }
 
-        self.draw_extended_node_table([]);
+        self.draw_extended_node_table([], null, null, { "no-filter": true });
       } else {
-        self.draw_node_table(self.extra_node_table_columns);
+        self.draw_node_table(self.extra_node_table_columns, null, null, {
+          "no-filter": true,
+        });
       }
     } else {
       rendered_nodes = self.network_svg.selectAll(".node");

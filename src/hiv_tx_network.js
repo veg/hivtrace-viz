@@ -1684,8 +1684,6 @@ class HIVTxNetwork {
             }
           );
 
-          /** handle CoI growth */
-
           if (
             auto_extend &&
             pg.tracking !== kGlobals.CDCCOITrackingOptionsNone

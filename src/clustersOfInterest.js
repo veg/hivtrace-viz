@@ -986,7 +986,6 @@ function open_editor(
           existing_set.nodes
         );
       }
-
       panel_object.table_handler(this);
     },
     dragit: {
