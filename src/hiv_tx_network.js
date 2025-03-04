@@ -1023,8 +1023,27 @@ class HIVTxNetwork {
       let edge_set;
 
       if (edgesByNode) {
+        let node_list = [...core_node_set];
+        let node_set = new Set(node_list);
+
+        for (let i = 0; i < node_list.length; i++) {
+          let d = node_list[i];
+          if (d in this.json.Nodes) {
+            _.each([...edgesByNode[d]], (e) => {
+              if (!node_set.has(e.source)) {
+                node_list.push(e.source);
+                node_set.add(e.source);
+              }
+              if (!node_set.has(e.target)) {
+                node_list.push(e.target);
+                node_set.add(e.target);
+              }
+            });
+          }
+        }
+
         const existing_nodes = _.map(
-          _.filter([...core_node_set], (d) => d in this.json.Nodes),
+          _.filter(node_list, (d) => d in this.json.Nodes),
           (d) => edgesByNode[d]
         );
 
@@ -1528,6 +1547,25 @@ class HIVTxNetwork {
           _.each(inject_mspp_nodes, (n) => {
             pg.nodes.push(n);
           });
+
+          if (inject_mspp_nodes.length) {
+            let desc = {};
+
+            _.each(inject_mspp_nodes, (n) => {
+              let k = this.primary_key({ id: n.name });
+              if (!(k in desc)) {
+                desc[k] = [];
+              }
+              desc[k].push(n);
+              pg.nodes.push(n);
+            });
+
+            pg.description +=
+              " Migrated to multiple sequences per person cluster; added the following sequences: " +
+              _.map(desc, (k, n) => {
+                return n + "(" + k.length + ")";
+              }).join(", ");
+          }
 
           /**     extract network data at 0.015 and subcluster thresholds
                             filter on dates subsequent to the created date
