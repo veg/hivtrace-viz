@@ -554,10 +554,12 @@ class HIVTxNetwork {
 
   annotate_multiple_clusters_on_nodes() {
     if (this.has_multiple_sequences) {
+      let entities_in_multiple_clusters = {};
       _.each(this.primary_key_list, (nodes, key) => {
         if (nodes.length >= 2) {
           let cl = _.groupBy(nodes, (n) => n.cluster);
           if (_.size(cl) > 1) {
+            entities_in_multiple_clusters[key] = _.keys(cl);
             _.each(nodes, (n) => {
               n["multiple clusters"] = _.keys(cl);
             });
@@ -584,6 +586,17 @@ class HIVTxNetwork {
           }
         }
       });
+      this.entities_in_multiple_clusters = entities_in_multiple_clusters;
+      /*let by_cluster = {};
+      _.each (this.entities_in_multiple_clusters, (c,n)=> {
+        _.each (c, (ci)=> {
+            if (ci in by_cluster) {
+                by_cluster[ci].push (n); 
+            } else {
+                by_cluster[ci] = [n];
+            }
+        });
+      });*/
     }
   }
 
@@ -1030,28 +1043,56 @@ class HIVTxNetwork {
           let d = node_list[i];
           if (d in this.json.Nodes) {
             _.each([...edgesByNode[d]], (e) => {
+              let add_nodes = [];
+
               if (!node_set.has(e.source)) {
-                node_list.push(e.source);
-                node_set.add(e.source);
+                add_nodes.push(e.source);
               }
               if (!node_set.has(e.target)) {
-                node_list.push(e.target);
-                node_set.add(e.target);
+                add_nodes.push(e.target);
               }
+              /*if (this.has_multiple_sequences) {
+                let extra_nodes = [];
+                _.each (add_nodes, n2a=> {
+                    let node_object = this.json.Nodes[n2a];
+                    _.each (this.primary_key_list [this.primary_key(node_object)], (no)=> {
+                        let nidx = nodeID2idx[no.id];
+                        if (!node_set.has(nidx)) {
+                            extra_nodes.push (nidx);
+                            node_set.add (nidx);
+                        }
+                    });
+                });
+                if (extra_nodes.length) {
+                    add_nodes.push (...extra_nodes);
+                }
+              }*/
+
+              _.each(add_nodes, (n2a) => {
+                node_list.push(n2a);
+                node_set.add(n2a);
+              });
             });
           }
         }
 
-        const existing_nodes = _.map(
+        edge_set = new Set();
+        _.each(
           _.filter(node_list, (d) => d in this.json.Nodes),
-          (d) => edgesByNode[d]
+          (d) => {
+            for (const e of edgesByNode[d]) {
+              edge_set.add(e);
+            }
+          }
         );
 
-        edge_set = [
+        edge_set = [...edge_set];
+
+        /*edge_set = [
           ...existing_nodes.reduce((acc, set) => {
             return new Set([...acc, ...set]);
           }, new Set()),
-        ];
+        ];*/
       } else {
         edge_set = this.json.Edges;
       }
@@ -1464,15 +1505,44 @@ class HIVTxNetwork {
       const nodeID2idx = {};
       const edgesByNode = {};
 
-      _.each(this.json.Nodes, (n, i) => {
-        nodeID2idx[n.id] = i;
-        edgesByNode[i] = new Set();
-      });
+      if (this.has_multiple_sequences) {
+        const blobs = {};
+        _.each(this.json.Nodes, (n, i) => {
+          nodeID2idx[n.id] = i;
+          edgesByNode[i] = new Set();
+          blobs[i] = new Set();
+        });
 
-      _.each(this.json.Edges, (e) => {
-        edgesByNode[e.source].add(e);
-        edgesByNode[e.target].add(e);
-      });
+        _.each(this.primary_key_list, (list, id) => {
+          let ids = _.map(list, (n) => nodeID2idx[n.id]);
+          _.each(ids, (id) => {
+            _.each(ids, (iid) => blobs[id].add(iid));
+          });
+        });
+
+        _.each(this.json.Edges, (e) => {
+          _.each([...blobs[e.source]], (id) => {
+            let ee = _.clone(e);
+            ee.source = id;
+            edgesByNode[id].add(ee);
+          });
+          _.each([...blobs[e.target]], (id) => {
+            let ee = _.clone(e);
+            ee.target = id;
+            edgesByNode[id].add(ee);
+          });
+        });
+      } else {
+        _.each(this.json.Nodes, (n, i) => {
+          nodeID2idx[n.id] = i;
+          edgesByNode[i] = new Set();
+        });
+
+        _.each(this.json.Edges, (e) => {
+          edgesByNode[e.source].add(e);
+          edgesByNode[e.target].add(e);
+        });
+      }
 
       let traversal_cache = null;
 
@@ -1738,6 +1808,8 @@ class HIVTxNetwork {
               nodeID2idx,
               edgesByNode
             );
+
+            //console.log (pg.name, _.map ([...added_nodes], (n)=>this.json.Nodes[n]));
 
             if (added_nodes.size) {
               _.each([...added_nodes], (nid) => {
