@@ -105,7 +105,7 @@ function hivtraceClusterGraphSummary(network, tag, not_CDC) {
 
   if (network.has_multiple_sequences) {
     table_data.push([
-      "Persons with ≥1 sequence",
+      "Persons with >1 sequence",
       _.filter(network.primary_key_list, (d, k) => d.length > 1).length,
     ]);
     table_data.push([

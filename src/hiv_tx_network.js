@@ -1505,7 +1505,11 @@ class HIVTxNetwork {
       const nodeID2idx = {};
       const edgesByNode = {};
 
-      if (this.has_multiple_sequences) {
+      /** the following code will expand CoI via MSPP links
+          by eliding all edges connecting multiple sequences from the same person
+          it is disabled as per CDC request of 03/10/2025
+      */
+      /*if (this.has_multiple_sequences) {
         const blobs = {};
         _.each(this.json.Nodes, (n, i) => {
           nodeID2idx[n.id] = i;
@@ -1532,7 +1536,7 @@ class HIVTxNetwork {
             edgesByNode[id].add(ee);
           });
         });
-      } else {
+      } else*/ {
         _.each(this.json.Nodes, (n, i) => {
           nodeID2idx[n.id] = i;
           edgesByNode[i] = new Set();
@@ -2600,8 +2604,6 @@ class HIVTxNetwork {
 
   /**
         define an attribute generator for new network nodes/clusters
-        
-               
         @return attribute definition dict
     */
 
@@ -2611,7 +2613,7 @@ class HIVTxNetwork {
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
       map: function (node) {
-        if (node.attributes.indexOf("new_node") >= 0) {
+        if (HIVTxNetwork.is_new_node(node)) {
           return "New";
         }
         if (node.attributes.indexOf("moved_clusters") >= 0) {
@@ -3016,7 +3018,10 @@ class HIVTxNetwork {
                     return [k, null];
                   }
                 } else {
-                  return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                  return [
+                    k,
+                    _.sortBy(_.map(unique_values, (d3, k3) => k3)).join(";"),
+                  ];
                 }
               }
             })
