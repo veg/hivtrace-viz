@@ -1803,8 +1803,20 @@ var hivtrace_cluster_network_graph = function (
           _.map(column_names, (c) => {
             if (c.raw_attribute_key === tables._networkNodeIDField) {
               let uid = self.primary_key(n);
-              if (HTX.HIVTxNetwork.is_new_node(n)) {
-                return uid + tables._networkNewNodeMarker;
+              /** only display [+] for MSPP nodes where EVERYTHING is tagged as new **/
+
+              if (self.has_multiple_sequences) {
+                if (
+                  _.every(this.primary_key_list[uid], (n) =>
+                    HTX.HIVTxNetwork.is_new_node(n)
+                  )
+                ) {
+                  return uid + tables._networkNewNodeMarker;
+                }
+              } else {
+                if (HTX.HIVTxNetwork.is_new_node(n)) {
+                  return uid + tables._networkNewNodeMarker;
+                }
               }
               return uid;
             }
