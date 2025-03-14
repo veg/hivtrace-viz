@@ -1584,14 +1584,29 @@ class HIVTxNetwork {
 
           let updated_pg_record = false;
           let inject_mspp_nodes = [];
+          let mspp_ms_nodes = {};
+          let existing_subclusters = new Set();
+          let existing_clusters = new Set();
 
           _.each(pg.nodes, (node) => {
             const nodeid = node.name;
             if (nodeid in this.node_id_to_object) {
-              pg.node_objects.push(this.node_id_to_object[nodeid]);
+              const n = this.node_id_to_object[nodeid];
+              existing_subclusters.add(n.subcluster_label);
+              existing_clusters.add(n.cluster);
+              pg.node_objects.push(n);
             } else {
               /* 20241125
-                    check to see if this might be an eHARS only CoI
+                    check to see if this might be an eHARS only CoI, i.e., 
+                    migrating SSPP to MSPP
+                    
+                20250314
+                    the logic will be as follows 
+                    (1) if there's a unique sequence in the MSPP network for the same eHARS ID
+                        we introduce it to the CoI
+                    (2) all entities with multiple sequences are processed to see which subclusters and clusters
+                        the sequences belong
+                    (3) they will be handled in the next step
               */
               if (this.has_multiple_sequences) {
                 const entities = this.primary_key_list[nodeid];
@@ -1599,9 +1614,11 @@ class HIVTxNetwork {
                   if (entities.length == 1) {
                     node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
+                    existing_subclusters.add(entities[0].subcluster_label);
+                    existing_clusters.add(entities[0].cluster);
                     return;
                   } else {
-                    node.name = entities[0].id;
+                    /*node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
                     for (let i = 1; i < entities.length; i++) {
                       pg.node_objects.push(entities[i]);
@@ -1609,7 +1626,14 @@ class HIVTxNetwork {
                       node_entry.name = entities[i].id;
                       node_entry.added = node.added;
                       inject_mspp_nodes.push(node_entry);
-                    }
+                    }*/
+
+                    mspp_ms_nodes[nodeid] = {
+                      subclusters: new Set(),
+                      clusters: new Set(),
+                    };
+                    mspp_ms_nodes[nodeid] = [entities, _.clone(node)];
+
                     return;
                   }
                 }
@@ -1618,27 +1642,99 @@ class HIVTxNetwork {
             }
           });
 
+          let discordant_node_record = [];
+
+          if (_.size(mspp_ms_nodes)) {
+            let entity_tracker = null;
+
+            if (
+              pg.createdBy == kGlobals.CDCCOICreatedBySyste ||
+              pg.tracking == kGlobals.CDCCOITrackingOptions[0] ||
+              pg.tracking == kGlobals.CDCCOITrackingOptions[1]
+            ) {
+              entity_tracker = existing_subclusters;
+            } else {
+              if (
+                pg.tracking == kGlobals.CDCCOITrackingOptions[2] ||
+                pg.tracking == kGlobals.CDCCOITrackingOptions[3]
+              ) {
+                entity_tracker = existing_clusters;
+              }
+            }
+
+            if (!entity_tracker || entity_tracker.size == 0) {
+              entity_tracker = {};
+              entity_tracker.has = (n) => true;
+            }
+
+            _.each(mspp_ms_nodes, (n) => {
+              const ref_node = n[1];
+              _.each(n[0], (e) => {
+                if (entity_tracker.has(e.subcluster_label)) {
+                  pg.node_objects.push(e);
+                  let node_entry = _.clone(ref_node);
+                  node_entry.name = e.id;
+                  node_entry.added = ref_node.added;
+                  inject_mspp_nodes.push(node_entry);
+                  //console.log ("Adding ", e);
+                } else {
+                  /*if (e.subcluster_label) {
+                            console.log (pg.name, e);
+                        }*/
+                  discordant_node_record.push(e);
+                }
+              });
+            });
+          }
+
           _.each(inject_mspp_nodes, (n) => {
             pg.nodes.push(n);
           });
 
-          if (inject_mspp_nodes.length) {
-            let desc = {};
+          /*if (discordant_node_record.length) {
+            console.log (pg.name, discordant_node_record);
+          }*/
 
-            _.each(inject_mspp_nodes, (n) => {
-              let k = this.primary_key({ id: n.name });
-              if (!(k in desc)) {
-                desc[k] = [];
-              }
-              desc[k].push(n);
-              pg.nodes.push(n);
-            });
+          if (inject_mspp_nodes.length || discordant_node_record.length) {
+            //console.log (pg.name, discordant_node_record);
 
             pg.description +=
-              " Migrated to multiple sequences per person cluster; added the following sequences: " +
-              _.map(desc, (k, n) => {
-                return n + "(" + k.length + ")";
-              }).join(", ");
+              " Migrated to multiple sequences per person cluster";
+
+            _.each(
+              [
+                [inject_mspp_nodes, "used the following sequences "],
+                [discordant_node_record, "ignored the following sequences "],
+              ],
+              (pair, i) => {
+                if (pair[0].length) {
+                  let desc = {};
+
+                  _.each(pair[0], (n) => {
+                    let k = this.primary_key("id" in n ? n : { id: n.name });
+                    if (!(k in desc)) {
+                      desc[k] = [];
+                    }
+                    desc[k].push(n);
+                    if (i == 0) {
+                      pg.nodes.push(n);
+                    }
+                  });
+
+                  pg.description +=
+                    "; " +
+                    pair[1] +
+                    _.map(desc, (k, n) => {
+                      return (
+                        n +
+                        " (" +
+                        _.map(k, (no) => no.id || no.name).join(", ") +
+                        ")"
+                      );
+                    }).join("; ");
+                }
+              }
+            );
           }
 
           /**     extract network data at 0.015 and subcluster thresholds
