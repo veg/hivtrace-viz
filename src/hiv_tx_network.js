@@ -6,9 +6,9 @@ var _ = require("underscore"),
 
 /*------------------------------------------------------------
      define a barebones class for the network object
-     mostly here to encapsulate function definitions 
+     mostly here to encapsulate function definitions
      so they don't pollute the main function
-     
+
 ------------------------------------------------------------*/
 
 /**
@@ -31,7 +31,7 @@ class HIVTxNetwork {
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
-    /** SLKP 20241029 
+    /** SLKP 20241029
         this function is used to identify which nodes are duplicates
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
         all sequences/nodes that map to the same primary key are assumed to represent the same entity / individual
@@ -132,7 +132,7 @@ class HIVTxNetwork {
   }
 
   /**
-    Iterate over nodes in the network, identify all those which share the same 
+    Iterate over nodes in the network, identify all those which share the same
     primary key (i.e., the same individual), tabulate them, and collate node attributes
   */
 
@@ -201,10 +201,10 @@ class HIVTxNetwork {
     }
   }
 
-  /** 
-      this is a function which calculates country node centers 
+  /**
+      this is a function which calculates country node centers
       for the (experimental) option of rendering networks with
-      topo maps 
+      topo maps
    */
 
   _calc_country_nodes = (calc_options) => {
@@ -224,7 +224,7 @@ class HIVTxNetwork {
 
   /**
         @cluster [dict] : cluster object
-        
+
         return true if the cluster passes all the currently defined filters
         see this.cluster_filtering_functions
   */
@@ -235,7 +235,7 @@ class HIVTxNetwork {
 
   /**
         @cluster [dict] : cluster object
-        
+
         return true if cluster size is at least this.minimum_cluster_size
   */
 
@@ -245,8 +245,8 @@ class HIVTxNetwork {
 
   /**
         @node_list [array] : list of nodes
-        
-        returns the list of unique "individuals", collapsing nodes representing 
+
+        returns the list of unique "individuals", collapsing nodes representing
         multiple sequences from the same entity into a single blob
   */
 
@@ -259,8 +259,8 @@ class HIVTxNetwork {
 
   /**
         @node_list [array] : list of node IDs
-        
-        returns the list of unique "individuals", collapsing nodes representing 
+
+        returns the list of unique "individuals", collapsing nodes representing
         multiple sequences from the same entity into a single blob
   */
 
@@ -274,7 +274,7 @@ class HIVTxNetwork {
 
   /**
         @node_list [array] : list of nodes
-        
+
         returns [primary key] => [objects] dict
   */
 
@@ -284,7 +284,7 @@ class HIVTxNetwork {
 
   /**
         @cluster [dict] : cluster object
-        
+
         return true if cluster size is at least 2
   */
 
@@ -294,7 +294,7 @@ class HIVTxNetwork {
 
   /**
         @cluster [dict] : cluster object
-        
+
         return true if the cluster is new compared to the previous network
   */
 
@@ -304,7 +304,7 @@ class HIVTxNetwork {
 
   /**
         @cluster [dict] : cluster object
-        
+
         return true if the cluster has nodes newer than this.using_time_filter
   */
 
@@ -320,24 +320,26 @@ class HIVTxNetwork {
   };
 
   get_reference_date() {
-    /** 
+    /**
         get the reference (creation) date for the network
         same as "today", unless this is not the primary network (cluster or subcluster view),
         in which case the reference date for the parent is used
     */
-    if (!this.isPrimaryGraph && this.parent_graph_object)
+    if (!this.isPrimaryGraph && this.parent_graph_object) {
       return this.parent_graph_object.today;
+    }
 
     return this.today;
   }
 
   lookup_option(key, default_value, options) {
-    /** 
+    /**
         retrieve an option associated with "key"
         if not found in Settings or options, return "default value"
     */
-    if (this.json.Settings && this.json.Settings[key])
+    if (this.json.Settings && this.json.Settings[key]) {
       return this.json.Settings[key];
+    }
     if (options && options[key]) return options[key];
     return default_value;
   }
@@ -346,7 +348,7 @@ class HIVTxNetwork {
     return '<div><ul data-hivtrace-ui-role = "priority-membership-list"></ul></div>';
   }
 
-  /** retrive the DOM ID for an element given its data-hivtrace-ui-role 
+  /** retrive the DOM ID for an element given its data-hivtrace-ui-role
       @param role: data-hivtrace-ui-role
       @param nested: true if this is being called from a secondary network or element (dialog, cluster view etc),
                      which does not have primary button_ui elements
@@ -361,20 +363,20 @@ class HIVTxNetwork {
     );
   }
 
-  /** 
+  /**
     Process the network to simplify multiple sequences per individual
-    
+
     1. Identify null clusters, i.e., clusters that consist only of sequences with the same primary key (individual)
-        Delete ALL null clusters; remove all nodes and edges associated with them 
-        
-    2. Identify identical sequence sets, i.e., sequences with the same individual that have the same connection patterns, 
+        Delete ALL null clusters; remove all nodes and edges associated with them
+
+    2. Identify identical sequence sets, i.e., sequences with the same individual that have the same connection patterns,
         (a) All sequences in the set have the same primary key
         (b) All sequences in the set are connected to each other (at length <= reduce_distance_within)
         (c) All sequences in the set are connected to the same set of OTHER sequences (at length <= reduce_distance_between)
-        
-        All identical sequence sets are collapsed to a 
-    
-    
+
+        All identical sequence sets are collapsed to a
+
+
   */
   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
     if (this.has_multiple_sequences && this.isPrimaryGraph) {
@@ -554,10 +556,12 @@ class HIVTxNetwork {
 
   annotate_multiple_clusters_on_nodes() {
     if (this.has_multiple_sequences) {
+      let entities_in_multiple_clusters = {};
       _.each(this.primary_key_list, (nodes, key) => {
         if (nodes.length >= 2) {
           let cl = _.groupBy(nodes, (n) => n.cluster);
           if (_.size(cl) > 1) {
+            entities_in_multiple_clusters[key] = _.keys(cl);
             _.each(nodes, (n) => {
               n["multiple clusters"] = _.keys(cl);
             });
@@ -584,25 +588,36 @@ class HIVTxNetwork {
           }
         }
       });
+      this.entities_in_multiple_clusters = entities_in_multiple_clusters;
+      /*let by_cluster = {};
+      _.each (this.entities_in_multiple_clusters, (c,n)=> {
+        _.each (c, (ci)=> {
+            if (ci in by_cluster) {
+                by_cluster[ci].push (n);
+            } else {
+                by_cluster[ci] = [n];
+            }
+        });
+      });*/
     }
   }
 
   /**
-        When MSPP are present, this function will reduce the network 
-        encoded by .Nodes and .Edges in filtered_json, and 
+        When MSPP are present, this function will reduce the network
+        encoded by .Nodes and .Edges in filtered_json, and
         reduce all sequences that represent the same entity into one node.
-        Such nodes inherit the union of their links (so at least of the sequences being 
+        Such nodes inherit the union of their links (so at least of the sequences being
         collapsed link to X, the "joint" node will link to X).
-        
-        The joint nodes will also receive aggregated attributes; 
-        if the nodes being merged have different attributes values for a given key, the 
+
+        The joint nodes will also receive aggregated attributes;
+        if the nodes being merged have different attributes values for a given key, the
         merged node will have a ';' separated list of attributes for the same key.
-  
+
   */
 
   simplify_multisequence_cluster(filtered_json) {
     /**
-            20241030 SLKP 
+            20241030 SLKP
             Perform a greedy collapse of all the sequences that map to the same primary key
             For a reduced cluster view
         */
@@ -763,20 +778,20 @@ class HIVTxNetwork {
 
   /**
         compute the overlap between CoI
-        
+
         @groups: an array with CoI objects
-        
+
         1. Populate this.priority_node_overlap dictionary which
-           stores, for every node present in AT LEAST ONE CoI, the set of all 
+           stores, for every node present in AT LEAST ONE CoI, the set of all
            PGs it belongs to, as in "node-id" => set ("PG1", "PG2"...)
-           
+
         2. For each CoI, create and populate a member field, .overlaps
            which is a dictionary that stores
            {
                 sets : #of CoI with which it shares nodes
                 nodes: the # of nodes contained in overlaps
            }
-    
+
    */
 
   priority_groups_compute_overlap = function (groups) {
@@ -886,8 +901,8 @@ class HIVTxNetwork {
   /** Fetch the value of an attribute from the node
     @param d: node object
     @param id: [string] the attribute whose value should be fetched
-    @param number: [bool] if true, only return numerical values 
-  
+    @param number: [bool] if true, only return numerical values
+
  */
 
   attribute_node_value_by_id(d, id, number, is_date) {
@@ -1023,16 +1038,63 @@ class HIVTxNetwork {
       let edge_set;
 
       if (edgesByNode) {
-        const existing_nodes = _.map(
-          _.filter([...core_node_set], (d) => d in this.json.Nodes),
-          (d) => edgesByNode[d]
+        let node_list = [...core_node_set];
+        let node_set = new Set(node_list);
+
+        for (let i = 0; i < node_list.length; i++) {
+          let d = node_list[i];
+          if (d in this.json.Nodes) {
+            _.each([...edgesByNode[d]], (e) => {
+              let add_nodes = [];
+
+              if (!node_set.has(e.source)) {
+                add_nodes.push(e.source);
+              }
+              if (!node_set.has(e.target)) {
+                add_nodes.push(e.target);
+              }
+              /*if (this.has_multiple_sequences) {
+                let extra_nodes = [];
+                _.each (add_nodes, n2a=> {
+                    let node_object = this.json.Nodes[n2a];
+                    _.each (this.primary_key_list [this.primary_key(node_object)], (no)=> {
+                        let nidx = nodeID2idx[no.id];
+                        if (!node_set.has(nidx)) {
+                            extra_nodes.push (nidx);
+                            node_set.add (nidx);
+                        }
+                    });
+                });
+                if (extra_nodes.length) {
+                    add_nodes.push (...extra_nodes);
+                }
+              }*/
+
+              _.each(add_nodes, (n2a) => {
+                node_list.push(n2a);
+                node_set.add(n2a);
+              });
+            });
+          }
+        }
+
+        edge_set = new Set();
+        _.each(
+          _.filter(node_list, (d) => d in this.json.Nodes),
+          (d) => {
+            for (const e of edgesByNode[d]) {
+              edge_set.add(e);
+            }
+          }
         );
 
-        edge_set = [
+        edge_set = [...edge_set];
+
+        /*edge_set = [
           ...existing_nodes.reduce((acc, set) => {
             return new Set([...acc, ...set]);
           }, new Set()),
-        ];
+        ];*/
       } else {
         edge_set = this.json.Edges;
       }
@@ -1080,8 +1142,8 @@ class HIVTxNetwork {
     return added_nodes;
   };
 
-  /** 
-        export CoI records for interactions with the external DB 
+  /**
+        export CoI records for interactions with the external DB
         @group_set : custom set or all (if null)
         @include_unvalidated: if true will include CoI which did not undergo/pass validation
   */
@@ -1108,7 +1170,7 @@ class HIVTxNetwork {
     );
   };
 
-  /** interact with the remote DB to send updates of CoI operations 
+  /** interact with the remote DB to send updates of CoI operations
         @name: the name of the CoI
         @operation: what happened ("insert", "delete", "update")
   */
@@ -1143,13 +1205,13 @@ class HIVTxNetwork {
   };
 
   /**
-        A function that updates the "freehand" description 
+        A function that updates the "freehand" description
         of a specific CoI
-        
+
         @param name [string] : the name of the CoI
         @param description [string] :  the actual description
         @param update_table [bool] : if true, trigger CoI table update in UI/UX
-        
+
         @return N/A
   */
 
@@ -1170,10 +1232,10 @@ class HIVTxNetwork {
 
   /**
         Remove a CoI from the list of defined CoI
-        
+
         @param name [string] : the name of the CoI
         @param update_table [bool] : if true, trigger CoI table update in UI/UX
-        
+
         @return N/A
   */
 
@@ -1196,10 +1258,10 @@ class HIVTxNetwork {
 
   /**
         Export nodes that are members of CoI
-        
+
         @param name [array] : set of CoI OBJECTS, by default this is `defined_priority_groups`
         @param include_unvalidated [bool] : if true, include all CoI (validated/not) in the export
-        
+
         @return an array of node records
   */
 
@@ -1279,7 +1341,11 @@ class HIVTxNetwork {
                 cluster_current_size: entities.length,
                 cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
                 cluster_overlap: g.overlap.sets,
-                SequenceID: this.list_of_aliased_sequences(gn).join(";"),
+                SequenceID: this.list_of_aliased_sequences(gn)
+                  .map((seq) => {
+                    return seq.split("|")[1];
+                  })
+                  .join(";"),
               };
             }
           );
@@ -1290,7 +1356,7 @@ class HIVTxNetwork {
 
   /**
         Export CoI summary info
-        
+  
         @return an array of CoI records
   */
   priority_groups_export_sets = function () {
@@ -1328,7 +1394,7 @@ class HIVTxNetwork {
   };
 
   /** parse a date record
-        @param value (date object or string) 
+        @param value (date object or string)
         @return date object
   */
 
@@ -1357,7 +1423,7 @@ class HIVTxNetwork {
     throw Error("Invalid date");
   }
 
-  /** 
+  /**
         Check if the date attribute of a node falls within a pre-specified range
         @param cutoff
         @param date_file
@@ -1410,9 +1476,9 @@ class HIVTxNetwork {
               kind:  kGlobals.CDCCOIKind,
               tracking: kGlobals.CDCCOITrackingOptions
               createdBy : kGlobals.CDCCOICreatedBySystem,kGlobals.CDCCOICreatedManually
-
+  
       @param auto_extend {bool} : if true, automatically expand existing CoI
-
+  
     */
   priority_groups_validate(groups, auto_extend) {
     if (_.some(groups, (g) => !g.validated)) {
@@ -1445,15 +1511,48 @@ class HIVTxNetwork {
       const nodeID2idx = {};
       const edgesByNode = {};
 
-      _.each(this.json.Nodes, (n, i) => {
-        nodeID2idx[n.id] = i;
-        edgesByNode[i] = new Set();
-      });
+      /** the following code will expand CoI via MSPP links
+          by eliding all edges connecting multiple sequences from the same person
+          it is disabled as per CDC request of 03/10/2025
+      */
+      /*if (this.has_multiple_sequences) {
+        const blobs = {};
+        _.each(this.json.Nodes, (n, i) => {
+          nodeID2idx[n.id] = i;
+          edgesByNode[i] = new Set();
+          blobs[i] = new Set();
+        });
 
-      _.each(this.json.Edges, (e) => {
-        edgesByNode[e.source].add(e);
-        edgesByNode[e.target].add(e);
-      });
+        _.each(this.primary_key_list, (list, id) => {
+          let ids = _.map(list, (n) => nodeID2idx[n.id]);
+          _.each(ids, (id) => {
+            _.each(ids, (iid) => blobs[id].add(iid));
+          });
+        });
+
+        _.each(this.json.Edges, (e) => {
+          _.each([...blobs[e.source]], (id) => {
+            let ee = _.clone(e);
+            ee.source = id;
+            edgesByNode[id].add(ee);
+          });
+          _.each([...blobs[e.target]], (id) => {
+            let ee = _.clone(e);
+            ee.target = id;
+            edgesByNode[id].add(ee);
+          });
+        });
+      } else*/ {
+        _.each(this.json.Nodes, (n, i) => {
+          nodeID2idx[n.id] = i;
+          edgesByNode[i] = new Set();
+        });
+
+        _.each(this.json.Edges, (e) => {
+          edgesByNode[e.source].add(e);
+          edgesByNode[e.target].add(e);
+        });
+      }
 
       let traversal_cache = null;
 
@@ -1491,14 +1590,29 @@ class HIVTxNetwork {
 
           let updated_pg_record = false;
           let inject_mspp_nodes = [];
+          let mspp_ms_nodes = {};
+          let existing_subclusters = new Set();
+          let existing_clusters = new Set();
 
           _.each(pg.nodes, (node) => {
             const nodeid = node.name;
             if (nodeid in this.node_id_to_object) {
-              pg.node_objects.push(this.node_id_to_object[nodeid]);
+              const n = this.node_id_to_object[nodeid];
+              existing_subclusters.add(n.subcluster_label);
+              existing_clusters.add(n.cluster);
+              pg.node_objects.push(n);
             } else {
               /* 20241125
-                    check to see if this might be an eHARS only CoI
+                    check to see if this might be an eHARS only CoI, i.e., 
+                    migrating SSPP to MSPP
+                    
+                20250314
+                    the logic will be as follows 
+                    (1) if there's a unique sequence in the MSPP network for the same eHARS ID
+                        we introduce it to the CoI
+                    (2) all entities with multiple sequences are processed to see which subclusters and clusters
+                        the sequences belong
+                    (3) they will be handled in the next step
               */
               if (this.has_multiple_sequences) {
                 const entities = this.primary_key_list[nodeid];
@@ -1506,9 +1620,11 @@ class HIVTxNetwork {
                   if (entities.length == 1) {
                     node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
+                    existing_subclusters.add(entities[0].subcluster_label);
+                    existing_clusters.add(entities[0].cluster);
                     return;
                   } else {
-                    node.name = entities[0].id;
+                    /*node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
                     for (let i = 1; i < entities.length; i++) {
                       pg.node_objects.push(entities[i]);
@@ -1516,7 +1632,14 @@ class HIVTxNetwork {
                       node_entry.name = entities[i].id;
                       node_entry.added = node.added;
                       inject_mspp_nodes.push(node_entry);
-                    }
+                    }*/
+
+                    mspp_ms_nodes[nodeid] = {
+                      subclusters: new Set(),
+                      clusters: new Set(),
+                    };
+                    mspp_ms_nodes[nodeid] = [entities, _.clone(node)];
+
                     return;
                   }
                 }
@@ -1525,9 +1648,100 @@ class HIVTxNetwork {
             }
           });
 
+          let discordant_node_record = [];
+
+          if (_.size(mspp_ms_nodes)) {
+            let entity_tracker = null;
+
+            if (
+              pg.createdBy == kGlobals.CDCCOICreatedBySyste ||
+              pg.tracking == kGlobals.CDCCOITrackingOptions[0] ||
+              pg.tracking == kGlobals.CDCCOITrackingOptions[1]
+            ) {
+              entity_tracker = existing_subclusters;
+            } else {
+              if (
+                pg.tracking == kGlobals.CDCCOITrackingOptions[2] ||
+                pg.tracking == kGlobals.CDCCOITrackingOptions[3]
+              ) {
+                entity_tracker = existing_clusters;
+              }
+            }
+
+            if (!entity_tracker || entity_tracker.size == 0) {
+              entity_tracker = {};
+              entity_tracker.has = (n) => true;
+            }
+
+            _.each(mspp_ms_nodes, (n) => {
+              const ref_node = n[1];
+              _.each(n[0], (e) => {
+                if (entity_tracker.has(e.subcluster_label)) {
+                  pg.node_objects.push(e);
+                  let node_entry = _.clone(ref_node);
+                  node_entry.name = e.id;
+                  node_entry.added = ref_node.added;
+                  inject_mspp_nodes.push(node_entry);
+                  //console.log ("Adding ", e);
+                } else {
+                  /*if (e.subcluster_label) {
+                            console.log (pg.name, e);
+                        }*/
+                  discordant_node_record.push(e);
+                }
+              });
+            });
+          }
+
           _.each(inject_mspp_nodes, (n) => {
             pg.nodes.push(n);
           });
+
+          /*if (discordant_node_record.length) {
+            console.log (pg.name, discordant_node_record);
+          }*/
+
+          if (inject_mspp_nodes.length || discordant_node_record.length) {
+            //console.log (pg.name, discordant_node_record);
+
+            pg.description +=
+              " Migrated to multiple sequences per person cluster";
+
+            _.each(
+              [
+                [inject_mspp_nodes, "used the following sequences "],
+                [discordant_node_record, "ignored the following sequences "],
+              ],
+              (pair, i) => {
+                if (pair[0].length) {
+                  let desc = {};
+
+                  _.each(pair[0], (n) => {
+                    let k = this.primary_key("id" in n ? n : { id: n.name });
+                    if (!(k in desc)) {
+                      desc[k] = [];
+                    }
+                    desc[k].push(n);
+                    if (i == 0) {
+                      pg.nodes.push(n);
+                    }
+                  });
+
+                  pg.description +=
+                    "; " +
+                    pair[1] +
+                    _.map(desc, (k, n) => {
+                      return (
+                        n +
+                        " (" +
+                        _.map(k, (no) => no.id || no.name).join(", ") +
+                        ")"
+                      );
+                    }).join("; ");
+                }
+              }
+            );
+          }
 
           /**     extract network data at 0.015 and subcluster thresholds
                             filter on dates subsequent to the created date
@@ -1625,7 +1839,7 @@ class HIVTxNetwork {
           const direct_subcluster = new Set();
           const direct_subcluster_new = new Set();
 
-          /** process the cluster object to extract directly connected 
+          /** process the cluster object to extract directly connected
               subcluster nodes and new nodes */
 
           _.each(json_subcluster["Edges"], (e) => {
@@ -1641,8 +1855,9 @@ class HIVTxNetwork {
                     json_subcluster["Nodes"][nid],
                     true
                   )
-                )
+                ) {
                   direct_subcluster_new.add(json_subcluster["Nodes"][nid].id);
+                }
               }
             });
           });
@@ -1700,6 +1915,8 @@ class HIVTxNetwork {
               nodeID2idx,
               edgesByNode
             );
+
+            //console.log (pg.name, _.map ([...added_nodes], (n)=>this.json.Nodes[n]));
 
             if (added_nodes.size) {
               _.each([...added_nodes], (nid) => {
@@ -1825,7 +2042,7 @@ class HIVTxNetwork {
   }
 
   /**
-        Compute which CoI do various nodes belong to, and 
+        Compute which CoI do various nodes belong to, and
         define additional attributes for each node
    */
 
@@ -1899,8 +2116,9 @@ class HIVTxNetwork {
                 node,
                 false
               )
-            )
+            ) {
               return pg_enum[0];
+            }
             if (
               object_ref.filter_by_date(
                 cutoffs[1],
@@ -1909,8 +2127,9 @@ class HIVTxNetwork {
                 node,
                 false
               )
-            )
+            ) {
               return pg_enum[1];
+            }
 
             return pg_enum[2];
           }
@@ -1988,7 +2207,7 @@ class HIVTxNetwork {
   /** read and process JSON files defining COI
         @param url [string]: load the data from here
         @param is_writeable [string]: if "writeable", changes to COI lists will be pushed back to the server
-        
+  
         This needs to be called AFTER the clusters/subclusters have been annotated
   */
 
@@ -2171,11 +2390,11 @@ class HIVTxNetwork {
     });
   }
 
-  /**  add an attribute description 
-        
+  /**  add an attribute description
+  
        Given an attribute definition (see comments elsewhere), and a key to associate it with
-       do     
-       
+       do
+  
   */
 
   inject_attribute_description(key, d) {
@@ -2188,14 +2407,14 @@ class HIVTxNetwork {
   }
 
   /**  populate_predefined_attribute
-        
+  
        Given an attribute definition (see comments elsewhere), and a key to associate it with
        do
-       
+  
        0. Inject the definition of the attribute into the network dictionary
        1. Compute the value of the attribute for all nodes
        2. Compute unique values
-       
+  
        @param computed (dict) : attribute definition
        @param key (string) : the key to associate with the attribute
   */
@@ -2285,34 +2504,34 @@ class HIVTxNetwork {
   }
 
   /**===================================================**/
-  /** attribute callback definitions 
-    
+  /** attribute callback definitions
+  
         The following functions are generators for attribute callbacks.
         They return dict-like objects that contain fields used to populate
         and display network node and cluster attributes
-        
+  
         The fields in the attribute definition are as follows
-        
-        depends [optional]   : the list of node fields that must be defined in order for 
+  
+        depends [optional]   : the list of node fields that must be defined in order for
                               this attribute to be computed; null = none
-
+  
         label [required]     : the attribute label to display in the dropdown other locations
         enum  [optional]     : if provided as an array, specifies the set of allowed values
-        volatile [optional]  : if non-null, tag this attribute for re-computation when certain 
+        volatile [optional]  : if non-null, tag this attribute for re-computation when certain
                                events take place
         color_scale[required]: value=>color map for rendering
         map[required]        : a function to compute attribute value from node data
         color_stops[optional]: # of color stops for a continuous variable that's binned
-        
+  
     */
   /**===================================================**/
 
   /**
-        define an attribute generator for subcluster membership attribute 
-        
+        define an attribute generator for subcluster membership attribute
+  
         @param network : the network / cluster object to ise
         @param data: reference date to use
-        
+  
         @return attribute definition
     */
 
@@ -2370,11 +2589,11 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for binned viral loads    
-        
+        define an attribute generator for binned viral loads
+  
         @param field: the node attribute field to use
         @param title: display this title for the attribute
-             
+  
         @return attribute definition dict
     */
   define_attribute_binned_vl(field, title) {
@@ -2413,8 +2632,8 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for Viral load result interpretatio 
-              
+        define an attribute generator for Viral load result interpretatio
+  
         @return attribute definition dict
     */
   define_attribute_vl_interpretaion() {
@@ -2490,8 +2709,6 @@ class HIVTxNetwork {
 
   /**
         define an attribute generator for new network nodes/clusters
-        
-               
         @return attribute definition dict
     */
 
@@ -2501,7 +2718,7 @@ class HIVTxNetwork {
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
       map: function (node) {
-        if (node.attributes.indexOf("new_node") >= 0) {
+        if (HIVTxNetwork.is_new_node(node)) {
           return "New";
         }
         if (node.attributes.indexOf("moved_clusters") >= 0) {
@@ -2520,10 +2737,10 @@ class HIVTxNetwork {
 
   /**
         define an attribute generator for dx year
-        
+  
         @param relative: if T, compute dx date relative to the network date in years
         @param label: use this label
-              
+  
         @return attribute definition dict
     */
 
@@ -2543,9 +2760,9 @@ class HIVTxNetwork {
           );
 
           if (value) {
-            if (relative)
+            if (relative) {
               value = (this.get_reference_date() - value) / 31536000000;
-            else value = String(value.getFullYear());
+            } else value = String(value.getFullYear());
           } else {
             value = kGlobals.missing.label;
           }
@@ -2583,8 +2800,8 @@ class HIVTxNetwork {
   /**
         Retrieve the list of sequences associated with a node
         @param pid: use this entity id
-              
-        @return list of sequence_ids 
+  
+        @return list of sequence_ids
     */
 
   fetch_sequences_for_pid(pid) {
@@ -2695,11 +2912,11 @@ class HIVTxNetwork {
 
   /**
         Generate a function callback for attribute time series data
-        
-        @param export_items 
+  
+        @param export_items
             if set (and is an array), the function will add the callback to the array
             otherwise the callback will be invoked on this
-        
+  
         @return noting
     */
 
@@ -2787,14 +3004,14 @@ class HIVTxNetwork {
 
   /**
     annotate_cluster_changes
-    
+  
     If the network contains information about cluster changes (new/moved/deleted nodes, etc),
     this function will annotate cluster objects (in place) with various attributes
         "delta" : change in the size of the cluster
         "flag"  : a status flag to be used in the cluster display table
             if set to 2 then TBD
             if set to 3 then TBD
-    
+  
   */
 
   annotate_cluster_changes() {
@@ -2821,13 +3038,13 @@ class HIVTxNetwork {
 
   /**
     extract_individual_level_records
-    
+  
     for networks that have multiple sequences per individual, this function
-    will reduce the list of node records to only include those that have 
+    will reduce the list of node records to only include those that have
     attribute data. If more than one node has attribute data, the first one
     (chosen based on the sorting order when this.primary_key_list was initialized)
     is returned.
-    
+  
   */
 
   extract_individual_level_records() {
@@ -2850,11 +3067,11 @@ class HIVTxNetwork {
 
   /**
     aggregate_indvidual_level_records
-    
+  
     for networks that have multiple sequences per individual, this function
     will reduce the list of node records to only have one per primary key
     all attributes where more than one value is present will be shown as ';' separated
-    
+  
   */
 
   aggregate_indvidual_level_records(node_list) {
@@ -2906,7 +3123,10 @@ class HIVTxNetwork {
                     return [k, null];
                   }
                 } else {
-                  return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
+                  return [
+                    k,
+                    _.sortBy(_.map(unique_values, (d3, k3) => k3)).join(";"),
+                  ];
                 }
               }
             })
@@ -2939,9 +3159,9 @@ class HIVTxNetwork {
 
   /**
     generate an entity (primary key) id from string
-    
+  
     @param node_name (string)
-    
+  
     returns [String] entity id
   */
 
@@ -2951,9 +3171,9 @@ class HIVTxNetwork {
 
   /**
     generate an entity (primary key) id from node
-    
+  
     @param node (Object)
-    
+  
     returns [String] entity id
   */
 
@@ -2971,9 +3191,9 @@ class HIVTxNetwork {
 
   /**
     generate a list of sequence IDs represented by a node
-    
+  
     @param node (Object)
-    
+  
     returns [array] list of sequence ids
   */
   list_of_aliased_sequences(node) {

@@ -689,9 +689,9 @@ function open_editor(
         }
 
         _.each(nodes_to_add, (n) => {
-          if (!(n in existing_ids) && n in valid_ids) {
-            panel_object._append_node(valid_ids[n]);
-            existing_ids[n] = 1;
+          if (!(n.id in existing_ids) && n.id in valid_ids) {
+            panel_object._append_node(valid_ids[n.id]);
+            existing_ids[n.id] = 1;
             need_update = true;
           } else {
             console.log("***", n);

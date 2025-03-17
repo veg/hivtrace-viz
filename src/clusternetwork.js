@@ -1803,8 +1803,20 @@ var hivtrace_cluster_network_graph = function (
           _.map(column_names, (c) => {
             if (c.raw_attribute_key === tables._networkNodeIDField) {
               let uid = self.primary_key(n);
-              if (HTX.HIVTxNetwork.is_new_node(n)) {
-                return uid + tables._networkNewNodeMarker;
+              /** only display [+] for MSPP nodes where EVERYTHING is tagged as new **/
+
+              if (self.has_multiple_sequences) {
+                if (
+                  _.every(this.primary_key_list[uid], (n) =>
+                    HTX.HIVTxNetwork.is_new_node(n)
+                  )
+                ) {
+                  return uid + tables._networkNewNodeMarker;
+                }
+              } else {
+                if (HTX.HIVTxNetwork.is_new_node(n)) {
+                  return uid + tables._networkNewNodeMarker;
+                }
               }
               return uid;
             }
@@ -4482,7 +4494,13 @@ var hivtrace_cluster_network_graph = function (
       container
         .selectAll("path")
         .attr("d", misc.symbol(symbol_type).size(node_size(node)))
-        .style("fill", (d) => node_color(d));
+        .style("fill", (d) => node_color(d))
+        .classed(
+          "multi_sequence",
+          (d) =>
+            _.isArray(d[kGlobals.network.AliasedSequencesID]) &&
+            d[kGlobals.network.AliasedSequencesID].length > 1
+        );
 
       if (node.show_label) {
         if (container.selectAll("text").empty()) {
@@ -4513,12 +4531,6 @@ var hivtrace_cluster_network_graph = function (
         .classed(
           "selected_object",
           (d) => d.match_filter && !self.hide_unselected
-        )
-        .classed(
-          "multi_sequence",
-          (d) =>
-            _.isArray(d[kGlobals.network.AliasedSequencesID]) &&
-            d[kGlobals.network.AliasedSequencesID].length > 1
         )
         .classed("injected_object", (d) => d.node_class === "injected")
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
@@ -5715,7 +5727,7 @@ var hivtrace_cluster_network_graph = function (
         anything_changed = true;
       }
 
-      if (n.match_filter) {
+      if (n.match_filter && n.parent) {
         n.parent.match_filter += 1;
       }
     });
@@ -6318,6 +6330,10 @@ var hivtrace_cluster_network_graph = function (
                 null,
                 { "no-filter": true }
               );
+            } else {
+              self.draw_extended_node_table([], null, null, {
+                "no-filter": true,
+              });
             }
           });
         }
