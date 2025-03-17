@@ -191,9 +191,7 @@ circle.selected_object {
   stroke: #000;
 }
 
-g.multi_sequence,
-path.multi_sequence,
-circle.multi_sequence {
+.multi_sequence {
   stroke-width: 1px;
   stroke: #350e6b;
   border-radius: 50%;

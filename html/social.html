@@ -836,7 +836,7 @@
           } else {
             d3.select("#app-error").style("display", "none");
             hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
-            hivtrace.graphSummary(graph, graph_summary_tag);
+            hivtrace.graphSummary(user_graph, graph_summary_tag);
 
             [
               "#main-tab",
@@ -927,8 +927,7 @@
 
       var initialize_cluster_network_graphs = function () {
         //Initialize clusternetworkgraph with json url
-        url =
-          "../test/workshop/SocialDemoFiles/SocialNetwork.trace.json";
+        url = "../test/workshop/SocialDemoFiles/SocialNetwork.trace.json";
         //url = "test/LA.json"
 
         d3.json(url, function (error, results) {

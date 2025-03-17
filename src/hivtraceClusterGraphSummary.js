@@ -21,7 +21,7 @@ Creates and populates a summary table for an HIV trace cluster graph.
 None
 */
 
-function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
+function hivtraceClusterGraphSummary(network, tag, not_CDC) {
   // Select the target element for appending the summary table
   var summary_table = d3.select(tag).select("tbody");
 
@@ -29,6 +29,8 @@ function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
   if (summary_table.empty()) {
     summary_table = d3.select(tag).append("tbody");
   }
+
+  let graph = network.json;
 
   // Initialize an empty array to store table data
   var table_data = [];
@@ -100,6 +102,17 @@ function hivtraceClusterGraphSummary(graph, tag, not_CDC) {
     "&nbsp;&nbsp;<i>" + __("statistics")["interquartile_range"] + "</i>",
     degrees["Q1"] + " - " + degrees["Q3"],
   ]);
+
+  if (network.has_multiple_sequences) {
+    table_data.push([
+      "Persons with >1 sequence",
+      _.filter(network.primary_key_list, (d, k) => d.length > 1).length,
+    ]);
+    table_data.push([
+      "Persons in multiple clusters",
+      _.size(network.entities_in_multiple_clusters),
+    ]);
+  }
 
   // If not CDC flag is false, add additional statistics
   if (!not_CDC) {
