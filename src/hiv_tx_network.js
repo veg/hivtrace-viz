@@ -2804,6 +2804,17 @@ class HIVTxNetwork {
         @return list of sequence_ids
     */
 
+  fetch_sequence_objects_for_pid(pid) {
+    return this.primary_key_list[pid];
+  }
+
+  /**
+        Retrieve the list of sequences associated with a node
+        @param pid: use this entity id
+  
+        @return list of sequence_ids
+    */
+
   fetch_sequences_for_pid(pid) {
     if (this.has_multiple_sequences) {
       return _.flatten(
