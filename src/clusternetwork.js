@@ -7525,11 +7525,11 @@ var hivtrace_cluster_network_graph = function (
 
     return {
       "edge-styler": function (element, d, network) {
-        var e_type = misc.edge_typer(d);
+        var e_type = edge_typer(d);
         if (e_type !== "") {
           d3.select(element).style(
             "stroke",
-            network._edge_colorizer(misc.edge_typer(d))
+            network._edge_colorizer(edge_typer(d))
           ); //.style ("stroke-dasharray", network._edge_dasher (d["edge_type"]));
 
           d.is_hidden = !network.shown_types[e_type];

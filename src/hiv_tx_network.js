@@ -2714,7 +2714,7 @@ class HIVTxNetwork {
 
   define_attribute_network_update() {
     return {
-      label: "Compared to previous network",
+      label: "Sequence updates compared to previous network",
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
       map: function (node) {
