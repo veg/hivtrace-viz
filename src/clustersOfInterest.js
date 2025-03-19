@@ -684,7 +684,7 @@ function open_editor(
 
         if (!mspp_raw) {
           nodes_to_add = _.flatten(
-            _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
+            _.map(nodes_to_add, (d) => self.fetch_sequence_objects_for_pid(d))
           );
         }
 

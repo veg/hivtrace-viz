@@ -2714,7 +2714,7 @@ class HIVTxNetwork {
 
   define_attribute_network_update() {
     return {
-      label: "Compared to previous network",
+      label: "Sequence updates compared to previous network",
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
       map: function (node) {
@@ -2795,6 +2795,17 @@ class HIVTxNetwork {
         };
       },
     };
+  }
+
+  /**
+        Retrieve the list of sequences associated with a node
+        @param pid: use this entity id
+  
+        @return list of sequence_ids
+    */
+
+  fetch_sequence_objects_for_pid(pid) {
+    return this.primary_key_list[pid];
   }
 
   /**
