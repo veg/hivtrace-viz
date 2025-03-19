@@ -3674,11 +3674,11 @@ var hivtrace_cluster_network_graph = function (
       });
   };*/
 
-  self.update_volatile_elements = function (container) {
+  self.update_volatile_elements = function (container, suppress_editor) {
     //var event = new CustomEvent('hiv-trace-viz-volatile-update', { detail: container });
     //container.node().dispatchEvent (event);
 
-    const coe = clustersOfInterest.get_editor();
+    const coe = !suppress_editor ? clustersOfInterest.get_editor() : null;
 
     container
       .selectAll("td, th")
@@ -3695,7 +3695,12 @@ var hivtrace_cluster_network_graph = function (
       self.update_volatile_elements(self.subcluster_table);
     }
     //console.log ("redraw_tables", clustersOfInterest.get_editor(), nodesTab.getNodeTable());
-    self.update_volatile_elements(nodesTab.getNodeTable());
+    const nt = nodesTab.getNodeTable();
+    self.update_volatile_elements(
+      nt,
+      nt.node_table_N > nt.node_table_DN ||
+        nt.node_table_DN > kGlobals.CoIAddLimit
+    );
     if (self.priority_set_table) {
       self.update_volatile_elements(self.priority_set_table);
     }
@@ -3718,6 +3723,9 @@ var hivtrace_cluster_network_graph = function (
       if (node_list.length > max_nodes_to_show) {
         node_list = node_list.slice(0, max_nodes_to_show);
       }
+
+      container.node_table_N = N;
+      container.node_table_DN = node_list.length;
 
       var column_ids = self._extract_exportable_attributes(true);
 
