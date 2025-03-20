@@ -506,12 +506,12 @@ function open_priority_set_editor(
               const pattern = new RegExp(escapeRegExp(query), "i");
               for (
                 var i = 0;
-                hits.length < 10 && i < json["Nodes"].length;
+                hits.length < 10 && i < self.json["Nodes"].length;
                 i++
               ) {
-                if (pattern.test(json["Nodes"][i].id)) {
-                  if (panel_object.can_add(json["Nodes"][i].id)) {
-                    hits.push(json["Nodes"][i].id);
+                if (pattern.test(self.json["Nodes"][i].id)) {
+                  if (panel_object.can_add(self.json["Nodes"][i].id)) {
+                    hits.push(self.json["Nodes"][i].id);
                   }
                 }
               }
@@ -528,7 +528,7 @@ function open_priority_set_editor(
 
       panel_object.validate_input = function (expression, skip_ui) {
         expression = expression || auto_object.autocomplete.getVal();
-        const validator = _.filter(json["Nodes"], (n) => n.id == expression);
+        const validator = _.filter(self.json["Nodes"], (n) => n.id == expression);
         if (validator.length == 1 && panel_object.can_add(validator[0].id)) {
           if (!skip_ui) {
             submit_button.attr("disabled", null);
@@ -591,7 +591,7 @@ function open_priority_set_editor(
 
         let need_update = false;
         let valid_ids = {};
-        _.each(json["Nodes"], (n) => {
+        _.each(self.json["Nodes"], (n) => {
           if (!existing_ids[n.id]) {
             if (existing_attributes) {
               valid_ids[n.id] = _.extend(n, existing_attributes[n.id]);
