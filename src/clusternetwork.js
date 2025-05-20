@@ -322,8 +322,10 @@ var hivtrace_cluster_network_graph = function (
     0.005
   );
 
-  clustersOfInterest.init(self);
-  nodesTab.init(d3.select(nodes_table));
+  if (self.isPrimaryGraph) {
+    clustersOfInterest.init(self);
+    nodesTab.init(d3.select(nodes_table));
+  }
 
   self.countryCentersObject = network.check_network_option(
     options,
@@ -3694,7 +3696,6 @@ var hivtrace_cluster_network_graph = function (
     if (self.subcluster_table) {
       self.update_volatile_elements(self.subcluster_table);
     }
-    //console.log ("redraw_tables", clustersOfInterest.get_editor(), nodesTab.getNodeTable());
     const nt = nodesTab.getNodeTable();
     self.update_volatile_elements(
       nt,
@@ -6346,7 +6347,9 @@ var hivtrace_cluster_network_graph = function (
           });
         }
 
-        self.draw_extended_node_table([], null, null, { "no-filter": true });
+        if (self.isPrimaryGraph) {
+          self.draw_extended_node_table([], null, null, { "no-filter": true });
+        }
       } else {
         self.draw_node_table(self.extra_node_table_columns, null, null, {
           "no-filter": true,
@@ -8262,10 +8265,15 @@ var hivtrace_cluster_network_graph = function (
     .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
     .friction(0.25);
 
-  d3.select(self.container).selectAll(".my_progress").style("display", "none");
   d3.select(self.container).selectAll("svg").remove();
-  nodesTab.getNodeTable().selectAll("*").remove();
-  self.cluster_table.selectAll("*").remove();
+
+  if (self.isPrimaryGraph) {
+    d3.select(self.container)
+      .selectAll(".my_progress")
+      .style("display", "none");
+    nodesTab.getNodeTable().selectAll("*").remove();
+    self.cluster_table.selectAll("*").remove();
+  }
 
   self.network_svg = d3
     .select(self.container)
