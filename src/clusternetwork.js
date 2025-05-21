@@ -3320,8 +3320,6 @@ var hivtrace_cluster_network_graph = function (
       }
 
       self._aux_populate_category_menus();
-
-      // populate the UI elements
     }
 
     if (self.cluster_sizes.length > max_points_to_render) {
