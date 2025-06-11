@@ -1247,8 +1247,8 @@ class HIVTxNetwork {
       );
 
       if (idx >= 0) {
-        this.defined_priority_groups.splice(idx, 1);
         this.priority_groups_update_node_sets(name, "delete");
+        this.defined_priority_groups.splice(idx, 1);
         if (update_table) {
           clustersOfInterest.draw_priority_set_table(this);
         }
