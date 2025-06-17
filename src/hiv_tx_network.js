@@ -74,6 +74,43 @@ class HIVTxNetwork {
     this.using_time_filter = null;
   }
 
+  /**
+   * Groups all edges in `this.json.Edges` by the primary key of their source and target nodes.
+   * The result is returned
+   * An edge will appear in the list for its source's primary key and its target's primary key.
+   */
+  group_edges_by_primary_key() {
+    let edges_by_primary_key = {};
+
+    _.each(this.json.Edges, (edge) => {
+      try {
+        const source_pk = this.primary_key(this.json.Nodes[edge.source]);
+        const target_pk = this.primary_key(this.json.Nodes[edge.target]);
+
+        if (!edges_by_primary_key[source_pk]) {
+          edges_by_primary_key[source_pk] = [];
+        }
+
+        edges_by_primary_key[source_pk].push(edge);
+
+        if (source_pk !== target_pk) {
+          if (!edges_by_primary_key[target_pk]) {
+            edges_by_primary_key[target_pk] = [];
+          }
+          // Add only if it's not already there (to avoid duplicates if an edge is within the same PK group but processed twice)
+          // However, the current logic adds it once for source and once for target if different, which is fine.
+          // If an edge is between two nodes of the same PK, it's added only once via the source_pk.
+          edges_by_primary_key[target_pk].push(edge);
+        }
+      } catch (err) {
+        console.log(err);
+        throw err;
+      }
+    });
+
+    return edges_by_primary_key;
+  }
+
   /** initialize UI/UX elements */
   initialize_ui_ux_elements() {
     /** define a D3 behavior to make node labels draggable */
@@ -1247,8 +1284,8 @@ class HIVTxNetwork {
       );
 
       if (idx >= 0) {
-        this.defined_priority_groups.splice(idx, 1);
         this.priority_groups_update_node_sets(name, "delete");
+        this.defined_priority_groups.splice(idx, 1);
         if (update_table) {
           clustersOfInterest.draw_priority_set_table(this);
         }
@@ -2714,7 +2751,7 @@ class HIVTxNetwork {
 
   define_attribute_network_update() {
     return {
-      label: "Compared to previous network",
+      label: "Sequence updates compared to previous network",
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
       map: function (node) {
@@ -2795,6 +2832,17 @@ class HIVTxNetwork {
         };
       },
     };
+  }
+
+  /**
+        Retrieve the list of sequences associated with a node
+        @param pid: use this entity id
+  
+        @return list of sequence_ids
+    */
+
+  fetch_sequence_objects_for_pid(pid) {
+    return this.primary_key_list[pid];
   }
 
   /**
