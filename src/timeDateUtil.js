@@ -3,7 +3,7 @@ var d3 = require("d3");
 const _networkCDCDateField = "hiv_aids_dx_dt";
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
-const DateViewFormatExport = d3.time.format("%m/%d/%Y");
+const DateViewFormatExport = d3.time.format.utc("%m/%d/%Y");
 
 const DateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
 /** this is currently used to display node addition dates to COI */
@@ -112,6 +112,7 @@ module.exports = {
   DateFormats,
   DateUpperBoundYear,
   DateViewFormat,
+  DateViewFormatExport,
   DateViewFormatClusterCreate,
   DateViewFormatMMDDYYY,
   DateViewFormatShort,
