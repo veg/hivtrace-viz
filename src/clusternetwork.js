@@ -10,14 +10,17 @@ import * as timeDateUtil from "./timeDateUtil.js";
 import * as nodesTab from "./nodesTab.js";
 import * as clustersOfInterest from "./clustersOfInterest.js";
 import { hivtrace_cluster_depthwise_traversal } from "./misc";
-import * as misc from "./misc";
+import * as misc from "./misc"; // Keep misc import
 import * as kGlobals from "./globals.js";
 import * as network from "./network.js";
 import * as HTX from "./hiv_tx_network.js";
 import * as columnDefinitions from "./column_definitions.js";
 import "jQuery-QueryBuilder";
 import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
-import "bootstrap-datepicker";
+import "bootstrap-datepicker"; // Keep datepicker import
+
+// Import the refactored social network loader function
+import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
 
 var hivtrace_cluster_network_graph = function (
   json,
@@ -322,8 +325,10 @@ var hivtrace_cluster_network_graph = function (
     0.005
   );
 
-  clustersOfInterest.init(self);
-  nodesTab.init(d3.select(nodes_table));
+  if (self.isPrimaryGraph) {
+    clustersOfInterest.init(self);
+    nodesTab.init(d3.select(nodes_table));
+  }
 
   self.countryCentersObject = network.check_network_option(
     options,
@@ -3318,8 +3323,6 @@ var hivtrace_cluster_network_graph = function (
       }
 
       self._aux_populate_category_menus();
-
-      // populate the UI elements
     }
 
     if (self.cluster_sizes.length > max_points_to_render) {
@@ -3694,7 +3697,6 @@ var hivtrace_cluster_network_graph = function (
     if (self.subcluster_table) {
       self.update_volatile_elements(self.subcluster_table);
     }
-    //console.log ("redraw_tables", clustersOfInterest.get_editor(), nodesTab.getNodeTable());
     const nt = nodesTab.getNodeTable();
     self.update_volatile_elements(
       nt,
@@ -6346,7 +6348,9 @@ var hivtrace_cluster_network_graph = function (
           });
         }
 
-        self.draw_extended_node_table([], null, null, { "no-filter": true });
+        if (self.isPrimaryGraph) {
+          self.draw_extended_node_table([], null, null, { "no-filter": true });
+        }
       } else {
         self.draw_node_table(self.extra_node_table_columns, null, null, {
           "no-filter": true,
@@ -7532,6 +7536,7 @@ var hivtrace_cluster_network_graph = function (
       };
 
     return {
+      //"simplified-mspp" : self.has_multiple_sequences,
       "edge-styler": function (element, d, network) {
         var e_type = edge_typer(d);
         if (e_type !== "") {
@@ -7626,490 +7631,21 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ Node injection (social network) ---------------*/
 
-  self.load_nodes_edges = function (
+  // The load_nodes_edges function is now imported from socialNetworkLoader.js
+  // We will call it by passing 'self' as the first argument.
+  self.load_nodes_edges = (
     nodes_and_attributes,
     index_id,
     edges_and_attributes,
     annotation
-  ) {
-    annotation = annotation || "Social";
-    /**
-        1. Scan the list of nodes for
-            a. Nodes not present in the existing network
-            b. Attribute names
-            c. Attribute values
-
-        2. Scan the list of edges for
-            a. Edges not present in the existing network
-            b. Attribute names
-            c. Attribute values
-     */
-
-    var new_nodes = [];
-    var edge_types_dict = {};
-    var existing_nodes = 0;
-    var injected_nodes = {};
-    var node_attributes = {};
-    var existing_network_nodes = {};
-    var node_name_2_id = {};
-
-    _.each(self.json.Nodes, (n, i) => {
-      existing_network_nodes[n.id] = n;
-      node_name_2_id[n.id] = i;
-    });
-
-    const handle_node_attributes = (target, n) => {
-      _.each(n, (attribute_value, attribute_key) => {
-        if (attribute_key !== index_id) {
-          HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
-            target,
-            attribute_key,
-            attribute_value
-          );
-        }
-      });
-    };
-
-    const inject_new_node = (node_name, n) => {
-      const new_node = {
-        node_class: "injected",
-        node_annotation: annotation,
-        attributes: [],
-        degree: 0,
-      };
-      new_node[kGlobals.network.NodeAttributeID] = {};
-      new_node.id = node_name;
-      handle_node_attributes(new_node, n);
-      node_name_2_id[node_name] = self.json.Nodes.length;
-      self.json.Nodes.push(new_node);
-      new_nodes.push(new_node);
-    };
-
-    if (nodes_and_attributes && nodes_and_attributes.length) {
-      if (!(index_id in nodes_and_attributes[0])) {
-        throw Error(
-          index_id +
-            " is not one of the attributes in the imported node records"
-        );
-      }
-
-      _.each(nodes_and_attributes[0], (r, i) => {
-        if (i !== index_id) {
-          var attribute_definition = {
-            label: i,
-            type: "String",
-            annotation: annotation,
-          };
-          self.inject_attribute_description(i, attribute_definition);
-        }
-      });
-
-      _.each(nodes_and_attributes, (n) => {
-        if (n[index_id] in existing_network_nodes) {
-          handle_node_attributes(existing_network_nodes[n[index_id]], n);
-          existing_nodes++;
-        } else {
-          inject_new_node(n[index_id], n);
-        }
-      });
-    }
-
-    if (edges_and_attributes && edges_and_attributes.length) {
-      const auto_inject = !(
-        nodes_and_attributes && nodes_and_attributes.length
-      );
-
-      if (auto_inject) {
-        _.map(existing_network_nodes, (e) => false);
-      }
-
-      _.each(edges_and_attributes, (e) => {
-        try {
-          if ("Index" in e && "Partner" in e && "Contact" in e) {
-            if (!(e["Index"] in node_name_2_id)) {
-              if (auto_inject) {
-                inject_new_node(e["Index"], []);
-              } else {
-                throw Error("Invalid index node");
-              }
-            } else if (auto_inject) {
-              existing_network_nodes[e["Index"]] = true;
-            }
-
-            if (!(e["Partner"] in node_name_2_id)) {
-              if (auto_inject) {
-                inject_new_node(e["Partner"], []);
-              } else {
-                throw Error("Invalid partner node");
-              }
-            } else if (auto_inject) {
-              existing_network_nodes[e["Partner"]] = true;
-            }
-
-            edge_types_dict[e["Contact"]] =
-              (edge_types_dict[e["Contact"]]
-                ? edge_types_dict[e["Contact"]]
-                : 0) + 1;
-
-            var new_edge = {
-              source: node_name_2_id[e["Index"]],
-              target: node_name_2_id[e["Partner"]],
-              edge_type: e["Contact"],
-              length: 0.005,
-              directed: true,
-            };
-
-            self.json.Edges.push(new_edge);
-          } else {
-            throw Error("Missing required attribute");
-          }
-        } catch (err) {
-          throw Error(
-            "Invalid edge specification ( " + err + ") " + JSON.stringify(e)
-          );
-        }
-      });
-
-      if (auto_inject) {
-        existing_nodes = _.size(_.filter(existing_network_nodes, (e) => e));
-      }
-
-      self._aux_populate_category_menus();
-
-      self.update_clusters_with_injected_nodes(null, null, annotation);
-      if (self._is_CDC_) {
-        self.draw_extended_node_table(self.aggregate_indvidual_level_records());
-      } else {
-        self.draw_node_table(self.extra_node_table_columns, self.json.Nodes);
-      }
-      if (!self.extra_cluster_table_columns) {
-        self.extra_cluster_table_columns = [];
-      }
-      if (!self.extra_subcluster_table_columns) {
-        self.extra_subcluster_table_columns = [];
-      }
-
-      var edge_types_by_cluster = {};
-      _.each(self.json.Edges, (e) => {
-        try {
-          var edge_clusters = _.union(
-            _.keys(self.json.Nodes[e.source].extended_cluster),
-            _.keys(self.json.Nodes[e.target].extended_cluster)
-          );
-          _.each(edge_clusters, (c) => {
-            if (!(c in edge_types_by_cluster)) {
-              edge_types_by_cluster[c] = {};
-            }
-            if (e.edge_type) {
-              edge_types_by_cluster[c][e.edge_type] = 1;
-            }
-          });
-        } catch (err) {
-          console.log(err);
-        }
-      });
-
-      var edge_types_by_cluster_sorted = {};
-      _.each(edge_types_by_cluster, (v, c) => {
-        var my_keys = _.keys(v);
-        my_keys.sort();
-        edge_types_by_cluster_sorted[c] = my_keys;
-      });
-
-      /*var _edge_dasher = d3.scale
-        .ordinal()
-        .range(kGlobals.CategoricalDashPatterns)
-        .domain(edge_types);
-      */
-
-      var _social_view_handler = function (
-        id,
-        node_filter,
-        labeled_links,
-        shown_types,
-        title,
-        e
-      ) {
-        self.open_exclusive_tab_view(
-          id,
-          node_filter,
-          title,
-          self._social_view_options(labeled_links, shown_types),
-          true
-        );
-      };
-
-      var _injected_column_subcluster_button_handler = function (
-        payload,
-        edge_filter,
-        title,
-        e
-      ) {
-        function edge_filter_for_subclusters(edge) {
-          return (
-            HTX.HIVTxNetwork.is_edge_injected(edge) ||
-            edge.length <= self.subcluster_threshold
-          );
-        }
-
-        var subcluster_edges = [];
-
-        var direct_links_only = hivtrace_cluster_depthwise_traversal(
-          self.json.Nodes,
-          self.json.Edges,
-          edge_filter || edge_filter_for_subclusters,
-          //null,
-          subcluster_edges,
-          payload.children
-        );
-
-        var labeled_links = {},
-          shown_types = {};
-        _.each(subcluster_edges[0], (e) => {
-          if (e.edge_type) {
-            labeled_links[e.edge_type] = 1;
-            shown_types[e.edge_type] = 1;
-          }
-        });
-
-        labeled_links = _.keys(labeled_links);
-        labeled_links.sort();
-        labeled_links.push("");
-        shown_types[""] = 1;
-
-        title =
-          title ||
-          function (id) {
-            return (
-              "Subcluster " + payload.cluster_id + "[+ " + annotation + "]"
-            );
-          };
-
-        var cv = self.view_subcluster(
-          payload,
-          direct_links_only[0],
-          title(payload.cluster_id),
-          self._social_view_options(labeled_links, shown_types),
-          edge_filter_for_subclusters,
-          true
-        );
-        //cv.annotate_priority_clusters(timeDateUtil._networkCDCDateField, 36, 12);
-        //cv.handle_attribute_categorical("recent_rapid");
-        cv._refresh_subcluster_view(
-          self.today || timeDateUtil.getCurrentDate()
-        );
-      };
-
-      var injected_column_subcluster = [
-        {
-          description: {
-            value: annotation + " network",
-            help: "View subclusters with " + annotation + " data",
-          },
-
-          generator: function (cluster) {
-            return {
-              value: cluster,
-              callback: function (element, payload) {
-                var this_cell = d3.select(element);
-                this_cell
-                  .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
-                  .style("margin-left", "1em")
-                  .text("Complete " + annotation)
-                  .on(
-                    "click",
-                    _.partial(
-                      _injected_column_subcluster_button_handler,
-                      payload,
-                      null,
-                      null
-                    )
-                  );
-
-                var node_ids = {};
-
-                _.each(payload.children, (n) => {
-                  node_ids[n.id] = 1;
-                });
-
-                this_cell
-                  .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
-                  .text("Directly linked " + annotation)
-                  .on(
-                    "click",
-                    _.partial(
-                      _injected_column_subcluster_button_handler,
-                      payload,
-                      (edge) =>
-                        self.json.Nodes[edge.target].id in node_ids ||
-                        self.json.Nodes[edge.source].id in node_ids,
-                      (id) =>
-                        "Subcluster " +
-                        payload.cluster_id +
-                        "[+ direct  " +
-                        annotation +
-                        "]"
-                    )
-                  );
-              },
-            };
-          },
-        },
-      ];
-
-      var injected_column = [
-        {
-          description: {
-            value: annotation + " network",
-            sort: function (c) {
-              return c.value[0];
-            },
-            help: "Nodes added and clusters merged through " + annotation,
-          },
-          generator: function (cluster) {
-            return {
-              value: [
-                cluster.injected[annotation],
-                cluster.linked_clusters,
-                cluster.cluster_id,
-              ],
-
-              callback: function (element, payload) {
-                var this_cell = d3.select(element);
-                this_cell.text(
-                  Number(payload[0]) + " " + annotation + " nodes. "
-                );
-                var other_clusters = [];
-                if (payload[1]) {
-                  other_clusters = _.without(_.keys(payload[1]), payload[2]);
-                  if (other_clusters.length) {
-                    other_clusters.sort();
-                    this_cell
-                      .append("span")
-                      .classed("label label-info", true)
-                      .text("Bridges to " + other_clusters.length + " clusters")
-                      .attr("title", other_clusters.join(", "));
-                  }
-                }
-
-                var labeled_links = _.clone(
-                  edge_types_by_cluster_sorted[payload[2]]
-                );
-
-                if (
-                  payload[0] > 0 ||
-                  other_clusters.length ||
-                  (edge_types_by_cluster_sorted[payload[2]] &&
-                    labeled_links.length)
-                ) {
-                  labeled_links.push("");
-
-                  var shown_types = {};
-                  _.each(labeled_links, (t) => {
-                    shown_types[t] = 1;
-                  });
-
-                  this_cell
-                    .append("button")
-                    .classed("btn btn-primary btn-xs pull-right", true)
-                    .text("Directly linked " + annotation)
-                    .style("margin-left", "1em")
-                    .on("click", (e) => {
-                      var directly_linked_ids = {};
-                      var node_ids = {};
-
-                      _.each(cluster.children, (n) => {
-                        node_ids[n.id] = 1;
-                      });
-
-                      var direct_links_only =
-                        hivtrace_cluster_depthwise_traversal(
-                          self.json.Nodes,
-                          self.json.Edges,
-                          (edge) =>
-                            self.json.Nodes[edge.target].id in node_ids ||
-                            self.json.Nodes[edge.source].id in node_ids,
-                          false,
-                          cluster.children
-                        );
-
-                      _.each(direct_links_only[0], (n) => {
-                        directly_linked_ids[n.id] = true;
-                      });
-
-                      //console.log (directly_linked_ids);
-
-                      _social_view_handler(
-                        payload[2],
-                        (n) => n.id in directly_linked_ids,
-                        labeled_links,
-                        shown_types,
-                        (id) =>
-                          "Cluster " + id + "[+ direct " + annotation + "]",
-                        e
-                      );
-                    });
-
-                  this_cell
-                    .append("button")
-                    .classed("btn btn-primary btn-xs pull-right", true)
-                    .text("Complete " + annotation)
-                    .on(
-                      "click",
-                      _.partial(
-                        _social_view_handler,
-                        payload[2],
-                        (n) =>
-                          n.extended_cluster &&
-                          payload[2] in n.extended_cluster,
-                        labeled_links,
-                        shown_types,
-                        (id) => "Cluster " + id + "[+ " + annotation + "]"
-                      )
-                    );
-                }
-              },
-            };
-          },
-        },
-      ];
-
-      if (self.extra_cluster_table_columns) {
-        self.extra_cluster_table_columns =
-          self.extra_cluster_table_columns.concat(injected_column);
-      } else {
-        self.extra_cluster_table_columns = injected_column;
-      }
-
-      self.draw_cluster_table(
-        self.extra_cluster_table_columns,
-        self.cluster_table
-      );
-
-      if (self.subcluster_table) {
-        if (self.extra_subcluster_table_columns) {
-          self.extra_subcluster_table_columns =
-            self.extra_subcluster_table_columns.concat(
-              injected_column_subcluster
-            );
-        } else {
-          self.extra_subcluster_table_columns = injected_column_subcluster;
-        }
-        self.draw_cluster_table(
-          self.extra_subcluster_table_columns,
-          self.subcluster_table,
-          { subclusters: true, "no-clusters": true }
-        );
-      }
-    }
-
-    return {
-      nodes: new_nodes,
-      existing_nodes: existing_nodes,
-      edges: edge_types_dict,
-    };
+  ) => {
+    return loadSocialNetworkData(
+      self,
+      nodes_and_attributes,
+      index_id,
+      edges_and_attributes,
+      annotation
+    );
   };
 
   self.update_clusters_with_injected_nodes = function (
@@ -8262,10 +7798,15 @@ var hivtrace_cluster_network_graph = function (
     .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
     .friction(0.25);
 
-  d3.select(self.container).selectAll(".my_progress").style("display", "none");
   d3.select(self.container).selectAll("svg").remove();
-  nodesTab.getNodeTable().selectAll("*").remove();
-  self.cluster_table.selectAll("*").remove();
+
+  if (self.isPrimaryGraph) {
+    d3.select(self.container)
+      .selectAll(".my_progress")
+      .style("display", "none");
+    nodesTab.getNodeTable().selectAll("*").remove();
+    self.cluster_table.selectAll("*").remove();
+  }
 
   self.network_svg = d3
     .select(self.container)

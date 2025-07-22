@@ -686,6 +686,8 @@ function open_editor(
           nodes_to_add = _.flatten(
             _.map(nodes_to_add, (d) => self.fetch_sequence_objects_for_pid(d))
           );
+        } else {
+          nodes_to_add = _.map(nodes_to_add, (d) => ({ id: d }));
         }
 
         _.each(nodes_to_add, (n) => {
