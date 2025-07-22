@@ -1523,7 +1523,7 @@ class HIVTxNetwork {
           these have been precomputed elsewhere (priority_score)
       */
 
-      const priority_subclusters = _.map(
+      /*const priority_subclusters = _.map(
         _.filter(
           _.flatten(
             _.map(
@@ -1541,7 +1541,20 @@ class HIVTxNetwork {
           (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
         ),
         (d) => new Set(d)
-      );
+      );*/
+
+      const priority_subclusters = _.chain(this.clusters)
+        .map("subclusters")
+        .flatten()
+        .filter((sc) => sc.priority_score.length)
+        .map("priority_score")
+        .flatten(1)
+        .map((d) => this.unique_entity_list_from_ids(d))
+        .filter(
+          (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
+        )
+        .map((d) => new Set(d))
+        .value();
 
       this.map_ids_to_objects();
 
@@ -1976,7 +1989,9 @@ class HIVTxNetwork {
 
           /** check to see the CoI meets priority definitions */
 
-          const node_set = new Set(_.map(pg.nodes, (n) => n.name));
+          const node_set = new Set(
+            this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+          );
           pg.meets_priority_def = _.some(
             priority_subclusters,
             (ps) =>
