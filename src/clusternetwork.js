@@ -5491,7 +5491,10 @@ var hivtrace_cluster_network_graph = function (
           };
 
           if (d.enum) {
-            def.values = _.clone(d.enum);
+            def.values = _.map(_.clone(d.enum), (d) => ({
+              value: d,
+              label: _.escape(d),
+            }));
             def.input = "select";
           }
 
