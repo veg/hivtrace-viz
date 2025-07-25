@@ -364,6 +364,29 @@ function open_editor(
 
         // check if can save (name set etc)
         if (panel_object.network_nodes.length) {
+          const entity_attributes = _.mapObject(
+            self.unique_entity_object_list(panel_object.table_entities),
+            (d) => d[0]
+          );
+
+          _.each(panel_object.network_nodes, (n) => {
+            const ref_attr = entity_attributes[self.primary_key(n)];
+            if (ref_attr) {
+              _.each(
+                [
+                  "_priority_set_date",
+                  "_priority_set_kind",
+                  "_priority_set_autoadded",
+                ],
+                (attr) => {
+                  if (ref_attr[attr]) {
+                    n[attr] = ref_attr[attr];
+                  }
+                }
+              );
+            }
+          });
+
           let name, desc, kind, tracking;
 
           [name, desc, kind, tracking] = _.map(
@@ -423,7 +446,7 @@ function open_editor(
                   _.each(added_node_objects, (n) => {
                     set_description.nodes.push({
                       name: n.id,
-                      added: timeDateUtil.getCurrentDate(),
+                      added: modifiedDate || createdDate,
                       kind: kGlobals.CDCCOINodeKindDefault,
                     });
                   });
@@ -602,8 +625,9 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
+        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
-          node["_priority_set_date"] = createdDate;
+          node["_priority_set_date"] = modifiedDate || createdDate;
         }
         if (!("_priority_set_kind" in node)) {
           node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
@@ -622,7 +646,7 @@ function open_editor(
         }
         _.each(seqs_to_add, (node) => {
           if (!("_priority_set_date" in node)) {
-            node["_priority_set_date"] = createdDate;
+            node["_priority_set_date"] = modifiedDate || createdDate;
           }
           if (!("_priority_set_kind" in node)) {
             node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
@@ -964,8 +988,11 @@ function open_editor(
           extra_columns.splice(1, 1);
         }
 
+        panel_object.table_entities = self.aggregate_indvidual_level_records(
+          panel.network_nodes
+        );
         self.draw_extended_node_table(
-          self.aggregate_indvidual_level_records(panel.network_nodes),
+          panel_object.table_entities,
           table_container,
           extra_columns
         );

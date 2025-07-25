@@ -31,6 +31,7 @@ class HIVTxNetwork {
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
+    this.nodeFilterObject = null;
     /** SLKP 20241029
         this function is used to identify which nodes are duplicates
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
@@ -1319,7 +1320,9 @@ class HIVTxNetwork {
 
           cluster_detect_size = this.unique_entity_list_from_ids(
             _.map(
-              _.filter(g.nodes, (node) => node.added <= g.created),
+              _.filter(g.nodes, (node) => {
+                return node.added <= g.created;
+              }),
               (node) => node.name
             )
           ).length;
@@ -1523,7 +1526,7 @@ class HIVTxNetwork {
           these have been precomputed elsewhere (priority_score)
       */
 
-      const priority_subclusters = _.map(
+      /*const priority_subclusters = _.map(
         _.filter(
           _.flatten(
             _.map(
@@ -1541,7 +1544,20 @@ class HIVTxNetwork {
           (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
         ),
         (d) => new Set(d)
-      );
+      );*/
+
+      const priority_subclusters = _.chain(this.clusters)
+        .map("subclusters")
+        .flatten()
+        .filter((sc) => sc.priority_score.length)
+        .map("priority_score")
+        .flatten(1)
+        .map((d) => this.unique_entity_list_from_ids(d))
+        .filter(
+          (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
+        )
+        .map((d) => new Set(d))
+        .value();
 
       this.map_ids_to_objects();
 
@@ -1976,7 +1992,9 @@ class HIVTxNetwork {
 
           /** check to see the CoI meets priority definitions */
 
-          const node_set = new Set(_.map(pg.nodes, (n) => n.name));
+          const node_set = new Set(
+            this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+          );
           pg.meets_priority_def = _.some(
             priority_subclusters,
             (ps) =>
@@ -2194,6 +2212,9 @@ class HIVTxNetwork {
         type: "String",
         //label_format: d3.format(".2f"),
         map: function (node) {
+          /*if (node && node.subcluster_label && node.subcluster_label == "10.2") {
+             console.log (node);
+          }*/
           if (node) {
             return node.subcluster_label || "None";
           }
@@ -2211,6 +2232,10 @@ class HIVTxNetwork {
 
     //console.time ("SUBS");
     this._aux_populate_category_menus();
+    if (this._is_CDC_) {
+      this.define_node_search_table();
+    }
+
     //console.timeEnd ("SUBS");
   }
 
@@ -2457,6 +2482,7 @@ class HIVTxNetwork {
   */
 
   populate_predefined_attribute(computed, key) {
+    //console.log ("Injecting " + key);
     if (_.isFunction(computed)) {
       computed = computed(this);
     }
@@ -3150,7 +3176,6 @@ class HIVTxNetwork {
           new_record[kGlobals.network.NodeAttributeID] = _.object(
             _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
               const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
-
               let unique_values = _.countBy(
                 values,
                 (dn) => dn[kGlobals.network.NodeAttributeID][k]
