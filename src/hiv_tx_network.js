@@ -1320,7 +1320,9 @@ class HIVTxNetwork {
 
           cluster_detect_size = this.unique_entity_list_from_ids(
             _.map(
-              _.filter(g.nodes, (node) => node.added <= g.created),
+              _.filter(g.nodes, (node) => {
+                return node.added <= g.created;
+              }),
               (node) => node.name
             )
           ).length;

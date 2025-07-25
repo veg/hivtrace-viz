@@ -446,7 +446,7 @@ function open_editor(
                   _.each(added_node_objects, (n) => {
                     set_description.nodes.push({
                       name: n.id,
-                      added: timeDateUtil.getCurrentDate(),
+                      added: modifiedDate || createdDate,
                       kind: kGlobals.CDCCOINodeKindDefault,
                     });
                   });
@@ -625,8 +625,9 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
+        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
-          node["_priority_set_date"] = createdDate;
+          node["_priority_set_date"] = modifiedDate || createdDate;
         }
         if (!("_priority_set_kind" in node)) {
           node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
@@ -645,7 +646,7 @@ function open_editor(
         }
         _.each(seqs_to_add, (node) => {
           if (!("_priority_set_date" in node)) {
-            node["_priority_set_date"] = createdDate;
+            node["_priority_set_date"] = modifiedDate || createdDate;
           }
           if (!("_priority_set_kind" in node)) {
             node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
