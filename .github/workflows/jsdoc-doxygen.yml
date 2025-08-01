@@ -50,10 +50,15 @@ jobs:
         run: doxygen Doxyfile
 
       - name: Generate PDF using LaTeX Action
-        uses: xu-cheng/latex-action@v2
+        uses: xu-cheng/latex-action@v3
         with:
           working_directory: docs/latex/
           root_file: refman.tex
+          compiler: latexmk
+          args: -pdf
+          os: debian
+          extra_system_packages: "inkscape ghostscript"
+          texlive_version: 2024
 
       - name: Copy PDF to more visible location in docs and output folder
         run: |
