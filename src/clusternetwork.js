@@ -5466,6 +5466,296 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  self.define_node_search_table = function () {
+    self.node_search_div = self.get_ui_element_selector_by_role(
+      "node_search_div",
+      true
+    );
+
+    if (self.node_search_div && self.isPrimaryGraph) {
+      const compute_type = (t, d) => {
+        if (t == "String") return "string";
+        if (t == "Number") return d.is_integer ? "integer" : "double";
+        if (t == "Date") return "date";
+        return "string";
+      };
+
+      self.node_search_attributes = self._extract_exportable_attributes(false);
+
+      self.qb_filter_def = _.sortBy(
+        _.map(self.node_search_attributes, (d) => {
+          let def = {
+            id: d.raw_attribute_key,
+            label: d.label,
+            type: compute_type(d.type, d),
+          };
+
+          if (d.enum) {
+            def.values = _.map(_.clone(d.enum), (d) => ({
+              value: d,
+              label: _.escape(d),
+            }));
+            def.input = "select";
+          }
+
+          if (def.type == "date") {
+            def.plugin = "datepicker";
+            def.plugin_config = {
+              format: "yyyy/mm/dd",
+              todayBtn: "linked",
+              todayHighlight: true,
+              autoclose: true,
+            };
+            def.operators = [
+              "equal",
+              "not equal",
+              "less",
+              "less_or_equal",
+              "greater",
+              "greater_or_equal",
+            ];
+          } else {
+            if (def.type == "string") {
+              def.operators = [
+                "equal",
+                "not equal",
+                "contains",
+                "begins_with",
+                "ends_with",
+                "is_empty",
+                "is_not_empty",
+              ];
+            } else if (def.type == "integer" || def.type == "double") {
+              def.operators = [
+                "equal",
+                "not equal",
+                "less",
+                "less_or_equal",
+                "greater",
+                "greater_or_equal",
+                "between",
+              ];
+            }
+          }
+          return def;
+        }),
+        (d) => d.label
+      );
+
+      if (self.nodeFilterObject) {
+        try {
+          if (_.isEqual(self.nodeFilterObject, self.qb_filter_def)) {
+            return;
+          }
+        } catch (err) {
+          console.log(err);
+        }
+        $(self.node_search_div).queryBuilder("destroy");
+        self.nodeFilterObject = null;
+        self.aggregate_entity_data = null;
+      }
+
+      let query_buttons = d3
+        .select(self.node_search_div)
+        .selectAll('[data-hivtrace-ui-role="node-selector-search-buttonbar"]');
+
+      if (query_buttons.empty()) {
+        d3.select(self.node_search_div)
+          .append("div")
+          .classed("alert alert-info alert-dismissible", true)
+          .style("font-size", "150%")
+          .text(
+            "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
+          )
+          .append("button")
+          .classed("close", true)
+          .attr("data-dismiss", "alert")
+          .append("span")
+          .html("&times;");
+
+        /*
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+                */
+
+        query_buttons = d3
+          .select(self.node_search_div)
+          .append("div")
+          .classed("btn-group btn-group-sm", true)
+          .attr("data-hivtrace-ui-role", "node-selector-search-buttonbar");
+        self.node_query_button_reset = query_buttons
+          .append("button")
+          .text("Reset")
+          .classed("btn btn-warning", true);
+        self.node_query_button_search = query_buttons
+          .append("button")
+          .text("Search")
+          .classed("btn btn-primary", true);
+      }
+
+      self.nodeFilterObject = _.clone(self.qb_filter_def);
+
+      let qb = $(self.node_search_div).queryBuilder({
+        plugins: {
+          "filter-description": null,
+          "bt-tooltip-errors": null,
+          "not-group": null,
+        },
+        filters: self.qb_filter_def,
+      });
+
+      d3.select($(self.node_search_div).get(0))
+        .selectAll(".group-conditions")
+        .selectAll("label")
+        .classed("btn-primary", false)
+        .classed("btn-default", true);
+
+      $(self.node_search_div).on(
+        "afterInit.queryBuilder afterSetRules.queryBuilder afterAddGroup.queryBuilder",
+        function (e, level) {
+          d3.select($(self.node_search_div).get(0))
+            .selectAll(".group-conditions")
+            .selectAll("label")
+            .classed("btn-primary", false)
+            .classed("btn-default", true);
+        }
+      );
+
+      self.process_search_field = (value, condition) => {
+        switch (condition.type) {
+          case "string": {
+            if (!value) value = "";
+            value = value.toLowerCase();
+            switch (condition.operator) {
+              case "equal":
+                return value == condition.value;
+              case "not equal":
+                return value != condition.value;
+              case "contains":
+                return value.indexOf(condition.value) >= 0;
+              case "begins_with":
+                return value.indexOf(condition.value) == 0;
+              case "ends_with":
+                return (
+                  value.indexOf(condition.value) ==
+                  Math.max(0, value.length - condition.value.length)
+                );
+              case "is_not_empty":
+                return value.length > 0;
+              case "is_empty":
+                return value.length == 0;
+            }
+            break;
+          }
+          case "date":
+          case "integer":
+          case "double": {
+            if (!value) return false;
+            switch (condition.operator) {
+              case "equal":
+                return value == condition.value;
+              case "not equal":
+                return value != condition.value;
+              case "less":
+                return value < condition.value;
+              case "less_or_equal":
+                return value <= condition.value;
+              case "greater":
+                return value > condition.value;
+              case "greater_or_equal":
+                return value >= condition.value;
+              case "between":
+                return (
+                  value >= condition.value[0] && value <= condition.value[1]
+                );
+            }
+            break;
+          }
+        }
+        return false;
+      };
+
+      self.process_search = (data, rules) => {
+        let rule_results;
+        if (rules.rules) {
+          rule_results = _.map(rules.rules, (r) => {
+            return self.process_search(data, r);
+          });
+        } else {
+          return self.process_search_field(
+            self.attribute_node_value_by_id(
+              data,
+              rules.id,
+              rules.type == "number"
+            ),
+            rules
+          );
+        }
+
+        if (rules.condition == "AND") {
+          rule_results = _.every(rule_results, (d) => d);
+        } else if (rules.condition == "OR") {
+          rule_results = _.some(rule_results, (d) => d);
+        } else {
+          rule_results = false;
+        }
+
+        return rules.not ? !rule_results : rule_results;
+      };
+
+      self.rule_lc = (rules) => {
+        if (rules.rules) {
+          _.each(rules.rules, (r) => {
+            self.rule_lc(r);
+          });
+        } else {
+          if (rules.value) {
+            if (rules.type == "string") {
+              rules.value = rules.value.toLowerCase();
+            } else if (rules.type == "date") {
+              rules.value = timeDateUtil.DateViewNodeSearch.parse(rules.value);
+            }
+          }
+        }
+      };
+
+      if (!self.aggregate_entity_data) {
+        self.aggregate_entity_data = self.aggregate_indvidual_level_records();
+      }
+
+      self.node_query_button_reset.on("click", (d) => {
+        $(self.node_search_div).queryBuilder("reset");
+        self.draw_extended_node_table([], null, null, {
+          "no-filter": true,
+        });
+      });
+
+      self.node_query_button_search.on("click", (d) => {
+        var result = $(self.node_search_div).queryBuilder("getRules");
+        if (!$.isEmptyObject(result)) {
+          self.rule_lc(result);
+          self.draw_extended_node_table(
+            _.filter(self.aggregate_entity_data, (d) =>
+              self.process_search(d, result)
+            ),
+            null,
+            null,
+            { "no-filter": true }
+          );
+        } else {
+          self.draw_extended_node_table([], null, null, {
+            "no-filter": true,
+          });
+        }
+      });
+    }
+
+    if (self.isPrimaryGraph) {
+      self.draw_extended_node_table([], null, null, { "no-filter": true });
+    }
+  };
+
   self.handle_attribute_categorical = function (cat_id, skip_update) {
     var set_attr = "None";
 
@@ -6076,281 +6366,7 @@ var hivtrace_cluster_network_graph = function (
       }
 
       if (self._is_CDC_) {
-        self.node_search_div = self.get_ui_element_selector_by_role(
-          "node_search_div",
-          true
-        );
-
-        if (self.node_search_div && self.isPrimaryGraph) {
-          const compute_type = (t, d) => {
-            if (t == "String") return "string";
-            if (t == "Number") return d.is_integer ? "integer" : "double";
-            if (t == "Date") return "date";
-            return "string";
-          };
-
-          self.node_search_attributes =
-            self._extract_exportable_attributes(false);
-
-          self.qb_filter_def = _.sortBy(
-            _.map(self.node_search_attributes, (d) => {
-              let def = {
-                id: d.raw_attribute_key,
-                label: d.label,
-                type: compute_type(d.type, d),
-              };
-
-              if (d.enum) {
-                def.values = _.clone(d.enum);
-                def.input = "select";
-              }
-
-              if (def.type == "date") {
-                def.plugin = "datepicker";
-                def.plugin_config = {
-                  format: "yyyy/mm/dd",
-                  todayBtn: "linked",
-                  todayHighlight: true,
-                  autoclose: true,
-                };
-                def.operators = [
-                  "equal",
-                  "not equal",
-                  "less",
-                  "less_or_equal",
-                  "greater",
-                  "greater_or_equal",
-                ];
-              } else {
-                if (def.type == "string") {
-                  def.operators = [
-                    "equal",
-                    "not equal",
-                    "contains",
-                    "begins_with",
-                    "ends_with",
-                    "is_empty",
-                    "is_not_empty",
-                  ];
-                } else if (def.type == "integer" || def.type == "double") {
-                  def.operators = [
-                    "equal",
-                    "not equal",
-                    "less",
-                    "less_or_equal",
-                    "greater",
-                    "greater_or_equal",
-                    "between",
-                  ];
-                }
-              }
-              return def;
-            }),
-            (d) => d.label
-          );
-
-          let query_buttons = d3
-            .select(self.node_search_div)
-            .selectAll(
-              '[data-hivtrace-ui-role="node-selector-search-buttonbar"]'
-            );
-
-          if (query_buttons.empty()) {
-            d3.select(self.node_search_div)
-              .append("div")
-              .classed("alert alert-info alert-dismissible", true)
-              .style("font-size", "150%")
-              .text(
-                "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
-              )
-              .append("button")
-              .classed("close", true)
-              .attr("data-dismiss", "alert")
-              .append("span")
-              .html("&times;");
-
-            /*
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-                */
-
-            query_buttons = d3
-              .select(self.node_search_div)
-              .append("div")
-              .classed("btn-group btn-group-sm", true)
-              .attr("data-hivtrace-ui-role", "node-selector-search-buttonbar");
-            self.node_query_button_reset = query_buttons
-              .append("button")
-              .text("Reset")
-              .classed("btn btn-warning", true);
-            self.node_query_button_search = query_buttons
-              .append("button")
-              .text("Search")
-              .classed("btn btn-primary", true);
-          }
-
-          let qb = $(self.node_search_div).queryBuilder({
-            plugins: {
-              "filter-description": null,
-              "bt-tooltip-errors": null,
-              "not-group": null,
-            },
-            filters: self.qb_filter_def,
-          });
-
-          d3.select($(self.node_search_div).get(0))
-            .selectAll(".group-conditions")
-            .selectAll("label")
-            .classed("btn-primary", false)
-            .classed("btn-default", true);
-
-          $(self.node_search_div).on(
-            "afterInit.queryBuilder afterSetRules.queryBuilder afterAddGroup.queryBuilder",
-            function (e, level) {
-              d3.select($(self.node_search_div).get(0))
-                .selectAll(".group-conditions")
-                .selectAll("label")
-                .classed("btn-primary", false)
-                .classed("btn-default", true);
-            }
-          );
-
-          self.process_search_field = (value, condition) => {
-            switch (condition.type) {
-              case "string": {
-                if (!value) value = "";
-                value = value.toLowerCase();
-                switch (condition.operator) {
-                  case "equal":
-                    return value == condition.value;
-                  case "not equal":
-                    return value != condition.value;
-                  case "contains":
-                    return value.indexOf(condition.value) >= 0;
-                  case "begins_with":
-                    return value.indexOf(condition.value) == 0;
-                  case "ends_with":
-                    return (
-                      value.indexOf(condition.value) ==
-                      Math.max(0, value.length - condition.value.length)
-                    );
-                  case "is_not_empty":
-                    return value.length > 0;
-                  case "is_empty":
-                    return value.length == 0;
-                }
-                break;
-              }
-              case "date":
-              case "integer":
-              case "double": {
-                if (!value) return false;
-                switch (condition.operator) {
-                  case "equal":
-                    return value == condition.value;
-                  case "not equal":
-                    return value != condition.value;
-                  case "less":
-                    return value < condition.value;
-                  case "less_or_equal":
-                    return value <= condition.value;
-                  case "greater":
-                    return value > condition.value;
-                  case "greater_or_equal":
-                    return value >= condition.value;
-                  case "between":
-                    return (
-                      value >= condition.value[0] && value <= condition.value[1]
-                    );
-                }
-                break;
-              }
-            }
-            return false;
-          };
-
-          self.process_search = (data, rules) => {
-            let rule_results;
-            if (rules.rules) {
-              rule_results = _.map(rules.rules, (r) => {
-                return self.process_search(data, r);
-              });
-            } else {
-              return self.process_search_field(
-                self.attribute_node_value_by_id(
-                  data,
-                  rules.id,
-                  rules.type == "number"
-                ),
-                rules
-              );
-            }
-
-            if (rules.condition == "AND") {
-              rule_results = _.every(rule_results, (d) => d);
-            } else if (rules.condition == "OR") {
-              rule_results = _.some(rule_results, (d) => d);
-            } else {
-              rule_results = false;
-            }
-
-            return rules.not ? !rule_results : rule_results;
-          };
-
-          self.rule_lc = (rules) => {
-            if (rules.rules) {
-              _.each(rules.rules, (r) => {
-                self.rule_lc(r);
-              });
-            } else {
-              if (rules.value) {
-                if (rules.type == "string") {
-                  rules.value = rules.value.toLowerCase();
-                } else if (rules.type == "date") {
-                  rules.value = timeDateUtil.DateViewNodeSearch.parse(
-                    rules.value
-                  );
-                }
-              }
-            }
-          };
-
-          if (!self.aggregate_entity_data) {
-            self.aggregate_entity_data =
-              self.aggregate_indvidual_level_records();
-          }
-
-          self.node_query_button_reset.on("click", (d) => {
-            $(self.node_search_div).queryBuilder("reset");
-            self.draw_extended_node_table([], null, null, {
-              "no-filter": true,
-            });
-          });
-
-          self.node_query_button_search.on("click", (d) => {
-            var result = $(self.node_search_div).queryBuilder("getRules");
-            if (!$.isEmptyObject(result)) {
-              self.rule_lc(result);
-              self.draw_extended_node_table(
-                _.filter(self.aggregate_entity_data, (d) =>
-                  self.process_search(d, result)
-                ),
-                null,
-                null,
-                { "no-filter": true }
-              );
-            } else {
-              self.draw_extended_node_table([], null, null, {
-                "no-filter": true,
-              });
-            }
-          });
-        }
-
-        if (self.isPrimaryGraph) {
-          self.draw_extended_node_table([], null, null, { "no-filter": true });
-        }
+        // defer until later
       } else {
         self.draw_node_table(self.extra_node_table_columns, null, null, {
           "no-filter": true,
@@ -7895,6 +7911,10 @@ var hivtrace_cluster_network_graph = function (
 
   if (self.isPrimaryGraph) {
     self.annotate_multiple_clusters_on_nodes();
+  }
+
+  if (self._is_CDC_) {
+    self.define_node_search_table();
   }
 
   self.draw_attribute_labels();
