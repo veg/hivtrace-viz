@@ -31,6 +31,7 @@ class HIVTxNetwork {
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
+    this.nodeFilterObject = null;
     /** SLKP 20241029
         this function is used to identify which nodes are duplicates
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
@@ -1319,7 +1320,9 @@ class HIVTxNetwork {
 
           cluster_detect_size = this.unique_entity_list_from_ids(
             _.map(
-              _.filter(g.nodes, (node) => node.added <= g.created),
+              _.filter(g.nodes, (node) => {
+                return node.added <= g.created;
+              }),
               (node) => node.name
             )
           ).length;
@@ -1644,6 +1647,9 @@ class HIVTxNetwork {
           let existing_subclusters = new Set();
           let existing_clusters = new Set();
 
+          let node_records_to_delete = new Set();
+          let do_not_add_duplicates = new Set();
+
           _.each(pg.nodes, (node) => {
             const nodeid = node.name;
             if (nodeid in this.node_id_to_object) {
@@ -1651,6 +1657,7 @@ class HIVTxNetwork {
               existing_subclusters.add(n.subcluster_label);
               existing_clusters.add(n.cluster);
               pg.node_objects.push(n);
+              do_not_add_duplicates.add(nodeid);
             } else {
               /* 20241125
                     check to see if this might be an eHARS only CoI, i.e., 
@@ -1665,13 +1672,14 @@ class HIVTxNetwork {
                     (3) they will be handled in the next step
               */
               if (this.has_multiple_sequences) {
-                const entities = this.primary_key_list[nodeid];
+                let entities = this.primary_key_list[nodeid];
                 if (entities) {
                   if (entities.length == 1) {
                     node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
                     existing_subclusters.add(entities[0].subcluster_label);
                     existing_clusters.add(entities[0].cluster);
+                    do_not_add_duplicates.add(nodeid);
                     return;
                   } else {
                     /*node.name = entities[0].id;
@@ -1700,6 +1708,8 @@ class HIVTxNetwork {
 
           let discordant_node_record = [];
 
+          //          console.log ("///", pg.nodes.length, pg.node_objects.length);
+
           if (_.size(mspp_ms_nodes)) {
             let entity_tracker = null;
 
@@ -1725,6 +1735,8 @@ class HIVTxNetwork {
 
             _.each(mspp_ms_nodes, (n) => {
               const ref_node = n[1];
+              node_records_to_delete.add(ref_node.name);
+
               _.each(n[0], (e) => {
                 if (entity_tracker.has(e.subcluster_label)) {
                   pg.node_objects.push(e);
@@ -1732,30 +1744,98 @@ class HIVTxNetwork {
                   node_entry.name = e.id;
                   node_entry.added = ref_node.added;
                   inject_mspp_nodes.push(node_entry);
+                  pg.nodes.push(node_entry);
                   //console.log ("Adding ", e);
                 } else {
                   /*if (e.subcluster_label) {
                             console.log (pg.name, e);
                         }*/
+                  //console.log (pg.name, e);
                   discordant_node_record.push(e);
                 }
               });
             });
           }
 
-          _.each(inject_mspp_nodes, (n) => {
-            pg.nodes.push(n);
+          // _.each(inject_mspp_nodes, (n) => {
+          //   pg.nodes.push(n);
+          //});
+
+          /** spaghetti code to check for duplicates **/
+
+          const check_for_ID_duplicates = _.groupBy(pg.nodes, (n) => n.name);
+          const prune_duplicates = new Set();
+
+          _.each(check_for_ID_duplicates, (grp, id) => {
+            if (_.size(grp) > 1) {
+              prune_duplicates.add(id);
+            }
           });
 
-          /*if (discordant_node_record.length) {
-            console.log (pg.name, discordant_node_record);
+          //console.log ("COI ", pg.name);
+          //console.log (pg.nodes.length);
+          //console.log (node_records_to_delete.size);
+
+          if (node_records_to_delete.size) {
+            pg.nodes = _.filter(
+              pg.nodes,
+              (n) => !node_records_to_delete.has(n.name)
+            );
+          }
+
+          /*if (pg.nodes.length != pg.node_objects.length) {
+            console.log ("!!!", pg.nodes.length, prune_duplicates.size, pg.node_objects.length);
+            console.log (_.chain (pg.nodes).map (n=>n.name).sortBy ().value(), 
+                _.chain (pg.node_objects).map (n=>n.id).sortBy ().value());
           }*/
 
-          if (inject_mspp_nodes.length || discordant_node_record.length) {
-            //console.log (pg.name, discordant_node_record);
+          if (prune_duplicates.size) {
+            let already_processed = new Set();
+            let filtered_nodes = [];
+            _.each(pg.nodes, (n) => {
+              if (prune_duplicates.has(n.name)) {
+                if (already_processed.has(n.name)) {
+                  return;
+                } else {
+                  already_processed.add(n.name);
+                }
+              }
+              filtered_nodes.push(n);
+            });
+            pg.nodes = filtered_nodes;
+            let filtered_node_objects = [];
+            already_processed = new Set();
+            _.each(pg.node_objects, (n) => {
+              if (prune_duplicates.has(n.id)) {
+                if (already_processed.has(n.id)) {
+                  return;
+                } else {
+                  already_processed.add(n.id);
+                }
+              }
+              filtered_node_objects.push(n);
+            });
+            pg.node_objects = filtered_node_objects;
+          }
 
-            pg.description +=
-              " Migrated to multiple sequences per person cluster";
+          const migration_tag =
+            " Migrated to multiple sequences per person cluster";
+
+          if (prune_duplicates.size || node_records_to_delete.size) {
+            let notes_cleanup = pg.description.split(migration_tag);
+            if (notes_cleanup.length > 1) {
+              const bits = _.countBy(notes_cleanup.slice(1, -1));
+              pg.description = notes_cleanup[0] + migration_tag;
+              _.each(bits, (v, k) => {
+                //console.log (v);
+                pg.description += k;
+                //console.log(pg.name, "/", v, "/", pg.description.length);
+              });
+            }
+          }
+
+          if (inject_mspp_nodes.length || discordant_node_record.length) {
+            pg.description += migration_tag;
 
             _.each(
               [
@@ -1966,8 +2046,6 @@ class HIVTxNetwork {
               edgesByNode
             );
 
-            //console.log (pg.name, _.map ([...added_nodes], (n)=>this.json.Nodes[n]));
-
             if (added_nodes.size) {
               _.each([...added_nodes], (nid) => {
                 const n = this.json.Nodes[nid];
@@ -2118,6 +2196,8 @@ class HIVTxNetwork {
       });
     });
 
+    //console.log (node2set);
+
     const pg_enum = [
       "Yes (dx≤12 months)",
       "Yes (12<dx≤36 months)",
@@ -2209,6 +2289,9 @@ class HIVTxNetwork {
         type: "String",
         //label_format: d3.format(".2f"),
         map: function (node) {
+          /*if (node && node.subcluster_label && node.subcluster_label == "10.2") {
+             console.log (node);
+          }*/
           if (node) {
             return node.subcluster_label || "None";
           }
@@ -2226,6 +2309,10 @@ class HIVTxNetwork {
 
     //console.time ("SUBS");
     this._aux_populate_category_menus();
+    if (this._is_CDC_) {
+      this.define_node_search_table();
+    }
+
     //console.timeEnd ("SUBS");
   }
 
@@ -2472,6 +2559,7 @@ class HIVTxNetwork {
   */
 
   populate_predefined_attribute(computed, key) {
+    //console.log ("Injecting " + key);
     if (_.isFunction(computed)) {
       computed = computed(this);
     }
@@ -2484,11 +2572,12 @@ class HIVTxNetwork {
     ) {
       this.inject_attribute_description(key, computed);
       _.each(this.json.Nodes, (node) => {
-        HIVTxNetwork.inject_attribute_node_value_by_id(
-          node,
-          key,
-          computed["map"](node, this)
-        );
+        const attr_value = computed["map"](node, this);
+
+        //if (key == "priority_set") {
+        //    console.log (node.id, node.priority_set, node._added_date, attr_value);
+        //}
+        HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
       });
 
       // add unique values
@@ -2537,6 +2626,10 @@ class HIVTxNetwork {
 
       var extension = {};
       extension[key] = computed;
+
+      if (key == "priority_set") {
+        console.log();
+      }
 
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
 
@@ -3165,7 +3258,6 @@ class HIVTxNetwork {
           new_record[kGlobals.network.NodeAttributeID] = _.object(
             _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
               const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
-
               let unique_values = _.countBy(
                 values,
                 (dn) => dn[kGlobals.network.NodeAttributeID][k]

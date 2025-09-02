@@ -364,6 +364,29 @@ function open_editor(
 
         // check if can save (name set etc)
         if (panel_object.network_nodes.length) {
+          const entity_attributes = _.mapObject(
+            self.unique_entity_object_list(panel_object.table_entities),
+            (d) => d[0]
+          );
+
+          _.each(panel_object.network_nodes, (n) => {
+            const ref_attr = entity_attributes[self.primary_key(n)];
+            if (ref_attr) {
+              _.each(
+                [
+                  "_priority_set_date",
+                  "_priority_set_kind",
+                  "_priority_set_autoadded",
+                ],
+                (attr) => {
+                  if (ref_attr[attr]) {
+                    n[attr] = ref_attr[attr];
+                  }
+                }
+              );
+            }
+          });
+
           let name, desc, kind, tracking;
 
           [name, desc, kind, tracking] = _.map(
@@ -423,7 +446,7 @@ function open_editor(
                   _.each(added_node_objects, (n) => {
                     set_description.nodes.push({
                       name: n.id,
-                      added: timeDateUtil.getCurrentDate(),
+                      added: modifiedDate || createdDate,
                       kind: kGlobals.CDCCOINodeKindDefault,
                     });
                   });
@@ -602,8 +625,9 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
+        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
-          node["_priority_set_date"] = createdDate;
+          node["_priority_set_date"] = modifiedDate || createdDate;
         }
         if (!("_priority_set_kind" in node)) {
           node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
@@ -622,7 +646,7 @@ function open_editor(
         }
         _.each(seqs_to_add, (node) => {
           if (!("_priority_set_date" in node)) {
-            node["_priority_set_date"] = createdDate;
+            node["_priority_set_date"] = modifiedDate || createdDate;
           }
           if (!("_priority_set_kind" in node)) {
             node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
@@ -964,8 +988,11 @@ function open_editor(
           extra_columns.splice(1, 1);
         }
 
+        panel_object.table_entities = self.aggregate_indvidual_level_records(
+          panel.network_nodes
+        );
         self.draw_extended_node_table(
-          self.aggregate_indvidual_level_records(panel.network_nodes),
+          panel_object.table_entities,
           table_container,
           extra_columns
         );
@@ -1418,12 +1445,20 @@ function draw_priority_set_table(self, container, priority_groups) {
           // size / new nodes
           value: [
             self.unique_entity_list(pg.node_objects).length,
-            self.unique_entity_list_from_ids(
+            _.chain(pg.nodes)
+              .groupBy((n) => self.entity_id_from_string(n.name))
+              .mapObject((v) =>
+                _.uniq(_.map(v, (n) => self.priority_groups_is_new_node(n)))
+              )
+              .filter((v) => v.length == 1 && v[0])
+              .size()
+              .value(),
+            /*self.unique_entity_list_from_ids(
               _.map(
                 _.filter(pg.nodes, (g) => self.priority_groups_is_new_node(g)),
                 (d) => d.name
               )
-            ).length,
+            ).length,*/
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,
           ],
@@ -1723,7 +1758,6 @@ function priority_set_view(self, priority_set, options) {
   }
 
   _.each(nodes, (d) => {
-    //console.log (d);
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
     if (d._added_date)
@@ -1803,6 +1837,22 @@ function priority_set_view(self, priority_set, options) {
     return "gray";
   });
 
+  // 20250807: reduce node information for priority set attributes
+
+  _.each(
+    _.groupBy(node_set, (n) => self.primary_key(n)),
+    (mspp, id) => {
+      if (mspp.length > 1) {
+        _.each(["_added_date", "priority_set"], (attr) => {
+          const min_attr = d3.min(_.map(mspp, (m) => m[attr]));
+          _.each(mspp, (n) => {
+            n[attr] = min_attr;
+          });
+        });
+      }
+    }
+  );
+
   self
     .view_subcluster(
       -1,
@@ -1841,7 +1891,6 @@ function priority_set_view(self, priority_set, options) {
             enum: viewEnum,
             type: "String",
             map: function (node) {
-              //console.log ("PS", node.id, node.priority_set);
               if (node.priority_set === 1) {
                 if (node._added_date) {
                   return viewEnum[dateID[node._added_date]];
