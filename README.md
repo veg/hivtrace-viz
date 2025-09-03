@@ -1,4 +1,4 @@
-# hivtrace-viz
+# hivtrace-viz  [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/veg/hivtrace-viz)
 
 This repository contains the visualization code for HIV-TRACE.
 
