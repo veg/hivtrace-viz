@@ -3816,6 +3816,13 @@ var hivtrace_cluster_network_graph = function (
     });
   }
 
+  /**
+   * @function _node_table_draw_buttons
+   * @description Draws buttons for node table rows, including view cluster and hide/show options.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing node information.
+   * @returns {void}
+   */
   function _node_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
     let labels;
@@ -3882,6 +3889,13 @@ var hivtrace_cluster_network_graph = function (
       });
   };*/
 
+  /**
+   * @function update_volatile_elements
+   * @description Updates volatile elements within a container, optionally suppressing the editor.
+   * @param {Object} container - The D3 selection of the container element.
+   * @param {boolean} suppress_editor - If true, suppresses the editor.
+   * @returns {void}
+   */
   self.update_volatile_elements = function (container, suppress_editor) {
     //var event = new CustomEvent('hiv-trace-viz-volatile-update', { detail: container });
     //container.node().dispatchEvent (event);
@@ -3897,6 +3911,11 @@ var hivtrace_cluster_network_graph = function (
       });
   };
 
+  /**
+   * @function redraw_tables
+   * @description Redraws all volatile tables in the network visualization.
+   * @returns {void}
+   */
   self.redraw_tables = function () {
     self.update_volatile_elements(self.cluster_table);
     if (self.subcluster_table) {
@@ -3913,6 +3932,15 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_extended_node_table
+   * @description Draws an extended node table with customizable columns and filtering options.
+   * @param {Array<Object>} node_list - The list of node objects to display.
+   * @param {Object} container - The D3 selection of the container element for the table.
+   * @param {Array<Object>} extra_columns - Additional column definitions for the table.
+   * @param {Object} options - Options for drawing the table.
+   * @returns {void}
+   */
   self.draw_extended_node_table = function (
     node_list,
     container,
@@ -4131,6 +4159,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function generate_coi_temporal_report
+   * @description Generates a temporal report for a Cluster of Interest (CoI).
+   * @param {Object} ref_set - The reference set for the CoI.
+   * @param {number} D - The distance threshold.
+   * @returns {Object} A temporal report object.
+   */
   self.generate_coi_temporal_report = function (ref_set, D) {
     if (!ref_set) return {};
     D = D || 0.005;
@@ -4266,6 +4301,18 @@ var hivtrace_cluster_network_graph = function (
     return report;
   };
 
+  /**
+   * @function draw_node_table
+   * @description Draws a node table with customizable columns and data.
+   * @param {Array<Object>} extra_columns - Additional column definitions for the table.
+   * @param {Array<Object>} node_list - The list of node objects to display.
+   * @param {Array<Array<Object>>} headers - The header definitions for the table.
+   * @param {Array<Array<Object>>} rows - The row data for the table.
+   * @param {Object} container - The D3 selection of the container element for the table.
+   * @param {string} table_caption - The caption for the table.
+   * @param {number} ND - The total number of nodes.
+   * @returns {void}
+   */
   self.draw_node_table = function (
     extra_columns,
     node_list,
@@ -4381,6 +4428,14 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_cluster_table
+   * @description Draws a cluster table with customizable columns and options.
+   * @param {Array<Object>} extra_columns - Additional column definitions for the table.
+   * @param {Object} element - The D3 selection of the container element for the table.
+   * @param {Object} options - Options for drawing the table.
+   * @returns {void}
+   */
   self.draw_cluster_table = function (extra_columns, element, options) {
     var skip_clusters = options && options["no-clusters"];
     var skip_subclusters = !(options && options["subclusters"]);
@@ -4636,6 +4691,13 @@ var hivtrace_cluster_network_graph = function (
   };
 
   /*------------ Update layout code ---------------*/
+  /**
+   * @function update_network_string
+   * @description Updates the network status string displayed in the UI.
+   * @param {number} node_count - The number of nodes currently displayed.
+   * @param {number} edge_count - The number of edges currently displayed.
+   * @returns {void}
+   */
   function update_network_string(node_count, edge_count) {
     if (network_status_string) {
       const clusters_shown = _.filter(
@@ -4688,6 +4750,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function draw_a_node
+   * @description Draws a single node on the network SVG.
+   * @param {Object} container - The D3 selection of the container element for the node.
+   * @param {Object} node - The node object to draw.
+   * @returns {void}
+   */
   function draw_a_node(container, node) {
     if (node) {
       container = d3.select(container);
@@ -4769,6 +4838,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function draw_a_cluster
+   * @description Draws a single cluster on the network SVG.
+   * @param {Object} container - The D3 selection of the container element for the cluster.
+   * @param {Object} the_cluster - The cluster object to draw.
+   * @returns {void}
+   */
   function draw_a_cluster(container, the_cluster) {
     var container_group = d3.select(container);
 
@@ -4853,6 +4929,12 @@ var hivtrace_cluster_network_graph = function (
       });
   }
 
+  /**
+   * @function check_for_predefined_shapes
+   * @description Checks for and returns predefined shapes for a given category ID.
+   * @param {string} cat_id - The category ID to check.
+   * @returns {Object} An object containing the domain and range for the shapes.
+   */
   function check_for_predefined_shapes(cat_id) {
     //console.log (cat_id);
 
@@ -4885,6 +4967,12 @@ var hivtrace_cluster_network_graph = function (
     };
   }
 
+  /**
+   * @function handle_shape_categorical
+   * @description Handles the categorical shaping of nodes based on a given category ID.
+   * @param {string} cat_id - The category ID to use for shaping.
+   * @returns {void}
+   */
   self.handle_shape_categorical = function (cat_id) {
     var set_attr = "None";
 
@@ -4935,6 +5023,13 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function renderColorPicker
+   * @description Renders a color picker for categorical or continuous attributes.
+   * @param {string} cat_id - The category ID for which to render the color picker.
+   * @param {string} type - The type of attribute ("categorical" or "continuous").
+   * @returns {void}
+   */
   self.renderColorPicker = function (cat_id, type) {
     const renderColorPickerCategorical = function (cat_id) {
       // For each unique value, render item.
@@ -5039,6 +5134,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_attribute_labels
+   * @description Draws attribute labels and legends on the network SVG.
+   * @returns {void}
+   */
   self.draw_attribute_labels = function () {
     // draw color legend in the network SVG
 
@@ -5396,6 +5496,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function compute_cluster_gradient
+   * @description Computes a radial gradient for a cluster based on an attribute.
+   * @param {Object} cluster - The cluster object.
+   * @param {string} cat_id - The category ID to use for the gradient.
+   * @returns {string|null} The ID of the generated gradient, or null if no category ID is provided.
+   */
   function compute_cluster_gradient(cluster, cat_id) {
     if (cat_id) {
       var id = self.dom_prefix + "-cluster-gradient-" + self.gradient_id++;
@@ -5437,6 +5544,12 @@ var hivtrace_cluster_network_graph = function (
     return null;
   }
 
+  /**
+   * @function handle_attribute_opacity
+   * @description Handles the opacity of nodes based on a given attribute.
+   * @param {string} cat_id - The category ID to use for opacity.
+   * @returns {void}
+   */
   self.handle_attribute_opacity = function (cat_id) {
     var set_attr = "None";
 
@@ -5487,6 +5600,12 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function handle_attribute_continuous
+   * @description Handles the continuous attribute visualization, including color scales and scatter plots.
+   * @param {string} cat_id - The category ID for the continuous attribute.
+   * @returns {void}
+   */
   self.handle_attribute_continuous = function (cat_id) {
     var set_attr = "None";
 
@@ -5671,6 +5790,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function define_node_search_table
+   * @description Defines the node search table and its filtering capabilities.
+   * @returns {void}
+   */
   self.define_node_search_table = function () {
     self.node_search_div = self.get_ui_element_selector_by_role(
       "node_search_div",
@@ -5961,6 +6085,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function handle_attribute_categorical
+   * @description Handles the categorical attribute visualization, including color schemes and table rendering.
+   * @param {string} cat_id - The category ID for the categorical attribute.
+   * @param {boolean} skip_update - If true, skips updating the visualization.
+   * @returns {void}
+   */
   self.handle_attribute_categorical = function (cat_id, skip_update) {
     var set_attr = "None";
 
@@ -6144,6 +6275,11 @@ var hivtrace_cluster_network_graph = function (
     self.renderColorPicker(cat_id, "categorical");
   };
 
+  /**
+   * @function filter_visibility
+   * @description Filters the visibility of clusters and nodes based on selection.
+   * @returns {void}
+   */
   self.filter_visibility = function () {
     self.clusters.forEach((c) => {
       c.is_hidden = self.hide_unselected && !c.match_filter;
@@ -6153,6 +6289,13 @@ var hivtrace_cluster_network_graph = function (
     });
   };
 
+  /**
+   * @function filter
+   * @description Filters the network based on a set of conditions.
+   * @param {Array<Object>} conditions - An array of filter conditions.
+   * @param {boolean} skip_update - If true, skips updating the visualization.
+   * @returns {void}
+   */
   self.filter = function (conditions, skip_update) {
     var anything_changed = false;
 
