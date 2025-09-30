@@ -448,6 +448,12 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ Network layout code ---------------*/
 
+  /**
+   * @function _get_node_country
+   * @description Retrieves the country code for a given node.
+   * @param {Object} node - The node object.
+   * @returns {string} The country code (Alpha2) of the node.
+   */
   self._get_node_country = function (node) {
     var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
     if (countryCodeAlpha2 === kGlobals.missing.label) {
@@ -456,6 +462,12 @@ var hivtrace_cluster_network_graph = function (
     return countryCodeAlpha2;
   };
 
+  /**
+   * @function _draw_topomap
+   * @description This function draws the topological map.
+   * @param {boolean} no_redraw - If true, the map will not be redrawn.
+   * @returns {Object} The network object itself.
+   */
   self._draw_topomap = function (no_redraw) {
     if (options && "showing_on_map" in options) {
       var countries = topojson.feature(
@@ -500,6 +512,14 @@ var hivtrace_cluster_network_graph = function (
     return self;
   };
 
+  /**
+   * @function open_exclusive_tab_close
+   * @description This function closes an exclusive tab and restores the previous one.
+   * @param {string} tab_element - The ID of the tab element to close.
+   * @param {string} tab_content - The ID of the tab content to remove.
+   * @param {string} restore_to_tag - The ID of the tab to restore to.
+   * @returns {void}
+   */
   self.open_exclusive_tab_close = function (
     tab_element,
     tab_content,
@@ -511,6 +531,16 @@ var hivtrace_cluster_network_graph = function (
     $("#" + tab_content).remove();
   };
 
+  /**
+   * @function open_exclusive_tab_view
+   * @description This function opens an exclusive tab view for a specific cluster.
+   * @param {string} cluster_id - The ID of the cluster to view.
+   * @param {Function} custom_filter - A custom filter function for nodes.
+   * @param {Function} custom_name - A function to generate a custom name for the tab.
+   * @param {Object} additional_options - Additional options for the tab view.
+   * @param {boolean} include_injected_edges - If true, includes injected edges.
+   * @returns {Object} The cluster view object.
+   */
   self.open_exclusive_tab_view = function (
     cluster_id,
     custom_filter,
@@ -603,6 +633,14 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function open_exclusive_tab_view_aux
+   * @description Auxiliary function to open an exclusive tab view.
+   * @param {Object} filtered_json - The filtered JSON data for the view.
+   * @param {string} title - The title of the new tab.
+   * @param {Object} option_extras - Extra options for the tab.
+   * @returns {Object} The cluster view object or the ID of the new tab content.
+   */
   self.open_exclusive_tab_view_aux = function (
     filtered_json,
     title,
@@ -781,6 +819,12 @@ var hivtrace_cluster_network_graph = function (
   // ensure all checkboxes are unchecked at initialization
   $('input[type="checkbox"]').prop("checked", false);
 
+  /**
+   * @function handle_node_click
+   * @description Handles the click event on a node, displaying a context menu.
+   * @param {Object} node - The clicked node object.
+   * @returns {void}
+   */
   var handle_node_click = function (node) {
     if (d3.event.defaultPrevented) return;
     var container = d3.select(self.container);
@@ -867,6 +911,12 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function get_initial_xy
+   * @description Calculates initial x and y coordinates for clusters based on packing or treemap layout.
+   * @param {boolean} packed - If true, uses a pack layout; otherwise, uses a treemap layout.
+   * @returns {Array} A tuple containing the laid out clusters and all clusters.
+   */
   function get_initial_xy(packed) {
     // create clusters from nodes
     var mapped_clusters = get_all_clusters(self.nodes);
@@ -924,6 +974,11 @@ var hivtrace_cluster_network_graph = function (
     return [clusters, all_clusters];
   }
 
+  /**
+   * @function prepare_data_to_graph
+   * @description Prepares the graph data for rendering, filtering clusters and nodes.
+   * @returns {Object} An object containing prepared graph data (all, edges, nodes, clusters).
+   */
   function prepare_data_to_graph() {
     var graphMe = {};
     graphMe.all = [];
@@ -980,6 +1035,12 @@ var hivtrace_cluster_network_graph = function (
     return graphMe;
   }
 
+  /**
+   * @function _refresh_subcluster_view
+   * @description Refreshes the subcluster view based on a given date.
+   * @param {Date} set_date - The date to use for refreshing the view.
+   * @returns {void}
+   */
   self._refresh_subcluster_view = function (set_date) {
     self.annotate_priority_clusters(
       timeDateUtil._networkCDCDateField,
@@ -1013,6 +1074,18 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function view_subcluster
+   * @description Displays a subcluster view with various filtering and naming options.
+   * @param {Object} cluster - The cluster object to view.
+   * @param {Function|Array} custom_filter - A custom filter function or array of nodes.
+   * @param {string} custom_name - A custom name for the subcluster view.
+   * @param {Object} view_sub_options - Additional options for the subcluster view.
+   * @param {Function} custom_edge_filter - A custom filter function for edges.
+   * @param {boolean} include_injected_edges - If true, includes injected edges.
+   * @param {number} length_threshold - The length threshold for subclusters.
+   * @returns {Object} The cluster view object.
+   */
   self.view_subcluster = function (
     cluster,
     custom_filter,
@@ -1167,6 +1240,13 @@ var hivtrace_cluster_network_graph = function (
     });*/
   };
 
+  /**
+   * @function oldest_nodes_first
+   * @description Compares two nodes to determine which one is older based on their diagnosis date.
+   * @param {Object} n1 - The first node object.
+   * @param {Object} n2 - The second node object.
+   * @returns {number} -1 if n1 is older, 1 if n2 is older, or based on ID if dates are equal.
+   */
   var oldest_nodes_first = function (n1, n2) {
     const date_field = date_field || timeDateUtil._networkCDCDateField;
 
@@ -1180,6 +1260,15 @@ var hivtrace_cluster_network_graph = function (
     return node1_dx < node2_dx ? -1 : 1;
   };
 
+  /**
+   * @function annotate_priority_clusters
+   * @description Annotates clusters with priority flags based on date and membership criteria.
+   * @param {string} date_field - The field in the node object representing the date.
+   * @param {number} span_months - The number of months for the long cutoff.
+   * @param {number} recent_months - The number of months for the short cutoff.
+   * @param {Date} start_date - The starting date for the annotation.
+   * @returns {void}
+   */
   self.annotate_priority_clusters = function (
     date_field,
     span_months,
@@ -1444,6 +1533,8 @@ var hivtrace_cluster_network_graph = function (
           sub.recent_nodes = [];
 
           const future_date = new Date(start_date.getTime() + 1e13);
+          if (sub.cluster_id == "2211.1")
+            console.log(sub, rr_cluster, subcluster_json);
 
           _.each(rr_cluster, (recent_cluster) => {
             var priority_nodes = _.groupBy(recent_cluster, (n) =>
@@ -1509,6 +1600,12 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function default_layout
+   * @description Applies a default layout to the clusters, either packed or tiled.
+   * @param {boolean} packed - If true, uses a packed layout; otherwise, uses a tiled layout.
+   * @returns {void}
+   */
   function default_layout(packed) {
     // let's create an array of clusters from the json
 
@@ -1557,11 +1654,24 @@ var hivtrace_cluster_network_graph = function (
     self.clusters.forEach(collapse_cluster);
   }
 
+  /**
+   * @function change_spacing
+   * @description Adjusts the spacing between nodes in the network layout.
+   * @param {number} delta - The factor by which to change the charge correction.
+   * @returns {void}
+   */
   function change_spacing(delta) {
     self.charge_correction *= delta;
     network_layout.start();
   }
 
+  /**
+   * @function change_window_size
+   * @description Changes the size of the network visualization window.
+   * @param {number} delta - The amount by which to change the width and height.
+   * @param {boolean} trigger - If true, triggers a network layout restart.
+   * @returns {void}
+   */
   function change_window_size(delta, trigger) {
     if (delta) {
       var x_scale = (self.width + delta / 2) / self.width;
