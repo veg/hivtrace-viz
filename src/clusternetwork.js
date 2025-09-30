@@ -1710,6 +1710,11 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function compute_adjacency_list
+   * @description Computes the adjacency list for each node in the network.
+   * @returns {void}
+   */
   self.compute_adjacency_list = _.once(() => {
     self.nodes.forEach((n) => {
       n.neighbors = d3.set();
@@ -1721,6 +1726,11 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function compute_local_clustering_coefficients
+   * @description Computes the local clustering coefficient for each node in the network.
+   * @returns {void}
+   */
   self.compute_local_clustering_coefficients = _.once(() => {
     self.compute_adjacency_list();
 
@@ -1752,10 +1762,21 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function get_node_by_id
+   * @description Retrieves a node object by its ID.
+   * @param {string} id - The ID of the node to retrieve.
+   * @returns {Object} The node object with the specified ID, or undefined if not found.
+   */
   self.get_node_by_id = function (id) {
     return self.nodes.filter((n) => n.id === id)[0];
   };
 
+  /**
+   * @function compute_local_clustering_coefficients_worker
+   * @description Computes local clustering coefficients using a web worker.
+   * @returns {void}
+   */
   self.compute_local_clustering_coefficients_worker = _.once(() => {
     var worker = new Worker("workers/lcc.js");
 
@@ -1774,6 +1795,12 @@ var hivtrace_cluster_network_graph = function (
     worker.postMessage(worker_obj);
   });
 
+  /**
+   * @function estimate_cubic_compute_cost
+   * @description Estimates the cubic computational cost for a given cluster.
+   * @param {Object} c - The cluster object.
+   * @returns {number} The estimated cubic computational cost.
+   */
   var estimate_cubic_compute_cost = _.memoize(
     (c) => {
       self.compute_adjacency_list();
@@ -1786,6 +1813,11 @@ var hivtrace_cluster_network_graph = function (
     (c) => c.cluster_id
   );
 
+  /**
+   * @function compute_global_clustering_coefficients
+   * @description Computes the global clustering coefficient for each cluster in the network.
+   * @returns {void}
+   */
   self.compute_global_clustering_coefficients = _.once(() => {
     self.compute_adjacency_list();
 
@@ -1831,12 +1863,23 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function mark_nodes_as_processing
+   * @description Marks nodes with a specified property to indicate they are being processed.
+   * @param {string} property - The property name to set on the nodes.
+   * @returns {void}
+   */
   self.mark_nodes_as_processing = function (property) {
     self.nodes.forEach((n) => {
       n[property] = misc.processing;
     });
   };
 
+  /**
+   * @function compute_graph_stats
+   * @description Computes and displays various graph statistics.
+   * @returns {void}
+   */
   self.compute_graph_stats = function () {
     d3.select(this).classed("disabled", true).select("i").classed({
       "fa-calculator": false,
@@ -1850,6 +1893,11 @@ var hivtrace_cluster_network_graph = function (
   };
 
   /*------------ Constructor ---------------*/
+  /**
+   * @function initial_json_load
+   * @description Initializes the network graph from the provided JSON data.
+   * @returns {void}
+   */
   function initial_json_load() {
     var connected_links = {};
     var total = 0;
@@ -1910,6 +1958,13 @@ var hivtrace_cluster_network_graph = function (
     /* add buttons and handlers */
     /* clusters first */
 
+    /**
+     * @function _extract_attributes_for_nodes
+     * @description Extracts specified attributes for a list of nodes.
+     * @param {Array<Object>} nodes - An array of node objects.
+     * @param {Array<Object>} column_names - An array of column name objects, each with a `raw_attribute_key`.
+     * @returns {Array<Array<string>>} A 2D array where the first row is headers and subsequent rows are node attribute values.
+     */
     self._extract_attributes_for_nodes = function (nodes, column_names) {
       var result = [_.map(column_names, (c) => c.raw_attribute_key)];
 
@@ -1945,6 +2000,12 @@ var hivtrace_cluster_network_graph = function (
       return result;
     };
 
+    /**
+     * @function _extract_exportable_attributes
+     * @description Extracts attributes that are suitable for export.
+     * @param {boolean} extended - If true, includes extended attributes like Node ID and Cluster.
+     * @returns {Array<Object>} An array of attribute objects.
+     */
     self._extract_exportable_attributes = function (extended) {
       var allowed_types = {
         String: 1,
@@ -1985,6 +2046,12 @@ var hivtrace_cluster_network_graph = function (
       return _.flatten(return_array, true);
     };
 
+    /**
+     * @function _extract_nodes_by_id
+     * @description Extracts nodes belonging to a specific cluster or subcluster ID.
+     * @param {string} id - The ID of the cluster or subcluster.
+     * @returns {Array<Object>} An array of node objects.
+     */
     self._extract_nodes_by_id = function (id) {
       let restricted_node_subset = _.filter(
         self.nodes,
@@ -2000,6 +2067,15 @@ var hivtrace_cluster_network_graph = function (
       return restricted_node_subset;
     };
 
+    /**
+     * @function _cluster_list_view_render
+     * @description Renders a list view of cluster nodes, optionally grouped by attribute.
+     * @param {string} cluster_id - The ID of the cluster to render.
+     * @param {boolean} group_by_attribute - If true, groups nodes by attribute; otherwise, lists individual nodes.
+     * @param {Object} the_list - The D3 selection of the list element to render into.
+     * @param {string} priority_group - The name of the priority group (if applicable).
+     * @returns {void}
+     */
     self._cluster_list_view_render = function (
       cluster_id,
       group_by_attribute,
@@ -2079,6 +2155,11 @@ var hivtrace_cluster_network_graph = function (
       }
     };
 
+    /**
+     * @function _setup_cluster_list_view
+     * @description Sets up the cluster list view, including event listeners for toggling and modal display.
+     * @returns {void}
+     */
     self._setup_cluster_list_view = function () {
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
@@ -3489,6 +3570,13 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   }
 
+  /**
+   * @function _cluster_table_draw_id
+   * @description Draws the ID column for the cluster table, including view buttons for subclusters and clusters.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing cluster ID and type.
+   * @returns {void}
+   */
   function _cluster_table_draw_id(element, payload) {
     var this_cell = d3.select(element);
     this_cell.selectAll("*").remove();
@@ -3599,6 +3687,13 @@ var hivtrace_cluster_network_graph = function (
       .attr("title", __("clusters_tab")["list"]);
   }
 
+  /**
+   * @function _cluster_table_draw_buttons
+   * @description Draws buttons for cluster table rows, including expand/collapse, problematic status, and change view.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing cluster information.
+   * @returns {void}
+   */
   function _cluster_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
     const label_diff = function (c_info) {
