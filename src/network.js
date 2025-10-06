@@ -110,8 +110,7 @@ function ensure_node_attributes_exist(json) {
   });
 }
 
-function check_network_option(options, key, if_absent, if_present) {
-  /**
+/**
     check_network_option
     
     Given a dictionary option list (can be null) and a key
@@ -120,7 +119,7 @@ function check_network_option(options, key, if_absent, if_present) {
         if the key is absent or "options" is null, the return value will be "if_absent" (null by default)
         if the key is present, and `if_present` is set, will return the if_present value, otherwise will return options[key]
 */
-
+function check_network_option(options, key, if_absent, if_present) {
   if (options) {
     if (key in options) {
       return if_present === undefined ? options[key] : if_present;
@@ -129,6 +128,14 @@ function check_network_option(options, key, if_absent, if_present) {
   return if_absent;
 }
 
+/**
+    center_cluster_handler
+    
+    Centers a cluster on the screen and triggers a network update.
+    
+    @param self: the network object
+    @param d: the cluster object to center
+*/
 function center_cluster_handler(self, d) {
   d.x = self.width / 2;
   d.y = self.height / 2;

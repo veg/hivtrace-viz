@@ -22,6 +22,20 @@ import "bootstrap-datepicker"; // Keep datepicker import
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
 
+/**
+ * Renders an HIV transmission network graph.
+ * @param {Object} json - The JSON object containing network nodes, edges, and meta-information.
+ * @param {string} network_container - The CSS selector of the DOM element where the SVG containing the network will be placed (e.g. '#element').
+ * @param {string} [network_status_string] - The CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element').
+ * @param {string} [network_warning_tag] - The CSS selector of the DOM element where any warning messages would go (e.g. '#element').
+ * @param {string} [button_bar_ui] - The ID of the control bar.
+ * @param {Object} [attributes] - A JSON object with mapped node attributes.
+ * @param {boolean} [filter_edges_toggle] - A flag to toggle edge filtering.
+ * @param {string} [clusters_table] - The CSS selector for the clusters table.
+ * @param {string} [nodes_table] - The CSS selector for the nodes table.
+ * @param {string} [parent_container] - The CSS selector for the parent container.
+ * @param {Object} [options] - Additional options for the graph.
+ */
 var hivtrace_cluster_network_graph = function (
   json,
   network_container,
@@ -35,17 +49,6 @@ var hivtrace_cluster_network_graph = function (
   parent_container,
   options
 ) {
-  // [REQ] json                        :          the JSON object containing network nodes, edges, and meta-information
-  // [REQ] network_container           :          the CSS selector of the DOM element where the SVG containing the network will be placed (e.g. '#element')
-  // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
-  // [OPT] network_warning_tag         :          the CSS selector of the DOM element where the any warning messages would go (e.g. '#element')
-  // [OPT] button_bar_ui               :          the ID of the control bar which can contain the following elements (prefix = button_bar_ui value)
-  //                                                - [prefix]_cluster_operations_container : a drop-down for operations on clusters
-  //                                                - [prefix]_attributes :  a drop-down for operations on attributes
-  //                                                - [prefix]_filter : a text box used to search the graph
-  // [OPT] network_status_string       :          the CSS selector of the DOM element where the text describing the current state of the network is shown (e.g. '#element')
-  // [OPT] attributes                  :          A JSON object with mapped node attributes
-
   // unpack compact JSON if needed
 
   if (json.Settings && json.Settings.compact_json) {
@@ -448,6 +451,12 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ Network layout code ---------------*/
 
+  /**
+   * @function _get_node_country
+   * @description Retrieves the country code for a given node.
+   * @param {Object} node - The node object.
+   * @returns {string} The country code (Alpha2) of the node.
+   */
   self._get_node_country = function (node) {
     var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
     if (countryCodeAlpha2 === kGlobals.missing.label) {
@@ -456,6 +465,12 @@ var hivtrace_cluster_network_graph = function (
     return countryCodeAlpha2;
   };
 
+  /**
+   * @function _draw_topomap
+   * @description This function draws the topological map.
+   * @param {boolean} no_redraw - If true, the map will not be redrawn.
+   * @returns {Object} The network object itself.
+   */
   self._draw_topomap = function (no_redraw) {
     if (options && "showing_on_map" in options) {
       var countries = topojson.feature(
@@ -500,6 +515,14 @@ var hivtrace_cluster_network_graph = function (
     return self;
   };
 
+  /**
+   * @function open_exclusive_tab_close
+   * @description This function closes an exclusive tab and restores the previous one.
+   * @param {string} tab_element - The ID of the tab element to close.
+   * @param {string} tab_content - The ID of the tab content to remove.
+   * @param {string} restore_to_tag - The ID of the tab to restore to.
+   * @returns {void}
+   */
   self.open_exclusive_tab_close = function (
     tab_element,
     tab_content,
@@ -511,6 +534,16 @@ var hivtrace_cluster_network_graph = function (
     $("#" + tab_content).remove();
   };
 
+  /**
+   * @function open_exclusive_tab_view
+   * @description This function opens an exclusive tab view for a specific cluster.
+   * @param {string} cluster_id - The ID of the cluster to view.
+   * @param {Function} custom_filter - A custom filter function for nodes.
+   * @param {Function} custom_name - A function to generate a custom name for the tab.
+   * @param {Object} additional_options - Additional options for the tab view.
+   * @param {boolean} include_injected_edges - If true, includes injected edges.
+   * @returns {Object} The cluster view object.
+   */
   self.open_exclusive_tab_view = function (
     cluster_id,
     custom_filter,
@@ -603,6 +636,14 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function open_exclusive_tab_view_aux
+   * @description Auxiliary function to open an exclusive tab view.
+   * @param {Object} filtered_json - The filtered JSON data for the view.
+   * @param {string} title - The title of the new tab.
+   * @param {Object} option_extras - Extra options for the tab.
+   * @returns {Object} The cluster view object or the ID of the new tab content.
+   */
   self.open_exclusive_tab_view_aux = function (
     filtered_json,
     title,
@@ -781,6 +822,12 @@ var hivtrace_cluster_network_graph = function (
   // ensure all checkboxes are unchecked at initialization
   $('input[type="checkbox"]').prop("checked", false);
 
+  /**
+   * @function handle_node_click
+   * @description Handles the click event on a node, displaying a context menu.
+   * @param {Object} node - The clicked node object.
+   * @returns {void}
+   */
   var handle_node_click = function (node) {
     if (d3.event.defaultPrevented) return;
     var container = d3.select(self.container);
@@ -867,6 +914,12 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function get_initial_xy
+   * @description Calculates initial x and y coordinates for clusters based on packing or treemap layout.
+   * @param {boolean} packed - If true, uses a pack layout; otherwise, uses a treemap layout.
+   * @returns {Array} A tuple containing the laid out clusters and all clusters.
+   */
   function get_initial_xy(packed) {
     // create clusters from nodes
     var mapped_clusters = get_all_clusters(self.nodes);
@@ -924,6 +977,11 @@ var hivtrace_cluster_network_graph = function (
     return [clusters, all_clusters];
   }
 
+  /**
+   * @function prepare_data_to_graph
+   * @description Prepares the graph data for rendering, filtering clusters and nodes.
+   * @returns {Object} An object containing prepared graph data (all, edges, nodes, clusters).
+   */
   function prepare_data_to_graph() {
     var graphMe = {};
     graphMe.all = [];
@@ -980,6 +1038,12 @@ var hivtrace_cluster_network_graph = function (
     return graphMe;
   }
 
+  /**
+   * @function _refresh_subcluster_view
+   * @description Refreshes the subcluster view based on a given date.
+   * @param {Date} set_date - The date to use for refreshing the view.
+   * @returns {void}
+   */
   self._refresh_subcluster_view = function (set_date) {
     self.annotate_priority_clusters(
       timeDateUtil._networkCDCDateField,
@@ -1013,6 +1077,18 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function view_subcluster
+   * @description Displays a subcluster view with various filtering and naming options.
+   * @param {Object} cluster - The cluster object to view.
+   * @param {Function|Array} custom_filter - A custom filter function or array of nodes.
+   * @param {string} custom_name - A custom name for the subcluster view.
+   * @param {Object} view_sub_options - Additional options for the subcluster view.
+   * @param {Function} custom_edge_filter - A custom filter function for edges.
+   * @param {boolean} include_injected_edges - If true, includes injected edges.
+   * @param {number} length_threshold - The length threshold for subclusters.
+   * @returns {Object} The cluster view object.
+   */
   self.view_subcluster = function (
     cluster,
     custom_filter,
@@ -1167,6 +1243,13 @@ var hivtrace_cluster_network_graph = function (
     });*/
   };
 
+  /**
+   * @function oldest_nodes_first
+   * @description Compares two nodes to determine which one is older based on their diagnosis date.
+   * @param {Object} n1 - The first node object.
+   * @param {Object} n2 - The second node object.
+   * @returns {number} -1 if n1 is older, 1 if n2 is older, or based on ID if dates are equal.
+   */
   var oldest_nodes_first = function (n1, n2) {
     const date_field = date_field || timeDateUtil._networkCDCDateField;
 
@@ -1180,6 +1263,15 @@ var hivtrace_cluster_network_graph = function (
     return node1_dx < node2_dx ? -1 : 1;
   };
 
+  /**
+   * @function annotate_priority_clusters
+   * @description Annotates clusters with priority flags based on date and membership criteria.
+   * @param {string} date_field - The field in the node object representing the date.
+   * @param {number} span_months - The number of months for the long cutoff.
+   * @param {number} recent_months - The number of months for the short cutoff.
+   * @param {Date} start_date - The starting date for the annotation.
+   * @returns {void}
+   */
   self.annotate_priority_clusters = function (
     date_field,
     span_months,
@@ -1444,6 +1536,8 @@ var hivtrace_cluster_network_graph = function (
           sub.recent_nodes = [];
 
           const future_date = new Date(start_date.getTime() + 1e13);
+          if (sub.cluster_id == "2211.1")
+            console.log(sub, rr_cluster, subcluster_json);
 
           _.each(rr_cluster, (recent_cluster) => {
             var priority_nodes = _.groupBy(recent_cluster, (n) =>
@@ -1509,6 +1603,12 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function default_layout
+   * @description Applies a default layout to the clusters, either packed or tiled.
+   * @param {boolean} packed - If true, uses a packed layout; otherwise, uses a tiled layout.
+   * @returns {void}
+   */
   function default_layout(packed) {
     // let's create an array of clusters from the json
 
@@ -1557,11 +1657,24 @@ var hivtrace_cluster_network_graph = function (
     self.clusters.forEach(collapse_cluster);
   }
 
+  /**
+   * @function change_spacing
+   * @description Adjusts the spacing between nodes in the network layout.
+   * @param {number} delta - The factor by which to change the charge correction.
+   * @returns {void}
+   */
   function change_spacing(delta) {
     self.charge_correction *= delta;
     network_layout.start();
   }
 
+  /**
+   * @function change_window_size
+   * @description Changes the size of the network visualization window.
+   * @param {number} delta - The amount by which to change the width and height.
+   * @param {boolean} trigger - If true, triggers a network layout restart.
+   * @returns {void}
+   */
   function change_window_size(delta, trigger) {
     if (delta) {
       var x_scale = (self.width + delta / 2) / self.width;
@@ -1600,6 +1713,11 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function compute_adjacency_list
+   * @description Computes the adjacency list for each node in the network.
+   * @returns {void}
+   */
   self.compute_adjacency_list = _.once(() => {
     self.nodes.forEach((n) => {
       n.neighbors = d3.set();
@@ -1611,6 +1729,11 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function compute_local_clustering_coefficients
+   * @description Computes the local clustering coefficient for each node in the network.
+   * @returns {void}
+   */
   self.compute_local_clustering_coefficients = _.once(() => {
     self.compute_adjacency_list();
 
@@ -1642,10 +1765,21 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function get_node_by_id
+   * @description Retrieves a node object by its ID.
+   * @param {string} id - The ID of the node to retrieve.
+   * @returns {Object} The node object with the specified ID, or undefined if not found.
+   */
   self.get_node_by_id = function (id) {
     return self.nodes.filter((n) => n.id === id)[0];
   };
 
+  /**
+   * @function compute_local_clustering_coefficients_worker
+   * @description Computes local clustering coefficients using a web worker.
+   * @returns {void}
+   */
   self.compute_local_clustering_coefficients_worker = _.once(() => {
     var worker = new Worker("workers/lcc.js");
 
@@ -1664,6 +1798,12 @@ var hivtrace_cluster_network_graph = function (
     worker.postMessage(worker_obj);
   });
 
+  /**
+   * @function estimate_cubic_compute_cost
+   * @description Estimates the cubic computational cost for a given cluster.
+   * @param {Object} c - The cluster object.
+   * @returns {number} The estimated cubic computational cost.
+   */
   var estimate_cubic_compute_cost = _.memoize(
     (c) => {
       self.compute_adjacency_list();
@@ -1676,6 +1816,11 @@ var hivtrace_cluster_network_graph = function (
     (c) => c.cluster_id
   );
 
+  /**
+   * @function compute_global_clustering_coefficients
+   * @description Computes the global clustering coefficient for each cluster in the network.
+   * @returns {void}
+   */
   self.compute_global_clustering_coefficients = _.once(() => {
     self.compute_adjacency_list();
 
@@ -1721,12 +1866,23 @@ var hivtrace_cluster_network_graph = function (
     });
   });
 
+  /**
+   * @function mark_nodes_as_processing
+   * @description Marks nodes with a specified property to indicate they are being processed.
+   * @param {string} property - The property name to set on the nodes.
+   * @returns {void}
+   */
   self.mark_nodes_as_processing = function (property) {
     self.nodes.forEach((n) => {
       n[property] = misc.processing;
     });
   };
 
+  /**
+   * @function compute_graph_stats
+   * @description Computes and displays various graph statistics.
+   * @returns {void}
+   */
   self.compute_graph_stats = function () {
     d3.select(this).classed("disabled", true).select("i").classed({
       "fa-calculator": false,
@@ -1740,6 +1896,11 @@ var hivtrace_cluster_network_graph = function (
   };
 
   /*------------ Constructor ---------------*/
+  /**
+   * @function initial_json_load
+   * @description Initializes the network graph from the provided JSON data.
+   * @returns {void}
+   */
   function initial_json_load() {
     var connected_links = {};
     var total = 0;
@@ -1800,6 +1961,13 @@ var hivtrace_cluster_network_graph = function (
     /* add buttons and handlers */
     /* clusters first */
 
+    /**
+     * @function _extract_attributes_for_nodes
+     * @description Extracts specified attributes for a list of nodes.
+     * @param {Array<Object>} nodes - An array of node objects.
+     * @param {Array<Object>} column_names - An array of column name objects, each with a `raw_attribute_key`.
+     * @returns {Array<Array<string>>} A 2D array where the first row is headers and subsequent rows are node attribute values.
+     */
     self._extract_attributes_for_nodes = function (nodes, column_names) {
       var result = [_.map(column_names, (c) => c.raw_attribute_key)];
 
@@ -1835,6 +2003,12 @@ var hivtrace_cluster_network_graph = function (
       return result;
     };
 
+    /**
+     * @function _extract_exportable_attributes
+     * @description Extracts attributes that are suitable for export.
+     * @param {boolean} extended - If true, includes extended attributes like Node ID and Cluster.
+     * @returns {Array<Object>} An array of attribute objects.
+     */
     self._extract_exportable_attributes = function (extended) {
       var allowed_types = {
         String: 1,
@@ -1875,6 +2049,12 @@ var hivtrace_cluster_network_graph = function (
       return _.flatten(return_array, true);
     };
 
+    /**
+     * @function _extract_nodes_by_id
+     * @description Extracts nodes belonging to a specific cluster or subcluster ID.
+     * @param {string} id - The ID of the cluster or subcluster.
+     * @returns {Array<Object>} An array of node objects.
+     */
     self._extract_nodes_by_id = function (id) {
       let restricted_node_subset = _.filter(
         self.nodes,
@@ -1890,6 +2070,15 @@ var hivtrace_cluster_network_graph = function (
       return restricted_node_subset;
     };
 
+    /**
+     * @function _cluster_list_view_render
+     * @description Renders a list view of cluster nodes, optionally grouped by attribute.
+     * @param {string} cluster_id - The ID of the cluster to render.
+     * @param {boolean} group_by_attribute - If true, groups nodes by attribute; otherwise, lists individual nodes.
+     * @param {Object} the_list - The D3 selection of the list element to render into.
+     * @param {string} priority_group - The name of the priority group (if applicable).
+     * @returns {void}
+     */
     self._cluster_list_view_render = function (
       cluster_id,
       group_by_attribute,
@@ -1969,6 +2158,11 @@ var hivtrace_cluster_network_graph = function (
       }
     };
 
+    /**
+     * @function _setup_cluster_list_view
+     * @description Sets up the cluster list view, including event listeners for toggling and modal display.
+     * @returns {void}
+     */
     self._setup_cluster_list_view = function () {
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
@@ -3379,6 +3573,13 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   }
 
+  /**
+   * @function _cluster_table_draw_id
+   * @description Draws the ID column for the cluster table, including view buttons for subclusters and clusters.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing cluster ID and type.
+   * @returns {void}
+   */
   function _cluster_table_draw_id(element, payload) {
     var this_cell = d3.select(element);
     this_cell.selectAll("*").remove();
@@ -3489,6 +3690,13 @@ var hivtrace_cluster_network_graph = function (
       .attr("title", __("clusters_tab")["list"]);
   }
 
+  /**
+   * @function _cluster_table_draw_buttons
+   * @description Draws buttons for cluster table rows, including expand/collapse, problematic status, and change view.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing cluster information.
+   * @returns {void}
+   */
   function _cluster_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
     const label_diff = function (c_info) {
@@ -3611,6 +3819,13 @@ var hivtrace_cluster_network_graph = function (
     });
   }
 
+  /**
+   * @function _node_table_draw_buttons
+   * @description Draws buttons for node table rows, including hide/show and view cluster.
+   * @param {HTMLElement} element - The HTML element for the table cell.
+   * @param {Array} payload - The data payload for the cell, containing node information.
+   * @returns {void}
+   */
   function _node_table_draw_buttons(element, payload) {
     var this_cell = d3.select(element);
     let labels;
@@ -3708,6 +3923,15 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_extended_node_table
+   * @description Draws an extended table of nodes with their attributes.
+   * @param {Array<Object>} node_list - An array of node objects to display.
+   * @param {HTMLElement} container - The container element for the table.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {Object} options - Additional options for the table.
+   * @returns {void}
+   */
   self.draw_extended_node_table = function (
     node_list,
     container,
@@ -3926,6 +4150,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function generate_coi_temporal_report
+   * @description Generates a temporal report for a given cluster of interest (CoI).
+   * @param {Object} ref_set - The reference set for the CoI.
+   * @param {number} D - The distance threshold.
+   * @returns {Object} A report object containing node and event information.
+   */
   self.generate_coi_temporal_report = function (ref_set, D) {
     if (!ref_set) return {};
     D = D || 0.005;
@@ -4061,6 +4292,18 @@ var hivtrace_cluster_network_graph = function (
     return report;
   };
 
+  /**
+   * @function draw_node_table
+   * @description Draws a table of nodes with their attributes.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {Array<Object>} node_list - An array of node objects to display.
+   * @param {Array<Array<Object>>} headers - An array of header definitions for the table.
+   * @param {Array<Array<Object>>} rows - An array of row data for the table.
+   * @param {HTMLElement} container - The container element for the table.
+   * @param {string} table_caption - The caption for the table.
+   * @param {number} ND - The total number of nodes.
+   * @returns {void}
+   */
   self.draw_node_table = function (
     extra_columns,
     node_list,
@@ -4176,6 +4419,14 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_cluster_table
+   * @description Draws a table of clusters with their attributes.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {HTMLElement} element - The container element for the table.
+   * @param {Object} options - Additional options for the table.
+   * @returns {void}
+   */
   self.draw_cluster_table = function (extra_columns, element, options) {
     var skip_clusters = options && options["no-clusters"];
     var skip_subclusters = !(options && options["subclusters"]);
@@ -4431,6 +4682,13 @@ var hivtrace_cluster_network_graph = function (
   };
 
   /*------------ Update layout code ---------------*/
+  /**
+   * @function update_network_string
+   * @description Updates the network status string with the current counts of nodes, edges, and clusters.
+   * @param {number} node_count - The number of nodes currently displayed.
+   * @param {number} edge_count - The number of edges currently displayed.
+   * @returns {void}
+   */
   function update_network_string(node_count, edge_count) {
     if (network_status_string) {
       const clusters_shown = _.filter(
@@ -4483,6 +4741,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function draw_a_node
+   * @description Draws a single node in the network, including its shape, color, and label.
+   * @param {HTMLElement} container - The container element for the node.
+   * @param {Object} node - The node object to draw.
+   * @returns {void}
+   */
   function draw_a_node(container, node) {
     if (node) {
       container = d3.select(container);
@@ -4564,6 +4829,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function draw_a_cluster
+   * @description Draws a single cluster in the network as a pie chart of its constituent nodes.
+   * @param {HTMLElement} container - The container element for the cluster.
+   * @param {Object} the_cluster - The cluster object to draw.
+   * @returns {void}
+   */
   function draw_a_cluster(container, the_cluster) {
     var container_group = d3.select(container);
 
@@ -4648,6 +4920,12 @@ var hivtrace_cluster_network_graph = function (
       });
   }
 
+  /**
+   * @function check_for_predefined_shapes
+   * @description Checks for predefined shape schemes for a given category and returns the domain and range for the shape scale.
+   * @param {string} cat_id - The category ID to check.
+   * @returns {Object} An object containing the domain and range for the shape scale.
+   */
   function check_for_predefined_shapes(cat_id) {
     //console.log (cat_id);
 
@@ -4680,6 +4958,12 @@ var hivtrace_cluster_network_graph = function (
     };
   }
 
+  /**
+   * @function handle_shape_categorical
+   * @description Handles the selection of a categorical attribute to be used for node shapes.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @returns {void}
+   */
   self.handle_shape_categorical = function (cat_id) {
     var set_attr = "None";
 
@@ -4730,6 +5014,13 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function renderColorPicker
+   * @description Renders a color picker for a given category, allowing users to override the default colors.
+   * @param {string} cat_id - The ID of the category.
+   * @param {string} type - The type of the category (e.g., 'categorical', 'continuous').
+   * @returns {void}
+   */
   self.renderColorPicker = function (cat_id, type) {
     const renderColorPickerCategorical = function (cat_id) {
       // For each unique value, render item.
@@ -4834,6 +5125,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_attribute_labels
+   * @description Draws the legend for the current color, shape, and opacity attributes.
+   * @returns {void}
+   */
   self.draw_attribute_labels = function () {
     // draw color legend in the network SVG
 
@@ -5191,6 +5487,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function compute_cluster_gradient
+   * @description Computes a radial gradient for a cluster based on a categorical attribute.
+   * @param {Object} cluster - The cluster object.
+   * @param {string} cat_id - The category ID to use for the gradient.
+   * @returns {string} The ID of the generated gradient.
+   */
   function compute_cluster_gradient(cluster, cat_id) {
     if (cat_id) {
       var id = self.dom_prefix + "-cluster-gradient-" + self.gradient_id++;
@@ -5232,6 +5535,12 @@ var hivtrace_cluster_network_graph = function (
     return null;
   }
 
+  /**
+   * @function handle_attribute_opacity
+   * @description Handles the selection of a continuous attribute to be used for node opacity.
+   * @param {string} cat_id - The ID of the continuous attribute.
+   * @returns {void}
+   */
   self.handle_attribute_opacity = function (cat_id) {
     var set_attr = "None";
 
@@ -5282,6 +5591,12 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function handle_attribute_continuous
+   * @description Handles the selection of a continuous attribute to be used for node color.
+   * @param {string} cat_id - The ID of the continuous attribute.
+   * @returns {void}
+   */
   self.handle_attribute_continuous = function (cat_id) {
     var set_attr = "None";
 
@@ -5466,6 +5781,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function define_node_search_table
+   * @description Defines the node search table using jQuery QueryBuilder.
+   * @returns {void}
+   */
   self.define_node_search_table = function () {
     self.node_search_div = self.get_ui_element_selector_by_role(
       "node_search_div",
@@ -5622,6 +5942,13 @@ var hivtrace_cluster_network_graph = function (
         }
       );
 
+      /**
+       * @function process_search_field
+       * @description Processes a single search condition against a value.
+       * @param {*} value - The value to check.
+       * @param {Object} condition - The search condition.
+       * @returns {boolean} True if the value meets the condition, false otherwise.
+       */
       self.process_search_field = (value, condition) => {
         switch (condition.type) {
           case "string": {
@@ -5676,6 +6003,13 @@ var hivtrace_cluster_network_graph = function (
         return false;
       };
 
+      /**
+       * @function process_search
+       * @description Processes a set of search rules against a data object.
+       * @param {Object} data - The data object to check.
+       * @param {Object} rules - The search rules.
+       * @returns {boolean} True if the data object meets the search criteria, false otherwise.
+       */
       self.process_search = (data, rules) => {
         let rule_results;
         if (rules.rules) {
@@ -5704,6 +6038,12 @@ var hivtrace_cluster_network_graph = function (
         return rules.not ? !rule_results : rule_results;
       };
 
+      /**
+       * @function rule_lc
+       * @description Converts string values in search rules to lowercase.
+       * @param {Object} rules - The search rules to process.
+       * @returns {void}
+       */
       self.rule_lc = (rules) => {
         if (rules.rules) {
           _.each(rules.rules, (r) => {
@@ -5756,6 +6096,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function handle_attribute_categorical
+   * @description Handles the selection of a categorical attribute to be used for node color.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @param {boolean} skip_update - If true, skips updating the network visualization after applying the new color scheme.
+   * @returns {void}
+   */
   self.handle_attribute_categorical = function (cat_id, skip_update) {
     var set_attr = "None";
 
@@ -5939,6 +6286,11 @@ var hivtrace_cluster_network_graph = function (
     self.renderColorPicker(cat_id, "categorical");
   };
 
+  /**
+   * @function filter_visibility
+   * @description Filters the visibility of nodes and clusters based on whether they match the current filter.
+   * @returns {void}
+   */
   self.filter_visibility = function () {
     self.clusters.forEach((c) => {
       c.is_hidden = self.hide_unselected && !c.match_filter;
@@ -5948,6 +6300,13 @@ var hivtrace_cluster_network_graph = function (
     });
   };
 
+  /**
+   * @function filter
+   * @description Filters the network based on a set of conditions, including regular expressions, distance, and date.
+   * @param {Array<Object>} conditions - An array of conditions to filter by.
+   * @param {boolean} skip_update - If true, skips updating the network visualization after filtering.
+   * @returns {void}
+   */
   self.filter = function (conditions, skip_update) {
     var anything_changed = false;
 
@@ -6045,10 +6404,21 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function is_empty
+   * @description Checks if the cluster sizes array is empty.
+   * @returns {boolean} True if the cluster sizes array is empty, false otherwise.
+   */
   self.is_empty = function () {
     return self.cluster_sizes.length === 0;
   };
 
+  /**
+   * @function link_generator_function
+   * @description Generates the SVG path for a link, optionally with a pull effect.
+   * @param {Object} d - The link data object.
+   * @returns {void}
+   */
   self.link_generator_function = function (d) {
     var pull = d.pull || 0.0;
     var path;
@@ -6114,6 +6484,13 @@ var hivtrace_cluster_network_graph = function (
     d3.select(this).attr("d", path);
   };
 
+  /**
+   * @function update
+   * @description Updates the network visualization, redrawing nodes, links, and clusters.
+   * @param {boolean} soft - If true, performs a soft update without re-initializing layout.
+   * @param {number} friction - The friction value for the network layout.
+   * @returns {void}
+   */
   self.update = function (soft, friction) {
     self.needs_an_update = false;
 
@@ -6480,6 +6857,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function tick
+   * @description Updates the positions of nodes and links during each tick of the network layout.
+   * @returns {void}
+   */
   function tick() {
     var sizes = network_layout.size();
 
@@ -6495,6 +6877,13 @@ var hivtrace_cluster_network_graph = function (
   }
 
   /*------------ Node Methods ---------------*/
+  /**
+   * @function compute_node_degrees
+   * @description Computes the degree of each node in the network.
+   * @param {Array<Object>} nodes - An array of node objects.
+   * @param {Array<Object>} edges - An array of edge objects.
+   * @returns {void}
+   */
   function compute_node_degrees(nodes, edges) {
     for (var n in nodes) {
       nodes[n].degree = 0;
@@ -6535,6 +6924,12 @@ var hivtrace_cluster_network_graph = function (
     return kGlobals.missing.label;
   };
 
+  /**
+   * @function has_network_attribute
+   * @description Checks if a given attribute exists in the network schema.
+   * @param {string} key - The key of the attribute to check.
+   * @returns {boolean} True if the attribute exists, false otherwise.
+   */
   self.has_network_attribute = function (key) {
     if (kGlobals.network.GraphAttrbuteID in self.json) {
       return key in self.json[kGlobals.network.GraphAttrbuteID];
@@ -6542,6 +6937,12 @@ var hivtrace_cluster_network_graph = function (
     return false;
   };
 
+  /**
+   * @function node_size
+   * @description Determines the size of a node based on its degree and whether it is being shown on a map.
+   * @param {Object} d - The node object.
+   * @returns {number} The size of the node.
+   */
   function node_size(d) {
     if (self.showing_on_map) {
       return 50;
@@ -6550,10 +6951,22 @@ var hivtrace_cluster_network_graph = function (
     return 4 * r * r;
   }
 
+  /**
+   * @function node_multiple_membership
+   * @description Checks if a node has the 'multiple_membership' attribute.
+   * @param {Object} n - The node object.
+   * @returns {boolean} True if the node has multiple memberships, false otherwise.
+   */
   function node_multiple_membership(n) {
     return n["multiple_membership"];
   }
 
+  /**
+   * @function node_color
+   * @description Determines the color of a node based on its attributes and the current colorizer settings.
+   * @param {Object} d - The node object.
+   * @returns {string} The color of the node.
+   */
   function node_color(d) {
     var hms = (d, c) => {
       if (node_multiple_membership(d)) {
@@ -6584,6 +6997,12 @@ var hivtrace_cluster_network_graph = function (
     return hms(d, "gray");
   }
 
+  /**
+   * @function node_opacity
+   * @description Determines the opacity of a node based on the current opacity settings.
+   * @param {Object} d - The node object.
+   * @returns {number} The opacity of the node.
+   */
   function node_opacity(d) {
     if (self.colorizer["opacity"]) {
       return self.colorizer["opacity"](
@@ -6593,6 +7012,13 @@ var hivtrace_cluster_network_graph = function (
     return 1;
   }
 
+  /**
+   * @function cluster_color
+   * @description Determines the color of a cluster based on its attributes.
+   * @param {Object} d - The cluster object.
+   * @param {string} type - The type of the cluster.
+   * @returns {string} The color of the cluster.
+   */
   function cluster_color(d, type) {
     if (d["binned_attributes"]) {
       return self.colorizer["category"](type);
@@ -6600,6 +7026,12 @@ var hivtrace_cluster_network_graph = function (
     return "#bdbdbd";
   }
 
+  /**
+   * @function node_info_string
+   * @description Generates an information string for a node, including its degree, clustering coefficient, and other attributes.
+   * @param {Object} n - The node object.
+   * @returns {string} The information string for the node.
+   */
   function node_info_string(n) {
     var str;
 
@@ -6662,6 +7094,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function edge_info_string
+   * @description Generates an information string for an edge, including its length and support.
+   * @param {Object} n - The edge object.
+   * @returns {string} The information string for the edge.
+   */
   function edge_info_string(n) {
     var str = "Length <em>" + kGlobals.formats.FloatFormat(n.length) + "</em>";
     if ("support" in n) {
@@ -6674,6 +7112,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function node_pop_on
+   * @description Shows a tooltip for a node when the mouse is over it.
+   * @param {Object} d - The node object.
+   * @returns {void}
+   */
   function node_pop_on(d) {
     if (d3.event.defaultPrevented) return;
 
@@ -6686,12 +7130,24 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function node_pop_off
+   * @description Hides the tooltip for a node when the mouse is no longer over it.
+   * @param {Object} d - The node object.
+   * @returns {void}
+   */
   function node_pop_off(d) {
     if (d3.event.defaultPrevented) return;
 
     toggle_tooltip(this, false);
   }
 
+  /**
+   * @function edge_pop_on
+   * @description Shows a tooltip for an edge when the mouse is over it.
+   * @param {Object} e - The edge object.
+   * @returns {void}
+   */
   function edge_pop_on(e) {
     toggle_tooltip(
       this,
@@ -6702,21 +7158,34 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function edge_pop_off
+   * @description Hides the tooltip for an edge when the mouse is no longer over it.
+   * @param {Object} d - The edge object.
+   * @returns {void}
+   */
   function edge_pop_off(d) {
     toggle_tooltip(this, false);
   }
 
   /*------------ Cluster Methods ---------------*/
 
-  /* Creates a new object that groups nodes by cluster
-   * @param nodes
-   * @returns clusters
+  /**
+   * Creates a new object that groups nodes by cluster
+   * @param {Array<Object>} nodes - An array of node objects.
+   * @returns {Object} An object where keys are cluster IDs and values are arrays of nodes.
    */
   function get_all_clusters(nodes) {
     var by_cluster = _.groupBy(nodes, "cluster");
     return by_cluster;
   }
 
+  /**
+   * @function compute_cluster_centroids
+   * @description Computes the centroids of clusters based on the positions of their children nodes.
+   * @param {Object} clusters - An object containing cluster data.
+   * @returns {void}
+   */
   function compute_cluster_centroids(clusters) {
     for (var c in clusters) {
       var cls = clusters[c];
@@ -6733,6 +7202,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function collapse_cluster
+   * @description Collapses a cluster, hiding its children nodes.
+   * @param {Object} x - The cluster object to collapse.
+   * @param {boolean} keep_in_q - If true, keeps the cluster in the open cluster queue.
+   * @returns {number} The number of children in the collapsed cluster.
+   */
   function collapse_cluster(x, keep_in_q) {
     self.needs_an_update = true;
     x.collapsed = true;
@@ -6747,6 +7223,13 @@ var hivtrace_cluster_network_graph = function (
     return x.children.length;
   }
 
+  /**
+   * @function expand_cluster
+   * @description Expands a cluster, showing its children nodes.
+   * @param {Object} x - The cluster object to expand.
+   * @param {boolean} copy_coord - If true, copies coordinates from the parent cluster to the children.
+   * @returns {void}
+   */
   function expand_cluster(x, copy_coord) {
     self.needs_an_update = true;
     x.collapsed = false;
@@ -6766,6 +7249,14 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function render_binned_table
+   * @description Renders a table with binned data.
+   * @param {string} id - The ID of the table element.
+   * @param {Function} the_map - A function that maps values to categories.
+   * @param {Array<Array<number>>} matrix - The data matrix to render.
+   * @returns {void}
+   */
   function render_binned_table(id, the_map, matrix) {
     var the_table = d3.select(self.get_ui_element_selector_by_role(id, true));
     if (the_table.empty()) {
@@ -6840,6 +7331,14 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function render_chord_diagram
+   * @description Renders a chord diagram to visualize relationships between categories.
+   * @param {string} id - The ID of the container element for the diagram.
+   * @param {Function} the_map - A function that maps values to categories.
+   * @param {Array<Array<number>>} matrix - The data matrix to render.
+   * @returns {void}
+   */
   function render_chord_diagram(id, the_map, matrix) {
     var container = d3.select(self.get_ui_element_selector_by_role(id, true));
 
@@ -6933,6 +7432,15 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function attribute_pairwise_distribution
+   * @description Computes the pairwise distribution of an attribute for the edges in the network.
+   * @param {string} id - The ID of the attribute.
+   * @param {number} dim - The dimension of the attribute.
+   * @param {Function} the_map - A function that maps attribute values to indices.
+   * @param {boolean} only_expanded - If true, only considers edges in expanded clusters.
+   * @returns {Array<Array<number>>} The pairwise distribution matrix.
+   */
   function attribute_pairwise_distribution(id, dim, the_map, only_expanded) {
     var scan_from = only_expanded ? draw_me.edges : self.edges;
     var the_matrix = [];
@@ -6980,6 +7488,13 @@ var hivtrace_cluster_network_graph = function (
     return the_matrix;
   }
 
+  /**
+   * @function _aux_populate_category_fields
+   * @description Populates category fields for a given attribute.
+   * @param {Object} d - The attribute object.
+   * @param {string} k - The key of the attribute.
+   * @returns {Object} The updated attribute object.
+   */
   self._aux_populate_category_fields = function (d, k) {
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
@@ -7029,6 +7544,12 @@ var hivtrace_cluster_network_graph = function (
     return d;
   };
 
+  /**
+   * @function _aux_get_attribute_dimension
+   * @description Gets the dimension of a categorical attribute.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @returns {number} The dimension of the attribute.
+   */
   self._aux_get_attribute_dimension = function (cat_id) {
     if (cat_id in graph_data[kGlobals.network.GraphAttrbuteID]) {
       const cinfo = graph_data[kGlobals.network.GraphAttrbuteID][cat_id];
@@ -7040,6 +7561,12 @@ var hivtrace_cluster_network_graph = function (
     return 0;
   };
 
+  /**
+   * @function _aux_process_category_values
+   * @description Processes the values of a categorical attribute, creating a value map and a stable-ish order.
+   * @param {Object} d - The attribute object.
+   * @returns {Object} The updated attribute object.
+   */
   self._aux_process_category_values = function (d) {
     var values,
       reduced_range = null;
@@ -7161,6 +7688,13 @@ var hivtrace_cluster_network_graph = function (
     return d;
   };
 
+  /**
+   * @function attribute_cluster_distribution
+   * @description Gets the distribution of a specific attribute within a cluster.
+   * @param {Object} the_cluster - The cluster object.
+   * @param {string} attribute_id - The ID of the attribute.
+   * @returns {Array|null} An array of attribute values, or null if the attribute is not found.
+   */
   function attribute_cluster_distribution(the_cluster, attribute_id) {
     if (attribute_id && the_cluster) {
       return the_cluster.children.map((d) =>
@@ -7170,6 +7704,12 @@ var hivtrace_cluster_network_graph = function (
     return null;
   }
 
+  /**
+   * @function cluster_info_string
+   * @description Generates an information string for a cluster, including its size, degree, and other attributes.
+   * @param {string} id - The ID of the cluster.
+   * @returns {string} The information string for the cluster.
+   */
   function cluster_info_string(id) {
     var the_cluster = self.clusters[self.cluster_mapping[id]],
       attr_info = the_cluster["binned_attributes"];
@@ -7219,6 +7759,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function cluster_pop_on
+   * @description Shows a tooltip for a cluster when the mouse is over it.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function cluster_pop_on(d) {
     toggle_tooltip(
       this,
@@ -7229,10 +7775,24 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function cluster_pop_off
+   * @description Hides the tooltip for a cluster when the mouse is no longer over it.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function cluster_pop_off(d) {
     toggle_tooltip(this, false);
   }
 
+  /**
+   * @function expand_cluster_handler
+   * @description Handles the expansion of a cluster, taking into account the maximum number of points to render.
+   * @param {Object} d - The cluster object to expand.
+   * @param {boolean} do_update - If true, updates the network visualization after expanding.
+   * @param {boolean} move_out - If true, moves the cluster out of the way after expanding.
+   * @returns {string} An empty string.
+   */
   self.expand_cluster_handler = function (d, do_update, move_out) {
     if (d.collapsed) {
       var new_nodes = self.cluster_sizes[d.cluster_id - 1] - 1;
@@ -7267,6 +7827,12 @@ var hivtrace_cluster_network_graph = function (
     return "";
   };
 
+  /**
+   * @function show_sequences_in_cluster
+   * @description Shows the sequences that make up a cluster.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function show_sequences_in_cluster(d) {
     var sequences = {};
     _.each(
@@ -7286,17 +7852,37 @@ var hivtrace_cluster_network_graph = function (
     //console.log (_.keys(sequences));
   }
 
+  /**
+   * @function _compute_cluster_degrees
+   * @description Computes the degrees of a cluster and stores them in the cluster object.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function _compute_cluster_degrees(d) {
     var degrees = d.children.map((c) => c.degree);
     degrees.sort(d3.ascending);
     d.degrees = helpers.describe_vector(degrees);
   }
 
+  /**
+   * @function handle_node_label
+   * @description Toggles the visibility of a node's label.
+   * @param {HTMLElement} container - The container element for the node.
+   * @param {Object} node - The node object.
+   * @returns {void}
+   */
   function handle_node_label(container, node) {
     node.show_label = !node.show_label;
     self.update(true);
   }
 
+  /**
+   * @function collapse_cluster_handler
+   * @description Handles the collapse of a cluster.
+   * @param {Object} d - The cluster object to collapse.
+   * @param {boolean} do_update - If true, updates the network visualization after collapsing.
+   * @returns {void}
+   */
   function collapse_cluster_handler(d, do_update) {
     collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
     if (do_update) {
@@ -7304,6 +7890,12 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function cluster_box_size
+   * @description Determines the size of a cluster box based on the number of entities in the cluster.
+   * @param {Object} c - The cluster object.
+   * @returns {number} The size of the cluster box.
+   */
   function cluster_box_size(c) {
     let cc;
     if (self.cluster_sizes_in_entities) {
@@ -7314,6 +7906,14 @@ var hivtrace_cluster_network_graph = function (
     return 8 * Math.sqrt(cc);
   }
 
+  /**
+   * @function extract_network_time_series
+   * @description Extracts a time series from the network data based on a given time attribute.
+   * @param {string} time_attr - The time attribute to use for the series.
+   * @param {Object} other_attributes - Other attributes to include in the series.
+   * @param {Function} node_filter - A function to filter nodes.
+   * @returns {Array<Object>} An array of time series data points.
+   */
   self.extract_network_time_series = function (
     time_attr,
     other_attributes,
@@ -7344,6 +7944,12 @@ var hivtrace_cluster_network_graph = function (
     return result;
   };
 
+  /**
+   * @function expand_some_clusters
+   * @description Expands a given subset of clusters, or all clusters if no subset is provided.
+   * @param {Array<Object>} [subset] - An array of cluster objects to expand.
+   * @returns {void}
+   */
   self.expand_some_clusters = function (subset) {
     subset = subset || self.clusters;
     subset.forEach((x) => {
@@ -7354,12 +7960,24 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function select_some_clusters
+   * @description Selects a subset of clusters based on a given condition.
+   * @param {Function} condition - A function that returns true for clusters that should be selected.
+   * @returns {Array<Object>} An array of selected cluster objects.
+   */
   self.select_some_clusters = function (condition) {
     return self.clusters.filter((c, i) =>
       _.some(c.children, (n) => condition(n))
     );
   };
 
+  /**
+   * @function collapse_some_clusters
+   * @description Collapses a given subset of clusters, or all clusters if no subset is provided.
+   * @param {Array<Object>} [subset] - An array of cluster objects to collapse.
+   * @returns {void}
+   */
   self.collapse_some_clusters = function (subset) {
     subset = subset || self.clusters;
     subset.forEach((x) => {
@@ -7368,11 +7986,21 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function toggle_hxb2
+   * @description Toggles the visibility of problematic (HXB2-linked) clusters.
+   * @returns {void}
+   */
   self.toggle_hxb2 = function () {
     self.hide_hxb2 = !self.hide_hxb2;
     self.update();
   };
 
+  /**
+   * @function toggle_diff
+   * @description Toggles the visibility of changes since the last network update.
+   * @returns {void}
+   */
   self.toggle_diff = function () {
     self.showing_diff = !self.showing_diff;
     if (self.showing_diff) {
@@ -7383,11 +8011,21 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function toggle_highlight_unsupported_edges
+   * @description Toggles the highlighting of unsupported edges.
+   * @returns {void}
+   */
   self.toggle_highlight_unsupported_edges = function () {
     self.highlight_unsuppored_edges = !self.highlight_unsuppored_edges;
     self.update();
   };
 
+  /**
+   * @function toggle_time_filter
+   * @description Toggles the time filter for displaying recent clusters.
+   * @returns {void}
+   */
   self.toggle_time_filter = function () {
     if (self.using_time_filter) {
       self.using_time_filter = null;
@@ -7406,6 +8044,12 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function stratify
+   * @description Stratifies an array of values into a sorted array of unique values and their counts.
+   * @param {Array} array - The array of values to stratify.
+   * @returns {Array<Array>} A sorted array of [value, count] pairs.
+   */
   function stratify(array) {
     if (array) {
       var dict = {},
@@ -7426,6 +8070,12 @@ var hivtrace_cluster_network_graph = function (
     return array;
   }
 
+  /**
+   * @function _distance_gate_options
+   * @description Returns an options object for the distance gate, including edge styling and an extra menu.
+   * @param {number} threshold - The distance threshold.
+   * @returns {Object} An options object.
+   */
   self._distance_gate_options = function (threshold) {
     threshold = threshold || 0.005;
 
@@ -7540,6 +8190,14 @@ var hivtrace_cluster_network_graph = function (
     };
   };
 
+  /**
+   * @function _social_view_options
+   * @description Returns an options object for the social network view, including edge styling and an extra menu.
+   * @param {Array<string>} labeled_links - An array of labels for the links.
+   * @param {Object} shown_types - An object specifying which edge types are shown.
+   * @param {Function} edge_typer - A function that returns the type of an edge.
+   * @returns {Object} An options object.
+   */
   self._social_view_options = function (
     labeled_links,
     shown_types,
@@ -7649,6 +8307,15 @@ var hivtrace_cluster_network_graph = function (
 
   // The load_nodes_edges function is now imported from socialNetworkLoader.js
   // We will call it by passing 'self' as the first argument.
+  /**
+   * @function load_nodes_edges
+   * @description Loads nodes and edges from the social network loader.
+   * @param {Array} nodes_and_attributes - An array of nodes and their attributes.
+   * @param {string} index_id - The ID of the index to use.
+   * @param {Array} edges_and_attributes - An array of edges and their attributes.
+   * @param {string} annotation - An annotation for the loaded data.
+   * @returns {Object} The result of loading the nodes and edges.
+   */
   self.load_nodes_edges = (
     nodes_and_attributes,
     index_id,
@@ -7664,6 +8331,14 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function update_clusters_with_injected_nodes
+   * @description Updates clusters with injected nodes from a social network.
+   * @param {Function} node_filter - A function to filter nodes.
+   * @param {Function} edge_filter - A function to filter edges.
+   * @param {string} annotation - An annotation for the injected nodes.
+   * @returns {Array<Object>} An array of recomputed clusters.
+   */
   self.update_clusters_with_injected_nodes = function (
     node_filter,
     edge_filter,
@@ -7738,6 +8413,16 @@ var hivtrace_cluster_network_graph = function (
     return recomputed_clusters;
   };
   /*------------ Event Functions ---------------*/
+  /**
+   * @function toggle_tooltip
+   * @description Toggles a tooltip on a given element.
+   * @param {HTMLElement} element - The element to toggle the tooltip on.
+   * @param {boolean} turn_on - If true, shows the tooltip; otherwise, hides it.
+   * @param {string} title - The title of the tooltip.
+   * @param {string} tag - The content of the tooltip.
+   * @param {string} container - The container for the tooltip.
+   * @returns {void}
+   */
   function toggle_tooltip(element, turn_on, title, tag, container) {
     //if (d3.event.defaultPrevented) return;
     if (!element) {

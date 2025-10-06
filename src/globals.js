@@ -301,7 +301,7 @@ CDCCOITrackingOptionsDistanceFilter[CDCCOITrackingOptions[3]] = (e, d) =>
   e.length < 0.015;
 
 /**
-    CDCCOITrackingOptionsFilter:
+    CDCCOITrackingOptionsDistanceFilter:
     A filtering option is applied to cluster edges when computing COI membership under different tracking options
     Selects edges of different lengths (0.5% vs 1.5%)
 */
