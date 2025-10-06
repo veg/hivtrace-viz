@@ -7170,9 +7170,10 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ Cluster Methods ---------------*/
 
-  /* Creates a new object that groups nodes by cluster
-   * @param nodes
-   * @returns clusters
+  /**
+   * Creates a new object that groups nodes by cluster
+   * @param {Array<Object>} nodes - An array of node objects.
+   * @returns {Object} An object where keys are cluster IDs and values are arrays of nodes.
    */
   function get_all_clusters(nodes) {
     var by_cluster = _.groupBy(nodes, "cluster");
@@ -7758,6 +7759,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function cluster_pop_on
+   * @description Shows a tooltip for a cluster when the mouse is over it.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function cluster_pop_on(d) {
     toggle_tooltip(
       this,
@@ -7768,10 +7775,24 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function cluster_pop_off
+   * @description Hides the tooltip for a cluster when the mouse is no longer over it.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function cluster_pop_off(d) {
     toggle_tooltip(this, false);
   }
 
+  /**
+   * @function expand_cluster_handler
+   * @description Handles the expansion of a cluster, taking into account the maximum number of points to render.
+   * @param {Object} d - The cluster object to expand.
+   * @param {boolean} do_update - If true, updates the network visualization after expanding.
+   * @param {boolean} move_out - If true, moves the cluster out of the way after expanding.
+   * @returns {string} An empty string.
+   */
   self.expand_cluster_handler = function (d, do_update, move_out) {
     if (d.collapsed) {
       var new_nodes = self.cluster_sizes[d.cluster_id - 1] - 1;
@@ -7806,6 +7827,12 @@ var hivtrace_cluster_network_graph = function (
     return "";
   };
 
+  /**
+   * @function show_sequences_in_cluster
+   * @description Shows the sequences that make up a cluster.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function show_sequences_in_cluster(d) {
     var sequences = {};
     _.each(
@@ -7825,17 +7852,37 @@ var hivtrace_cluster_network_graph = function (
     //console.log (_.keys(sequences));
   }
 
+  /**
+   * @function _compute_cluster_degrees
+   * @description Computes the degrees of a cluster and stores them in the cluster object.
+   * @param {Object} d - The cluster object.
+   * @returns {void}
+   */
   function _compute_cluster_degrees(d) {
     var degrees = d.children.map((c) => c.degree);
     degrees.sort(d3.ascending);
     d.degrees = helpers.describe_vector(degrees);
   }
 
+  /**
+   * @function handle_node_label
+   * @description Toggles the visibility of a node's label.
+   * @param {HTMLElement} container - The container element for the node.
+   * @param {Object} node - The node object.
+   * @returns {void}
+   */
   function handle_node_label(container, node) {
     node.show_label = !node.show_label;
     self.update(true);
   }
 
+  /**
+   * @function collapse_cluster_handler
+   * @description Handles the collapse of a cluster.
+   * @param {Object} d - The cluster object to collapse.
+   * @param {boolean} do_update - If true, updates the network visualization after collapsing.
+   * @returns {void}
+   */
   function collapse_cluster_handler(d, do_update) {
     collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
     if (do_update) {
@@ -7843,6 +7890,12 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function cluster_box_size
+   * @description Determines the size of a cluster box based on the number of entities in the cluster.
+   * @param {Object} c - The cluster object.
+   * @returns {number} The size of the cluster box.
+   */
   function cluster_box_size(c) {
     let cc;
     if (self.cluster_sizes_in_entities) {
@@ -7853,6 +7906,14 @@ var hivtrace_cluster_network_graph = function (
     return 8 * Math.sqrt(cc);
   }
 
+  /**
+   * @function extract_network_time_series
+   * @description Extracts a time series from the network data based on a given time attribute.
+   * @param {string} time_attr - The time attribute to use for the series.
+   * @param {Object} other_attributes - Other attributes to include in the series.
+   * @param {Function} node_filter - A function to filter nodes.
+   * @returns {Array<Object>} An array of time series data points.
+   */
   self.extract_network_time_series = function (
     time_attr,
     other_attributes,
