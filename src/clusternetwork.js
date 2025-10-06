@@ -4942,6 +4942,12 @@ var hivtrace_cluster_network_graph = function (
     };
   }
 
+  /**
+   * @function handle_shape_categorical
+   * @description Handles the selection of a categorical attribute to be used for node shapes.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @returns {void}
+   */
   self.handle_shape_categorical = function (cat_id) {
     var set_attr = "None";
 
@@ -4992,6 +4998,13 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function renderColorPicker
+   * @description Renders a color picker for a given category, allowing users to override the default colors.
+   * @param {string} cat_id - The ID of the category.
+   * @param {string} type - The type of the category (e.g., 'categorical', 'continuous').
+   * @returns {void}
+   */
   self.renderColorPicker = function (cat_id, type) {
     const renderColorPickerCategorical = function (cat_id) {
       // For each unique value, render item.
@@ -5096,6 +5109,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_attribute_labels
+   * @description Draws the legend for the current color, shape, and opacity attributes.
+   * @returns {void}
+   */
   self.draw_attribute_labels = function () {
     // draw color legend in the network SVG
 
@@ -5501,6 +5519,12 @@ var hivtrace_cluster_network_graph = function (
     return null;
   }
 
+  /**
+   * @function handle_attribute_opacity
+   * @description Handles the selection of a continuous attribute to be used for node opacity.
+   * @param {string} cat_id - The ID of the continuous attribute.
+   * @returns {void}
+   */
   self.handle_attribute_opacity = function (cat_id) {
     var set_attr = "None";
 
@@ -5551,6 +5575,12 @@ var hivtrace_cluster_network_graph = function (
     d3.event.preventDefault();
   };
 
+  /**
+   * @function handle_attribute_continuous
+   * @description Handles the selection of a continuous attribute to be used for node color.
+   * @param {string} cat_id - The ID of the continuous attribute.
+   * @returns {void}
+   */
   self.handle_attribute_continuous = function (cat_id) {
     var set_attr = "None";
 
@@ -5735,6 +5765,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function define_node_search_table
+   * @description Defines the node search table using jQuery QueryBuilder.
+   * @returns {void}
+   */
   self.define_node_search_table = function () {
     self.node_search_div = self.get_ui_element_selector_by_role(
       "node_search_div",
@@ -5891,6 +5926,13 @@ var hivtrace_cluster_network_graph = function (
         }
       );
 
+      /**
+       * @function process_search_field
+       * @description Processes a single search condition against a value.
+       * @param {*} value - The value to check.
+       * @param {Object} condition - The search condition.
+       * @returns {boolean} True if the value meets the condition, false otherwise.
+       */
       self.process_search_field = (value, condition) => {
         switch (condition.type) {
           case "string": {
@@ -5945,6 +5987,13 @@ var hivtrace_cluster_network_graph = function (
         return false;
       };
 
+      /**
+       * @function process_search
+       * @description Processes a set of search rules against a data object.
+       * @param {Object} data - The data object to check.
+       * @param {Object} rules - The search rules.
+       * @returns {boolean} True if the data object meets the search criteria, false otherwise.
+       */
       self.process_search = (data, rules) => {
         let rule_results;
         if (rules.rules) {
@@ -6208,6 +6257,11 @@ var hivtrace_cluster_network_graph = function (
     self.renderColorPicker(cat_id, "categorical");
   };
 
+  /**
+   * @function filter_visibility
+   * @description Filters the visibility of nodes and clusters based on whether they match the current filter.
+   * @returns {void}
+   */
   self.filter_visibility = function () {
     self.clusters.forEach((c) => {
       c.is_hidden = self.hide_unselected && !c.match_filter;
@@ -6217,6 +6271,13 @@ var hivtrace_cluster_network_graph = function (
     });
   };
 
+  /**
+   * @function filter
+   * @description Filters the network based on a set of conditions, including regular expressions, distance, and date.
+   * @param {Array<Object>} conditions - An array of conditions to filter by.
+   * @param {boolean} skip_update - If true, skips updating the network visualization after filtering.
+   * @returns {void}
+   */
   self.filter = function (conditions, skip_update) {
     var anything_changed = false;
 
