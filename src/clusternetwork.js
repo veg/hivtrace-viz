@@ -6250,10 +6250,21 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function is_empty
+   * @description Checks if the cluster sizes array is empty.
+   * @returns {boolean} True if the cluster sizes array is empty, false otherwise.
+   */
   self.is_empty = function () {
     return self.cluster_sizes.length === 0;
   };
 
+  /**
+   * @function link_generator_function
+   * @description Generates the SVG path for a link, optionally with a pull effect.
+   * @param {Object} d - The link data object.
+   * @returns {void}
+   */
   self.link_generator_function = function (d) {
     var pull = d.pull || 0.0;
     var path;
@@ -6319,6 +6330,13 @@ var hivtrace_cluster_network_graph = function (
     d3.select(this).attr("d", path);
   };
 
+  /**
+   * @function update
+   * @description Updates the network visualization, redrawing nodes, links, and clusters.
+   * @param {boolean} soft - If true, performs a soft update without re-initializing layout.
+   * @param {number} friction - The friction value for the network layout.
+   * @returns {void}
+   */
   self.update = function (soft, friction) {
     self.needs_an_update = false;
 
@@ -6685,6 +6703,11 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function tick
+   * @description Updates the positions of nodes and links during each tick of the network layout.
+   * @returns {void}
+   */
   function tick() {
     var sizes = network_layout.size();
 
