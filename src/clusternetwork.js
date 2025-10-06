@@ -3923,6 +3923,15 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_extended_node_table
+   * @description Draws an extended table of nodes with their attributes.
+   * @param {Array<Object>} node_list - An array of node objects to display.
+   * @param {HTMLElement} container - The container element for the table.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {Object} options - Additional options for the table.
+   * @returns {void}
+   */
   self.draw_extended_node_table = function (
     node_list,
     container,
@@ -4141,6 +4150,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function generate_coi_temporal_report
+   * @description Generates a temporal report for a given cluster of interest (CoI).
+   * @param {Object} ref_set - The reference set for the CoI.
+   * @param {number} D - The distance threshold.
+   * @returns {Object} A report object containing node and event information.
+   */
   self.generate_coi_temporal_report = function (ref_set, D) {
     if (!ref_set) return {};
     D = D || 0.005;
@@ -7471,6 +7487,13 @@ var hivtrace_cluster_network_graph = function (
     return the_matrix;
   }
 
+  /**
+   * @function _aux_populate_category_fields
+   * @description Populates category fields for a given attribute.
+   * @param {Object} d - The attribute object.
+   * @param {string} k - The key of the attribute.
+   * @returns {Object} The updated attribute object.
+   */
   self._aux_populate_category_fields = function (d, k) {
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
@@ -7520,6 +7543,12 @@ var hivtrace_cluster_network_graph = function (
     return d;
   };
 
+  /**
+   * @function _aux_get_attribute_dimension
+   * @description Gets the dimension of a categorical attribute.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @returns {number} The dimension of the attribute.
+   */
   self._aux_get_attribute_dimension = function (cat_id) {
     if (cat_id in graph_data[kGlobals.network.GraphAttrbuteID]) {
       const cinfo = graph_data[kGlobals.network.GraphAttrbuteID][cat_id];
@@ -7531,6 +7560,12 @@ var hivtrace_cluster_network_graph = function (
     return 0;
   };
 
+  /**
+   * @function _aux_process_category_values
+   * @description Processes the values of a categorical attribute, creating a value map and a stable-ish order.
+   * @param {Object} d - The attribute object.
+   * @returns {Object} The updated attribute object.
+   */
   self._aux_process_category_values = function (d) {
     var values,
       reduced_range = null;
@@ -7652,6 +7687,13 @@ var hivtrace_cluster_network_graph = function (
     return d;
   };
 
+  /**
+   * @function attribute_cluster_distribution
+   * @description Gets the distribution of a specific attribute within a cluster.
+   * @param {Object} the_cluster - The cluster object.
+   * @param {string} attribute_id - The ID of the attribute.
+   * @returns {Array|null} An array of attribute values, or null if the attribute is not found.
+   */
   function attribute_cluster_distribution(the_cluster, attribute_id) {
     if (attribute_id && the_cluster) {
       return the_cluster.children.map((d) =>
@@ -7661,6 +7703,12 @@ var hivtrace_cluster_network_graph = function (
     return null;
   }
 
+  /**
+   * @function cluster_info_string
+   * @description Generates an information string for a cluster, including its size, degree, and other attributes.
+   * @param {string} id - The ID of the cluster.
+   * @returns {string} The information string for the cluster.
+   */
   function cluster_info_string(id) {
     var the_cluster = self.clusters[self.cluster_mapping[id]],
       attr_info = the_cluster["binned_attributes"];
@@ -8081,6 +8129,14 @@ var hivtrace_cluster_network_graph = function (
     };
   };
 
+  /**
+   * @function _social_view_options
+   * @description Returns an options object for the social network view, including edge styling and an extra menu.
+   * @param {Array<string>} labeled_links - An array of labels for the links.
+   * @param {Object} shown_types - An object specifying which edge types are shown.
+   * @param {Function} edge_typer - A function that returns the type of an edge.
+   * @returns {Object} An options object.
+   */
   self._social_view_options = function (
     labeled_links,
     shown_types,
@@ -8190,6 +8246,15 @@ var hivtrace_cluster_network_graph = function (
 
   // The load_nodes_edges function is now imported from socialNetworkLoader.js
   // We will call it by passing 'self' as the first argument.
+  /**
+   * @function load_nodes_edges
+   * @description Loads nodes and edges from the social network loader.
+   * @param {Array} nodes_and_attributes - An array of nodes and their attributes.
+   * @param {string} index_id - The ID of the index to use.
+   * @param {Array} edges_and_attributes - An array of edges and their attributes.
+   * @param {string} annotation - An annotation for the loaded data.
+   * @returns {Object} The result of loading the nodes and edges.
+   */
   self.load_nodes_edges = (
     nodes_and_attributes,
     index_id,
@@ -8205,6 +8270,14 @@ var hivtrace_cluster_network_graph = function (
     );
   };
 
+  /**
+   * @function update_clusters_with_injected_nodes
+   * @description Updates clusters with injected nodes from a social network.
+   * @param {Function} node_filter - A function to filter nodes.
+   * @param {Function} edge_filter - A function to filter edges.
+   * @param {string} annotation - An annotation for the injected nodes.
+   * @returns {Array<Object>} An array of recomputed clusters.
+   */
   self.update_clusters_with_injected_nodes = function (
     node_filter,
     edge_filter,
