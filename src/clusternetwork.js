@@ -6022,6 +6022,12 @@ var hivtrace_cluster_network_graph = function (
         return rules.not ? !rule_results : rule_results;
       };
 
+      /**
+       * @function rule_lc
+       * @description Converts string values in search rules to lowercase.
+       * @param {Object} rules - The search rules to process.
+       * @returns {void}
+       */
       self.rule_lc = (rules) => {
         if (rules.rules) {
           _.each(rules.rules, (r) => {
@@ -6074,6 +6080,13 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function handle_attribute_categorical
+   * @description Handles the selection of a categorical attribute to be used for node color.
+   * @param {string} cat_id - The ID of the categorical attribute.
+   * @param {boolean} skip_update - If true, skips updating the network visualization after applying the new color scheme.
+   * @returns {void}
+   */
   self.handle_attribute_categorical = function (cat_id, skip_update) {
     var set_attr = "None";
 
@@ -7822,6 +7835,12 @@ var hivtrace_cluster_network_graph = function (
     return result;
   };
 
+  /**
+   * @function expand_some_clusters
+   * @description Expands a given subset of clusters, or all clusters if no subset is provided.
+   * @param {Array<Object>} [subset] - An array of cluster objects to expand.
+   * @returns {void}
+   */
   self.expand_some_clusters = function (subset) {
     subset = subset || self.clusters;
     subset.forEach((x) => {
@@ -7832,12 +7851,24 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function select_some_clusters
+   * @description Selects a subset of clusters based on a given condition.
+   * @param {Function} condition - A function that returns true for clusters that should be selected.
+   * @returns {Array<Object>} An array of selected cluster objects.
+   */
   self.select_some_clusters = function (condition) {
     return self.clusters.filter((c, i) =>
       _.some(c.children, (n) => condition(n))
     );
   };
 
+  /**
+   * @function collapse_some_clusters
+   * @description Collapses a given subset of clusters, or all clusters if no subset is provided.
+   * @param {Array<Object>} [subset] - An array of cluster objects to collapse.
+   * @returns {void}
+   */
   self.collapse_some_clusters = function (subset) {
     subset = subset || self.clusters;
     subset.forEach((x) => {
@@ -7846,11 +7877,21 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function toggle_hxb2
+   * @description Toggles the visibility of problematic (HXB2-linked) clusters.
+   * @returns {void}
+   */
   self.toggle_hxb2 = function () {
     self.hide_hxb2 = !self.hide_hxb2;
     self.update();
   };
 
+  /**
+   * @function toggle_diff
+   * @description Toggles the visibility of changes since the last network update.
+   * @returns {void}
+   */
   self.toggle_diff = function () {
     self.showing_diff = !self.showing_diff;
     if (self.showing_diff) {
@@ -7861,11 +7902,21 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function toggle_highlight_unsupported_edges
+   * @description Toggles the highlighting of unsupported edges.
+   * @returns {void}
+   */
   self.toggle_highlight_unsupported_edges = function () {
     self.highlight_unsuppored_edges = !self.highlight_unsuppored_edges;
     self.update();
   };
 
+  /**
+   * @function toggle_time_filter
+   * @description Toggles the time filter for displaying recent clusters.
+   * @returns {void}
+   */
   self.toggle_time_filter = function () {
     if (self.using_time_filter) {
       self.using_time_filter = null;
@@ -7910,6 +7961,12 @@ var hivtrace_cluster_network_graph = function (
     return array;
   }
 
+  /**
+   * @function _distance_gate_options
+   * @description Returns an options object for the distance gate, including edge styling and an extra menu.
+   * @param {number} threshold - The distance threshold.
+   * @returns {Object} An options object.
+   */
   self._distance_gate_options = function (threshold) {
     threshold = threshold || 0.005;
 
