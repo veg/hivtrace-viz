@@ -4276,6 +4276,18 @@ var hivtrace_cluster_network_graph = function (
     return report;
   };
 
+  /**
+   * @function draw_node_table
+   * @description Draws a table of nodes with their attributes.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {Array<Object>} node_list - An array of node objects to display.
+   * @param {Array<Array<Object>>} headers - An array of header definitions for the table.
+   * @param {Array<Array<Object>>} rows - An array of row data for the table.
+   * @param {HTMLElement} container - The container element for the table.
+   * @param {string} table_caption - The caption for the table.
+   * @param {number} ND - The total number of nodes.
+   * @returns {void}
+   */
   self.draw_node_table = function (
     extra_columns,
     node_list,
@@ -4391,6 +4403,14 @@ var hivtrace_cluster_network_graph = function (
     }
   };
 
+  /**
+   * @function draw_cluster_table
+   * @description Draws a table of clusters with their attributes.
+   * @param {Array} extra_columns - An array of extra columns to add to the table.
+   * @param {HTMLElement} element - The container element for the table.
+   * @param {Object} options - Additional options for the table.
+   * @returns {void}
+   */
   self.draw_cluster_table = function (extra_columns, element, options) {
     var skip_clusters = options && options["no-clusters"];
     var skip_subclusters = !(options && options["subclusters"]);
@@ -6767,6 +6787,13 @@ var hivtrace_cluster_network_graph = function (
   }
 
   /*------------ Node Methods ---------------*/
+  /**
+   * @function compute_node_degrees
+   * @description Computes the degree of each node in the network.
+   * @param {Array<Object>} nodes - An array of node objects.
+   * @param {Array<Object>} edges - An array of edge objects.
+   * @returns {void}
+   */
   function compute_node_degrees(nodes, edges) {
     for (var n in nodes) {
       nodes[n].degree = 0;
@@ -6807,6 +6834,12 @@ var hivtrace_cluster_network_graph = function (
     return kGlobals.missing.label;
   };
 
+  /**
+   * @function has_network_attribute
+   * @description Checks if a given attribute exists in the network schema.
+   * @param {string} key - The key of the attribute to check.
+   * @returns {boolean} True if the attribute exists, false otherwise.
+   */
   self.has_network_attribute = function (key) {
     if (kGlobals.network.GraphAttrbuteID in self.json) {
       return key in self.json[kGlobals.network.GraphAttrbuteID];
@@ -6874,6 +6907,12 @@ var hivtrace_cluster_network_graph = function (
     return hms(d, "gray");
   }
 
+  /**
+   * @function node_opacity
+   * @description Determines the opacity of a node based on the current opacity settings.
+   * @param {Object} d - The node object.
+   * @returns {number} The opacity of the node.
+   */
   function node_opacity(d) {
     if (self.colorizer["opacity"]) {
       return self.colorizer["opacity"](
@@ -6883,6 +6922,13 @@ var hivtrace_cluster_network_graph = function (
     return 1;
   }
 
+  /**
+   * @function cluster_color
+   * @description Determines the color of a cluster based on its attributes.
+   * @param {Object} d - The cluster object.
+   * @param {string} type - The type of the cluster.
+   * @returns {string} The color of the cluster.
+   */
   function cluster_color(d, type) {
     if (d["binned_attributes"]) {
       return self.colorizer["category"](type);
@@ -6890,6 +6936,12 @@ var hivtrace_cluster_network_graph = function (
     return "#bdbdbd";
   }
 
+  /**
+   * @function node_info_string
+   * @description Generates an information string for a node, including its degree, clustering coefficient, and other attributes.
+   * @param {Object} n - The node object.
+   * @returns {string} The information string for the node.
+   */
   function node_info_string(n) {
     var str;
 
@@ -6952,6 +7004,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function edge_info_string
+   * @description Generates an information string for an edge, including its length and support.
+   * @param {Object} n - The edge object.
+   * @returns {string} The information string for the edge.
+   */
   function edge_info_string(n) {
     var str = "Length <em>" + kGlobals.formats.FloatFormat(n.length) + "</em>";
     if ("support" in n) {
@@ -6964,6 +7022,12 @@ var hivtrace_cluster_network_graph = function (
     return str;
   }
 
+  /**
+   * @function node_pop_on
+   * @description Shows a tooltip for a node when the mouse is over it.
+   * @param {Object} d - The node object.
+   * @returns {void}
+   */
   function node_pop_on(d) {
     if (d3.event.defaultPrevented) return;
 
@@ -6976,12 +7040,24 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function node_pop_off
+   * @description Hides the tooltip for a node when the mouse is no longer over it.
+   * @param {Object} d - The node object.
+   * @returns {void}
+   */
   function node_pop_off(d) {
     if (d3.event.defaultPrevented) return;
 
     toggle_tooltip(this, false);
   }
 
+  /**
+   * @function edge_pop_on
+   * @description Shows a tooltip for an edge when the mouse is over it.
+   * @param {Object} e - The edge object.
+   * @returns {void}
+   */
   function edge_pop_on(e) {
     toggle_tooltip(
       this,
@@ -6992,6 +7068,12 @@ var hivtrace_cluster_network_graph = function (
     );
   }
 
+  /**
+   * @function edge_pop_off
+   * @description Hides the tooltip for an edge when the mouse is no longer over it.
+   * @param {Object} d - The edge object.
+   * @returns {void}
+   */
   function edge_pop_off(d) {
     toggle_tooltip(this, false);
   }
@@ -7007,6 +7089,12 @@ var hivtrace_cluster_network_graph = function (
     return by_cluster;
   }
 
+  /**
+   * @function compute_cluster_centroids
+   * @description Computes the centroids of clusters based on the positions of their children nodes.
+   * @param {Object} clusters - An object containing cluster data.
+   * @returns {void}
+   */
   function compute_cluster_centroids(clusters) {
     for (var c in clusters) {
       var cls = clusters[c];
@@ -7023,6 +7111,13 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function collapse_cluster
+   * @description Collapses a cluster, hiding its children nodes.
+   * @param {Object} x - The cluster object to collapse.
+   * @param {boolean} keep_in_q - If true, keeps the cluster in the open cluster queue.
+   * @returns {number} The number of children in the collapsed cluster.
+   */
   function collapse_cluster(x, keep_in_q) {
     self.needs_an_update = true;
     x.collapsed = true;
@@ -7037,6 +7132,13 @@ var hivtrace_cluster_network_graph = function (
     return x.children.length;
   }
 
+  /**
+   * @function expand_cluster
+   * @description Expands a cluster, showing its children nodes.
+   * @param {Object} x - The cluster object to expand.
+   * @param {boolean} copy_coord - If true, copies coordinates from the parent cluster to the children.
+   * @returns {void}
+   */
   function expand_cluster(x, copy_coord) {
     self.needs_an_update = true;
     x.collapsed = false;
@@ -7056,6 +7158,14 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function render_binned_table
+   * @description Renders a table with binned data.
+   * @param {string} id - The ID of the table element.
+   * @param {Function} the_map - A function that maps values to categories.
+   * @param {Array<Array<number>>} matrix - The data matrix to render.
+   * @returns {void}
+   */
   function render_binned_table(id, the_map, matrix) {
     var the_table = d3.select(self.get_ui_element_selector_by_role(id, true));
     if (the_table.empty()) {
@@ -7130,6 +7240,14 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function render_chord_diagram
+   * @description Renders a chord diagram to visualize relationships between categories.
+   * @param {string} id - The ID of the container element for the diagram.
+   * @param {Function} the_map - A function that maps values to categories.
+   * @param {Array<Array<number>>} matrix - The data matrix to render.
+   * @returns {void}
+   */
   function render_chord_diagram(id, the_map, matrix) {
     var container = d3.select(self.get_ui_element_selector_by_role(id, true));
 
@@ -7223,6 +7341,15 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
+  /**
+   * @function attribute_pairwise_distribution
+   * @description Computes the pairwise distribution of an attribute for the edges in the network.
+   * @param {string} id - The ID of the attribute.
+   * @param {number} dim - The dimension of the attribute.
+   * @param {Function} the_map - A function that maps attribute values to indices.
+   * @param {boolean} only_expanded - If true, only considers edges in expanded clusters.
+   * @returns {Array<Array<number>>} The pairwise distribution matrix.
+   */
   function attribute_pairwise_distribution(id, dim, the_map, only_expanded) {
     var scan_from = only_expanded ? draw_me.edges : self.edges;
     var the_matrix = [];
@@ -7696,6 +7823,12 @@ var hivtrace_cluster_network_graph = function (
     self.update();
   };
 
+  /**
+   * @function stratify
+   * @description Stratifies an array of values into a sorted array of unique values and their counts.
+   * @param {Array} array - The array of values to stratify.
+   * @returns {Array<Array>} A sorted array of [value, count] pairs.
+   */
   function stratify(array) {
     if (array) {
       var dict = {},
@@ -8028,6 +8161,16 @@ var hivtrace_cluster_network_graph = function (
     return recomputed_clusters;
   };
   /*------------ Event Functions ---------------*/
+  /**
+   * @function toggle_tooltip
+   * @description Toggles a tooltip on a given element.
+   * @param {HTMLElement} element - The element to toggle the tooltip on.
+   * @param {boolean} turn_on - If true, shows the tooltip; otherwise, hides it.
+   * @param {string} title - The title of the tooltip.
+   * @param {string} tag - The content of the tooltip.
+   * @param {string} container - The container for the tooltip.
+   * @returns {void}
+   */
   function toggle_tooltip(element, turn_on, title, tag, container) {
     //if (d3.event.defaultPrevented) return;
     if (!element) {
