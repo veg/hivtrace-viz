@@ -357,12 +357,12 @@ class HIVTxNetwork {
     );
   };
 
-  get_reference_date() {
-    /**
+  /**
         get the reference (creation) date for the network
         same as "today", unless this is not the primary network (cluster or subcluster view),
         in which case the reference date for the parent is used
     */
+  get_reference_date() {
     if (!this.isPrimaryGraph && this.parent_graph_object) {
       return this.parent_graph_object.today;
     }
@@ -370,11 +370,11 @@ class HIVTxNetwork {
     return this.today;
   }
 
-  lookup_option(key, default_value, options) {
-    /**
+  /**
         retrieve an option associated with "key"
         if not found in Settings or options, return "default value"
     */
+  lookup_option(key, default_value, options) {
     if (this.json.Settings && this.json.Settings[key]) {
       return this.json.Settings[key];
     }
@@ -382,6 +382,9 @@ class HIVTxNetwork {
     return default_value;
   }
 
+  /**
+        Generates the HTML for a priority membership list form.
+    */
   static lookup_form_generator() {
     return '<div><ul data-hivtrace-ui-role = "priority-membership-list"></ul></div>';
   }
@@ -1494,6 +1497,10 @@ class HIVTxNetwork {
     return false;
   }
 
+  /**
+        Counts the number of unique entities in a priority group.
+        @param pg: The priority group object.
+    */
   priority_group_entity_count(pg) {
     return this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
       .length;
@@ -3019,6 +3026,10 @@ class HIVTxNetwork {
     };
   }
 
+  /**
+        define an attribute generator for binned age at diagnosis
+        @return attribute definition dict
+    */
   define_attribute_age_dx() {
     return {
       depends: ["age_dx"],
@@ -3336,6 +3347,11 @@ class HIVTxNetwork {
     return this.primary_key(node);
   }
 
+  /**
+        Applies a callback to each entity in the network.
+        An entity is a group of nodes that share the same primary key.
+        @param cb: The callback function to apply. It receives the primary key and the list of nodes for the entity.
+    */
   apply_to_entities(cb) {
     if (this.has_multiple_sequences) {
       _.each(this.primary_key_list, (d, k) => {
