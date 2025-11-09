@@ -2052,6 +2052,39 @@ var hivtrace_cluster_network_graph = function (
       return _.flatten(return_array, true);
     };
 
+    self._extract_mjc_attributes = function () {
+      const attributes = [];
+      if (!self.isMJCNetwork) {
+        return [];
+      }
+      // TODO: determine how to get this value?
+      if (self.MJCVariables.individualJurisdictionEnabled) {
+        attributes.push('')
+      }
+      if (self.MJCVariables.individualStateCurrentResidenceEnabled) {
+        attributes.push('cur_state_cd')
+      }
+      if (self.MJCVariables.individualStateDiagnosisResidenceEnabled) {
+        attributes.push('rsd_state_cd')
+      }
+      // TODO: determine how to get this value?
+      if (self.MJCVariables.individualDateIdentifiedInMjcEnabled) {
+        attributes.push('')
+      }
+      // TODO: determine how to get this value?
+      if (self.MJCVariables.individualIdentifiedLast12MonthsEnabled) {
+        attributes.push('')
+      }
+      // TODO: only currently year, must update to include month
+      if (self.MJCVariables.individualDiagnosisMonthYearEnabled) {
+        attributes.push('hiv_aids_dx_dt_year');
+      }
+
+      return Object.values(self.json[kGlobals.network.GraphAttrbuteID]).filter((d) =>
+        attributes.includes(d.raw_attribute_key)
+      );
+    }
+
     /**
      * @function _extract_nodes_by_id
      * @description Extracts nodes belonging to a specific cluster or subcluster ID.
@@ -2089,7 +2122,7 @@ var hivtrace_cluster_network_graph = function (
       priority_group
     ) {
       the_list.selectAll("*").remove();
-      var column_ids = self._extract_exportable_attributes();
+      var column_ids = self.isMJCNetwork ? self._extract_mjc_attributes() : self._extract_exportable_attributes();
       var cluster_nodes;
 
       if (priority_group) {

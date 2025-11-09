@@ -1293,7 +1293,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           width: 325,
           text_wrap: true,
           help: "Cluster of interest name",
-          hidden: !("mjcClusterIdEnabled" in self.MJCVariables) || self.MJCVariables.mjcClusterIdEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           value: "Modified/created",
@@ -1302,14 +1302,14 @@ function draw_priority_set_table(self, container, priority_groups) {
             return c.value[0];
           },
           help: "When was the cluster of interest created/last modified",
-          hidden: !("mjcModifiedDateEnabled" in self.MJCVariables) || self.MJCVariables.mjcModifiedDateEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           value: "Growth",
           sort: "value",
           help: "How growth is handled",
           width: 100,
-          hidden: !("mjcGrowthCriteriaEnabled" in self.MJCVariables) || self.MJCVariables.mjcGrowthCriteriaEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
           //text_wrap: true
         },
         {
@@ -1324,21 +1324,21 @@ function draw_priority_set_table(self, container, priority_groups) {
             return 0;
           },
           help: "Number of nodes in the cluster of interest",
-          hidden: !("mjcCurrentSizeEnabled" in self.MJCVariables) || self.MJCVariables.mjcCurrentSizeEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
           value: "Priority",
           width: 60,
           sort: "value",
           help: "Does the cluster of interest continue to meet priority criteria?",
-          hidden: !("mjcCurrentPriorityEnabled" in self.MJCVariables) || self.MJCVariables.mjcCurrentPriorityEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
           value: "DXs in last 12 mo.",
           width: 50,
           sort: "value",
           help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
-          hidden: !("mjcDiagnosesLast12MonthsEnabled" in self.MJCVariables) || self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           value: "Overlap",
@@ -1369,7 +1369,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           return c.value;
         },
         help: "Method of cluster identification",
-        hidden: !("mjcIdMethodEnabled" in self.MJCVariables) || self.MJCVariables.mjcIdMethodEnabled === false,
+        hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
       });
     }
 
@@ -1436,7 +1436,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             "</div>",
           html: true,
           actions: [],
-          hidden: !("mjcClusterIdEnabled" in self.MJCVariables) || self.MJCVariables.mjcClusterIdEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           // modification / creation date
@@ -1450,7 +1450,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             }
             return vs[0];
           },
-          hidden: !("mjcModifiedDateEnabled" in self.MJCVariables) || self.MJCVariables.mjcModifiedDateEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           // tracking mode
@@ -1460,7 +1460,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           format: function (value) {
             return kGlobals.CDCCOIConciseTrackingOptions[value];
           },
-          hidden: !("mjcGrowthCriteriaEnabled" in self.MJCVariables) || self.MJCVariables.mjcGrowthCriteriaEnabled === false
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false
         },
         {
           // size / new nodes
@@ -1499,18 +1499,18 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          hidden: !("mjcCurrentSizeEnabled" in self.MJCVariables) || self.MJCVariables.mjcCurrentSizeEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
           // meets priority definition
           width: 60,
           value: pg.meets_priority_def ? "Yes" : "No",
-          hidden: !("mjcCurrentPriorityEnabled" in self.MJCVariables) || self.MJCVariables.mjcCurrentPriorityEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
           width: 50,
           value: pg.cluster_dx_recent12_mo,
-          hidden: !("mjcDiagnosesLast12MonthsEnabled" in self.MJCVariables) || self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           width: 140,
@@ -1584,7 +1584,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          hidden: !("mjcIdMethodEnabled" in self.MJCVariables) || self.MJCVariables.mjcIdMethodEnabled === false,
+          hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
         });
       }
 
