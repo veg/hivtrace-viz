@@ -45,6 +45,9 @@ function add_a_sortable_table(
   var tbody = container.selectAll("tbody");
 
   const set_table_elements = (d, cell) => {
+    if (d.hidden) {
+      d3.select(cell).style("display", "none");
+    }
     if (d.width || d.text_wrap) {
       cell = d3.select(cell);
       if (d.width) cell.style("width", String(d.width) + "px");
