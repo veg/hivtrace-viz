@@ -434,6 +434,14 @@ var hivtrace_cluster_network_graph = function (
       false,
       "Diagnosis Year"
     ),
+    
+    hiv_aids_dx_dt_month_year: self.define_attribute_dx_month_year(
+      "Diagnosis Month/Year"
+    ),
+
+    hiv_aids_dx_dt_last_year: self.define_attribute_dx_last_year(
+      "DX in Last 12 Mo."
+    ),
 
     sequence_count: self.define_attribute_sequence_count("Number of sequences"),
   };
@@ -2057,9 +2065,8 @@ var hivtrace_cluster_network_graph = function (
       if (!self.isMJCNetwork) {
         return [];
       }
-      // TODO: determine how to get this value?
       if (self.MJCVariables.individualJurisdictionEnabled) {
-        attributes.push('')
+        attributes.push('mjc_data_owners')
       }
       if (self.MJCVariables.individualStateCurrentResidenceEnabled) {
         attributes.push('cur_state_cd')
@@ -2067,22 +2074,28 @@ var hivtrace_cluster_network_graph = function (
       if (self.MJCVariables.individualStateDiagnosisResidenceEnabled) {
         attributes.push('rsd_state_cd')
       }
-      // TODO: determine how to get this value?
       if (self.MJCVariables.individualDateIdentifiedInMjcEnabled) {
-        attributes.push('')
+        attributes.push('hiv_aids_dx_dt')
       }
-      // TODO: determine how to get this value?
       if (self.MJCVariables.individualIdentifiedLast12MonthsEnabled) {
-        attributes.push('')
+        attributes.push('hiv_aids_dx_dt_last_year')
       }
-      // TODO: only currently year, must update to include month
       if (self.MJCVariables.individualDiagnosisMonthYearEnabled) {
-        attributes.push('hiv_aids_dx_dt_year');
+        attributes.push('hiv_aids_dx_dt_month_year');
       }
+
+      const ATTRIBUTE_ORDER = [
+        'mjc_data_owners',
+        'cur_state_cd',
+        'rsd_state_cd',
+        'hiv_aids_dx_dt',
+        'hiv_aids_dx_dt_last_year',
+        'hiv_aids_dx_dt_month_year'
+      ];
 
       return Object.values(self.json[kGlobals.network.GraphAttrbuteID]).filter((d) =>
         attributes.includes(d.raw_attribute_key)
-      );
+      ).sort((a, b) => ATTRIBUTE_ORDER.indexOf(a.raw_attribute_key) - ATTRIBUTE_ORDER.indexOf(b.raw_attribute_key));
     }
 
     /**

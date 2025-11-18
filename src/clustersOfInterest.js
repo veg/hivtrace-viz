@@ -1285,6 +1285,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
           help: "How was this cluster of interest created",
           width: 50,
+          hidden: self.isMJCNetwork,
         },
         {
           value: "Name",
@@ -1405,6 +1406,7 @@ function draw_priority_set_table(self, container, priority_groups) {
               '" data-text-export=' +
               kGlobals.CDCCOICreatedManually +
               "></i>",
+          hidden: self.isMJCNetwork,
         },
         {
           // name

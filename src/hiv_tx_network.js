@@ -2950,6 +2950,87 @@ class HIVTxNetwork {
   }
 
   /**
+   * Define an attribute generator for month/year at diagnosis
+   * 
+   * @param {*} label : use this label
+   * @returns attribute definition dict
+   */
+  define_attribute_dx_month_year(label) {
+    return {
+      depends: [timeDateUtil._networkCDCDateField],
+      label: label,
+      type: "String",
+      map: (node) => {
+        try {
+          var value = this.parse_dates(
+            this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCDateField
+            )
+          );
+          
+          if (value) {
+            return (
+              ("0" + (value.getMonth() + 1)).slice(-2) +
+              "/" +
+              String(value.getFullYear())
+            );
+          }
+          return kGlobals.missing.label;
+        }
+        catch {
+          return kGlobals.missing.label;
+        }
+      }
+    };
+  }
+
+  /**
+   * Define an attribute generator for boolean value of dx in last year
+   * @param {*} label : use this label
+   * @returns attribute definition dict
+   */
+  define_attribute_dx_last_year(label) {
+    return {
+      depends: [timeDateUtil._networkCDCDateField],
+      label: label,
+      type: "String",
+      enum: ["Yes", "No"],
+      map: (node) => {
+        try {
+          var value = this.parse_dates(
+            this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCDateField
+            )
+          );
+          
+          if (value) {
+            const one_year_ago = timeDateUtil.n_months_ago(
+              this.get_reference_date(),
+              12
+            );
+            if (value >= one_year_ago) {
+              return "Yes";
+            }
+            return "No";
+          }
+          return kGlobals.missing.label;
+        }
+        catch {
+          return kGlobals.missing.label;
+        }
+      },
+      color_scale: function () {
+        return d3.scale
+          .ordinal()
+          .domain(["Yes", "No", kGlobals.missing.label])
+          .range(["#d95f02", "#7570b3", kGlobals.missing.color]);
+      },
+    };
+  }
+
+  /**
         Retrieve the list of sequences associated with a node
         @param pid: use this entity id
   
