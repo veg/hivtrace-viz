@@ -434,7 +434,7 @@ var hivtrace_cluster_network_graph = function (
       false,
       "Diagnosis Year"
     ),
-    
+
     hiv_aids_dx_dt_month_year: self.define_attribute_dx_month_year(
       "Diagnosis Month/Year"
     ),
@@ -8531,7 +8531,9 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ D3 globals and SVG elements ---------------*/
 
-  var network_layout = d3.layout
+  var network_layout = null;
+  if (!self.isMJCNetwork) {
+    network_layout = d3.layout
     .force()
     .on("tick", tick)
     .charge((d) => {
@@ -8558,7 +8560,9 @@ var hivtrace_cluster_network_graph = function (
     .chargeDistance(l_scale * 0.1)
     .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
     .friction(0.25);
-
+  } else {
+    network_layout = d3.layout.force();
+  }
   d3.select(self.container).selectAll("svg").remove();
 
   if (self.isPrimaryGraph) {
