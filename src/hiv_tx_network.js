@@ -40,12 +40,13 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
-          const i = node.id.indexOf("|");
-          if (i >= 0) {
-            return node.id.substr(0, i);
-          }
-          return node.id;
-        };
+        const i = node.id.indexOf("|");
+        if (i >= 0) {
+          return node.id.substr(0, i);
+        }
+        return node.id;
+      };
+    
     this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
@@ -123,10 +124,10 @@ class HIVTxNetwork {
         d3.select(this).attr(
           "transform",
           "translate(" +
-            (d.label_x + d.rendered_size * 1.25) +
-            "," +
-            (d.label_y + d.rendered_size * 0.5) +
-            ")"
+          (d.label_x + d.rendered_size * 1.25) +
+          "," +
+          (d.label_y + d.rendered_size * 0.5) +
+          ")"
         );
       })
       .on("dragstart", () => {
@@ -943,10 +944,12 @@ class HIVTxNetwork {
     @param d: node object
     @param id: [string] the attribute whose value should be fetched
     @param number: [bool] if true, only return numerical values
+    @param is_date: [bool] if true, parse the value as a date
+    @param check_redacted: [bool] if true, check if the attribute is redacted and return "REDACTED" label
 
  */
 
-  attribute_node_value_by_id(d, id, number, is_date) {
+  attribute_node_value_by_id(d, id, number, is_date, check_redacted) {
     try {
       if (kGlobals.network.NodeAttributeID in d && id) {
         if (id in d[kGlobals.network.NodeAttributeID]) {
@@ -959,12 +962,14 @@ class HIVTxNetwork {
           }
 
           if (_.isString(v)) {
-            if (v.length === 0) {
+            if (check_redacted && v === "REDACTED") {
+              return "REDACTED";
+            } else if (v.length === 0) {
               return kGlobals.missing.label;
             } else if (number) {
               v = Number(v);
               return _.isNaN(v) ? kGlobals.missing.label : v;
-            } else if (date) {
+            } else if (is_date) {
               return v.getTime();
             }
           }
@@ -2137,9 +2142,9 @@ class HIVTxNetwork {
               h.size !== history_entry.size ||
               h.national_priority !== history_entry.national_priority ||
               h.cluster_dx_recent12_mo !==
-                history_entry.cluster_dx_recent12_mo ||
+              history_entry.cluster_dx_recent12_mo ||
               h.cluster_dx_recent36_mo !==
-                history_entry.cluster_dx_recent36_mo ||
+              history_entry.cluster_dx_recent36_mo ||
               h.new_nodes !== history_entry.new_nodes
             ) {
               return true;
@@ -2468,8 +2473,8 @@ class HIVTxNetwork {
           this.defined_priority_groups.push(...this.auto_create_priority_sets);
         }
         const autocreated = this.defined_priority_groups.filter(
-            (pg) => pg.autocreated
-          ).length,
+          (pg) => pg.autocreated
+        ).length,
           autoexpanded = this.defined_priority_groups.filter(
             (pg) => pg.autoexpanded
           ).length,
@@ -2566,7 +2571,6 @@ class HIVTxNetwork {
   */
 
   populate_predefined_attribute(computed, key) {
-    //console.log ("Injecting " + key);
     if (_.isFunction(computed)) {
       computed = computed(this);
     }
@@ -2599,7 +2603,7 @@ class HIVTxNetwork {
               uniq_value_set.add(
                 this.attribute_node_value_by_id(n, key).getTime()
               );
-            } catch {}
+            } catch { }
           });
         } else {
           _.each(this.json.Nodes, (n) =>
@@ -2887,6 +2891,36 @@ class HIVTxNetwork {
     };
   }
 
+  define_attribute_dx_date_mjc(label) {
+    return {
+      depends: [timeDateUtil._networkCDCDateField],
+      label: label,
+      type: "Date",
+      map: (node) => {
+          var value =
+            this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCDateField,
+              false,
+              true,
+              true
+            )
+
+          if (value === "REDACTED") {
+            return value;
+          }
+
+          value = this.parse_dates(value);
+
+          if (value) {
+            return value;
+          } else {
+            return kGlobals.missing.label;
+          }
+      }
+    };
+  }
+
   /**
         define an attribute generator for dx year
   
@@ -2907,7 +2941,10 @@ class HIVTxNetwork {
           var value = this.parse_dates(
             this.attribute_node_value_by_id(
               node,
-              timeDateUtil._networkCDCDateField
+              timeDateUtil._networkCDCDateField,
+              false,
+              true,
+              true
             )
           );
 
@@ -2957,26 +2994,18 @@ class HIVTxNetwork {
    */
   define_attribute_dx_month_year(label) {
     return {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [timeDateUtil._networkCDCMonthYearField],
       label: label,
       type: "String",
       map: (node) => {
         try {
-          var value = this.parse_dates(
-            this.attribute_node_value_by_id(
-              node,
-              timeDateUtil._networkCDCDateField
-            )
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCMonthYearField,
+            false,
+            false,
+            true
           );
-          
-          if (value) {
-            return (
-              ("0" + (value.getMonth() + 1)).slice(-2) +
-              "/" +
-              String(value.getFullYear())
-            );
-          }
-          return kGlobals.missing.label;
         }
         catch {
           return kGlobals.missing.label;
@@ -2992,40 +3021,23 @@ class HIVTxNetwork {
    */
   define_attribute_dx_last_year(label) {
     return {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [timeDateUtil._networkCDCLastYearField],
       label: label,
       type: "String",
       enum: ["Yes", "No"],
       map: (node) => {
         try {
-          var value = this.parse_dates(
-            this.attribute_node_value_by_id(
-              node,
-              timeDateUtil._networkCDCDateField
-            )
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCLastYearField,
+            false,
+            false,
+            true
           );
-          
-          if (value) {
-            const one_year_ago = timeDateUtil.n_months_ago(
-              this.get_reference_date(),
-              12
-            );
-            if (value >= one_year_ago) {
-              return "Yes";
-            }
-            return "No";
-          }
-          return kGlobals.missing.label;
         }
         catch {
           return kGlobals.missing.label;
         }
-      },
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(["Yes", "No", kGlobals.missing.label])
-          .range(["#d95f02", "#7570b3", kGlobals.missing.color]);
       },
     };
   }
@@ -3188,7 +3200,7 @@ class HIVTxNetwork {
           ) {
             var attr_desc =
               network.json[kGlobals.network.GraphAttrbuteID][
-                network.colorizer["category_id"]
+              network.colorizer["category_id"]
               ];
             attr = {};
             attr[network.colorizer["category_id"]] = attr_desc["label"];

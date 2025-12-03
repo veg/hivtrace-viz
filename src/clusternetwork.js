@@ -446,6 +446,13 @@ var hivtrace_cluster_network_graph = function (
     sequence_count: self.define_attribute_sequence_count("Number of sequences"),
   };
 
+  // add attribute transforms for handling REDACTED values in MJC networks
+  if (self.isMJCNetwork) {
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt"] = self.define_attribute_dx_date_mjc(
+      "Diagnosis Date"
+    );
+  }
+
   if (self.cluster_attributes) {
     self._networkPredefinedAttributeTransforms["_newly_added"] =
       self.define_attribute_network_update();
@@ -2061,30 +2068,11 @@ var hivtrace_cluster_network_graph = function (
     };
 
     self._extract_mjc_attributes = function () {
-      const attributes = [];
       if (!self.isMJCNetwork) {
         return [];
       }
-      if (self.MJCVariables.individualJurisdictionEnabled) {
-        attributes.push('mjc_data_owners')
-      }
-      if (self.MJCVariables.individualStateCurrentResidenceEnabled) {
-        attributes.push('cur_state_cd')
-      }
-      if (self.MJCVariables.individualStateDiagnosisResidenceEnabled) {
-        attributes.push('rsd_state_cd')
-      }
-      if (self.MJCVariables.individualDateIdentifiedInMjcEnabled) {
-        attributes.push('hiv_aids_dx_dt')
-      }
-      if (self.MJCVariables.individualIdentifiedLast12MonthsEnabled) {
-        attributes.push('hiv_aids_dx_dt_last_year')
-      }
-      if (self.MJCVariables.individualDiagnosisMonthYearEnabled) {
-        attributes.push('hiv_aids_dx_dt_month_year');
-      }
 
-      const ATTRIBUTE_ORDER = [
+      const MJC_ATTRIBUTES = [
         'mjc_data_owners',
         'cur_state_cd',
         'rsd_state_cd',
@@ -2094,8 +2082,8 @@ var hivtrace_cluster_network_graph = function (
       ];
 
       return Object.values(self.json[kGlobals.network.GraphAttrbuteID]).filter((d) =>
-        attributes.includes(d.raw_attribute_key)
-      ).sort((a, b) => ATTRIBUTE_ORDER.indexOf(a.raw_attribute_key) - ATTRIBUTE_ORDER.indexOf(b.raw_attribute_key));
+        MJC_ATTRIBUTES.includes(d.raw_attribute_key)
+      ).sort((a, b) => MJC_ATTRIBUTES.indexOf(a.raw_attribute_key) - MJC_ATTRIBUTES.indexOf(b.raw_attribute_key));
     }
 
     /**
@@ -3204,11 +3192,19 @@ var hivtrace_cluster_network_graph = function (
                       this.parse_dates(a_date)
                     );
                   } catch (err) {
-                    HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
-                      nd,
-                      k,
-                      kGlobals.missing.label
-                    );
+                    if (a_date === "REDACTED" && self.isMJCNetwork) {
+                      HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
+                        nd,
+                        k,
+                        "REDACTED"
+                      );
+                    } else {
+                      HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
+                        nd,
+                        k,
+                        kGlobals.missing.label
+                      );
+                    }
                   }
                   return self.attribute_node_value_by_id(nd, k);
                 }),
@@ -8534,32 +8530,32 @@ var hivtrace_cluster_network_graph = function (
   var network_layout = null;
   if (!self.isMJCNetwork) {
     network_layout = d3.layout
-    .force()
-    .on("tick", tick)
-    .charge((d) => {
-      if (self.showing_on_map) {
-        return -60;
-      }
-      if (d.cluster_id) {
-        return self.charge_correction * (-15 - 5 * d.children.length ** 0.4);
-      }
-      return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
-    })
-    .linkDistance(
-      (d) => link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
-    )
-    .linkStrength((d) => {
-      if (self.showing_on_map) {
-        return 0.01;
-      }
-      if (d.support !== undefined) {
-        return 0.75 - 0.5 * d.support;
-      }
-      return 1;
-    })
-    .chargeDistance(l_scale * 0.1)
-    .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
-    .friction(0.25);
+      .force()
+      .on("tick", tick)
+      .charge((d) => {
+        if (self.showing_on_map) {
+          return -60;
+        }
+        if (d.cluster_id) {
+          return self.charge_correction * (-15 - 5 * d.children.length ** 0.4);
+        }
+        return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
+      })
+      .linkDistance(
+        (d) => link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
+      )
+      .linkStrength((d) => {
+        if (self.showing_on_map) {
+          return 0.01;
+        }
+        if (d.support !== undefined) {
+          return 0.75 - 0.5 * d.support;
+        }
+        return 1;
+      })
+      .chargeDistance(l_scale * 0.1)
+      .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
+      .friction(0.25);
   } else {
     network_layout = d3.layout.force();
   }
