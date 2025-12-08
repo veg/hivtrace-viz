@@ -426,6 +426,7 @@ function open_editor(
               autocreated: existing_set ? existing_set.autocreated : false,
               autoexpanded: existing_set ? existing_set.autoexpanded : false,
               pending: false,
+              history: existing_set ? existing_set.history : [],
             };
 
             if (tracking !== kGlobals.CDCCOITrackingOptionsNone) {
@@ -625,7 +626,6 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
-        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
           node["_priority_set_date"] = modifiedDate || createdDate;
         }
@@ -1294,7 +1294,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           width: 325,
           text_wrap: true,
           help: "Cluster of interest name",
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           value: "Modified/created",
@@ -1303,14 +1303,14 @@ function draw_priority_set_table(self, container, priority_groups) {
             return c.value[0];
           },
           help: "When was the cluster of interest created/last modified",
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           value: "Growth",
           sort: "value",
           help: "How growth is handled",
           width: 100,
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
           //text_wrap: true
         },
         {
@@ -1336,10 +1336,10 @@ function draw_priority_set_table(self, container, priority_groups) {
         },
         {
           value: "DXs in last 12 mo.",
-          width: 50,
+          width: 100,
           sort: "value",
           help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           value: "Overlap",
@@ -1364,13 +1364,13 @@ function draw_priority_set_table(self, container, priority_groups) {
 
     if (self._is_CDC_auto_mode) {
       headers[0].splice(3, 0, {
-        value: "clusterOI identification method",
+        value: `${self.isMJCNetwork ? "MJ " : ""}clusterOI identification method`,
         width: 100,
         sort: function (c) {
           return c.value;
         },
         help: "Method of cluster identification",
-        hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
+        // hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
       });
     }
 
@@ -1410,7 +1410,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         },
         {
           // name
-          value: pg.name,
+          value: self.cleanRedacted(pg.name),
           width: 325,
           help:
             pg.description +
@@ -1438,21 +1438,21 @@ function draw_priority_set_table(self, container, priority_groups) {
             "</div>",
           html: true,
           actions: [],
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           // modification / creation date
           width: 180,
           value: [pg.modified, pg.created],
           format: function (value) {
-            let vs = _.map(value, (v) => timeDateUtil.DateViewFormat(v));
+            let vs = _.map(value, (v) => v === "REDACTED" ? v : timeDateUtil.DateViewFormat(v));
 
             if (vs[0] !== vs[1]) {
               return vs[0] + " / " + vs[1];
             }
             return vs[0];
           },
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           // tracking mode
@@ -1460,9 +1460,12 @@ function draw_priority_set_table(self, container, priority_groups) {
           //text_wrap: true,
           value: pg.tracking,
           format: function (value) {
+            if (value === "REDACTED") {
+              return "REDACTED";
+            }
             return kGlobals.CDCCOIConciseTrackingOptions[value];
           },
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
         },
         {
           // size / new nodes
@@ -1510,9 +1513,10 @@ function draw_priority_set_table(self, container, priority_groups) {
           hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
-          width: 50,
-          value: pg.cluster_dx_recent12_mo,
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          width: 100,
+          // TODO: actually redact the data on the backend
+          value: (self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false) ? "REDACTED" : pg.cluster_dx_recent12_mo,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           width: 140,
@@ -1586,11 +1590,11 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
         });
       }
 
-      if (pg.pending) {
+      if (pg.pending && !self.isMJCNetwork) {
         // pending user review
         this_row[1].actions = [
           {
@@ -1712,7 +1716,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       rows,
       true,
       has_required_actions +
-      `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> clusters of interest.
+      `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${self.isMJCNetwork ? 'MJ ' : ''}clusters of interest.
           <button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>
           <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv">Export to CSV</button>`,
       get_editor()

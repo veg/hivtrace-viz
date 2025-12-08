@@ -46,7 +46,7 @@ class HIVTxNetwork {
         }
         return node.id;
       };
-    
+
     this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
@@ -1203,9 +1203,9 @@ class HIVTxNetwork {
         name: g.name,
         description: g.description,
         nodes: g.nodes,
-        modified: timeDateUtil.DateFormats[0](g.modified),
+        modified: g.modified === "REDACTED" ? g.modified : timeDateUtil.DateFormats[0](g.modified),
         kind: g.kind,
-        created: timeDateUtil.DateFormats[0](g.created),
+        created: g.modified === "REDACTED" ? g.created : timeDateUtil.DateFormats[0](g.created),
         createdBy: g.createdBy,
         tracking: g.tracking,
         autocreated: g.autocreated,
@@ -1356,8 +1356,8 @@ class HIVTxNetwork {
             (gn) => {
               const eid = this.entity_id(gn);
               return {
-                eHARS_uid: eid,
-                cluster_uid: g.name,
+                eHARS_uid: this.cleanRedacted(eid),
+                cluster_uid: this.cleanRedacted(g.name),
                 cluster_ident_method: g.kind,
                 person_ident_method: entity_to_pg_records[eid][0].kind,
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
@@ -1413,7 +1413,7 @@ class HIVTxNetwork {
         _.filter(this.defined_priority_groups, (g) => g.validated),
         (g) => ({
           cluster_type: g.createdBy,
-          cluster_uid: g.name,
+          cluster_uid: this.cleanRedacted(g.name),
           cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
             g.modified
           ),
@@ -1626,13 +1626,17 @@ class HIVTxNetwork {
           pg.node_objects = [];
           pg.not_in_network = [];
           pg.validated = true;
-          pg.created = _.isDate(pg.created)
-            ? pg.created
-            : timeDateUtil.DateFormats[0].parse(pg.created);
+          if (pg.created !== "REDACTED") {
+            pg.created = _.isDate(pg.created)
+              ? pg.created
+              : timeDateUtil.DateFormats[0].parse(pg.created);
+          }
           if (pg.modified) {
-            pg.modified = _.isDate(pg.modified)
-              ? pg.modified
-              : timeDateUtil.DateFormats[0].parse(pg.modified);
+            if (pg.modified !== "REDACTED") {
+              pg.modified = _.isDate(pg.modified)
+                ? pg.modified
+                : timeDateUtil.DateFormats[0].parse(pg.modified);
+            }
           } else {
             pg.modified = pg.created;
           }
@@ -2375,6 +2379,9 @@ class HIVTxNetwork {
         _.each(this.defined_priority_groups, (pg) => {
           _.each(pg.nodes, (n) => {
             try {
+              if (n.added === "REDACTED") {
+                return;
+              }
               n.added = timeDateUtil.DateFormats[0].parse(n.added);
               if (n.added > latest_date) {
                 latest_date = n.added;
@@ -2891,32 +2898,14 @@ class HIVTxNetwork {
     };
   }
 
-  define_attribute_dx_date_mjc(label) {
+  define_attribute_mjc_date_added(label) {
     return {
-      depends: [timeDateUtil._networkCDCDateField],
+      depends: [],
       label: label,
       type: "Date",
       map: (node) => {
-          var value =
-            this.attribute_node_value_by_id(
-              node,
-              timeDateUtil._networkCDCDateField,
-              false,
-              true,
-              true
-            )
-
-          if (value === "REDACTED") {
-            return value;
-          }
-
-          value = this.parse_dates(value);
-
-          if (value) {
-            return value;
-          } else {
-            return kGlobals.missing.label;
-          }
+        // will be dynamically injected into node every time a MJ ClusterOI is viewed
+        return kGlobals.missing.label;
       }
     };
   }
@@ -3438,6 +3427,13 @@ class HIVTxNetwork {
 
   entity_id(node) {
     return this.primary_key(node);
+  }
+
+  cleanRedacted(id) {
+    if (id.startsWith("REDACTED_")) {
+      return "REDACTED";
+    }
+    return id;
   }
 
   /**

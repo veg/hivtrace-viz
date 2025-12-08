@@ -435,21 +435,18 @@ var hivtrace_cluster_network_graph = function (
       "Diagnosis Year"
     ),
 
-    hiv_aids_dx_dt_month_year: self.define_attribute_dx_month_year(
-      "Diagnosis Month/Year"
-    ),
-
-    hiv_aids_dx_dt_last_year: self.define_attribute_dx_last_year(
-      "DX in Last 12 Mo."
-    ),
-
     sequence_count: self.define_attribute_sequence_count("Number of sequences"),
   };
 
-  // add attribute transforms for handling REDACTED values in MJC networks
   if (self.isMJCNetwork) {
-    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt"] = self.define_attribute_dx_date_mjc(
-      "Diagnosis Date"
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_month_year"] = self.define_attribute_dx_month_year(
+      "Diagnosis Month/Year"
+    );
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_last_year"] = self.define_attribute_dx_last_year(
+      "DX in Last 12 Mo."
+    );
+    self._networkPredefinedAttributeTransforms["mjc_date_added"] = self.define_attribute_mjc_date_added(
+      "Date Added to MJ ClusterOI"
     );
   }
 
@@ -2067,23 +2064,45 @@ var hivtrace_cluster_network_graph = function (
       return _.flatten(return_array, true);
     };
 
-    self._extract_mjc_attributes = function () {
+    self._extract_mjc_attributes = function (priority_group_name) {
       if (!self.isMJCNetwork) {
         return [];
+      }
+
+      // for all nodes in the priority group, update the mjc_date_added to the current viewed priority group
+      if (priority_group_name) {
+        let priority_group = self.priority_groups_find_by_name(priority_group_name);
+        let nodeToAddedDateMap = {};
+        for (let n of priority_group.nodes) {
+          let value = n.added;
+          if (value !== "REDACTED") {
+            value = timeDateUtil.DateViewFormatExport(this.parse_dates(value));
+          }
+          nodeToAddedDateMap[n.name] = value;
+        }
+
+        if (priority_group) {
+          const cluster_nodes = priority_group.node_objects;
+          _.each(cluster_nodes, (n) => {
+            n.patient_attributes.mjc_date_added = nodeToAddedDateMap[n.id];
+          });
+        }
       }
 
       const MJC_ATTRIBUTES = [
         'mjc_data_owners',
         'cur_state_cd',
         'rsd_state_cd',
-        'hiv_aids_dx_dt',
+        'mjc_date_added',
         'hiv_aids_dx_dt_last_year',
         'hiv_aids_dx_dt_month_year'
       ];
 
-      return Object.values(self.json[kGlobals.network.GraphAttrbuteID]).filter((d) =>
-        MJC_ATTRIBUTES.includes(d.raw_attribute_key)
-      ).sort((a, b) => MJC_ATTRIBUTES.indexOf(a.raw_attribute_key) - MJC_ATTRIBUTES.indexOf(b.raw_attribute_key));
+      return MJC_ATTRIBUTES.filter((attr_key =>
+        attr_key in self.json[kGlobals.network.GraphAttrbuteID]
+      )).map((attr_key) =>
+        self.json[kGlobals.network.GraphAttrbuteID][attr_key]
+      );
     }
 
     /**
@@ -2123,7 +2142,7 @@ var hivtrace_cluster_network_graph = function (
       priority_group
     ) {
       the_list.selectAll("*").remove();
-      var column_ids = self.isMJCNetwork ? self._extract_mjc_attributes() : self._extract_exportable_attributes();
+      var column_ids = self.isMJCNetwork ? self._extract_mjc_attributes(priority_group) : self._extract_exportable_attributes();
       var cluster_nodes;
 
       if (priority_group) {
@@ -2171,13 +2190,13 @@ var hivtrace_cluster_network_graph = function (
             attribute_list.append("dt").text(key);
             attribute_list
               .append("dd")
-              .text(_.map(binned[key], (n) => this.entity_id(n)).join(", "));
+              .text(_.map(binned[key], (n) => this.cleanRedacted(this.entity_id(n))).join(", "));
           });
         });
       } else {
         _.each(cluster_nodes, (node) => {
           var patient_record = the_list.append("li");
-          patient_record.append("code").text(this.entity_id(node));
+          patient_record.append("code").text(this.cleanRedacted(this.entity_id(node)));
           var patient_list = patient_record
             .append("dl")
             .classed("dl-horizontal", true);
@@ -2245,7 +2264,7 @@ var hivtrace_cluster_network_graph = function (
             .text(
               __("clusters_tab")["listing_nodes"] +
               (priority_list
-                ? " in cluster of interest " + priority_list
+                ? ` in ${self.isMJCNetwork ? 'MJ ' : ''}cluster of interest ` + priority_list
                 : " " + __("general")["cluster"] + " " + cluster_id)
             );
 
@@ -2295,7 +2314,7 @@ var hivtrace_cluster_network_graph = function (
             .text(
               "View how nodes in cluster of interest " +
               priority_list +
-              " overlap with other clusterOI"
+              (self.isMJCNetwork ? " overlap with your clusterOI and other MJ clusterOI" : " overlap with other clusterOI")
             );
 
           const ps = self.priority_groups_find_by_name(priority_list);
@@ -2316,26 +2335,57 @@ var hivtrace_cluster_network_graph = function (
             ],
           ];
 
+          if (self.isMJCNetwork) {
+            headers[0].push({
+              value: "Other MJ Cluster(s) of Interest",
+              help: "Names of other MJ clusterOI where this node is included",
+              sort: "value",
+            });
+          }
+
           var rows = [];
           var rows_for_export = [
             ["Overlapping Cluster of Interest", "Node", "Other clusterOI"],
           ];
 
-          _.each(
-            self.aggregate_indvidual_level_records(ps.node_objects),
-            (n) => {
-              const eid = self.entity_id(n);
-              const overlap = self.priority_node_overlap[eid];
-              let other_sets = "None";
-              if (overlap.size > 1) {
-                other_sets = _.sortBy(
-                  _.filter([...overlap], (d) => d !== priority_list)
-                ).join("; ");
+          if (self.isMJCNetwork) {
+            rows_for_export[0].push("Other MJ clusterOI");
+          }
+
+          if (self.isMJCNetwork) {
+            // TODO: complete this implementation with proper clusterOI/priority_sets being used as input
+            _.each(
+              self.aggregate_indvidual_level_records(ps.node_objects),
+              (n, i) => {
+                const eid = self.entity_id(n);
+                const overlap = self.priority_node_overlap[eid];
+                let other_sets = "None";
+                if (overlap.size > 1) {
+                  other_sets = _.sortBy(
+                    _.filter([...overlap], (d) => d !== priority_list)
+                  ).join("; ");
+                }
+                rows.push([{ value: self.cleanRedacted(eid) }, { value: other_sets }, { value: i % 4 === 0 ? "CA_2026_XX.XX" : "None" }]);
+                rows_for_export.push([ps.name, self.cleanRedacted(eid), other_sets, i % 4 === 0 ? "CA_2026_XX.XX" : "None"]);
               }
-              rows.push([{ value: eid }, { value: other_sets }]);
-              rows_for_export.push([ps.name, eid, other_sets]);
-            }
-          );
+            );
+          } else {
+            _.each(
+              self.aggregate_indvidual_level_records(ps.node_objects),
+              (n) => {
+                const eid = self.entity_id(n);
+                const overlap = self.priority_node_overlap[eid];
+                let other_sets = "None";
+                if (overlap.size > 1) {
+                  other_sets = _.sortBy(
+                    _.filter([...overlap], (d) => d !== priority_list)
+                  ).join("; ");
+                }
+                rows.push([{ value: self.cleanRedacted(eid) }, { value: other_sets }]);
+                rows_for_export.push([ps.name, self.cleanRedacted(eid), other_sets]);
+              }
+            );
+          }
 
           d3.select(
             self.get_ui_element_selector_by_role(
