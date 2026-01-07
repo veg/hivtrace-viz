@@ -625,7 +625,6 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
-        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
           node["_priority_set_date"] = modifiedDate || createdDate;
         }
@@ -719,8 +718,6 @@ function open_editor(
             panel_object._append_node(valid_ids[n.id]);
             existing_ids[n.id] = 1;
             need_update = true;
-          } else {
-            console.log("***", n);
           }
         });
 

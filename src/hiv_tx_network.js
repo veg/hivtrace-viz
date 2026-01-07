@@ -462,7 +462,6 @@ class HIVTxNetwork {
       //console.log (misc.hivtrace_cluster_depthwise_traversal (c95.Nodes, c95.Edges, (d)=>d.length <= reduce_distance_within));
 
       let null_size = nodes_to_delete.size;
-      console.log("Marked ", null_size, " nodes in null clusters");
 
       _.each(complete_clusters, (cluster, cluster_index) => {
         if (cluster.length > 1) {
@@ -2633,10 +2632,6 @@ class HIVTxNetwork {
 
       var extension = {};
       extension[key] = computed;
-
-      if (key == "priority_set") {
-        console.log();
-      }
 
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
 

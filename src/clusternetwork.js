@@ -1536,8 +1536,6 @@ var hivtrace_cluster_network_graph = function (
           sub.recent_nodes = [];
 
           const future_date = new Date(start_date.getTime() + 1e13);
-          if (sub.cluster_id == "2211.1")
-            console.log(sub, rr_cluster, subcluster_json);
 
           _.each(rr_cluster, (recent_cluster) => {
             var priority_nodes = _.groupBy(recent_cluster, (n) =>
