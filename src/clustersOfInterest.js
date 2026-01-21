@@ -1263,7 +1263,8 @@ function _action_drop_down(self, pg) {
 }
 
 /**
- * Draws a table of priority sets (clusters of interest).
+ * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views). 
+ * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.own_defined_priority_groups is the jurisdiction's ClusterOI.
 
  * @param {Object} self - The main network visualization object.
  * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
@@ -1275,7 +1276,12 @@ function draw_priority_set_table(self, container, priority_groups) {
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
     self.priority_groups_compute_node_membership();
-    self.priority_groups_compute_overlap(priority_groups);
+    if (self.isMJCNetwork) {
+      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.own_defined_priority_groups)
+      self.priority_groups_compute_overlap_mjc(self.defined_priority_groups, self.own_defined_priority_groups);
+    } else {
+      self.priority_groups_compute_overlap(priority_groups);
+    }
     var headers = [
       [
         {
@@ -1342,7 +1348,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
-          value: "Overlap",
+          value: self.isMJCNetwork ? "My ClusterOI Overlap Count" : "Overlap",
           width: 140,
           sort: function (c) {
             c = c.value;
@@ -1351,7 +1357,9 @@ function draw_priority_set_table(self, container, priority_groups) {
             }
             return 0;
           },
-          help: "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
+          help: self.isMJCNetwork ?
+            "How many of my jurisdiction's ClusterOI have overlapping nodes with this MJ ClusterOI?" :
+            "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
         },
         /*,
           {
@@ -1717,8 +1725,8 @@ function draw_priority_set_table(self, container, priority_groups) {
       true,
       has_required_actions +
       `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${self.isMJCNetwork ? 'MJ ' : ''}clusters of interest.
-          <button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>
-          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv">Export to CSV</button>`,
+          ${self.isMJCNetwork ? '' : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'}
+          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV">Export to CSV</button>`,
       get_editor()
     );
 

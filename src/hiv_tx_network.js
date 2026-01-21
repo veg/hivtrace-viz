@@ -40,6 +40,9 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
+        if (this.isMJCNetwork && !node.id) {
+          return node.name;
+        }
         const i = node.id.indexOf("|");
         if (i >= 0) {
           return node.id.substr(0, i);
@@ -898,6 +901,85 @@ class HIVTxNetwork {
       };
     });
   };
+
+  priority_groups_compute_overlap_mjc = (mjc_groups, own_groups) => {
+    this.priority_node_overlap = {};
+
+    if (!mjc_groups || !own_groups) {
+      return;
+    }
+
+    // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
+    var size_by_pg = {};
+
+    // Also keep sizes for own_groups for superset/duplicate checks
+    var size_by_own = {};
+
+    // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
+    _.each(own_groups, (pg) => {
+      const ents = this.aggregate_indvidual_level_records(pg.nodes);
+      size_by_own[pg.name] = ents.length;
+
+      _.each(ents, (n) => {
+        const entity_id = this.entity_id(n);
+        if (!(entity_id in this.priority_node_overlap)) {
+          this.priority_node_overlap[entity_id] = new Set();
+        }
+        this.priority_node_overlap[entity_id].add(pg.name);
+      });
+    });
+
+    // 3) For each mjc group, compute overlap only considering nodes that are present in own_groups
+    _.each(mjc_groups, (pg) => {
+      const overlap = {
+        sets: new Set(),
+        nodes: 0,
+        supersets: [],
+        duplicates: [],
+      };
+
+      const by_set_count = {};
+      _.each(pg.nodes, (n) => {
+        const entity_id = this.entity_id(n);
+
+        // Only care about nodes in mjc_groups that are present in own_groups
+        if (entity_id in this.priority_node_overlap && this.priority_node_overlap[entity_id].size > 0) {
+          overlap.nodes++;
+          this.priority_node_overlap[entity_id].forEach((own_pg_name) => {
+            // Collect counts per owning PG (these are names from own_groups)
+            if (!(own_pg_name in by_set_count)) {
+              by_set_count[own_pg_name] = [];
+            }
+            by_set_count[own_pg_name].push(entity_id);
+
+            overlap.sets.add(own_pg_name);
+          });
+        }
+      });
+
+      // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
+      // then it's either a superset or a duplicate (same size).
+      _.each(by_set_count, (nodes, own_name) => {
+        if (nodes.length == size_by_pg[pg.name]) {
+          if (size_by_own[own_name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(own_name);
+          } else {
+            overlap.supersets.push(own_name);
+          }
+        }
+      });
+
+      // assign overlap summary to the mjc group
+      pg.overlap = {
+        nodes: overlap.nodes,
+        // sets = number of distinct own_groups that share nodes with this mjc_group
+        sets: overlap.sets.size,
+        superset: overlap.supersets,
+        duplicate: overlap.duplicates,
+      };
+    });
+  };
+
 
   /** generate the name for a cluster of interest */
   generateClusterOfInterestID(subcluster_id) {
@@ -2366,1102 +2448,1120 @@ class HIVTxNetwork {
         This needs to be called AFTER the clusters/subclusters have been annotated
   */
 
-  load_priority_sets(url, is_writeable) {
+  fetch_priority_sets(url, callback) {
     d3.json(url, (error, results) => {
       if (error) {
         throw Error(
           "Failed loading cluster of interest file " + error.responseURL
         );
       } else {
-        let latest_date = new Date();
-        latest_date.setFullYear(1900);
-        this.defined_priority_groups = _.clone(results);
-        _.each(this.defined_priority_groups, (pg) => {
-          _.each(pg.nodes, (n) => {
-            try {
-              if (n.added === "REDACTED") {
-                return;
-              }
-              n.added = timeDateUtil.DateFormats[0].parse(n.added);
-              if (n.added > latest_date) {
-                latest_date = n.added;
-              }
-            } catch {
-              // do nothing
-            }
-          });
-        });
-
-        this.priority_set_table_writeable = is_writeable === "writeable";
-
-        this.priority_groups_validate(
-          this.defined_priority_groups,
-          this._is_CDC_auto_mode
-        );
-
-        this.auto_create_priority_sets = [];
-        /**
-            check if the system needs to create/expand CoI
-        */
-        const today_string = timeDateUtil.DateFormats[0](
-          this.get_reference_date()
-        );
-        this.map_ids_to_objects();
-
-        if (this._is_CDC_auto_mode) {
-          _.each(this.clusters, (cluster_data, cluster_id) => {
-            _.each(cluster_data.subclusters, (subcluster_data) => {
-              _.each(subcluster_data.priority_score, (priority_score, i) => {
-                let priority_entities = this.unique_entity_list(
-                  _.map(priority_score, (d) => ({ id: d }))
-                );
-                if (
-                  priority_entities.length >=
-                  this.CDC_data["autocreate-priority-set-size"]
-                ) {
-                  // only generate a new set if it doesn't match what is already there
-                  const node_set = {};
-                  _.each(subcluster_data.recent_nodes[i], (n) => {
-                    node_set[n] = 1;
-                  });
-
-                  const matched_groups = _.filter(
-                    _.filter(
-                      this.defined_priority_groups,
-                      (pg) =>
-                        pg.kind in kGlobals.CDCCOICanAutoExpand &&
-                        pg.createdBy === kGlobals.CDCCOICreatedBySystem &&
-                        pg.tracking === kGlobals.CDCCOITrackingOptionsDefault
-                    ),
-                    (pg) => {
-                      const matched = _.countBy(
-                        _.map(pg.nodes, (pn) => pn.name in node_set)
-                      );
-                      return matched[true] >= 1;
-                    }
-                  );
-
-                  if (matched_groups.length >= 1) {
-                    return;
-                  }
-
-                  const autoname = this.generateClusterOfInterestID(
-                    subcluster_data.cluster_id
-                  );
-
-                  this.auto_create_priority_sets.push({
-                    name: autoname,
-                    description:
-                      "Automatically created cluster of interest " + autoname,
-                    nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
-                      this.priority_group_node_record(
-                        n,
-                        this.get_reference_date()
-                      )
-                    ),
-                    created: today_string,
-                    kind: kGlobals.CDCCOIKindAutomaticCreation,
-                    tracking: kGlobals.CDCCOITrackingOptions[0],
-                    createdBy: kGlobals.CDCCOICreatedBySystem,
-                    autocreated: true,
-                    autoexpanded: false,
-                    pending: true,
-                  });
-                }
-              });
-            });
-          });
-        }
-
-        if (this.auto_create_priority_sets.length) {
-          // SLKP 20200727 now check to see if any of the priority sets
-          // need to be auto-generated
-          //console.log (this.auto_create_priority_sets);
-          this.defined_priority_groups.push(...this.auto_create_priority_sets);
-        }
-        const autocreated = this.defined_priority_groups.filter(
-          (pg) => pg.autocreated
-        ).length,
-          autoexpanded = this.defined_priority_groups.filter(
-            (pg) => pg.autoexpanded
-          ).length,
-          automatic_action_taken = autocreated + autoexpanded > 0,
-          left_to_review = this.defined_priority_groups.filter(
-            (pg) => pg.pending
-          ).length;
-
-        if (automatic_action_taken) {
-          this.warning_string +=
-            "<br/>Automatically created <b>" +
-            autocreated +
-            "</b> and expanded <b>" +
-            autoexpanded +
-            "</b> clusters of interest." +
-            (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
-              : "");
-          this.display_warning(this.warning_string, true);
-        }
-
-        const tab_pill = this.get_ui_element_selector_by_role(
-          "priority_set_counts",
-          true
-        );
-
-        if (!this.priority_set_table_writeable) {
-          const rationale =
-            is_writeable === "old"
-              ? "the network is <b>older</b> than some of the Clusters of Interest"
-              : "the network was ran in <b>standalone</b> mode so no data is stored";
-          this.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
-          this.display_warning(this.warning_string, true);
-          if (tab_pill) {
-            d3.select(tab_pill).text("Read-only");
-          }
-        } else if (tab_pill && left_to_review > 0) {
-          d3.select(tab_pill).text(left_to_review);
-          d3.select("#banner_coi_counts").text(left_to_review);
-        }
-
-        this.priority_groups_validate(this.defined_priority_groups);
-        // Update the DB with the new ClusterOI
-        const auto_create_priority_sets_names =
-          this.auto_create_priority_sets.map((pg) => pg.name);
-        _.each(this.defined_priority_groups, (pg) => {
-          if (pg.name in auto_create_priority_sets_names) {
-            this.priority_groups_update_node_sets(pg.name, "insert");
-          } else {
-            // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
-            this.priority_groups_update_node_sets(pg.name, "update");
-          }
-        });
-
-        clustersOfInterest.draw_priority_set_table(this);
-        if (
-          this.showing_diff &&
-          this.has_network_attribute("subcluster_or_priority_node")
-        ) {
-          this.handle_attribute_categorical("subcluster_or_priority_node");
-        }
-        //this.update();
+        callback(results);
       }
     });
   }
 
-  /**  add an attribute description
-  
-       Given an attribute definition (see comments elsewhere), and a key to associate it with
-       do
-  
-  */
+  load_priority_sets(url, is_writeable) {
+    this.fetch_priority_sets(url, (results) => {
+      let latest_date = new Date();
+      latest_date.setFullYear(1900);
+      this.defined_priority_groups = _.clone(results);
+      _.each(this.defined_priority_groups, (pg) => {
+        _.each(pg.nodes, (n) => {
+          try {
+            if (n.added === "REDACTED") {
+              return;
+            }
+            n.added = timeDateUtil.DateFormats[0].parse(n.added);
+            if (n.added > latest_date) {
+              latest_date = n.added;
+            }
+          } catch {
+            // do nothing
+          }
+        });
+      });
 
-  inject_attribute_description(key, d) {
-    if (kGlobals.network.GraphAttrbuteID in this.json) {
-      var new_attr = {};
-      new_attr[key] = d;
-      _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
-      //this.json[kGlobals.network.GraphAttrbuteID][key] = _.clone (d);
+      this.priority_set_table_writeable = is_writeable === "writeable";
+
+      this.priority_groups_validate(
+        this.defined_priority_groups,
+        this._is_CDC_auto_mode
+      );
+
+      this.auto_create_priority_sets = [];
+      /**
+          check if the system needs to create/expand CoI
+      */
+      const today_string = timeDateUtil.DateFormats[0](
+        this.get_reference_date()
+      );
+      this.map_ids_to_objects();
+
+      if (this._is_CDC_auto_mode) {
+        _.each(this.clusters, (cluster_data, cluster_id) => {
+          _.each(cluster_data.subclusters, (subcluster_data) => {
+            _.each(subcluster_data.priority_score, (priority_score, i) => {
+              let priority_entities = this.unique_entity_list(
+                _.map(priority_score, (d) => ({ id: d }))
+              );
+              if (
+                priority_entities.length >=
+                this.CDC_data["autocreate-priority-set-size"]
+              ) {
+                // only generate a new set if it doesn't match what is already there
+                const node_set = {};
+                _.each(subcluster_data.recent_nodes[i], (n) => {
+                  node_set[n] = 1;
+                });
+
+                const matched_groups = _.filter(
+                  _.filter(
+                    this.defined_priority_groups,
+                    (pg) =>
+                      pg.kind in kGlobals.CDCCOICanAutoExpand &&
+                      pg.createdBy === kGlobals.CDCCOICreatedBySystem &&
+                      pg.tracking === kGlobals.CDCCOITrackingOptionsDefault
+                  ),
+                  (pg) => {
+                    const matched = _.countBy(
+                      _.map(pg.nodes, (pn) => pn.name in node_set)
+                    );
+                    return matched[true] >= 1;
+                  }
+                );
+
+                if (matched_groups.length >= 1) {
+                  return;
+                }
+
+                const autoname = this.generateClusterOfInterestID(
+                  subcluster_data.cluster_id
+                );
+
+                this.auto_create_priority_sets.push({
+                  name: autoname,
+                  description:
+                    "Automatically created cluster of interest " + autoname,
+                  nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
+                    this.priority_group_node_record(
+                      n,
+                      this.get_reference_date()
+                    )
+                  ),
+                  created: today_string,
+                  kind: kGlobals.CDCCOIKindAutomaticCreation,
+                  tracking: kGlobals.CDCCOITrackingOptions[0],
+                  createdBy: kGlobals.CDCCOICreatedBySystem,
+                  autocreated: true,
+                  autoexpanded: false,
+                  pending: true,
+                });
+              }
+            });
+          });
+        });
+      }
+
+      if (this.auto_create_priority_sets.length) {
+        // SLKP 20200727 now check to see if any of the priority sets
+        // need to be auto-generated
+        //console.log (this.auto_create_priority_sets);
+        this.defined_priority_groups.push(...this.auto_create_priority_sets);
+      }
+      const autocreated = this.defined_priority_groups.filter(
+        (pg) => pg.autocreated
+      ).length,
+        autoexpanded = this.defined_priority_groups.filter(
+          (pg) => pg.autoexpanded
+        ).length,
+        automatic_action_taken = autocreated + autoexpanded > 0,
+        left_to_review = this.defined_priority_groups.filter(
+          (pg) => pg.pending
+        ).length;
+
+      if (automatic_action_taken) {
+        this.warning_string +=
+          "<br/>Automatically created <b>" +
+          autocreated +
+          "</b> and expanded <b>" +
+          autoexpanded +
+          "</b> clusters of interest." +
+          (left_to_review > 0
+            ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
+            : "");
+        this.display_warning(this.warning_string, true);
+      }
+
+      const tab_pill = this.get_ui_element_selector_by_role(
+        "priority_set_counts",
+        true
+      );
+
+      if (!this.priority_set_table_writeable) {
+        const rationale =
+          is_writeable === "old"
+            ? "the network is <b>older</b> than some of the Clusters of Interest"
+            : "the network was ran in <b>standalone</b> mode so no data is stored";
+        this.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
+        this.display_warning(this.warning_string, true);
+        if (tab_pill) {
+          d3.select(tab_pill).text("Read-only");
+        }
+      } else if (tab_pill && left_to_review > 0) {
+        d3.select(tab_pill).text(left_to_review);
+        d3.select("#banner_coi_counts").text(left_to_review);
+      }
+
+      this.priority_groups_validate(this.defined_priority_groups);
+      // Update the DB with the new ClusterOI
+      const auto_create_priority_sets_names =
+        this.auto_create_priority_sets.map((pg) => pg.name);
+      _.each(this.defined_priority_groups, (pg) => {
+        if (pg.name in auto_create_priority_sets_names) {
+          this.priority_groups_update_node_sets(pg.name, "insert");
+        } else {
+          // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
+          this.priority_groups_update_node_sets(pg.name, "update");
+        }
+      });
+
+      clustersOfInterest.draw_priority_set_table(this);
+      if (
+        this.showing_diff &&
+        this.has_network_attribute("subcluster_or_priority_node")
+      ) {
+        this.handle_attribute_categorical("subcluster_or_priority_node");
+      }
+      //this.update();
+    });
+  }
+
+  MJCloadOwnPrioritySets(options) {
+    if (this.isMJCNetwork && options["own-priority-sets-url"]) {
+      this.own_priority_set_url = options["own-priority-sets-url"];
+      this.fetch_priority_sets(this.own_priority_set_url, (results) => {
+        this.own_defined_priority_groups = results;
+      });
     }
   }
 
-  /**  populate_predefined_attribute
-  
-       Given an attribute definition (see comments elsewhere), and a key to associate it with
-       do
-  
-       0. Inject the definition of the attribute into the network dictionary
-       1. Compute the value of the attribute for all nodes
-       2. Compute unique values
-  
-       @param computed (dict) : attribute definition
-       @param key (string) : the key to associate with the attribute
-  */
+    /**  add an attribute description
+    
+         Given an attribute definition (see comments elsewhere), and a key to associate it with
+         do
+    
+    */
 
-  populate_predefined_attribute(computed, key) {
-    if (_.isFunction(computed)) {
-      computed = computed(this);
+    inject_attribute_description(key, d) {
+      if (kGlobals.network.GraphAttrbuteID in this.json) {
+        var new_attr = {};
+        new_attr[key] = d;
+        _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
+        //this.json[kGlobals.network.GraphAttrbuteID][key] = _.clone (d);
+      }
     }
 
-    if (
-      !computed["depends"] ||
-      _.every(computed["depends"], (d) =>
-        _.has(this.json[kGlobals.network.GraphAttrbuteID], d)
-      )
-    ) {
-      this.inject_attribute_description(key, computed);
-      _.each(this.json.Nodes, (node) => {
-        const attr_value = computed["map"](node, this);
+    /**  populate_predefined_attribute
+    
+         Given an attribute definition (see comments elsewhere), and a key to associate it with
+         do
+    
+         0. Inject the definition of the attribute into the network dictionary
+         1. Compute the value of the attribute for all nodes
+         2. Compute unique values
+    
+         @param computed (dict) : attribute definition
+         @param key (string) : the key to associate with the attribute
+    */
 
-        //if (key == "priority_set") {
-        //    console.log (node.id, node.priority_set, node._added_date, attr_value);
-        //}
-        HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
-      });
+    populate_predefined_attribute(computed, key) {
+      if (_.isFunction(computed)) {
+        computed = computed(this);
+      }
 
-      // add unique values
-      if (computed.enum) {
-        this.uniqValues[key] = computed.enum;
-      } else {
-        var uniq_value_set = new Set();
+      if (
+        !computed["depends"] ||
+        _.every(computed["depends"], (d) =>
+          _.has(this.json[kGlobals.network.GraphAttrbuteID], d)
+        )
+      ) {
+        this.inject_attribute_description(key, computed);
+        _.each(this.json.Nodes, (node) => {
+          const attr_value = computed["map"](node, this);
 
-        if (computed.type === "Date") {
-          _.each(this.json.Nodes, (n) => {
-            try {
-              uniq_value_set.add(
-                this.attribute_node_value_by_id(n, key).getTime()
-              );
-            } catch { }
-          });
+          //if (key == "priority_set") {
+          //    console.log (node.id, node.priority_set, node._added_date, attr_value);
+          //}
+          HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
+        });
+
+        // add unique values
+        if (computed.enum) {
+          this.uniqValues[key] = computed.enum;
         } else {
-          _.each(this.json.Nodes, (n) =>
-            uniq_value_set.add(
-              this.attribute_node_value_by_id(
-                n,
-                key,
-                computed.type === "Number"
+          var uniq_value_set = new Set();
+
+          if (computed.type === "Date") {
+            _.each(this.json.Nodes, (n) => {
+              try {
+                uniq_value_set.add(
+                  this.attribute_node_value_by_id(n, key).getTime()
+                );
+              } catch { }
+            });
+          } else {
+            _.each(this.json.Nodes, (n) =>
+              uniq_value_set.add(
+                this.attribute_node_value_by_id(
+                  n,
+                  key,
+                  computed.type === "Number"
+                )
               )
-            )
-          );
-        }
-
-        this.uniqValues[key] = [...uniq_value_set];
-        if (computed.type === "Number" || computed.type == "Date") {
-          var color_stops =
-            computed["color_stops"] || kGlobals.network.ContinuousColorStops;
-
-          if (color_stops > this.uniqValues[key].length) {
-            computed["color_stops"] = this.uniqValues[key].length;
-          }
-
-          if (computed.type === "Number") {
-            computed.is_integer = _.every(this.uniqValues[key], (d) =>
-              Number.isInteger(d)
             );
           }
+
+          this.uniqValues[key] = [...uniq_value_set];
+          if (computed.type === "Number" || computed.type == "Date") {
+            var color_stops =
+              computed["color_stops"] || kGlobals.network.ContinuousColorStops;
+
+            if (color_stops > this.uniqValues[key].length) {
+              computed["color_stops"] = this.uniqValues[key].length;
+            }
+
+            if (computed.type === "Number") {
+              computed.is_integer = _.every(this.uniqValues[key], (d) =>
+                Number.isInteger(d)
+              );
+            }
+          }
         }
-      }
-      this.uniqs[key] = this.uniqValues[key].length;
+        this.uniqs[key] = this.uniqValues[key].length;
 
-      var extension = {};
-      extension[key] = computed;
+        var extension = {};
+        extension[key] = computed;
 
-      if (key == "priority_set") {
-        console.log();
-      }
+        if (key == "priority_set") {
+          console.log();
+        }
 
-      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
+        _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
 
-      if (computed["overwrites"]) {
-        if (
-          _.has(
-            this.json[kGlobals.network.GraphAttrbuteID],
-            computed["overwrites"]
-          )
-        ) {
-          this.json[kGlobals.network.GraphAttrbuteID][computed["overwrites"]][
-            "_hidden_"
-          ] = true;
+        if (computed["overwrites"]) {
+          if (
+            _.has(
+              this.json[kGlobals.network.GraphAttrbuteID],
+              computed["overwrites"]
+            )
+          ) {
+            this.json[kGlobals.network.GraphAttrbuteID][computed["overwrites"]][
+              "_hidden_"
+            ] = true;
+          }
         }
       }
     }
-  }
 
-  /**===================================================**/
-  /** attribute callback definitions
-  
-        The following functions are generators for attribute callbacks.
-        They return dict-like objects that contain fields used to populate
-        and display network node and cluster attributes
-  
-        The fields in the attribute definition are as follows
-  
-        depends [optional]   : the list of node fields that must be defined in order for
-                              this attribute to be computed; null = none
-  
-        label [required]     : the attribute label to display in the dropdown other locations
-        enum  [optional]     : if provided as an array, specifies the set of allowed values
-        volatile [optional]  : if non-null, tag this attribute for re-computation when certain
-                               events take place
-        color_scale[required]: value=>color map for rendering
-        map[required]        : a function to compute attribute value from node data
-        color_stops[optional]: # of color stops for a continuous variable that's binned
-  
-    */
-  /**===================================================**/
+    /**===================================================**/
+    /** attribute callback definitions
+    
+          The following functions are generators for attribute callbacks.
+          They return dict-like objects that contain fields used to populate
+          and display network node and cluster attributes
+    
+          The fields in the attribute definition are as follows
+    
+          depends [optional]   : the list of node fields that must be defined in order for
+                                this attribute to be computed; null = none
+    
+          label [required]     : the attribute label to display in the dropdown other locations
+          enum  [optional]     : if provided as an array, specifies the set of allowed values
+          volatile [optional]  : if non-null, tag this attribute for re-computation when certain
+                                 events take place
+          color_scale[required]: value=>color map for rendering
+          map[required]        : a function to compute attribute value from node data
+          color_stops[optional]: # of color stops for a continuous variable that's binned
+    
+      */
+    /**===================================================**/
 
-  /**
-        define an attribute generator for subcluster membership attribute
-  
-        @param network : the network / cluster object to ise
-        @param data: reference date to use
-  
-        @return attribute definition
-    */
+    /**
+          define an attribute generator for subcluster membership attribute
+    
+          @param network : the network / cluster object to ise
+          @param data: reference date to use
+    
+          @return attribute definition
+      */
 
-  define_attribute_COI_membership(network, date) {
-    date = date || this.get_reference_date();
+    define_attribute_COI_membership(network, date) {
+      date = date || this.get_reference_date();
 
-    const subcluster_enum = [
-      "No, dx>36 months", // 0
-      "No, but dx�12 months",
-      "Yes (dx�12 months)",
-      "Yes (12<dx� 36 months)",
-      "Future node", // 4
-      "Not a member of subcluster", // 5
-      "Not in a subcluster",
-      "No, but 12<dx� 36 months",
-    ];
+      const subcluster_enum = [
+        "No, dx>36 months", // 0
+        "No, but dx�12 months",
+        "Yes (dx�12 months)",
+        "Yes (12<dx� 36 months)",
+        "Future node", // 4
+        "Not a member of subcluster", // 5
+        "Not in a subcluster",
+        "No, but 12<dx� 36 months",
+      ];
 
-    return {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: "ClusterOI membership as of " + timeDateUtil.DateViewFormat(date),
-      enum: subcluster_enum,
-      //type: "String",
-      volatile: true,
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(subcluster_enum.concat([kGlobals.missing.label]))
-          .range(
-            _.union(
-              [
-                "steelblue",
-                "pink",
-                "red",
-                "#FF8C00",
-                "#9A4EAE",
-                "yellow",
-                "#FFFFFF",
-                "#FFD580",
-              ],
-              [kGlobals.missing.color]
-            )
-          );
-      },
+      return {
+        depends: [timeDateUtil._networkCDCDateField],
+        label: "ClusterOI membership as of " + timeDateUtil.DateViewFormat(date),
+        enum: subcluster_enum,
+        //type: "String",
+        volatile: true,
+        color_scale: function () {
+          return d3.scale
+            .ordinal()
+            .domain(subcluster_enum.concat([kGlobals.missing.label]))
+            .range(
+              _.union(
+                [
+                  "steelblue",
+                  "pink",
+                  "red",
+                  "#FF8C00",
+                  "#9A4EAE",
+                  "yellow",
+                  "#FFFFFF",
+                  "#FFD580",
+                ],
+                [kGlobals.missing.color]
+              )
+            );
+        },
 
-      map: function (node) {
-        if (node.subcluster_label) {
-          if (node.priority_flag > 0) {
-            return subcluster_enum[node.priority_flag];
-          }
-          return subcluster_enum[0];
-        }
-        return subcluster_enum[6];
-      },
-    };
-  }
-
-  /**
-        define an attribute generator for binned viral loads
-  
-        @param field: the node attribute field to use
-        @param title: display this title for the attribute
-  
-        @return attribute definition dict
-    */
-  define_attribute_binned_vl(field, title) {
-    const vl_bins = ["<200", "200-10000", ">10000"];
-
-    return {
-      depends: [field],
-      label: title,
-      enum: vl_bins,
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(vl_bins.concat([kGlobals.missing.label]))
-          .range(
-            _.union(kGlobals.SequentialColor[3], [kGlobals.missing.color])
-          );
-      },
-
-      map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(node, field, true);
-
-        if (vl_value !== kGlobals.missing.label) {
-          if (vl_value <= 200) {
-            return vl_bins[0];
-          }
-          if (vl_value <= 10000) {
-            return vl_bins[1];
-          }
-          return vl_bins[2];
-        }
-
-        return kGlobals.missing.label;
-      },
-    };
-  }
-
-  /**
-        define an attribute generator for Viral load result interpretatio
-  
-        @return attribute definition dict
-    */
-  define_attribute_vl_interpretaion() {
-    return {
-      depends: ["vl_recent_value", "result_interpretation"],
-      label: "Viral load result interpretation",
-      color_stops: 6,
-      scale: d3.scale.log(10).domain([10, 1e6]).range([0, 5]),
-      category_values: ["Suppressed", "Viremic (above assay limit)"],
-      type: "Number-categories",
-      color_scale: (attr) => {
-        var color_scale_d3 = d3.scale
-          .linear()
-          .range([
-            "#d53e4f",
-            "#fc8d59",
-            "#fee08b",
-            "#e6f598",
-            "#99d594",
-            "#3288bd",
-          ])
-          .domain(_.range(kGlobals.network.ContinuousColorStops, -1, -1));
-
-        return function (v) {
-          if (_.isNumber(v)) {
-            return color_scale_d3(attr.scale(v));
-          }
-          switch (v) {
-            case attr.category_values[0]:
-              return color_scale_d3(0);
-            case attr.category_values[1]:
-              return color_scale_d3(5);
-            default:
-              return kGlobals.missing.color;
-          }
-        };
-      },
-      label_format: d3.format(",.0f"),
-      map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(
-          node,
-          "vl_recent_value",
-          true
-        );
-        var result_interpretation = this.attribute_node_value_by_id(
-          node,
-          "result_interpretation"
-        );
-
-        if (
-          vl_value !== kGlobals.missing.label ||
-          result_interpretation !== kGlobals.missing.label
-        ) {
-          if (result_interpretation !== kGlobals.missing.label) {
-            if (result_interpretation === "<") {
-              return "Suppressed";
+        map: function (node) {
+          if (node.subcluster_label) {
+            if (node.priority_flag > 0) {
+              return subcluster_enum[node.priority_flag];
             }
-            if (result_interpretation === ">") {
-              return "Viremic (above assay limit)";
+            return subcluster_enum[0];
+          }
+          return subcluster_enum[6];
+        },
+      };
+    }
+
+    /**
+          define an attribute generator for binned viral loads
+    
+          @param field: the node attribute field to use
+          @param title: display this title for the attribute
+    
+          @return attribute definition dict
+      */
+    define_attribute_binned_vl(field, title) {
+      const vl_bins = ["<200", "200-10000", ">10000"];
+
+      return {
+        depends: [field],
+        label: title,
+        enum: vl_bins,
+        type: "String",
+        color_scale: function () {
+          return d3.scale
+            .ordinal()
+            .domain(vl_bins.concat([kGlobals.missing.label]))
+            .range(
+              _.union(kGlobals.SequentialColor[3], [kGlobals.missing.color])
+            );
+        },
+
+        map: (node) => {
+          var vl_value = this.attribute_node_value_by_id(node, field, true);
+
+          if (vl_value !== kGlobals.missing.label) {
+            if (vl_value <= 200) {
+              return vl_bins[0];
             }
-            if (vl_value !== kGlobals.missing.label) {
+            if (vl_value <= 10000) {
+              return vl_bins[1];
+            }
+            return vl_bins[2];
+          }
+
+          return kGlobals.missing.label;
+        },
+      };
+    }
+
+    /**
+          define an attribute generator for Viral load result interpretatio
+    
+          @return attribute definition dict
+      */
+    define_attribute_vl_interpretaion() {
+      return {
+        depends: ["vl_recent_value", "result_interpretation"],
+        label: "Viral load result interpretation",
+        color_stops: 6,
+        scale: d3.scale.log(10).domain([10, 1e6]).range([0, 5]),
+        category_values: ["Suppressed", "Viremic (above assay limit)"],
+        type: "Number-categories",
+        color_scale: (attr) => {
+          var color_scale_d3 = d3.scale
+            .linear()
+            .range([
+              "#d53e4f",
+              "#fc8d59",
+              "#fee08b",
+              "#e6f598",
+              "#99d594",
+              "#3288bd",
+            ])
+            .domain(_.range(kGlobals.network.ContinuousColorStops, -1, -1));
+
+          return function (v) {
+            if (_.isNumber(v)) {
+              return color_scale_d3(attr.scale(v));
+            }
+            switch (v) {
+              case attr.category_values[0]:
+                return color_scale_d3(0);
+              case attr.category_values[1]:
+                return color_scale_d3(5);
+              default:
+                return kGlobals.missing.color;
+            }
+          };
+        },
+        label_format: d3.format(",.0f"),
+        map: (node) => {
+          var vl_value = this.attribute_node_value_by_id(
+            node,
+            "vl_recent_value",
+            true
+          );
+          var result_interpretation = this.attribute_node_value_by_id(
+            node,
+            "result_interpretation"
+          );
+
+          if (
+            vl_value !== kGlobals.missing.label ||
+            result_interpretation !== kGlobals.missing.label
+          ) {
+            if (result_interpretation !== kGlobals.missing.label) {
+              if (result_interpretation === "<") {
+                return "Suppressed";
+              }
+              if (result_interpretation === ">") {
+                return "Viremic (above assay limit)";
+              }
+              if (vl_value !== kGlobals.missing.label) {
+                return vl_value;
+              }
+            } else {
               return vl_value;
             }
-          } else {
-            return vl_value;
-          }
-        }
-
-        return kGlobals.missing.label;
-      },
-    };
-  }
-
-  /**
-        define an attribute generator for new network nodes/clusters
-        @return attribute definition dict
-    */
-
-  define_attribute_network_update() {
-    return {
-      label: "Sequence updates compared to previous network",
-      enum: ["Existing", "New", "Moved clusters"],
-      type: "String",
-      map: function (node) {
-        if (HIVTxNetwork.is_new_node(node)) {
-          return "New";
-        }
-        if (node.attributes.indexOf("moved_clusters") >= 0) {
-          return "Moved clusters";
-        }
-        return "Existing";
-      },
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain(["Existing", "New", "Moved clusters", kGlobals.missing.label])
-          .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]);
-      },
-    };
-  }
-
-  define_attribute_mjc_date_added(label) {
-    return {
-      depends: [],
-      label: label,
-      type: "Date",
-      map: (node) => {
-        // will be dynamically injected into node every time a MJ ClusterOI is viewed
-        return kGlobals.missing.label;
-      }
-    };
-  }
-
-  /**
-        define an attribute generator for dx year
-  
-        @param relative: if T, compute dx date relative to the network date in years
-        @param label: use this label
-  
-        @return attribute definition dict
-    */
-
-  define_attribute_dx_years(relative, label) {
-    return {
-      depends: [timeDateUtil._networkCDCDateField],
-      label: label,
-      type: "Number",
-      label_format: relative ? d3.format(".2f") : d3.format(".0f"),
-      map: (node) => {
-        try {
-          var value = this.parse_dates(
-            this.attribute_node_value_by_id(
-              node,
-              timeDateUtil._networkCDCDateField,
-              false,
-              true,
-              true
-            )
-          );
-
-          if (value) {
-            if (relative) {
-              value = (this.get_reference_date() - value) / 31536000000;
-            } else value = String(value.getFullYear());
-          } else {
-            value = kGlobals.missing.label;
           }
 
-          return value;
-        } catch {
           return kGlobals.missing.label;
-        }
-      },
-      color_scale: function (attr) {
-        const range_without_missing = _.without(
-          attr.value_range,
-          kGlobals.missing.label
-        );
-        const color_scale = _.compose(
-          d3.interpolateRgb("#ffffcc", "#800026"),
-          d3.scale
-            .linear()
-            .domain([
-              range_without_missing[0],
-              range_without_missing[range_without_missing.length - 1],
-            ])
-            .range([0, 1])
-        );
-        return function (v) {
-          if (v === kGlobals.missing.label) {
-            return kGlobals.missing.color;
-          }
-          return color_scale(v);
-        };
-      },
-    };
-  }
-
-  /**
-   * Define an attribute generator for month/year at diagnosis
-   * 
-   * @param {*} label : use this label
-   * @returns attribute definition dict
-   */
-  define_attribute_dx_month_year(label) {
-    return {
-      depends: [timeDateUtil._networkCDCMonthYearField],
-      label: label,
-      type: "String",
-      map: (node) => {
-        try {
-          return this.attribute_node_value_by_id(
-            node,
-            timeDateUtil._networkCDCMonthYearField,
-            false,
-            false,
-            true
-          );
-        }
-        catch {
-          return kGlobals.missing.label;
-        }
-      }
-    };
-  }
-
-  /**
-   * Define an attribute generator for boolean value of dx in last year
-   * @param {*} label : use this label
-   * @returns attribute definition dict
-   */
-  define_attribute_dx_last_year(label) {
-    return {
-      depends: [timeDateUtil._networkCDCLastYearField],
-      label: label,
-      type: "String",
-      enum: ["Yes", "No"],
-      map: (node) => {
-        try {
-          return this.attribute_node_value_by_id(
-            node,
-            timeDateUtil._networkCDCLastYearField,
-            false,
-            false,
-            true
-          );
-        }
-        catch {
-          return kGlobals.missing.label;
-        }
-      },
-    };
-  }
-
-  /**
-        Retrieve the list of sequences associated with a node
-        @param pid: use this entity id
-  
-        @return list of sequence_ids
-    */
-
-  fetch_sequence_objects_for_pid(pid) {
-    return this.primary_key_list[pid];
-  }
-
-  /**
-        Retrieve the list of sequences associated with a node
-        @param pid: use this entity id
-  
-        @return list of sequence_ids
-    */
-
-  fetch_sequences_for_pid(pid) {
-    if (this.has_multiple_sequences) {
-      return _.flatten(
-        _.map(this.primary_key_list[pid], (d) =>
-          d[kGlobals.network.AliasedSequencesID]
-            ? d[kGlobals.network.AliasedSequencesID]
-            : d.id
-        )
-      );
+        },
+      };
     }
-    return this.primary_key_list[pid];
-  }
 
-  /**
-        define an attribute generator for the number of sequences associated with this node
-        @param label: use this label
-        @return attribute definition dict
-    */
+    /**
+          define an attribute generator for new network nodes/clusters
+          @return attribute definition dict
+      */
 
-  define_attribute_sequence_count(label) {
-    return {
-      depends: [],
-      label: label,
-      type: "Number",
-      label_format: d3.format("d"),
-      map: (node) => {
-        if (node[kGlobals.network.AliasedSequencesID]) {
-          return node[kGlobals.network.AliasedSequencesID].length;
-        }
-        if (this.has_multiple_sequences) {
-          return this.fetch_sequences_for_pid(this.primary_key(node)).length;
-        }
-        return 1;
-      },
-      color_scale: function (attr) {
-        const range_without_missing = _.without(
-          attr.value_range,
-          kGlobals.missing.label
-        );
-        const color_scale = _.compose(
-          d3.interpolateRgb("#ffffcc", "#800026"),
-          d3.scale
-            .linear()
-            .domain([
-              range_without_missing[0],
-              range_without_missing[range_without_missing.length - 1],
-            ])
-            .range([0, 1])
-        );
-        return function (v) {
-          if (v === kGlobals.missing.label) {
-            return kGlobals.missing.color;
+    define_attribute_network_update() {
+      return {
+        label: "Sequence updates compared to previous network",
+        enum: ["Existing", "New", "Moved clusters"],
+        type: "String",
+        map: function (node) {
+          if (HIVTxNetwork.is_new_node(node)) {
+            return "New";
           }
-          return color_scale(v);
-        };
-      },
-    };
-  }
-
-  /**
-        define an attribute generator for binned age at diagnosis
-        @return attribute definition dict
-    */
-  define_attribute_age_dx() {
-    return {
-      depends: ["age_dx"],
-      overwrites: "age_dx",
-      label: "Age at Diagnosis",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
-      type: "String",
-      color_scale: function () {
-        return d3.scale
-          .ordinal()
-          .domain([
-            "<13",
-            "13-19",
-            "20-29",
-            "30-39",
-            "40-49",
-            "50-59",
-            "�60",
-            kGlobals.missing.label,
-          ])
-          .range([
-            "#b10026",
-            "#e31a1c",
-            "#fc4e2a",
-            "#fd8d3c",
-            "#feb24c",
-            "#fed976",
-            "#ffffb2",
-            "#636363",
-          ]);
-      },
-      map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(node, "age_dx");
-        if (vl_value === ">=60") {
-          return "�60";
-        }
-        if (vl_value === "\ufffd60") {
-          return "�60";
-        }
-        if (Number(vl_value) >= 60) {
-          return "�60";
-        }
-        return vl_value;
-      },
-    };
-  }
-
-  /**
-        Generate a function callback for attribute time series data
-  
-        @param export_items
-            if set (and is an array), the function will add the callback to the array
-            otherwise the callback will be invoked on this
-  
-        @return noting
-    */
-
-  check_for_time_series = function (export_items) {
-    var event_handler = (network, e) => {
-      if (e) {
-        e = d3.select(e);
-      }
-      if (!network.network_cluster_dynamics) {
-        network.network_cluster_dynamics = network.network_svg
-          .append("g")
-          .attr("id", this.dom_prefix + "-dynamics-svg")
-          .attr("transform", "translate (" + network.width * 0.45 + ",0)");
-
-        network.handle_inline_charts = function (plot_filter) {
-          var attr = null;
-          var color = null;
-          if (
-            network.colorizer["category_id"] &&
-            !network.colorizer["continuous"]
-          ) {
-            var attr_desc =
-              network.json[kGlobals.network.GraphAttrbuteID][
-              network.colorizer["category_id"]
-              ];
-            attr = {};
-            attr[network.colorizer["category_id"]] = attr_desc["label"];
-            color = {};
-            color[attr_desc["label"]] = network.colorizer["category"];
+          if (node.attributes.indexOf("moved_clusters") >= 0) {
+            return "Moved clusters";
           }
+          return "Existing";
+        },
+        color_scale: function () {
+          return d3.scale
+            .ordinal()
+            .domain(["Existing", "New", "Moved clusters", kGlobals.missing.label])
+            .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]);
+        },
+      };
+    }
 
-          misc.cluster_dynamics(
-            network.extract_network_time_series(
-              timeDateUtil.getClusterTimeScale(),
-              attr,
-              plot_filter
-            ),
-            network.network_cluster_dynamics,
-            "Quarter of Diagnosis",
-            "Number of Cases",
-            null,
-            null,
-            {
-              base_line: 20,
-              top: network.margin.top,
-              right: network.margin.right,
-              bottom: 3 * 20,
-              left: 5 * 20,
-              font_size: 12,
-              rect_size: 14,
-              width: network.width / 2,
-              height: network.height / 2,
-              colorizer: color,
-              prefix: network.dom_prefix,
-              barchart: true,
-              drag: {
-                x: network.width * 0.45,
-                y: 0,
-              },
+    define_attribute_mjc_date_added(label) {
+      return {
+        depends: [],
+        label: label,
+        type: "Date",
+        map: (node) => {
+          // will be dynamically injected into node every time a MJ ClusterOI is viewed
+          return kGlobals.missing.label;
+        }
+      };
+    }
+
+    /**
+          define an attribute generator for dx year
+    
+          @param relative: if T, compute dx date relative to the network date in years
+          @param label: use this label
+    
+          @return attribute definition dict
+      */
+
+    define_attribute_dx_years(relative, label) {
+      return {
+        depends: [timeDateUtil._networkCDCDateField],
+        label: label,
+        type: "Number",
+        label_format: relative ? d3.format(".2f") : d3.format(".0f"),
+        map: (node) => {
+          try {
+            var value = this.parse_dates(
+              this.attribute_node_value_by_id(
+                node,
+                timeDateUtil._networkCDCDateField,
+                false,
+                true,
+                true
+              )
+            );
+
+            if (value) {
+              if (relative) {
+                value = (this.get_reference_date() - value) / 31536000000;
+              } else value = String(value.getFullYear());
+            } else {
+              value = kGlobals.missing.label;
             }
+
+            return value;
+          } catch {
+            return kGlobals.missing.label;
+          }
+        },
+        color_scale: function (attr) {
+          const range_without_missing = _.without(
+            attr.value_range,
+            kGlobals.missing.label
           );
-        };
-        network.handle_inline_charts();
-        if (e) {
-          e.text("Hide time-course plots");
-        }
-      } else {
-        if (e) {
-          e.text("Show time-course plots");
-        }
-        network.network_cluster_dynamics.remove();
-        network.network_cluster_dynamics = null;
-        network.handle_inline_charts = null;
-      }
-    };
-
-    if (timeDateUtil.getClusterTimeScale()) {
-      if (export_items) {
-        export_items.push(["Show time-course plots", event_handler]);
-      } else {
-        event_handler(this);
-      }
+          const color_scale = _.compose(
+            d3.interpolateRgb("#ffffcc", "#800026"),
+            d3.scale
+              .linear()
+              .domain([
+                range_without_missing[0],
+                range_without_missing[range_without_missing.length - 1],
+              ])
+              .range([0, 1])
+          );
+          return function (v) {
+            if (v === kGlobals.missing.label) {
+              return kGlobals.missing.color;
+            }
+            return color_scale(v);
+          };
+        },
+      };
     }
-  };
 
-  /**
-    annotate_cluster_changes
-  
-    If the network contains information about cluster changes (new/moved/deleted nodes, etc),
-    this function will annotate cluster objects (in place) with various attributes
-        "delta" : change in the size of the cluster
-        "flag"  : a status flag to be used in the cluster display table
-            if set to 2 then TBD
-            if set to 3 then TBD
-  
-  */
+    /**
+     * Define an attribute generator for month/year at diagnosis
+     * 
+     * @param {*} label : use this label
+     * @returns attribute definition dict
+     */
+    define_attribute_dx_month_year(label) {
+      return {
+        depends: [timeDateUtil._networkCDCMonthYearField],
+        label: label,
+        type: "String",
+        map: (node) => {
+          try {
+            return this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCMonthYearField,
+              false,
+              false,
+              true
+            );
+          }
+          catch {
+            return kGlobals.missing.label;
+          }
+        }
+      };
+    }
 
-  annotate_cluster_changes() {
-    if (this.cluster_attributes) {
-      _.each(this.cluster_attributes, (cluster) => {
-        if ("old_size" in cluster && "size" in cluster) {
-          cluster["delta"] = cluster["size"] - cluster["old_size"];
-          cluster["deleted"] =
-            cluster["old_size"] +
-            (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
-            cluster["size"];
-        } else if (cluster["type"] === "new") {
-          cluster["delta"] = cluster["size"];
-          if ("moved" in cluster) {
-            cluster["delta"] -= cluster["moved"];
+    /**
+     * Define an attribute generator for boolean value of dx in last year
+     * @param {*} label : use this label
+     * @returns attribute definition dict
+     */
+    define_attribute_dx_last_year(label) {
+      return {
+        depends: [timeDateUtil._networkCDCLastYearField],
+        label: label,
+        type: "String",
+        enum: ["Yes", "No"],
+        map: (node) => {
+          try {
+            return this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCLastYearField,
+              false,
+              false,
+              true
+            );
+          }
+          catch {
+            return kGlobals.missing.label;
+          }
+        },
+      };
+    }
+
+    /**
+          Retrieve the list of sequences associated with a node
+          @param pid: use this entity id
+    
+          @return list of sequence_ids
+      */
+
+    fetch_sequence_objects_for_pid(pid) {
+      return this.primary_key_list[pid];
+    }
+
+    /**
+          Retrieve the list of sequences associated with a node
+          @param pid: use this entity id
+    
+          @return list of sequence_ids
+      */
+
+    fetch_sequences_for_pid(pid) {
+      if (this.has_multiple_sequences) {
+        return _.flatten(
+          _.map(this.primary_key_list[pid], (d) =>
+            d[kGlobals.network.AliasedSequencesID]
+              ? d[kGlobals.network.AliasedSequencesID]
+              : d.id
+          )
+        );
+      }
+      return this.primary_key_list[pid];
+    }
+
+    /**
+          define an attribute generator for the number of sequences associated with this node
+          @param label: use this label
+          @return attribute definition dict
+      */
+
+    define_attribute_sequence_count(label) {
+      return {
+        depends: [],
+        label: label,
+        type: "Number",
+        label_format: d3.format("d"),
+        map: (node) => {
+          if (node[kGlobals.network.AliasedSequencesID]) {
+            return node[kGlobals.network.AliasedSequencesID].length;
+          }
+          if (this.has_multiple_sequences) {
+            return this.fetch_sequences_for_pid(this.primary_key(node)).length;
+          }
+          return 1;
+        },
+        color_scale: function (attr) {
+          const range_without_missing = _.without(
+            attr.value_range,
+            kGlobals.missing.label
+          );
+          const color_scale = _.compose(
+            d3.interpolateRgb("#ffffcc", "#800026"),
+            d3.scale
+              .linear()
+              .domain([
+                range_without_missing[0],
+                range_without_missing[range_without_missing.length - 1],
+              ])
+              .range([0, 1])
+          );
+          return function (v) {
+            if (v === kGlobals.missing.label) {
+              return kGlobals.missing.color;
+            }
+            return color_scale(v);
+          };
+        },
+      };
+    }
+
+    /**
+          define an attribute generator for binned age at diagnosis
+          @return attribute definition dict
+      */
+    define_attribute_age_dx() {
+      return {
+        depends: ["age_dx"],
+        overwrites: "age_dx",
+        label: "Age at Diagnosis",
+        enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
+        type: "String",
+        color_scale: function () {
+          return d3.scale
+            .ordinal()
+            .domain([
+              "<13",
+              "13-19",
+              "20-29",
+              "30-39",
+              "40-49",
+              "50-59",
+              "�60",
+              kGlobals.missing.label,
+            ])
+            .range([
+              "#b10026",
+              "#e31a1c",
+              "#fc4e2a",
+              "#fd8d3c",
+              "#feb24c",
+              "#fed976",
+              "#ffffb2",
+              "#636363",
+            ]);
+        },
+        map: (node) => {
+          var vl_value = this.attribute_node_value_by_id(node, "age_dx");
+          if (vl_value === ">=60") {
+            return "�60";
+          }
+          if (vl_value === "\ufffd60") {
+            return "�60";
+          }
+          if (Number(vl_value) >= 60) {
+            return "�60";
+          }
+          return vl_value;
+        },
+      };
+    }
+
+    /**
+          Generate a function callback for attribute time series data
+    
+          @param export_items
+              if set (and is an array), the function will add the callback to the array
+              otherwise the callback will be invoked on this
+    
+          @return noting
+      */
+
+    check_for_time_series = function (export_items) {
+      var event_handler = (network, e) => {
+        if (e) {
+          e = d3.select(e);
+        }
+        if (!network.network_cluster_dynamics) {
+          network.network_cluster_dynamics = network.network_svg
+            .append("g")
+            .attr("id", this.dom_prefix + "-dynamics-svg")
+            .attr("transform", "translate (" + network.width * 0.45 + ",0)");
+
+          network.handle_inline_charts = function (plot_filter) {
+            var attr = null;
+            var color = null;
+            if (
+              network.colorizer["category_id"] &&
+              !network.colorizer["continuous"]
+            ) {
+              var attr_desc =
+                network.json[kGlobals.network.GraphAttrbuteID][
+                network.colorizer["category_id"]
+                ];
+              attr = {};
+              attr[network.colorizer["category_id"]] = attr_desc["label"];
+              color = {};
+              color[attr_desc["label"]] = network.colorizer["category"];
+            }
+
+            misc.cluster_dynamics(
+              network.extract_network_time_series(
+                timeDateUtil.getClusterTimeScale(),
+                attr,
+                plot_filter
+              ),
+              network.network_cluster_dynamics,
+              "Quarter of Diagnosis",
+              "Number of Cases",
+              null,
+              null,
+              {
+                base_line: 20,
+                top: network.margin.top,
+                right: network.margin.right,
+                bottom: 3 * 20,
+                left: 5 * 20,
+                font_size: 12,
+                rect_size: 14,
+                width: network.width / 2,
+                height: network.height / 2,
+                colorizer: color,
+                prefix: network.dom_prefix,
+                barchart: true,
+                drag: {
+                  x: network.width * 0.45,
+                  y: 0,
+                },
+              }
+            );
+          };
+          network.handle_inline_charts();
+          if (e) {
+            e.text("Hide time-course plots");
           }
         } else {
-          cluster["delta"] = 0;
+          if (e) {
+            e.text("Show time-course plots");
+          }
+          network.network_cluster_dynamics.remove();
+          network.network_cluster_dynamics = null;
+          network.handle_inline_charts = null;
         }
-        cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
-      });
-    }
-  }
+      };
 
-  /**
-    extract_individual_level_records
-  
-    for networks that have multiple sequences per individual, this function
-    will reduce the list of node records to only include those that have
-    attribute data. If more than one node has attribute data, the first one
-    (chosen based on the sorting order when this.primary_key_list was initialized)
-    is returned.
-  
-  */
-
-  extract_individual_level_records() {
-    if (this.has_multiple_sequences && this.primary_key_list) {
-      let patient_records = [];
-      _.each(this.primary_key_list, (records, pkey) => {
-        if (records.length > 1) {
-          //console.log (_.find (records, (r)=> !r['missing_attributes']));
-          patient_records.push(
-            _.find(records, (r) => !r["missing_attributes"]) || records[0]
-          );
+      if (timeDateUtil.getClusterTimeScale()) {
+        if (export_items) {
+          export_items.push(["Show time-course plots", event_handler]);
         } else {
-          patient_records.push(records[0]);
-        }
-      });
-      return patient_records;
-    }
-    return this.json.Nodes;
-  }
-
-  /**
-    aggregate_indvidual_level_records
-  
-    for networks that have multiple sequences per individual, this function
-    will reduce the list of node records to only have one per primary key
-    all attributes where more than one value is present will be shown as ';' separated
-  
-  */
-
-  aggregate_indvidual_level_records(node_list) {
-    node_list = node_list || this.json.Nodes;
-
-    const aggregator = (values, key, record, store_key) => {
-      let unique_values = _.countBy(values, (dn) => dn[key]);
-
-      delete unique_values["undefined"];
-
-      if (_.size(unique_values) == 1) {
-        record[store_key] = values[0][key];
-      } else {
-        if (_.size(unique_values) > 0) {
-          record[store_key] = _.map(unique_values, (d3, k3) => k3).join(";");
+          event_handler(this);
         }
       }
     };
 
-    if (this.has_multiple_sequences) {
-      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
-      let new_list = [];
-      _.each(binned, (values, key) => {
-        if (values.length == 1) {
-          new_list.push(_.clone(values[0]));
-        } else {
-          let new_record = _.clone(values[0]);
-          new_record[kGlobals.network.NodeAttributeID] = _.object(
-            _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
-              const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
-              let unique_values = _.countBy(
-                values,
-                (dn) => dn[kGlobals.network.NodeAttributeID][k]
-              );
+    /**
+      annotate_cluster_changes
+    
+      If the network contains information about cluster changes (new/moved/deleted nodes, etc),
+      this function will annotate cluster objects (in place) with various attributes
+          "delta" : change in the size of the cluster
+          "flag"  : a status flag to be used in the cluster display table
+              if set to 2 then TBD
+              if set to 3 then TBD
+    
+    */
 
-              if (_.size(unique_values) == 1) {
-                return [k, values[0][kGlobals.network.NodeAttributeID][k]];
-              } else {
-                if (proto.type == "Date") {
-                  try {
+    annotate_cluster_changes() {
+      if (this.cluster_attributes) {
+        _.each(this.cluster_attributes, (cluster) => {
+          if ("old_size" in cluster && "size" in cluster) {
+            cluster["delta"] = cluster["size"] - cluster["old_size"];
+            cluster["deleted"] =
+              cluster["old_size"] +
+              (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
+              cluster["size"];
+          } else if (cluster["type"] === "new") {
+            cluster["delta"] = cluster["size"];
+            if ("moved" in cluster) {
+              cluster["delta"] -= cluster["moved"];
+            }
+          } else {
+            cluster["delta"] = 0;
+          }
+          cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
+        });
+      }
+    }
+
+    /**
+      extract_individual_level_records
+    
+      for networks that have multiple sequences per individual, this function
+      will reduce the list of node records to only include those that have
+      attribute data. If more than one node has attribute data, the first one
+      (chosen based on the sorting order when this.primary_key_list was initialized)
+      is returned.
+    
+    */
+
+    extract_individual_level_records() {
+      if (this.has_multiple_sequences && this.primary_key_list) {
+        let patient_records = [];
+        _.each(this.primary_key_list, (records, pkey) => {
+          if (records.length > 1) {
+            //console.log (_.find (records, (r)=> !r['missing_attributes']));
+            patient_records.push(
+              _.find(records, (r) => !r["missing_attributes"]) || records[0]
+            );
+          } else {
+            patient_records.push(records[0]);
+          }
+        });
+        return patient_records;
+      }
+      return this.json.Nodes;
+    }
+
+    /**
+      aggregate_indvidual_level_records
+    
+      for networks that have multiple sequences per individual, this function
+      will reduce the list of node records to only have one per primary key
+      all attributes where more than one value is present will be shown as ';' separated
+    
+    */
+
+    aggregate_indvidual_level_records(node_list) {
+      if (this.isMJCNetwork) {
+        return _.uniq(node_list, (n) => n.id ?? n.name);
+      }
+      node_list = node_list || this.json.Nodes;
+
+      const aggregator = (values, key, record, store_key) => {
+        let unique_values = _.countBy(values, (dn) => dn[key]);
+
+        delete unique_values["undefined"];
+
+        if (_.size(unique_values) == 1) {
+          record[store_key] = values[0][key];
+        } else {
+          if (_.size(unique_values) > 0) {
+            record[store_key] = _.map(unique_values, (d3, k3) => k3).join(";");
+          }
+        }
+      };
+
+      if (this.has_multiple_sequences) {
+        let binned = _.groupBy(node_list, (n) => this.primary_key(n));
+        let new_list = [];
+        _.each(binned, (values, key) => {
+          if (values.length == 1) {
+            new_list.push(_.clone(values[0]));
+          } else {
+            let new_record = _.clone(values[0]);
+            new_record[kGlobals.network.NodeAttributeID] = _.object(
+              _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
+                const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
+                let unique_values = _.countBy(
+                  values,
+                  (dn) => dn[kGlobals.network.NodeAttributeID][k]
+                );
+
+                if (_.size(unique_values) == 1) {
+                  return [k, values[0][kGlobals.network.NodeAttributeID][k]];
+                } else {
+                  if (proto.type == "Date") {
+                    try {
+                      return [
+                        k,
+                        new Date(
+                          Date.parse(d3.min(_.map(unique_values, (d3, k3) => k3)))
+                        ),
+                      ];
+                    } catch {
+                      return [k, null];
+                    }
+                  } else {
                     return [
                       k,
-                      new Date(
-                        Date.parse(d3.min(_.map(unique_values, (d3, k3) => k3)))
-                      ),
+                      _.sortBy(_.map(unique_values, (d3, k3) => k3)).join(";"),
                     ];
-                  } catch {
-                    return [k, null];
                   }
-                } else {
-                  return [
-                    k,
-                    _.sortBy(_.map(unique_values, (d3, k3) => k3)).join(";"),
-                  ];
                 }
-              }
-            })
-          );
+              })
+            );
 
-          aggregator(values, "cluster", new_record, "cluster");
-          aggregator(
-            values,
-            "subcluster_label",
-            new_record,
-            "subcluster_label"
-          );
+            aggregator(values, "cluster", new_record, "cluster");
+            aggregator(
+              values,
+              "subcluster_label",
+              new_record,
+              "subcluster_label"
+            );
 
-          new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
-            _.map(values, (d) =>
-              d[kGlobals.network.AliasedSequencesID]
-                ? d[kGlobals.network.AliasedSequencesID]
-                : d.id
-            )
-          );
-          new_record[kGlobals.network.NodeAttributeID]["sequence_count"] =
-            new_record[kGlobals.network.AliasedSequencesID].length;
-          new_list.push(new_record);
-        }
-      });
-      return new_list;
+            new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
+              _.map(values, (d) =>
+                d[kGlobals.network.AliasedSequencesID]
+                  ? d[kGlobals.network.AliasedSequencesID]
+                  : d.id
+              )
+            );
+            new_record[kGlobals.network.NodeAttributeID]["sequence_count"] =
+              new_record[kGlobals.network.AliasedSequencesID].length;
+            new_list.push(new_record);
+          }
+        });
+        return new_list;
+      }
+      return node_list;
     }
-    return node_list;
-  }
 
-  /**
-    generate an entity (primary key) id from string
-  
-    @param node_name (string)
-  
-    returns [String] entity id
-  */
-
-  entity_id_from_string(node_name) {
-    return this.primary_key({ id: node_name });
-  }
-
-  /**
-    generate an entity (primary key) id from node
-  
-    @param node (Object)
-  
-    returns [String] entity id
-  */
-
-  entity_id(node) {
-    return this.primary_key(node);
-  }
-
-  cleanRedacted(id) {
-    if (id.startsWith("REDACTED_")) {
-      return "REDACTED";
-    }
-    return id;
-  }
-
-  /**
-        Applies a callback to each entity in the network.
-        An entity is a group of nodes that share the same primary key.
-        @param cb: The callback function to apply. It receives the primary key and the list of nodes for the entity.
+    /**
+      generate an entity (primary key) id from string
+    
+      @param node_name (string)
+    
+      returns [String] entity id
     */
-  apply_to_entities(cb) {
-    if (this.has_multiple_sequences) {
-      _.each(this.primary_key_list, (d, k) => {
-        cb(k, d);
-      });
+
+    entity_id_from_string(node_name) {
+      return this.primary_key({ id: node_name });
+    }
+
+    /**
+      generate an entity (primary key) id from node
+    
+      @param node (Object)
+    
+      returns [String] entity id
+    */
+
+    entity_id(node) {
+      return this.primary_key(node);
+    }
+
+    cleanRedacted(id) {
+      if (id.startsWith("REDACTED_")) {
+        return "REDACTED";
+      }
+      return id;
+    }
+
+    /**
+          Applies a callback to each entity in the network.
+          An entity is a group of nodes that share the same primary key.
+          @param cb: The callback function to apply. It receives the primary key and the list of nodes for the entity.
+      */
+    apply_to_entities(cb) {
+      if (this.has_multiple_sequences) {
+        _.each(this.primary_key_list, (d, k) => {
+          cb(k, d);
+        });
+      }
+    }
+
+    /**
+      generate a list of sequence IDs represented by a node
+    
+      @param node (Object)
+    
+      returns [array] list of sequence ids
+    */
+    list_of_aliased_sequences(node) {
+      return node[kGlobals.network.AliasedSequencesID]
+        ? node[kGlobals.network.AliasedSequencesID]
+        : [node.id];
     }
   }
-
-  /**
-    generate a list of sequence IDs represented by a node
-  
-    @param node (Object)
-  
-    returns [array] list of sequence ids
-  */
-  list_of_aliased_sequences(node) {
-    return node[kGlobals.network.AliasedSequencesID]
-      ? node[kGlobals.network.AliasedSequencesID]
-      : [node.id];
-  }
-}
 
 module.exports = {
   HIVTxNetwork,

@@ -182,7 +182,7 @@ var hivtrace_cluster_network_graph = function (
   self.hide_unselected = false;
   self.show_percent_in_pairwise_table = false;
 
-  self.priority_set_table_writeable = true;
+  self.priority_set_table_writeable = !self.isMJCNetwork;
 
   /** if there's a function passed as "init_code", run it now */
 
@@ -2314,7 +2314,7 @@ var hivtrace_cluster_network_graph = function (
             .text(
               "View how nodes in cluster of interest " +
               priority_list +
-              (self.isMJCNetwork ? " overlap with your clusterOI and other MJ clusterOI" : " overlap with other clusterOI")
+              (self.isMJCNetwork ? " overlap with your jurisdiction's clusterOI" : " overlap with other clusterOI")
             );
 
           const ps = self.priority_groups_find_by_name(priority_list);
@@ -2328,64 +2328,33 @@ var hivtrace_cluster_network_graph = function (
                 sort: "value",
               },
               {
-                value: "Other Cluster(s) of Interest",
-                help: "Names of other clusterOI where this node is included",
+                value: self.isMJCNetwork ? "My Jurisdiction's Cluster(s) of Interest" : "Other Cluster(s) of Interest",
+                help: self.isMJCNetwork ? "Names of my jurisdiction's clusterOI where this node is included" : "Names of other clusterOI where this node is included",
                 sort: "value",
               },
             ],
           ];
 
-          if (self.isMJCNetwork) {
-            headers[0].push({
-              value: "Other MJ Cluster(s) of Interest",
-              help: "Names of other MJ clusterOI where this node is included",
-              sort: "value",
-            });
-          }
-
           var rows = [];
           var rows_for_export = [
-            ["Overlapping Cluster of Interest", "Node", "Other clusterOI"],
+            ["Overlapping Cluster of Interest", "Node", self.isMJCNetwork ? "My clusterOI" : "Other clusterOI"],
           ];
 
-          if (self.isMJCNetwork) {
-            rows_for_export[0].push("Other MJ clusterOI");
-          }
-
-          if (self.isMJCNetwork) {
-            // TODO: complete this implementation with proper clusterOI/priority_sets being used as input
-            _.each(
-              self.aggregate_indvidual_level_records(ps.node_objects),
-              (n, i) => {
-                const eid = self.entity_id(n);
-                const overlap = self.priority_node_overlap[eid];
-                let other_sets = "None";
-                if (overlap.size > 1) {
-                  other_sets = _.sortBy(
-                    _.filter([...overlap], (d) => d !== priority_list)
-                  ).join("; ");
-                }
-                rows.push([{ value: self.cleanRedacted(eid) }, { value: other_sets }, { value: i % 4 === 0 ? "CA_2026_XX.XX" : "None" }]);
-                rows_for_export.push([ps.name, self.cleanRedacted(eid), other_sets, i % 4 === 0 ? "CA_2026_XX.XX" : "None"]);
+          _.each(
+            self.aggregate_indvidual_level_records(ps.node_objects),
+            (n) => {
+              const eid = self.entity_id(n);
+              const overlap = self.priority_node_overlap[eid];
+              let other_sets = "None";
+              if (overlap && overlap.size > 1) {
+                other_sets = _.sortBy(
+                  _.filter([...overlap], (d) => d !== priority_list)
+                ).join("; ");
               }
-            );
-          } else {
-            _.each(
-              self.aggregate_indvidual_level_records(ps.node_objects),
-              (n) => {
-                const eid = self.entity_id(n);
-                const overlap = self.priority_node_overlap[eid];
-                let other_sets = "None";
-                if (overlap.size > 1) {
-                  other_sets = _.sortBy(
-                    _.filter([...overlap], (d) => d !== priority_list)
-                  ).join("; ");
-                }
-                rows.push([{ value: self.cleanRedacted(eid) }, { value: other_sets }]);
-                rows_for_export.push([ps.name, self.cleanRedacted(eid), other_sets]);
-              }
-            );
-          }
+              rows.push([{ value: self.cleanRedacted(eid) }, { value: other_sets }]);
+              rows_for_export.push([ps.name, self.cleanRedacted(eid), other_sets]);
+            }
+          );
 
           d3.select(
             self.get_ui_element_selector_by_role(
@@ -8696,7 +8665,10 @@ var hivtrace_cluster_network_graph = function (
 
     if (options["priority-sets-url"]) {
       const is_writeable = options["is-writeable"];
+      //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI, 
+      // while self.own_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the MJCloadOwnPrioritySets callback)
       self.load_priority_sets(options["priority-sets-url"], is_writeable);
+      self.MJCloadOwnPrioritySets(options);
     }
 
     if (self.showing_diff) {
