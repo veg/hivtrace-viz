@@ -1,6 +1,9 @@
 var d3 = require("d3");
 
 const _networkCDCDateField = "hiv_aids_dx_dt";
+const _networkCDCLastYearField = "hiv_aids_dx_dt_last_year";
+const _networkCDCMonthYearField = "hiv_aids_dx_dt_month_year";
+
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
 const DateViewFormatExport = d3.time.format.utc("%m/%d/%Y");
@@ -105,6 +108,8 @@ function n_months_ago(reference_date, months) {
 module.exports = {
   hivtrace_date_or_na_if_missing,
   _networkCDCDateField,
+  _networkCDCLastYearField,
+  _networkCDCMonthYearField,
   _networkTimeQuery,
   getClusterTimeScale,
   getCurrentDate,

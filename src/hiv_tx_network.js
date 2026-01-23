@@ -40,12 +40,16 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
+          if (this.isMJCNetwork && !node.id) {
+            return node.name;
+          }
           const i = node.id.indexOf("|");
           if (i >= 0) {
             return node.id.substr(0, i);
           }
           return node.id;
         };
+
     this.tabulate_multiple_sequences();
 
     /** initialize UI/UX elements */
@@ -897,6 +901,87 @@ class HIVTxNetwork {
     });
   };
 
+  priority_groups_compute_overlap_mjc = (mjc_groups, own_groups) => {
+    this.priority_node_overlap = {};
+
+    if (!mjc_groups || !own_groups) {
+      return;
+    }
+
+    // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
+    var size_by_pg = {};
+
+    // Also keep sizes for own_groups for superset/duplicate checks
+    var size_by_own = {};
+
+    // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
+    _.each(own_groups, (pg) => {
+      const ents = this.aggregate_indvidual_level_records(pg.nodes);
+      size_by_own[pg.name] = ents.length;
+
+      _.each(ents, (n) => {
+        const entity_id = this.entity_id(n);
+        if (!(entity_id in this.priority_node_overlap)) {
+          this.priority_node_overlap[entity_id] = new Set();
+        }
+        this.priority_node_overlap[entity_id].add(pg.name);
+      });
+    });
+
+    // 3) For each mjc group, compute overlap only considering nodes that are present in own_groups
+    _.each(mjc_groups, (pg) => {
+      const overlap = {
+        sets: new Set(),
+        nodes: 0,
+        supersets: [],
+        duplicates: [],
+      };
+
+      const by_set_count = {};
+      _.each(pg.nodes, (n) => {
+        const entity_id = this.entity_id(n);
+
+        // Only care about nodes in mjc_groups that are present in own_groups
+        if (
+          entity_id in this.priority_node_overlap &&
+          this.priority_node_overlap[entity_id].size > 0
+        ) {
+          overlap.nodes++;
+          this.priority_node_overlap[entity_id].forEach((own_pg_name) => {
+            // Collect counts per owning PG (these are names from own_groups)
+            if (!(own_pg_name in by_set_count)) {
+              by_set_count[own_pg_name] = [];
+            }
+            by_set_count[own_pg_name].push(entity_id);
+
+            overlap.sets.add(own_pg_name);
+          });
+        }
+      });
+
+      // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
+      // then it's either a superset or a duplicate (same size).
+      _.each(by_set_count, (nodes, own_name) => {
+        if (nodes.length == size_by_pg[pg.name]) {
+          if (size_by_own[own_name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(own_name);
+          } else {
+            overlap.supersets.push(own_name);
+          }
+        }
+      });
+
+      // assign overlap summary to the mjc group
+      pg.overlap = {
+        nodes: overlap.nodes,
+        // sets = number of distinct own_groups that share nodes with this mjc_group
+        sets: overlap.sets.size,
+        superset: overlap.supersets,
+        duplicate: overlap.duplicates,
+      };
+    });
+  };
+
   /** generate the name for a cluster of interest */
   generateClusterOfInterestID(subcluster_id) {
     const id =
@@ -942,10 +1027,12 @@ class HIVTxNetwork {
     @param d: node object
     @param id: [string] the attribute whose value should be fetched
     @param number: [bool] if true, only return numerical values
+    @param is_date: [bool] if true, parse the value as a date
+    @param check_redacted: [bool] if true, check if the attribute is redacted and return "REDACTED" label
 
  */
 
-  attribute_node_value_by_id(d, id, number, is_date) {
+  attribute_node_value_by_id(d, id, number, is_date, check_redacted) {
     try {
       if (kGlobals.network.NodeAttributeID in d && id) {
         if (id in d[kGlobals.network.NodeAttributeID]) {
@@ -958,12 +1045,14 @@ class HIVTxNetwork {
           }
 
           if (_.isString(v)) {
-            if (v.length === 0) {
+            if (check_redacted && v === "REDACTED") {
+              return "REDACTED";
+            } else if (v.length === 0) {
               return kGlobals.missing.label;
             } else if (number) {
               v = Number(v);
               return _.isNaN(v) ? kGlobals.missing.label : v;
-            } else if (date) {
+            } else if (is_date) {
               return v.getTime();
             }
           }
@@ -1197,9 +1286,15 @@ class HIVTxNetwork {
         name: g.name,
         description: g.description,
         nodes: g.nodes,
-        modified: timeDateUtil.DateFormats[0](g.modified),
+        modified:
+          g.modified === "REDACTED"
+            ? g.modified
+            : timeDateUtil.DateFormats[0](g.modified),
         kind: g.kind,
-        created: timeDateUtil.DateFormats[0](g.created),
+        created:
+          g.modified === "REDACTED"
+            ? g.created
+            : timeDateUtil.DateFormats[0](g.created),
         createdBy: g.createdBy,
         tracking: g.tracking,
         autocreated: g.autocreated,
@@ -1350,8 +1445,8 @@ class HIVTxNetwork {
             (gn) => {
               const eid = this.entity_id(gn);
               return {
-                eHARS_uid: eid,
-                cluster_uid: g.name,
+                eHARS_uid: this.cleanRedacted(eid),
+                cluster_uid: this.cleanRedacted(g.name),
                 cluster_ident_method: g.kind,
                 person_ident_method: entity_to_pg_records[eid][0].kind,
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
@@ -1407,7 +1502,7 @@ class HIVTxNetwork {
         _.filter(this.defined_priority_groups, (g) => g.validated),
         (g) => ({
           cluster_type: g.createdBy,
-          cluster_uid: g.name,
+          cluster_uid: this.cleanRedacted(g.name),
           cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
             g.modified
           ),
@@ -1620,13 +1715,17 @@ class HIVTxNetwork {
           pg.node_objects = [];
           pg.not_in_network = [];
           pg.validated = true;
-          pg.created = _.isDate(pg.created)
-            ? pg.created
-            : timeDateUtil.DateFormats[0].parse(pg.created);
+          if (pg.created !== "REDACTED") {
+            pg.created = _.isDate(pg.created)
+              ? pg.created
+              : timeDateUtil.DateFormats[0].parse(pg.created);
+          }
           if (pg.modified) {
-            pg.modified = _.isDate(pg.modified)
-              ? pg.modified
-              : timeDateUtil.DateFormats[0].parse(pg.modified);
+            if (pg.modified !== "REDACTED") {
+              pg.modified = _.isDate(pg.modified)
+                ? pg.modified
+                : timeDateUtil.DateFormats[0].parse(pg.modified);
+            }
           } else {
             pg.modified = pg.created;
           }
@@ -2356,191 +2455,209 @@ class HIVTxNetwork {
         This needs to be called AFTER the clusters/subclusters have been annotated
   */
 
-  load_priority_sets(url, is_writeable) {
+  fetch_priority_sets(url, callback) {
     d3.json(url, (error, results) => {
       if (error) {
         throw Error(
           "Failed loading cluster of interest file " + error.responseURL
         );
       } else {
-        let latest_date = new Date();
-        latest_date.setFullYear(1900);
-        this.defined_priority_groups = _.clone(results);
-        _.each(this.defined_priority_groups, (pg) => {
-          _.each(pg.nodes, (n) => {
-            try {
-              n.added = timeDateUtil.DateFormats[0].parse(n.added);
-              if (n.added > latest_date) {
-                latest_date = n.added;
-              }
-            } catch {
-              // do nothing
-            }
-          });
-        });
-
-        this.priority_set_table_writeable = is_writeable === "writeable";
-
-        this.priority_groups_validate(
-          this.defined_priority_groups,
-          this._is_CDC_auto_mode
-        );
-
-        this.auto_create_priority_sets = [];
-        /**
-            check if the system needs to create/expand CoI
-        */
-        const today_string = timeDateUtil.DateFormats[0](
-          this.get_reference_date()
-        );
-        this.map_ids_to_objects();
-
-        if (this._is_CDC_auto_mode) {
-          _.each(this.clusters, (cluster_data, cluster_id) => {
-            _.each(cluster_data.subclusters, (subcluster_data) => {
-              _.each(subcluster_data.priority_score, (priority_score, i) => {
-                let priority_entities = this.unique_entity_list(
-                  _.map(priority_score, (d) => ({ id: d }))
-                );
-                if (
-                  priority_entities.length >=
-                  this.CDC_data["autocreate-priority-set-size"]
-                ) {
-                  // only generate a new set if it doesn't match what is already there
-                  const node_set = {};
-                  _.each(subcluster_data.recent_nodes[i], (n) => {
-                    node_set[n] = 1;
-                  });
-
-                  const matched_groups = _.filter(
-                    _.filter(
-                      this.defined_priority_groups,
-                      (pg) =>
-                        pg.kind in kGlobals.CDCCOICanAutoExpand &&
-                        pg.createdBy === kGlobals.CDCCOICreatedBySystem &&
-                        pg.tracking === kGlobals.CDCCOITrackingOptionsDefault
-                    ),
-                    (pg) => {
-                      const matched = _.countBy(
-                        _.map(pg.nodes, (pn) => pn.name in node_set)
-                      );
-                      return matched[true] >= 1;
-                    }
-                  );
-
-                  if (matched_groups.length >= 1) {
-                    return;
-                  }
-
-                  const autoname = this.generateClusterOfInterestID(
-                    subcluster_data.cluster_id
-                  );
-
-                  this.auto_create_priority_sets.push({
-                    name: autoname,
-                    description:
-                      "Automatically created cluster of interest " + autoname,
-                    nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
-                      this.priority_group_node_record(
-                        n,
-                        this.get_reference_date()
-                      )
-                    ),
-                    created: today_string,
-                    kind: kGlobals.CDCCOIKindAutomaticCreation,
-                    tracking: kGlobals.CDCCOITrackingOptions[0],
-                    createdBy: kGlobals.CDCCOICreatedBySystem,
-                    autocreated: true,
-                    autoexpanded: false,
-                    pending: true,
-                  });
-                }
-              });
-            });
-          });
-        }
-
-        if (this.auto_create_priority_sets.length) {
-          // SLKP 20200727 now check to see if any of the priority sets
-          // need to be auto-generated
-          //console.log (this.auto_create_priority_sets);
-          this.defined_priority_groups.push(...this.auto_create_priority_sets);
-        }
-        const autocreated = this.defined_priority_groups.filter(
-            (pg) => pg.autocreated
-          ).length,
-          autoexpanded = this.defined_priority_groups.filter(
-            (pg) => pg.autoexpanded
-          ).length,
-          automatic_action_taken = autocreated + autoexpanded > 0,
-          left_to_review = this.defined_priority_groups.filter(
-            (pg) => pg.pending
-          ).length;
-
-        if (automatic_action_taken) {
-          this.warning_string +=
-            "<br/>Automatically created <b>" +
-            autocreated +
-            "</b> and expanded <b>" +
-            autoexpanded +
-            "</b> clusters of interest." +
-            (left_to_review > 0
-              ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
-              : "");
-          this.display_warning(this.warning_string, true);
-        }
-
-        const tab_pill = this.get_ui_element_selector_by_role(
-          "priority_set_counts",
-          true
-        );
-
-        if (!this.priority_set_table_writeable) {
-          const rationale =
-            is_writeable === "old"
-              ? "the network is <b>older</b> than some of the Clusters of Interest"
-              : "the network was ran in <b>standalone</b> mode so no data is stored";
-          this.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
-          this.display_warning(this.warning_string, true);
-          if (tab_pill) {
-            d3.select(tab_pill).text("Read-only");
-          }
-        } else if (tab_pill && left_to_review > 0) {
-          d3.select(tab_pill).text(left_to_review);
-          d3.select("#banner_coi_counts").text(left_to_review);
-        }
-
-        this.priority_groups_validate(this.defined_priority_groups);
-        // Update the DB with the new ClusterOI
-        const auto_create_priority_sets_names =
-          this.auto_create_priority_sets.map((pg) => pg.name);
-        _.each(this.defined_priority_groups, (pg) => {
-          if (pg.name in auto_create_priority_sets_names) {
-            this.priority_groups_update_node_sets(pg.name, "insert");
-          } else {
-            // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
-            this.priority_groups_update_node_sets(pg.name, "update");
-          }
-        });
-
-        clustersOfInterest.draw_priority_set_table(this);
-        if (
-          this.showing_diff &&
-          this.has_network_attribute("subcluster_or_priority_node")
-        ) {
-          this.handle_attribute_categorical("subcluster_or_priority_node");
-        }
-        //this.update();
+        callback(results);
       }
     });
   }
 
+  load_priority_sets(url, is_writeable) {
+    this.fetch_priority_sets(url, (results) => {
+      let latest_date = new Date();
+      latest_date.setFullYear(1900);
+      this.defined_priority_groups = _.clone(results);
+      _.each(this.defined_priority_groups, (pg) => {
+        _.each(pg.nodes, (n) => {
+          try {
+            if (n.added === "REDACTED") {
+              return;
+            }
+            n.added = timeDateUtil.DateFormats[0].parse(n.added);
+            if (n.added > latest_date) {
+              latest_date = n.added;
+            }
+          } catch {
+            // do nothing
+          }
+        });
+      });
+
+      this.priority_set_table_writeable = is_writeable === "writeable";
+
+      this.priority_groups_validate(
+        this.defined_priority_groups,
+        this._is_CDC_auto_mode
+      );
+
+      this.auto_create_priority_sets = [];
+      /**
+          check if the system needs to create/expand CoI
+      */
+      const today_string = timeDateUtil.DateFormats[0](
+        this.get_reference_date()
+      );
+      this.map_ids_to_objects();
+
+      if (this._is_CDC_auto_mode) {
+        _.each(this.clusters, (cluster_data, cluster_id) => {
+          _.each(cluster_data.subclusters, (subcluster_data) => {
+            _.each(subcluster_data.priority_score, (priority_score, i) => {
+              let priority_entities = this.unique_entity_list(
+                _.map(priority_score, (d) => ({ id: d }))
+              );
+              if (
+                priority_entities.length >=
+                this.CDC_data["autocreate-priority-set-size"]
+              ) {
+                // only generate a new set if it doesn't match what is already there
+                const node_set = {};
+                _.each(subcluster_data.recent_nodes[i], (n) => {
+                  node_set[n] = 1;
+                });
+
+                const matched_groups = _.filter(
+                  _.filter(
+                    this.defined_priority_groups,
+                    (pg) =>
+                      pg.kind in kGlobals.CDCCOICanAutoExpand &&
+                      pg.createdBy === kGlobals.CDCCOICreatedBySystem &&
+                      pg.tracking === kGlobals.CDCCOITrackingOptionsDefault
+                  ),
+                  (pg) => {
+                    const matched = _.countBy(
+                      _.map(pg.nodes, (pn) => pn.name in node_set)
+                    );
+                    return matched[true] >= 1;
+                  }
+                );
+
+                if (matched_groups.length >= 1) {
+                  return;
+                }
+
+                const autoname = this.generateClusterOfInterestID(
+                  subcluster_data.cluster_id
+                );
+
+                this.auto_create_priority_sets.push({
+                  name: autoname,
+                  description:
+                    "Automatically created cluster of interest " + autoname,
+                  nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
+                    this.priority_group_node_record(
+                      n,
+                      this.get_reference_date()
+                    )
+                  ),
+                  created: today_string,
+                  kind: kGlobals.CDCCOIKindAutomaticCreation,
+                  tracking: kGlobals.CDCCOITrackingOptions[0],
+                  createdBy: kGlobals.CDCCOICreatedBySystem,
+                  autocreated: true,
+                  autoexpanded: false,
+                  pending: true,
+                });
+              }
+            });
+          });
+        });
+      }
+
+      if (this.auto_create_priority_sets.length) {
+        // SLKP 20200727 now check to see if any of the priority sets
+        // need to be auto-generated
+        //console.log (this.auto_create_priority_sets);
+        this.defined_priority_groups.push(...this.auto_create_priority_sets);
+      }
+      const autocreated = this.defined_priority_groups.filter(
+          (pg) => pg.autocreated
+        ).length,
+        autoexpanded = this.defined_priority_groups.filter(
+          (pg) => pg.autoexpanded
+        ).length,
+        automatic_action_taken = autocreated + autoexpanded > 0,
+        left_to_review = this.defined_priority_groups.filter(
+          (pg) => pg.pending
+        ).length;
+
+      if (automatic_action_taken) {
+        this.warning_string +=
+          "<br/>Automatically created <b>" +
+          autocreated +
+          "</b> and expanded <b>" +
+          autoexpanded +
+          "</b> clusters of interest." +
+          (left_to_review > 0
+            ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
+            : "");
+        this.display_warning(this.warning_string, true);
+      }
+
+      const tab_pill = this.get_ui_element_selector_by_role(
+        "priority_set_counts",
+        true
+      );
+
+      if (!this.priority_set_table_writeable) {
+        const rationale =
+          is_writeable === "old"
+            ? "the network is <b>older</b> than some of the Clusters of Interest"
+            : "the network was ran in <b>standalone</b> mode so no data is stored";
+        this.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
+        this.display_warning(this.warning_string, true);
+        if (tab_pill) {
+          d3.select(tab_pill).text("Read-only");
+        }
+      } else if (tab_pill && left_to_review > 0) {
+        d3.select(tab_pill).text(left_to_review);
+        d3.select("#banner_coi_counts").text(left_to_review);
+      }
+
+      this.priority_groups_validate(this.defined_priority_groups);
+      // Update the DB with the new ClusterOI
+      const auto_create_priority_sets_names =
+        this.auto_create_priority_sets.map((pg) => pg.name);
+      _.each(this.defined_priority_groups, (pg) => {
+        if (pg.name in auto_create_priority_sets_names) {
+          this.priority_groups_update_node_sets(pg.name, "insert");
+        } else {
+          // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
+          this.priority_groups_update_node_sets(pg.name, "update");
+        }
+      });
+
+      clustersOfInterest.draw_priority_set_table(this);
+      if (
+        this.showing_diff &&
+        this.has_network_attribute("subcluster_or_priority_node")
+      ) {
+        this.handle_attribute_categorical("subcluster_or_priority_node");
+      }
+      //this.update();
+    });
+  }
+
+  MJCloadOwnPrioritySets(options) {
+    if (this.isMJCNetwork && options["own-priority-sets-url"]) {
+      this.own_priority_set_url = options["own-priority-sets-url"];
+      this.fetch_priority_sets(this.own_priority_set_url, (results) => {
+        this.own_defined_priority_groups = results;
+      });
+    }
+  }
+
   /**  add an attribute description
-  
-       Given an attribute definition (see comments elsewhere), and a key to associate it with
-       do
-  
-  */
+    
+         Given an attribute definition (see comments elsewhere), and a key to associate it with
+         do
+    
+    */
 
   inject_attribute_description(key, d) {
     if (kGlobals.network.GraphAttrbuteID in this.json) {
@@ -2552,20 +2669,19 @@ class HIVTxNetwork {
   }
 
   /**  populate_predefined_attribute
-  
-       Given an attribute definition (see comments elsewhere), and a key to associate it with
-       do
-  
-       0. Inject the definition of the attribute into the network dictionary
-       1. Compute the value of the attribute for all nodes
-       2. Compute unique values
-  
-       @param computed (dict) : attribute definition
-       @param key (string) : the key to associate with the attribute
-  */
+    
+         Given an attribute definition (see comments elsewhere), and a key to associate it with
+         do
+    
+         0. Inject the definition of the attribute into the network dictionary
+         1. Compute the value of the attribute for all nodes
+         2. Compute unique values
+    
+         @param computed (dict) : attribute definition
+         @param key (string) : the key to associate with the attribute
+    */
 
   populate_predefined_attribute(computed, key) {
-    //console.log ("Injecting " + key);
     if (_.isFunction(computed)) {
       computed = computed(this);
     }
@@ -2652,35 +2768,35 @@ class HIVTxNetwork {
 
   /**===================================================**/
   /** attribute callback definitions
-  
-        The following functions are generators for attribute callbacks.
-        They return dict-like objects that contain fields used to populate
-        and display network node and cluster attributes
-  
-        The fields in the attribute definition are as follows
-  
-        depends [optional]   : the list of node fields that must be defined in order for
-                              this attribute to be computed; null = none
-  
-        label [required]     : the attribute label to display in the dropdown other locations
-        enum  [optional]     : if provided as an array, specifies the set of allowed values
-        volatile [optional]  : if non-null, tag this attribute for re-computation when certain
-                               events take place
-        color_scale[required]: value=>color map for rendering
-        map[required]        : a function to compute attribute value from node data
-        color_stops[optional]: # of color stops for a continuous variable that's binned
-  
-    */
+    
+          The following functions are generators for attribute callbacks.
+          They return dict-like objects that contain fields used to populate
+          and display network node and cluster attributes
+    
+          The fields in the attribute definition are as follows
+    
+          depends [optional]   : the list of node fields that must be defined in order for
+                                this attribute to be computed; null = none
+    
+          label [required]     : the attribute label to display in the dropdown other locations
+          enum  [optional]     : if provided as an array, specifies the set of allowed values
+          volatile [optional]  : if non-null, tag this attribute for re-computation when certain
+                                 events take place
+          color_scale[required]: value=>color map for rendering
+          map[required]        : a function to compute attribute value from node data
+          color_stops[optional]: # of color stops for a continuous variable that's binned
+    
+      */
   /**===================================================**/
 
   /**
-        define an attribute generator for subcluster membership attribute
-  
-        @param network : the network / cluster object to ise
-        @param data: reference date to use
-  
-        @return attribute definition
-    */
+          define an attribute generator for subcluster membership attribute
+    
+          @param network : the network / cluster object to ise
+          @param data: reference date to use
+    
+          @return attribute definition
+      */
 
   define_attribute_COI_membership(network, date) {
     date = date || this.get_reference_date();
@@ -2736,13 +2852,13 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for binned viral loads
-  
-        @param field: the node attribute field to use
-        @param title: display this title for the attribute
-  
-        @return attribute definition dict
-    */
+          define an attribute generator for binned viral loads
+    
+          @param field: the node attribute field to use
+          @param title: display this title for the attribute
+    
+          @return attribute definition dict
+      */
   define_attribute_binned_vl(field, title) {
     const vl_bins = ["<200", "200-10000", ">10000"];
 
@@ -2779,10 +2895,10 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for Viral load result interpretatio
-  
-        @return attribute definition dict
-    */
+          define an attribute generator for Viral load result interpretatio
+    
+          @return attribute definition dict
+      */
   define_attribute_vl_interpretaion() {
     return {
       depends: ["vl_recent_value", "result_interpretation"],
@@ -2855,9 +2971,9 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for new network nodes/clusters
-        @return attribute definition dict
-    */
+          define an attribute generator for new network nodes/clusters
+          @return attribute definition dict
+      */
 
   define_attribute_network_update() {
     return {
@@ -2882,14 +2998,26 @@ class HIVTxNetwork {
     };
   }
 
+  define_attribute_mjc_date_added(label) {
+    return {
+      depends: [],
+      label: label,
+      type: "Date",
+      map: (node) => {
+        // will be dynamically injected into node every time a MJ ClusterOI is viewed
+        return kGlobals.missing.label;
+      },
+    };
+  }
+
   /**
-        define an attribute generator for dx year
-  
-        @param relative: if T, compute dx date relative to the network date in years
-        @param label: use this label
-  
-        @return attribute definition dict
-    */
+          define an attribute generator for dx year
+    
+          @param relative: if T, compute dx date relative to the network date in years
+          @param label: use this label
+    
+          @return attribute definition dict
+      */
 
   define_attribute_dx_years(relative, label) {
     return {
@@ -2902,7 +3030,10 @@ class HIVTxNetwork {
           var value = this.parse_dates(
             this.attribute_node_value_by_id(
               node,
-              timeDateUtil._networkCDCDateField
+              timeDateUtil._networkCDCDateField,
+              false,
+              true,
+              true
             )
           );
 
@@ -2945,22 +3076,76 @@ class HIVTxNetwork {
   }
 
   /**
-        Retrieve the list of sequences associated with a node
-        @param pid: use this entity id
-  
-        @return list of sequence_ids
-    */
+   * Define an attribute generator for month/year at diagnosis
+   *
+   * @param {*} label : use this label
+   * @returns attribute definition dict
+   */
+  define_attribute_dx_month_year(label) {
+    return {
+      depends: [timeDateUtil._networkCDCMonthYearField],
+      label: label,
+      type: "String",
+      map: (node) => {
+        try {
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCMonthYearField,
+            false,
+            false,
+            true
+          );
+        } catch {
+          return kGlobals.missing.label;
+        }
+      },
+    };
+  }
+
+  /**
+   * Define an attribute generator for boolean value of dx in last year
+   * @param {*} label : use this label
+   * @returns attribute definition dict
+   */
+  define_attribute_dx_last_year(label) {
+    return {
+      depends: [timeDateUtil._networkCDCLastYearField],
+      label: label,
+      type: "String",
+      enum: ["Yes", "No"],
+      map: (node) => {
+        try {
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCLastYearField,
+            false,
+            false,
+            true
+          );
+        } catch {
+          return kGlobals.missing.label;
+        }
+      },
+    };
+  }
+
+  /**
+          Retrieve the list of sequences associated with a node
+          @param pid: use this entity id
+    
+          @return list of sequence_ids
+      */
 
   fetch_sequence_objects_for_pid(pid) {
     return this.primary_key_list[pid];
   }
 
   /**
-        Retrieve the list of sequences associated with a node
-        @param pid: use this entity id
-  
-        @return list of sequence_ids
-    */
+          Retrieve the list of sequences associated with a node
+          @param pid: use this entity id
+    
+          @return list of sequence_ids
+      */
 
   fetch_sequences_for_pid(pid) {
     if (this.has_multiple_sequences) {
@@ -2976,10 +3161,10 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for the number of sequences associated with this node
-        @param label: use this label
-        @return attribute definition dict
-    */
+          define an attribute generator for the number of sequences associated with this node
+          @param label: use this label
+          @return attribute definition dict
+      */
 
   define_attribute_sequence_count(label) {
     return {
@@ -3022,9 +3207,9 @@ class HIVTxNetwork {
   }
 
   /**
-        define an attribute generator for binned age at diagnosis
-        @return attribute definition dict
-    */
+          define an attribute generator for binned age at diagnosis
+          @return attribute definition dict
+      */
   define_attribute_age_dx() {
     return {
       depends: ["age_dx"],
@@ -3073,14 +3258,14 @@ class HIVTxNetwork {
   }
 
   /**
-        Generate a function callback for attribute time series data
-  
-        @param export_items
-            if set (and is an array), the function will add the callback to the array
-            otherwise the callback will be invoked on this
-  
-        @return noting
-    */
+          Generate a function callback for attribute time series data
+    
+          @param export_items
+              if set (and is an array), the function will add the callback to the array
+              otherwise the callback will be invoked on this
+    
+          @return noting
+      */
 
   check_for_time_series = function (export_items) {
     var event_handler = (network, e) => {
@@ -3165,16 +3350,16 @@ class HIVTxNetwork {
   };
 
   /**
-    annotate_cluster_changes
-  
-    If the network contains information about cluster changes (new/moved/deleted nodes, etc),
-    this function will annotate cluster objects (in place) with various attributes
-        "delta" : change in the size of the cluster
-        "flag"  : a status flag to be used in the cluster display table
-            if set to 2 then TBD
-            if set to 3 then TBD
-  
-  */
+      annotate_cluster_changes
+    
+      If the network contains information about cluster changes (new/moved/deleted nodes, etc),
+      this function will annotate cluster objects (in place) with various attributes
+          "delta" : change in the size of the cluster
+          "flag"  : a status flag to be used in the cluster display table
+              if set to 2 then TBD
+              if set to 3 then TBD
+    
+    */
 
   annotate_cluster_changes() {
     if (this.cluster_attributes) {
@@ -3199,15 +3384,15 @@ class HIVTxNetwork {
   }
 
   /**
-    extract_individual_level_records
-  
-    for networks that have multiple sequences per individual, this function
-    will reduce the list of node records to only include those that have
-    attribute data. If more than one node has attribute data, the first one
-    (chosen based on the sorting order when this.primary_key_list was initialized)
-    is returned.
-  
-  */
+      extract_individual_level_records
+    
+      for networks that have multiple sequences per individual, this function
+      will reduce the list of node records to only include those that have
+      attribute data. If more than one node has attribute data, the first one
+      (chosen based on the sorting order when this.primary_key_list was initialized)
+      is returned.
+    
+    */
 
   extract_individual_level_records() {
     if (this.has_multiple_sequences && this.primary_key_list) {
@@ -3228,15 +3413,18 @@ class HIVTxNetwork {
   }
 
   /**
-    aggregate_indvidual_level_records
-  
-    for networks that have multiple sequences per individual, this function
-    will reduce the list of node records to only have one per primary key
-    all attributes where more than one value is present will be shown as ';' separated
-  
-  */
+      aggregate_indvidual_level_records
+    
+      for networks that have multiple sequences per individual, this function
+      will reduce the list of node records to only have one per primary key
+      all attributes where more than one value is present will be shown as ';' separated
+    
+    */
 
   aggregate_indvidual_level_records(node_list) {
+    if (this.isMJCNetwork) {
+      return _.uniq(node_list, (n) => n.id ?? n.name);
+    }
     node_list = node_list || this.json.Nodes;
 
     const aggregator = (values, key, record, store_key) => {
@@ -3319,34 +3507,41 @@ class HIVTxNetwork {
   }
 
   /**
-    generate an entity (primary key) id from string
-  
-    @param node_name (string)
-  
-    returns [String] entity id
-  */
+      generate an entity (primary key) id from string
+    
+      @param node_name (string)
+    
+      returns [String] entity id
+    */
 
   entity_id_from_string(node_name) {
     return this.primary_key({ id: node_name });
   }
 
   /**
-    generate an entity (primary key) id from node
-  
-    @param node (Object)
-  
-    returns [String] entity id
-  */
+      generate an entity (primary key) id from node
+    
+      @param node (Object)
+    
+      returns [String] entity id
+    */
 
   entity_id(node) {
     return this.primary_key(node);
   }
 
+  cleanRedacted(id) {
+    if (id.startsWith("REDACTED_")) {
+      return "REDACTED";
+    }
+    return id;
+  }
+
   /**
-        Applies a callback to each entity in the network.
-        An entity is a group of nodes that share the same primary key.
-        @param cb: The callback function to apply. It receives the primary key and the list of nodes for the entity.
-    */
+          Applies a callback to each entity in the network.
+          An entity is a group of nodes that share the same primary key.
+          @param cb: The callback function to apply. It receives the primary key and the list of nodes for the entity.
+      */
   apply_to_entities(cb) {
     if (this.has_multiple_sequences) {
       _.each(this.primary_key_list, (d, k) => {
@@ -3356,12 +3551,12 @@ class HIVTxNetwork {
   }
 
   /**
-    generate a list of sequence IDs represented by a node
-  
-    @param node (Object)
-  
-    returns [array] list of sequence ids
-  */
+      generate a list of sequence IDs represented by a node
+    
+      @param node (Object)
+    
+      returns [array] list of sequence ids
+    */
   list_of_aliased_sequences(node) {
     return node[kGlobals.network.AliasedSequencesID]
       ? node[kGlobals.network.AliasedSequencesID]
