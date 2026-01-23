@@ -72,7 +72,7 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
     try {
       return formatter(date);
     } catch {
-      console.log(date);
+      // Invalid date format
     }
   }
   return "N/A";
