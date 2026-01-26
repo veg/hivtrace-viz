@@ -2995,7 +2995,7 @@ class HIVTxNetwork {
       };
     }
 
-    define_attribute_mjc_date_added(label) {
+    define_attribute_sel_mjc_date_identified(label) {
       return {
         depends: [],
         label: label,
@@ -3004,6 +3004,62 @@ class HIVTxNetwork {
           // will be dynamically injected into node every time a MJ ClusterOI is viewed
           return kGlobals.missing.label;
         }
+      };
+    }
+
+    define_attribute_mjc_date_identified(label) {
+      return {
+        depends: [],
+        label: label,
+        type: "Object",
+        map: (node) => {
+          try {
+            return this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCIdentified,
+              false,
+              false,
+              true
+            );
+          }
+          catch {
+            return kGlobals.missing.label;
+          }
+        }  
+      };
+    }
+
+    define_attribute_sel_mjc_date_identified_12mo(label) {
+      return {
+        depends: [],
+        label: label,
+        type: "Date",
+        map: (node) => {
+          // will be dynamically injected into node every time a MJ ClusterOI is viewed
+          return kGlobals.missing.label;
+        }
+      };
+    }
+
+    define_attribute_mjc_date_identified_12mo(label) {
+      return {
+        depends: [],
+        label: label,
+        type: "Object",
+        map: (node) => {
+          try {
+            return this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCIdentified_12Mo,
+              false,
+              false,
+              true
+            );
+          }
+          catch {
+            return kGlobals.missing.label;
+          }
+        }  
       };
     }
 
@@ -3105,9 +3161,9 @@ class HIVTxNetwork {
      * @param {*} label : use this label
      * @returns attribute definition dict
      */
-    define_attribute_dx_last_year(label) {
+    define_attribute_dx_12mo(label) {
       return {
-        depends: [timeDateUtil._networkCDCLastYearField],
+        depends: [timeDateUtil._networkCDCLast12Mo],
         label: label,
         type: "String",
         enum: ["Yes", "No"],
@@ -3115,7 +3171,30 @@ class HIVTxNetwork {
           try {
             return this.attribute_node_value_by_id(
               node,
-              timeDateUtil._networkCDCLastYearField,
+              timeDateUtil._networkCDCLast12Mo,
+              false,
+              false,
+              true
+            );
+          }
+          catch {
+            return kGlobals.missing.label;
+          }
+        },
+      };
+    }
+
+    define_attribute_dx_36mo(label) {
+      return {
+        depends: [timeDateUtil._networkCDCLast36Mo],
+        label: label,
+        type: "String",
+        enum: ["Yes", "No"],
+        map: (node) => {
+          try {
+            return this.attribute_node_value_by_id(
+              node,
+              timeDateUtil._networkCDCLast36Mo,
               false,
               false,
               true

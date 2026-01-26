@@ -1,8 +1,11 @@
 var d3 = require("d3");
 
 const _networkCDCDateField = "hiv_aids_dx_dt";
-const _networkCDCLastYearField = "hiv_aids_dx_dt_last_year";
+const _networkCDCLast12Mo = "hiv_aids_dx_dt_12mo";
+const _networkCDCLast36Mo = "hiv_aids_dx_dt_36mo";
 const _networkCDCMonthYearField = "hiv_aids_dx_dt_month_year";
+const _networkCDCIdentified = "mjc_date_identified";
+const _networkCDCIdentified_12Mo = "mjc_date_identified_12mo";
 
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
@@ -108,8 +111,11 @@ function n_months_ago(reference_date, months) {
 module.exports = {
   hivtrace_date_or_na_if_missing,
   _networkCDCDateField,
-  _networkCDCLastYearField,
+  _networkCDCLast12Mo,
+  _networkCDCLast36Mo,
   _networkCDCMonthYearField,
+  _networkCDCIdentified,
+  _networkCDCIdentified_12Mo,
   _networkTimeQuery,
   getClusterTimeScale,
   getCurrentDate,

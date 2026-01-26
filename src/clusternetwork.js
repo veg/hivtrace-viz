@@ -439,14 +439,28 @@ var hivtrace_cluster_network_graph = function (
   };
 
   if (self.isMJCNetwork) {
+    // not actually displayed in node list view
+    self._networkPredefinedAttributeTransforms["mjc_date_identified"] = self.define_attribute_mjc_date_identified(
+      "Date Identified in MJ ClusterOI (Contains All ClusterOI Dates)"
+    );
+    self._networkPredefinedAttributeTransforms["selected_mjc_date_identified"] = self.define_attribute_sel_mjc_date_identified(
+      "Date Identified in MJ ClusterOI"
+    );
+    // not actually displayed in node list view
+    self._networkPredefinedAttributeTransforms["mjc_date_identified_12mo"] = self.define_attribute_mjc_date_identified_12mo(
+      "Identified in Last 12 Mo (Contains All ClusterOI Dates)"
+    );
+    self._networkPredefinedAttributeTransforms["selected_mjc_date_identified_12mo"] = self.define_attribute_sel_mjc_date_identified_12mo(
+      "Identified in Last 12 Mo"
+    );
     self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_month_year"] = self.define_attribute_dx_month_year(
       "Diagnosis Month/Year"
     );
-    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_last_year"] = self.define_attribute_dx_last_year(
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_12mo"] = self.define_attribute_dx_12mo(
       "DX in Last 12 Mo."
     );
-    self._networkPredefinedAttributeTransforms["mjc_date_added"] = self.define_attribute_mjc_date_added(
-      "Date Added to MJ ClusterOI"
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_36mo"] = self.define_attribute_dx_36mo(
+      "DX in Last 36 Mo."
     );
   }
 
@@ -2069,23 +2083,34 @@ var hivtrace_cluster_network_graph = function (
         return [];
       }
 
-      // for all nodes in the priority group, update the mjc_date_added to the current viewed priority group
+      // pull from the mjc_date_identified attribute of the nodes directly
       if (priority_group_name) {
-        let priority_group = self.priority_groups_find_by_name(priority_group_name);
-        let nodeToAddedDateMap = {};
-        for (let n of priority_group.nodes) {
-          let value = n.added;
-          if (value !== "REDACTED") {
-            value = timeDateUtil.DateViewFormatExport(this.parse_dates(value));
+        const priority_group = self.priority_groups_find_by_name(priority_group_name);
+        for (const node of priority_group.node_objects) {
+          if (
+            node.patient_attributes && "mjc_date_identified" in node.patient_attributes
+          ) {
+            if (node.patient_attributes.mjc_date_identified === "REDACTED") {
+              node.patient_attributes.selected_mjc_date_identified = "REDACTED";
+            } else if (!(priority_group_name in node.patient_attributes.mjc_date_identified)) {
+              node.patient_attributes.selected_mjc_date_identified = "";
+            } else {
+              node.patient_attributes.selected_mjc_date_identified = timeDateUtil.DateViewFormatExport(
+                this.parse_dates(new Date(
+                  node.patient_attributes.mjc_date_identified[priority_group_name])
+              ));
+            }
           }
-          nodeToAddedDateMap[n.name] = value;
-        }
 
-        if (priority_group) {
-          const cluster_nodes = priority_group.node_objects;
-          _.each(cluster_nodes, (n) => {
-            n.patient_attributes.mjc_date_added = nodeToAddedDateMap[n.id];
-          });
+          if (node.patient_attributes && "mjc_date_identified_12mo" in node.patient_attributes) {
+            if (node.patient_attributes.mjc_date_identified_12mo === "REDACTED") {
+              node.patient_attributes.selected_mjc_date_identified_12mo = "REDACTED";
+            } else if (!(priority_group_name in node.patient_attributes.mjc_date_identified_12mo)) {
+              node.patient_attributes.selected_mjc_date_identified_12mo = "";
+            } else {
+              node.patient_attributes.selected_mjc_date_identified_12mo = node.patient_attributes.mjc_date_identified_12mo[priority_group_name];
+            }
+          }
         }
       }
 
@@ -2093,9 +2118,11 @@ var hivtrace_cluster_network_graph = function (
         'mjc_data_owners',
         'cur_state_cd',
         'rsd_state_cd',
-        'mjc_date_added',
-        'hiv_aids_dx_dt_last_year',
-        'hiv_aids_dx_dt_month_year'
+        'selected_mjc_date_identified',
+        'selected_mjc_date_identified_12mo',
+        'hiv_aids_dx_dt_month_year',
+        'hiv_aids_dx_dt_12mo',
+        'hiv_aids_dx_dt_36mo',
       ];
 
       return MJC_ATTRIBUTES.filter((attr_key =>
@@ -2203,7 +2230,11 @@ var hivtrace_cluster_network_graph = function (
           _.each(column_ids, (column) => {
             patient_list
               .append("dt")
-              .text(column.label || column.raw_attribute_key);
+              .text(column.label || column.raw_attribute_key)
+              .attr("title", column.label || column.raw_attribute_key)
+              .style("width", "50%")
+              .style("text-align", "left")
+              .style("margin-left", "1em");
             patient_list
               .append("dd")
               .text(
