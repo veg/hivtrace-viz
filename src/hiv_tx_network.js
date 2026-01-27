@@ -2636,12 +2636,15 @@ class HIVTxNetwork {
     });
   }
 
-  MJCloadOwnPrioritySets(options) {
+  MJCloadOwnPrioritySets(options, callback) {
     if (this.isMJCNetwork && options["own-priority-sets-url"]) {
       this.own_priority_set_url = options["own-priority-sets-url"];
       this.fetch_priority_sets(this.own_priority_set_url, (results) => {
         this.own_defined_priority_groups = results;
+        callback();
       });
+    } else {
+      callback();
     }
   }
 
@@ -3467,7 +3470,7 @@ class HIVTxNetwork {
       for networks that have multiple sequences per individual, this function
       will reduce the list of node records to only include those that have
       attribute data. If more than one node has attribute data, the first one
-      (chosen based on the sorting order when this.primary_key_list was initialized)
+      (chosen based on the sorting order whfen this.primary_key_list was initialized)
       is returned.
     
     */
@@ -3501,6 +3504,7 @@ class HIVTxNetwork {
 
     aggregate_indvidual_level_records(node_list) {
       if (this.isMJCNetwork) {
+        // TODO: improve this to actually merge the node attributes
         return _.uniq(node_list, (n) => n.id ?? n.name);
       }
       node_list = node_list || this.json.Nodes;
