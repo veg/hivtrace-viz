@@ -99,6 +99,7 @@ var hivtrace_cluster_network_graph = function (
   self.process_multiple_sequences();
 
   self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
+  self.mjcUUID = self.isMJCNetwork ? options["mjc-uuid"] || null : null;
   self.MJCVariables = self.isMJCNetwork ? options["mjc-variables"] || {} : {};
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;

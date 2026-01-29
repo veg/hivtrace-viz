@@ -1366,7 +1366,27 @@ class HIVTxNetwork {
     let pg_to_update = this.priority_groups_find_by_name(name);
     if (pg_to_update) {
       pg_to_update.description = description;
-      this.priority_groups_update_node_sets(name, "update");
+
+      // For MJC networks, use MJC-specific endpoint
+      if (this.isMJCNetwork && this.mjcUUID) {
+        const url = `/mjc/results/${
+          this.mjcUUID
+        }/clusteroi/${encodeURIComponent(name)}/description`;
+        d3.text(url)
+          .header("Content-Type", "application/json")
+          .send(
+            "PUT",
+            JSON.stringify({ description: description }),
+            (error, data) => {
+              if (error) {
+                console.error("Error saving MJC ClusterOI description:", error);
+              }
+            }
+          );
+      } else {
+        this.priority_groups_update_node_sets(name, "update");
+      }
+
       if (update_table) {
         clustersOfInterest.draw_priority_set_table(this);
       }
