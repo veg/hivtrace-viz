@@ -800,7 +800,15 @@ class HIVTxNetwork {
   /** lookup a CoI by name; null if not found */
   priority_groups_find_by_name = function (name) {
     if (this.defined_priority_groups) {
-      return _.find(this.defined_priority_groups, (g) => g.name === name);
+      const result = _.find(
+        this.defined_priority_groups,
+        (g) => g.name === name
+      );
+      if (result) return result;
+    }
+    // For MJC networks, also check own_defined_priority_groups
+    if (this.isMJCNetwork && this.own_defined_priority_groups) {
+      return _.find(this.own_defined_priority_groups, (g) => g.name === name);
     }
     return null;
   };
@@ -2604,7 +2612,8 @@ class HIVTxNetwork {
         true
       );
 
-      if (!this.priority_set_table_writeable) {
+      // Skip read-only warning for MJC networks (they are read-only by design)
+      if (!this.priority_set_table_writeable && !this.isMJCNetwork) {
         const rationale =
           is_writeable === "old"
             ? "the network is <b>older</b> than some of the Clusters of Interest"

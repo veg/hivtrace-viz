@@ -1064,50 +1064,83 @@ function open_editor(
 function handle_inline_confirm(this_button, generator, text, action, disabled) {
   this_button = $(this_button.node());
   if (this_button.data("popover_shown") !== "shown") {
-    const popover = this_button
-      .popover({
-        sanitize: false,
-        placement: "right",
-        container: "body",
-        html: true,
-        content: generator,
-        trigger: "manual",
-      })
-      .on("shown.bs.popover", function (e) {
-        var clicked_object = d3.select(this);
-        var popover_div = d3.select(
-          "#" + clicked_object.attr("aria-describedby")
-        );
-        var textarea_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-form")
-        );
-        var button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-save")
-        );
-        textarea_element.text(text);
-        if (disabled) textarea_element.attr("disabled", true);
-        button_element.on("click", (d) => {
-          action($(textarea_element.node()).val());
-          d3.event.preventDefault();
-          this_button.click();
+    try {
+      const popover = this_button
+        .popover({
+          sanitize: false,
+          placement: "right",
+          container: "body",
+          html: true,
+          content: generator,
+          trigger: "manual",
+        })
+        .on("shown.bs.popover", function (e) {
+          var clicked_object = d3.select(this);
+          var popover_div = d3.select(
+            "#" + clicked_object.attr("aria-describedby")
+          );
+          var textarea_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-form")
+          );
+          var button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-save")
+          );
+          textarea_element.text(text);
+          if (disabled) textarea_element.attr("disabled", true);
+          button_element.on("click", (d) => {
+            action($(textarea_element.node()).val());
+            d3.event.preventDefault();
+            this_button.click();
+          });
+          button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-dismiss")
+          );
+          button_element.on("click", (d) => {
+            d3.event.preventDefault();
+            this_button.click();
+          });
         });
-        button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-dismiss")
-        );
-        button_element.on("click", (d) => {
-          d3.event.preventDefault();
-          this_button.click();
-        });
-      });
 
-    popover.popover("show");
-    this_button.data("popover_shown", "shown");
-    this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
-      $(this).data("popover_shown", "hidden");
-    });
+      popover.popover("show");
+      this_button.data("popover_shown", "shown");
+
+      // Fix popover visibility (Bootstrap fade transition workaround)
+      setTimeout(() => {
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          var popoverEl = $("#" + popoverId);
+          popoverEl.removeClass("fade").addClass("show in");
+          popoverEl.css({
+            "z-index": "99999",
+            opacity: "1",
+            display: "block",
+          });
+        }
+      }, 50);
+
+      this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
+        $(this).data("popover_shown", "hidden");
+      });
+    } catch (e) {
+      console.error("Error creating/showing popover:", e);
+    }
   } else {
     this_button.data("popover_shown", "hidden");
-    this_button.popover("destroy");
+    // Bootstrap 3 uses "destroy", Bootstrap 4/5 uses "dispose"
+    try {
+      this_button.popover("destroy");
+    } catch (e) {
+      try {
+        this_button.popover("dispose");
+      } catch (e2) {
+        // If neither works, try to hide and remove manually
+        this_button.popover("hide");
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          $("#" + popoverId).remove();
+        }
+      }
+    }
   }
 }
 
@@ -1204,10 +1237,66 @@ function _action_drop_down(self, pg) {
     }
     dropdown.push({
       label: "View nodes in this cluster of interest",
-      data: {
-        toggle: "modal",
-        target: misc.get_ui_element_selector_by_role("cluster_list"),
-        priority_set: pg.name,
+      action: function (button, value) {
+        const modalSelector = misc.get_ui_element_selector_by_role(
+          "cluster_list",
+          true
+        );
+        const $modal = $(modalSelector);
+
+        // Store priority set name for the modal handler to use
+        $modal.data("priority_set_trigger", pg.name);
+
+        // Manually trigger the show.bs.modal event and show the modal
+        // This is a workaround for Bootstrap modal not working
+        $modal.trigger("show.bs.modal");
+
+        // Manually add Bootstrap 3 modal classes and styles
+        $modal
+          .addClass("in")
+          .css("display", "block")
+          .attr("aria-hidden", "false");
+
+        // Add backdrop
+        if (!$(".modal-backdrop").length) {
+          $("body").append('<div class="modal-backdrop fade in"></div>');
+          $("body").addClass("modal-open");
+        }
+
+        // Helper function to close modal
+        const closeModal = function () {
+          $modal
+            .removeClass("in")
+            .css("display", "none")
+            .attr("aria-hidden", "true");
+          $(".modal-backdrop").remove();
+          $("body").removeClass("modal-open");
+          $modal.trigger("hidden.bs.modal");
+        };
+
+        // Bind close handlers (unbind first to prevent duplicates)
+        $modal
+          .find('[data-dismiss="modal"]')
+          .off("click.mjcmodal")
+          .on("click.mjcmodal", closeModal);
+
+        // Also close on backdrop click
+        $modal.off("click.mjcmodal").on("click.mjcmodal", function (e) {
+          if ($(e.target).is($modal)) {
+            closeModal();
+          }
+        });
+
+        // Close on escape key
+        $(document)
+          .off("keydown.mjcmodal")
+          .on("keydown.mjcmodal", function (e) {
+            if (e.keyCode === 27) {
+              // Escape
+              closeModal();
+              $(document).off("keydown.mjcmodal");
+            }
+          });
       },
     });
   }
@@ -1340,6 +1429,21 @@ function draw_priority_set_table(self, container, priority_groups) {
           hidden:
             self.isMJCNetwork &&
             self.MJCVariables.mjcCurrentSizeEnabled === false,
+        },
+        {
+          value: "Size (mine)",
+          width: 100,
+          sort: "value",
+          help: "Number of nodes from your jurisdiction in this cluster",
+          hidden: (function () {
+            console.log(
+              "Size (mine) column - isMJCNetwork:",
+              self.isMJCNetwork,
+              "hidden:",
+              !self.isMJCNetwork
+            );
+            return !self.isMJCNetwork;
+          })(),
         },
         {
           value: "Priority",
@@ -1491,8 +1595,11 @@ function draw_priority_set_table(self, container, priority_groups) {
         },
         {
           // size / new nodes
+          // For MJC networks, use pg.nodes.length since node_objects only contains local nodes
           value: [
-            self.unique_entity_list(pg.node_objects).length,
+            self.isMJCNetwork
+              ? pg.nodes.length
+              : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
               .mapObject((v) =>
@@ -1529,6 +1636,12 @@ function draw_priority_set_table(self, container, priority_groups) {
           hidden:
             self.isMJCNetwork &&
             self.MJCVariables.mjcCurrentSizeEnabled === false,
+        },
+        {
+          // size in my jurisdiction (MJC only)
+          width: 100,
+          value: pg.size_in_jurisdiction || 0,
+          hidden: !self.isMJCNetwork,
         },
         {
           // meets priority definition
@@ -1705,7 +1818,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       }
       this_row[1].actions = _.flatten(this_row[1].actions);
       //console.log (this_row[0]);
-      if (pg.not_in_network.length) {
+      if (pg.not_in_network && pg.not_in_network.length) {
         this_row[2]["actions"] = [
           {
             text: String(pg.not_in_network.length) + " removed",

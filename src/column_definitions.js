@@ -111,6 +111,7 @@ function secure_hiv_trace_subcluster_columns(self) {
           actions: function (item, value) {
             if (
               !clustersOfInterest.get_editor() ||
+              !cluster.recent_nodes ||
               cluster.recent_nodes.length === 0
             ) {
               return null;
@@ -191,7 +192,7 @@ function secure_hiv_trace_subcluster_columns(self) {
         definition["actions"] = function (item, value) {
           let result = [];
 
-          if (cluster.priority_score.length > 0) {
+          if (cluster.priority_score && cluster.priority_score.length > 0) {
             result = result.concat(
               _.map(cluster.priority_score, (c) => ({
                 icon: "fa-question",
