@@ -1871,7 +1871,7 @@ function draw_priority_set_table(self, container, priority_groups) {
               ? ""
               : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'
           }
-          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV">Export to CSV</button>`,
+          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV"><i class="fa fa-download"></i> Export Nodes to CSV</button>`,
       get_editor()
     );
 
