@@ -1512,6 +1512,10 @@ function draw_priority_set_table(self, container, priority_groups) {
 
     var rows = [];
     _.each(priority_groups, (pg) => {
+      // Ensure overlap object exists with default values
+      if (!pg.overlap) {
+        pg.overlap = { sets: 0, nodes: 0, duplicate: [], superset: [] };
+      }
       var this_row = [
         {
           // created by icon

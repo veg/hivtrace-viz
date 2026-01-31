@@ -2442,7 +2442,7 @@ class HIVTxNetwork {
 
     //console.time ("SUBS");
     this._aux_populate_category_menus();
-    if (this._is_CDC_) {
+    if (this._is_CDC_ && !this.isMJCNetwork) {
       this.define_node_search_table();
     }
 

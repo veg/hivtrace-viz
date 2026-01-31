@@ -8774,7 +8774,7 @@ var hivtrace_cluster_network_graph = function (
     self.annotate_multiple_clusters_on_nodes();
   }
 
-  if (self._is_CDC_) {
+  if (self._is_CDC_ && !self.isMJCNetwork) {
     self.define_node_search_table();
   }
 
