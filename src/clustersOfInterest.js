@@ -1124,7 +1124,7 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
 function _action_drop_down(self, pg) {
   let dropdown = [];
 
-  if (!self.isMJCNetwork) {
+  if (!self.isMJCNetwork || self.fullMJCNetwork) {
     const viewClusterOptions = _.flatten([
       _.map([self.subcluster_threshold, 0.015], (threshold) => {
         let items = [
@@ -1276,7 +1276,7 @@ function draw_priority_set_table(self, container, priority_groups) {
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
     self.priority_groups_compute_node_membership();
-    if (self.isMJCNetwork) {
+    if (self.isMJCNetwork && !self.fullMJCNetwork) {
       // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.own_defined_priority_groups)
       self.priority_groups_compute_overlap_mjc(self.defined_priority_groups, self.own_defined_priority_groups);
     } else {
@@ -1291,7 +1291,6 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
           help: "How was this cluster of interest created",
           width: 50,
-          hidden: self.isMJCNetwork,
         },
         {
           value: "Name",
@@ -1331,7 +1330,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             return 0;
           },
           help: "Number of nodes in the cluster of interest",
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
           value: "Priority",
@@ -1402,8 +1401,12 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: pg.createdBy,
           html: true,
           width: 50,
-          format: (value) =>
-            pg.createdBy === kGlobals.CDCCOICreatedBySystem
+          format: (value) => {
+            if (self.isMJCNetwork) {
+              return "<i class='fa fa-2x fa-globe' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+            }
+
+            return pg.createdBy === kGlobals.CDCCOICreatedBySystem
               ? '<i class="fa fa-2x fa-desktop" title="' +
               kGlobals.CDCCOICreatedBySystem +
               '" data-text-export=' +
@@ -1413,8 +1416,8 @@ function draw_priority_set_table(self, container, priority_groups) {
               kGlobals.CDCCOICreatedManually +
               '" data-text-export=' +
               kGlobals.CDCCOICreatedManually +
-              "></i>",
-          hidden: self.isMJCNetwork,
+              "></i>";
+          }
         },
         {
           // name
@@ -1498,6 +1501,9 @@ function draw_priority_set_table(self, container, priority_groups) {
           ],
           width: 100,
           format: function (v) {
+            if (self.isMJCNetwork && !self.fullMJCNetwork) {
+              return "REDACTED";
+            }
             //console.log (pg);
             if (v) {
               return (
@@ -1512,7 +1518,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
+          // hidden: self.isMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
           // meets priority definition
@@ -1523,7 +1529,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         {
           width: 100,
           // TODO: actually redact the data on the backend
-          value: (self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false) ? "REDACTED" : pg.cluster_dx_recent12_mo,
+          value: (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false) ? "REDACTED" : pg.cluster_dx_recent12_mo,
           // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
