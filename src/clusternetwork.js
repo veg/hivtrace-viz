@@ -6615,7 +6615,7 @@ var hivtrace_cluster_network_graph = function (
       }*/
     }
 
-    if (self.isMJCNetwork) {
+    if (self.isMJCNetwork && !self.fullMJCNetwork) {
       return;
     }
 
