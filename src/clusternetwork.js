@@ -8698,8 +8698,8 @@ var hivtrace_cluster_network_graph = function (
     if (options["priority-sets-url"]) {
       const is_writeable = options["is-writeable"];
       //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI, 
-      // while self.own_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the MJCloadOwnPrioritySets callback)
-      self.MJCloadOwnPrioritySets(options, () => self.load_priority_sets(options["priority-sets-url"], is_writeable));
+      // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
+      self.loadOverlapPrioritySets(options, () => self.load_priority_sets(options["priority-sets-url"], is_writeable));
     }
 
     if (self.showing_diff) {

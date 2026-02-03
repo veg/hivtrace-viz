@@ -902,23 +902,23 @@ class HIVTxNetwork {
     });
   };
 
-  priority_groups_compute_overlap_mjc = (mjc_groups, own_groups) => {
+  priority_groups_compute_overlap_mjc = (mjc_groups, overlap_groups) => {
     this.priority_node_overlap = {};
 
-    if (!mjc_groups || !own_groups) {
+    if (!mjc_groups || !overlap_groups) {
       return;
     }
 
     // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
     var size_by_pg = {};
 
-    // Also keep sizes for own_groups for superset/duplicate checks
-    var size_by_own = {};
+    // Also keep sizes for overlap_groups for superset/duplicate checks
+    var size_by_overlap = {};
 
-    // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
-    _.each(own_groups, (pg) => {
+    // 1) Build priority_node_overlap from overlap_groups (entity => Set of overlap PG names)
+    _.each(overlap_groups, (pg) => {
       const ents = this.aggregate_indvidual_level_records(pg.nodes);
-      size_by_own[pg.name] = ents.length;
+      size_by_overlap[pg.name] = ents.length;
 
       _.each(ents, (n) => {
         const entity_id = this.entity_id(n);
@@ -929,7 +929,7 @@ class HIVTxNetwork {
       });
     });
 
-    // 3) For each mjc group, compute overlap only considering nodes that are present in own_groups
+    // 3) For each mjc group, compute overlap only considering nodes that are present in overlap_groups
     _.each(mjc_groups, (pg) => {
       const overlap = {
         sets: new Set(),
@@ -942,29 +942,29 @@ class HIVTxNetwork {
       _.each(pg.nodes, (n) => {
         const entity_id = this.entity_id(n);
 
-        // Only care about nodes in mjc_groups that are present in own_groups
+        // Only care about nodes in mjc_groups that are present in overlap_groups
         if (entity_id in this.priority_node_overlap && this.priority_node_overlap[entity_id].size > 0) {
           overlap.nodes++;
-          this.priority_node_overlap[entity_id].forEach((own_pg_name) => {
-            // Collect counts per owning PG (these are names from own_groups)
-            if (!(own_pg_name in by_set_count)) {
-              by_set_count[own_pg_name] = [];
+          this.priority_node_overlap[entity_id].forEach((overlap_pg_name) => {
+            // Collect counts per PG (these are names from overlap_groups)
+            if (!(overlap_pg_name in by_set_count)) {
+              by_set_count[overlap_pg_name] = [];
             }
-            by_set_count[own_pg_name].push(entity_id);
+            by_set_count[overlap_pg_name].push(entity_id);
 
-            overlap.sets.add(own_pg_name);
+            overlap.sets.add(overlap_pg_name);
           });
         }
       });
 
-      // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
+      // Determine supersets/duplicates: if an overlap_group contains ALL entities of this mjc_group (within our intersection),
       // then it's either a superset or a duplicate (same size).
-      _.each(by_set_count, (nodes, own_name) => {
+      _.each(by_set_count, (nodes, overlap_name) => {
         if (nodes.length == size_by_pg[pg.name]) {
-          if (size_by_own[own_name] == size_by_pg[pg.name]) {
-            overlap.duplicates.push(own_name);
+          if (size_by_overlap[overlap_name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(overlap_name);
           } else {
-            overlap.supersets.push(own_name);
+            overlap.supersets.push(overlap_name);
           }
         }
       });
@@ -972,7 +972,7 @@ class HIVTxNetwork {
       // assign overlap summary to the mjc group
       pg.overlap = {
         nodes: overlap.nodes,
-        // sets = number of distinct own_groups that share nodes with this mjc_group
+        // sets = number of distinct overlap_groups that share nodes with this mjc_group
         sets: overlap.sets.size,
         superset: overlap.supersets,
         duplicate: overlap.duplicates,
@@ -2636,11 +2636,11 @@ class HIVTxNetwork {
     });
   }
 
-  MJCloadOwnPrioritySets(options, callback) {
-    if (this.isMJCNetwork && options["own-priority-sets-url"]) {
-      this.own_priority_set_url = options["own-priority-sets-url"];
-      this.fetch_priority_sets(this.own_priority_set_url, (results) => {
-        this.own_defined_priority_groups = results;
+  loadOverlapPrioritySets(options, callback) {
+    if (options["overlap-priority-sets-url"]) {
+      this.overlap_priority_set_url = options["overlap-priority-sets-url"];
+      this.fetch_priority_sets(this.overlap_priority_set_url, (results) => {
+        this.overlap_defined_priority_groups = results;
         callback();
       });
     } else {

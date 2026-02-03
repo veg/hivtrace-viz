@@ -1264,8 +1264,8 @@ function _action_drop_down(self, pg) {
 
 /**
  * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views). 
- * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.own_defined_priority_groups is the jurisdiction's ClusterOI.
-
+ * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
+ * For the case of ClusterOI, we assume that self.defined_priority_groups is regular ClusterOI and self.overlap_defined_priority_groups is MJ ClusterOI (if any).
  * @param {Object} self - The main network visualization object.
  * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
  * @param {Array} priority_groups - An array of objects representing the priority sets (optional).
@@ -1277,8 +1277,8 @@ function draw_priority_set_table(self, container, priority_groups) {
     priority_groups = priority_groups || self.defined_priority_groups;
     self.priority_groups_compute_node_membership();
     if (self.isMJCNetwork && !self.fullMJCNetwork) {
-      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.own_defined_priority_groups)
-      self.priority_groups_compute_overlap_mjc(self.defined_priority_groups, self.own_defined_priority_groups);
+      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
+      self.priority_groups_compute_overlap_mjc(self.defined_priority_groups, self.overlap_defined_priority_groups);
     } else {
       self.priority_groups_compute_overlap(priority_groups);
     }
@@ -1296,7 +1296,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: "Name",
           sort: "value",
           filter: true,
-          width: 325,
+          width: self.isMJCNetwork ? 325 : 200,
           text_wrap: true,
           help: "Cluster of interest name",
           // hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
@@ -1347,7 +1347,20 @@ function draw_priority_set_table(self, container, priority_groups) {
           // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
-          value: self.isMJCNetwork ? "My ClusterOI Overlap Count" : "Overlap",
+          value: "Overlap",
+          width: 140,
+          sort: function (c) {
+            c = c.value;
+            if (c) {
+              return c[1];
+            }
+            return 0;
+          },
+          help: "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
+          hidden: self.isMJCNetwork,
+        },
+        {
+          value: self.isMJCNetwork ? "My ClusterOI Overlap Count" : "MJ ClusterOI Overlap Count",
           width: 140,
           sort: function (c) {
             c = c.value;
@@ -1357,9 +1370,9 @@ function draw_priority_set_table(self, container, priority_groups) {
             return 0;
           },
           help: self.isMJCNetwork ?
-            "How many of my jurisdiction's ClusterOI have overlapping nodes with this MJ ClusterOI?" :
-            "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
-        },
+            "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?" :
+            "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+        }
         /*,
           {
             value: "Cluster",
@@ -1422,7 +1435,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         {
           // name
           value: self.cleanRedacted(pg.name),
-          width: 325,
+          width: self.isMJCNetwork ? 325 : 200,
           help:
             pg.description +
             (pg.pending ? " (new, pending confirmation)" : "") +
@@ -1532,6 +1545,66 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false) ? "REDACTED" : pg.cluster_dx_recent12_mo,
           // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
+        {
+          width: 140,
+          value: [
+            pg.overlap.sets,
+            pg.overlap.nodes,
+            pg.overlap.duplicate,
+            pg.overlap.superset,
+          ],
+          format: function (v) {
+            if (v) {
+              return (
+                String(v[0]) +
+                (v[1]
+                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
+                  v[1] +
+                  " persons</span>"
+                  : "") +
+                (v[2].length
+                  ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
+                  v[2].join(", ") +
+                  '" class="label label-danger pull-right">' +
+                  v[2].length +
+                  " duplicate clusterOI</span>"
+                  : "") +
+                (v[3].length
+                  ? ' <span title="clusterOIs which contain this clusterOI: ' +
+                  v[3].join(", ") +
+                  '" class="label label-warning pull-right">Fully contained in ' +
+                  v[3].length +
+                  " clusterOI</span>"
+                  : "")
+              );
+            }
+            return "N/A";
+          },
+          html: true,
+          actions:
+            pg.overlap.sets === 0
+              ? []
+              : [
+                {
+                  icon: "fa-eye",
+                  dropdown: [
+                    {
+                      label: "List overlaps",
+                      data: {
+                        toggle: "modal",
+                        target:
+                          misc.get_ui_element_selector_by_role(
+                            "overlap_list"
+                          ),
+                        priority_set: pg.name,
+                      },
+                    },
+                  ],
+                },
+              ],
+          hidden: self.isMJCNetwork,
+        },
+        // MJC Overlap column
         {
           width: 140,
           value: [
