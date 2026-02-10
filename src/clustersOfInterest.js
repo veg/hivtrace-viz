@@ -1467,7 +1467,7 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
 
     var rows = [];
     _.each(priority_groups, (pg) => {
-      const mjc_pg = self.isMJCNetwork ? pg : self.overlap_defined_priority_groups.find((p) => p.name === pg.name);
+      const mjc_pg = self.isMJCNetwork ? self.overlap_defined_priority_groups.find((p) => p.name === pg.name) : pg;
       var this_row = [
         {
           // created by icon
