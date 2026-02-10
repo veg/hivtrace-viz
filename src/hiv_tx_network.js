@@ -40,7 +40,7 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
-        if (this.isMJCNetwork && !node.id) {
+        if (!node.id) {
           return node.name;
         }
         const i = node.id.indexOf("|");
@@ -902,8 +902,8 @@ class HIVTxNetwork {
     });
   };
 
-  priority_groups_compute_overlap_mjc = (mjc_groups, overlap_groups) => {
-    this.priority_node_overlap = {};
+  priority_groups_compute_overlap_mjc = (mjc_groups, overlap_groups, output_key) => {
+    this[output_key] = {};
 
     if (!mjc_groups || !overlap_groups) {
       return;
@@ -915,21 +915,21 @@ class HIVTxNetwork {
     // Also keep sizes for overlap_groups for superset/duplicate checks
     var size_by_overlap = {};
 
-    // 1) Build priority_node_overlap from overlap_groups (entity => Set of overlap PG names)
+    // Build this[output_key] from overlap_groups (entity => Set of overlap PG names)
     _.each(overlap_groups, (pg) => {
       const ents = this.aggregate_indvidual_level_records(pg.nodes);
       size_by_overlap[pg.name] = ents.length;
 
       _.each(ents, (n) => {
         const entity_id = this.entity_id(n);
-        if (!(entity_id in this.priority_node_overlap)) {
-          this.priority_node_overlap[entity_id] = new Set();
+        if (!(entity_id in this[output_key])) {
+          this[output_key][entity_id] = new Set();
         }
-        this.priority_node_overlap[entity_id].add(pg.name);
+        this[output_key][entity_id].add(pg.name);
       });
     });
 
-    // 3) For each mjc group, compute overlap only considering nodes that are present in overlap_groups
+    // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
     _.each(mjc_groups, (pg) => {
       const overlap = {
         sets: new Set(),
@@ -943,9 +943,9 @@ class HIVTxNetwork {
         const entity_id = this.entity_id(n);
 
         // Only care about nodes in mjc_groups that are present in overlap_groups
-        if (entity_id in this.priority_node_overlap && this.priority_node_overlap[entity_id].size > 0) {
+        if (entity_id in this[output_key] && this[output_key][entity_id].size > 1) {
           overlap.nodes++;
-          this.priority_node_overlap[entity_id].forEach((overlap_pg_name) => {
+          this[output_key][entity_id].forEach((overlap_pg_name) => {
             // Collect counts per PG (these are names from overlap_groups)
             if (!(overlap_pg_name in by_set_count)) {
               by_set_count[overlap_pg_name] = [];
@@ -2626,6 +2626,7 @@ class HIVTxNetwork {
       });
 
       clustersOfInterest.draw_priority_set_table(this);
+      clustersOfInterest.draw_priority_set_table(this, null, null, true); // null just uses defaults (for archived MJ clusterOI)
       if (
         this.showing_diff &&
         this.has_network_attribute("subcluster_or_priority_node")
@@ -2646,6 +2647,44 @@ class HIVTxNetwork {
     } else {
       callback();
     }
+  }
+
+  priority_groups_archive_mjc_set(name, archived) {
+    // currently only for MJC networks
+    if (!this.isMJCNetwork) {
+      return;
+    }
+    const pg = _.find(this.defined_priority_groups, (pg) => pg.name === name);
+    if (!pg) {
+      console.warn("Could not find priority group with name " + name);
+      return;
+    }
+
+    pg.archived = archived;
+
+    fetch(this.mjc_archive_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: pg.name,
+        archived: pg.archived,
+      }),
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(
+          "Network response was not ok: " + response.statusText
+        );
+      }
+      return response.json();
+    })
+    .then((data) => {
+      clustersOfInterest.draw_priority_set_table(this);
+      clustersOfInterest.draw_priority_set_table(this, null, null, true);
+
+    });
   }
 
     /**  add an attribute description

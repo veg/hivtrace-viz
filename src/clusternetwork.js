@@ -168,12 +168,20 @@ var hivtrace_cluster_network_graph = function (
       options,
       "priority-table"
     );
+    self.priority_set_archive_table = network.check_network_option(
+      options,
+      "priority-table-archive"
+    );
     self.priority_set_table_write = network.check_network_option(
       options,
       "priority-table-writeback"
     );
-    if (self.priority_set_table)
+    if (self.priority_set_table) {
       self.priority_set_table = d3.select(self.priority_set_table);
+    }
+    if (self.priority_set_archive_table) {
+      self.priority_set_archive_table = d3.select(self.priority_set_archive_table);
+    }
   } else {
     self.priority_set_table = null;
     self.priority_set_table_write = null;
@@ -2337,6 +2345,7 @@ var hivtrace_cluster_network_graph = function (
         (event) => {
           var link_clicked = $(event.relatedTarget);
           var priority_list = link_clicked.data("priority_set");
+          var use_mjc_overlap_list = link_clicked.data("use_mjc_overlap_list");
 
           var modal = d3.select(
             self.get_ui_element_selector_by_role("overlap_list", true)
@@ -2344,13 +2353,16 @@ var hivtrace_cluster_network_graph = function (
           modal
             .selectAll(".modal-title")
             .text(
-              "View how nodes in cluster of interest " +
+              "View how nodes in " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI " +
               priority_list +
-              (self.isMJCNetwork ? " overlap with your jurisdiction's clusterOI" : " overlap with other clusterOI")
+              (self.isMJCNetwork ? " overlap with your jurisdiction's clusterOI" : 
+                use_mjc_overlap_list ? " overlap with MJ clusterOI" : " overlap with other clusterOI")
             );
 
-          const ps = self.priority_groups_find_by_name(priority_list);
-          if (!(ps && self.priority_node_overlap)) return;
+          const ps = use_mjc_overlap_list ? self.overlap_defined_priority_groups.find((pg) => pg.name === priority_list) : self.priority_groups_find_by_name(priority_list);
+          if (!ps) return;
+          if (!use_mjc_overlap_list && !self.priority_node_overlap) return;
+          if (use_mjc_overlap_list && !self.priority_node_overlap_mjc) return;
 
           var headers = [
             [
@@ -2373,10 +2385,13 @@ var hivtrace_cluster_network_graph = function (
           ];
 
           _.each(
-            self.aggregate_indvidual_level_records(ps.node_objects),
+            self.aggregate_indvidual_level_records(use_mjc_overlap_list ? ps.nodes : ps.node_objects),
             (n) => {
               const eid = self.entity_id(n);
-              const overlap = self.priority_node_overlap[eid];
+              if (eid.includes("REDACTED")) {
+                return;
+              }
+              const overlap = use_mjc_overlap_list && !self.isMJCNetwork ? self.priority_node_overlap_mjc[eid] : self.priority_node_overlap[eid];
               let other_sets = "None";
               if (overlap && overlap.size > 1) {
                 other_sets = _.sortBy(
@@ -4015,6 +4030,9 @@ var hivtrace_cluster_network_graph = function (
     );
     if (self.priority_set_table) {
       self.update_volatile_elements(self.priority_set_table);
+    }
+    if (self.priority_set_archive_table) {
+      self.update_volatile_elements(self.priority_set_archive_table);
     }
   };
 
@@ -8700,6 +8718,10 @@ var hivtrace_cluster_network_graph = function (
       //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI, 
       // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
       self.loadOverlapPrioritySets(options, () => self.load_priority_sets(options["priority-sets-url"], is_writeable));
+    }
+
+    if (options["mjc-archive-url"]) {
+      self.mjc_archive_url = options["mjc-archive-url"];
     }
 
     if (self.showing_diff) {
