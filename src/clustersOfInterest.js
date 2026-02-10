@@ -1431,6 +1431,7 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           help: self.isMJCNetwork ?
             "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?" :
             "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+            hidden: !self.isMJCNetwork || !self.overlap_defined_priority_groups,
         }
         /*,
           {
@@ -1467,7 +1468,7 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
 
     var rows = [];
     _.each(priority_groups, (pg) => {
-      const mjc_pg = self.isMJCNetwork ? self.overlap_defined_priority_groups.find((p) => p.name === pg.name) : pg;
+      const mjc_pg = self.isMJCNetwork ? pg : self.overlap_defined_priority_groups?.find((p) => p.name === pg.name);
       var this_row = [
         {
           // created by icon
@@ -1705,9 +1706,12 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
               ],
           hidden: self.isMJCNetwork,
         },
-        // MJC Overlap column 
-        // TODO: need to modify text accordingly
-        {
+      ];
+
+      // MJC Overlap column 
+      // TODO: need to modify text accordingly  
+      if (mjc_pg) {
+        this_row.push({
           width: 140,
           value: [
             mjc_pg.overlap.sets,
@@ -1765,8 +1769,8 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
                   ],
                 },
               ],
-        },
-      ];
+        });
+      }
 
       if (self._is_CDC_auto_mode) {
         this_row.splice(3, 0, {
