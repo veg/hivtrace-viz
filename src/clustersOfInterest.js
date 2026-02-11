@@ -1260,8 +1260,8 @@ function _action_drop_down(self, pg) {
               site_pg_name,
               copied_node_objects,
               "A copy of " + pg.name + " that contains site sequences only.",
-              "01 state/local molecular cluster analysis",
-              "05. Do not add cases to this cluster of interest. I do not want to monitor growth in this cluster of interest over time."
+              "02 national molecular cluster analysis",
+              pg.tracking
             );
           }
         }
