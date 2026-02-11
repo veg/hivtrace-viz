@@ -40,14 +40,12 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
-        if (!node.id) {
-          return node.name;
-        }
-        const i = node.id.indexOf("|");
+        const key = node.id || node.name || "";
+        const i = key.indexOf("|");
         if (i >= 0) {
-          return node.id.substr(0, i);
+          return key.substr(0, i);
         }
-        return node.id;
+        return key;
       };
 
     this.tabulate_multiple_sequences();
@@ -902,14 +900,14 @@ class HIVTxNetwork {
     });
   };
 
-  priority_groups_compute_overlap_mjc = (mjc_groups, overlap_groups, output_key) => {
+  priority_groups_compute_overlap_mjc = (defined_groups, overlap_groups, output_key, group_key) => {
     this[output_key] = {};
 
-    if (!mjc_groups || !overlap_groups) {
+    if (!defined_groups || !overlap_groups) {
       return;
     }
 
-    // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
+    // Build a map of entity lists & sizes for defined_groups
     var size_by_pg = {};
 
     // Also keep sizes for overlap_groups for superset/duplicate checks
@@ -930,7 +928,7 @@ class HIVTxNetwork {
     });
 
     // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
-    _.each(mjc_groups, (pg) => {
+    _.each(defined_groups, (pg) => {
       const overlap = {
         sets: new Set(),
         nodes: 0,
@@ -942,7 +940,7 @@ class HIVTxNetwork {
       _.each(pg.nodes, (n) => {
         const entity_id = this.entity_id(n);
 
-        // Only care about nodes in mjc_groups that are present in overlap_groups
+        // Only care about nodes in defined_groups that are present in overlap_groups
         if (entity_id in this[output_key] && this[output_key][entity_id].size > 1) {
           overlap.nodes++;
           this[output_key][entity_id].forEach((overlap_pg_name) => {
@@ -970,7 +968,7 @@ class HIVTxNetwork {
       });
 
       // assign overlap summary to the mjc group
-      pg.overlap = {
+      pg[group_key] = {
         nodes: overlap.nodes,
         // sets = number of distinct overlap_groups that share nodes with this mjc_group
         sets: overlap.sets.size,
@@ -1331,6 +1329,39 @@ class HIVTxNetwork {
       }
     }
   };
+
+  /**
+   * 
+   */
+  priority_groups_add_from_mjc = function (name, node_ids, description, kind, tracking) {
+    fetch(this.priority_set_add_from_mjc_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: name,
+        node_ids: node_ids,
+        description: description,
+        kind: kind,
+        tracking: tracking,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        alert("ClusterOI '" + name + "' added successfully from MJC.");
+      })
+      .catch((error) => {
+        console.error("Error adding ClusterOI from MJC:", error);
+        alert("Error adding ClusterOI from MJC. Please try again later.");
+      }
+    )
+  }
 
   /**
         A function that updates the "freehand" description
@@ -2637,9 +2668,9 @@ class HIVTxNetwork {
     });
   }
 
-  loadOverlapPrioritySets(options, callback) {
-    if (options["overlap-priority-sets-url"]) {
-      this.overlap_priority_set_url = options["overlap-priority-sets-url"];
+  loadOverlapPrioritySets(overlap_priority_sets_url, callback) {
+    if (overlap_priority_sets_url) {
+      this.overlap_priority_set_url = overlap_priority_sets_url;
       this.fetch_priority_sets(this.overlap_priority_set_url, (results) => {
         this.overlap_defined_priority_groups = results;
         callback();
@@ -2683,7 +2714,6 @@ class HIVTxNetwork {
     .then((data) => {
       clustersOfInterest.draw_priority_set_table(this);
       clustersOfInterest.draw_priority_set_table(this, null, null, true);
-
     });
   }
 

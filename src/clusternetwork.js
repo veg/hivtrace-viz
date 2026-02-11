@@ -2359,7 +2359,7 @@ var hivtrace_cluster_network_graph = function (
                 use_mjc_overlap_list ? " overlap with MJ clusterOI" : " overlap with other clusterOI")
             );
 
-          const ps = use_mjc_overlap_list ? self.overlap_defined_priority_groups.find((pg) => pg.name === priority_list) : self.priority_groups_find_by_name(priority_list);
+          const ps = self.priority_groups_find_by_name(priority_list);
           if (!ps) return;
           if (!use_mjc_overlap_list && !self.priority_node_overlap) return;
           if (use_mjc_overlap_list && !self.priority_node_overlap_mjc) return;
@@ -2391,7 +2391,7 @@ var hivtrace_cluster_network_graph = function (
               if (eid.includes("REDACTED")) {
                 return;
               }
-              const overlap = use_mjc_overlap_list && !self.isMJCNetwork ? self.priority_node_overlap_mjc[eid] : self.priority_node_overlap[eid];
+              const overlap = (use_mjc_overlap_list && !self.isMJCNetwork) ? self.priority_node_overlap_mjc[eid] : self.priority_node_overlap[eid];
               let other_sets = "None";
               if (overlap && overlap.size > 1) {
                 other_sets = _.sortBy(
@@ -8717,7 +8717,11 @@ var hivtrace_cluster_network_graph = function (
       const is_writeable = options["is-writeable"];
       //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI, 
       // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
-      self.loadOverlapPrioritySets(options, () => self.load_priority_sets(options["priority-sets-url"], is_writeable));
+      self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], () => self.load_priority_sets(options["priority-sets-url"], is_writeable));
+    }
+
+    if (options["priority-set-add-from-mjc-url"]) {
+      self.priority_set_add_from_mjc_url = options["priority-set-add-from-mjc-url"];
     }
 
     if (options["mjc-archive-url"]) {
