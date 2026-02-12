@@ -800,7 +800,15 @@ class HIVTxNetwork {
   /** lookup a CoI by name; null if not found */
   priority_groups_find_by_name = function (name) {
     if (this.defined_priority_groups) {
-      return _.find(this.defined_priority_groups, (g) => g.name === name);
+      const result = _.find(
+        this.defined_priority_groups,
+        (g) => g.name === name
+      );
+      if (result) return result;
+    }
+    // For MJC networks, also check own_defined_priority_groups
+    if (this.isMJCNetwork && this.own_defined_priority_groups) {
+      return _.find(this.own_defined_priority_groups, (g) => g.name === name);
     }
     return null;
   };
@@ -1358,7 +1366,27 @@ class HIVTxNetwork {
     let pg_to_update = this.priority_groups_find_by_name(name);
     if (pg_to_update) {
       pg_to_update.description = description;
-      this.priority_groups_update_node_sets(name, "update");
+
+      // For MJC networks, use MJC-specific endpoint
+      if (this.isMJCNetwork && this.mjcUUID) {
+        const url = `/mjc/results/${
+          this.mjcUUID
+        }/clusteroi/${encodeURIComponent(name)}/description`;
+        d3.text(url)
+          .header("Content-Type", "application/json")
+          .send(
+            "PUT",
+            JSON.stringify({ description: description }),
+            (error, data) => {
+              if (error) {
+                console.error("Error saving MJC ClusterOI description:", error);
+              }
+            }
+          );
+      } else {
+        this.priority_groups_update_node_sets(name, "update");
+      }
+
       if (update_table) {
         clustersOfInterest.draw_priority_set_table(this);
       }
@@ -2604,7 +2632,8 @@ class HIVTxNetwork {
         true
       );
 
-      if (!this.priority_set_table_writeable) {
+      // Skip read-only warning for MJC networks (they are read-only by design)
+      if (!this.priority_set_table_writeable && !this.isMJCNetwork) {
         const rationale =
           is_writeable === "old"
             ? "the network is <b>older</b> than some of the Clusters of Interest"

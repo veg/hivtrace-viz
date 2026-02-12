@@ -84,7 +84,7 @@ var hivtrace_cluster_network_graph = function (
 
   /** Not primary networks are individual cluster/subcluster views.
       They don't interfere with the primary network object, and UI elements
-  
+
    */
 
   const izPrimaryGraph = network.check_network_option(
@@ -99,6 +99,7 @@ var hivtrace_cluster_network_graph = function (
   self.process_multiple_sequences();
 
   self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
+  self.mjcUUID = self.isMJCNetwork ? options["mjc-uuid"] || null : null;
   self.MJCVariables = self.isMJCNetwork ? options["mjc-variables"] || {} : {};
 
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
@@ -171,8 +172,9 @@ var hivtrace_cluster_network_graph = function (
       options,
       "priority-table-writeback"
     );
-    if (self.priority_set_table)
+    if (self.priority_set_table) {
       self.priority_set_table = d3.select(self.priority_set_table);
+    }
   } else {
     self.priority_set_table = null;
     self.priority_set_table_write = null;
@@ -190,7 +192,7 @@ var hivtrace_cluster_network_graph = function (
     options["init_code"].call(null, self, options);
   }
 
-  /** Whenever the code creates a DOM element, it will be done using this prefix 
+  /** Whenever the code creates a DOM element, it will be done using this prefix
       to generate element IDs
    */
 
@@ -202,7 +204,7 @@ var hivtrace_cluster_network_graph = function (
 
   /** Retrieve additional columns (as dict, see comments further down in the code)
       for the "clusters" table
-  
+
    */
   self.extra_cluster_table_columns = network.check_network_option(
     options,
@@ -588,7 +590,7 @@ var hivtrace_cluster_network_graph = function (
 
     if (self.has_multiple_sequences) {
       /**
-            20241030 SLKP 
+            20241030 SLKP
             Perform a greedy collapse of all the sequences that map to the same primary key
             For a reduced cluster view
         */
@@ -1235,8 +1237,9 @@ var hivtrace_cluster_network_graph = function (
       custom_name || "Subcluster " + cluster.cluster_id,
       view_sub_options
     );
-    if (!view_sub_options.skip_recent_rapid)
+    if (!view_sub_options.skip_recent_rapid) {
       cluster_view.handle_attribute_categorical("subcluster_or_priority_node");
+    }
     return cluster_view;
 
     /*var selector =
@@ -1290,7 +1293,7 @@ var hivtrace_cluster_network_graph = function (
     recent_months,
     start_date
   ) {
-    /* 
+    /*
         values for priority_flag
             0: 0.5% subcluster
             1: last 12 months NOT in a priority cluster
@@ -1301,11 +1304,11 @@ var hivtrace_cluster_network_graph = function (
             5: date present but is between 1900 and start_date
             6: date missing
             7: in 0.5% cluster 12<dx<36 months but not a CoI
-            
-            
+
+
         SLKP 20221128:
             Add a calculation for simple classification of priority clusters
-            
+
             0: not in a national priority CoI
             1: IN a national priority CoI ≤12 months
             2: IN a national priority CoI 12 - 36 months
@@ -1406,7 +1409,7 @@ var hivtrace_cluster_network_graph = function (
         /** all clusters with more than one member connected at 'threshold' edge length */
         /** 20241031 SLKP
             Here, if there's more than one sequence per entity,
-            additional filtering will take place to NOT retain 
+            additional filtering will take place to NOT retain
             sub-clusters that are comprised entirely of sequences from the same entity
         **/
 
@@ -2146,7 +2149,10 @@ var hivtrace_cluster_network_graph = function (
       if (priority_group) {
         cluster_nodes = self.priority_groups_find_by_name(priority_group);
         if (cluster_nodes) {
-          if (self.has_multiple_sequences) {
+          // For MJC networks, use nodes array directly since node_objects only contains local nodes
+          if (self.isMJCNetwork) {
+            cluster_nodes = cluster_nodes.nodes || [];
+          } else if (self.has_multiple_sequences) {
             cluster_nodes = self.aggregate_indvidual_level_records(
               cluster_nodes.node_objects
             );
@@ -2196,25 +2202,66 @@ var hivtrace_cluster_network_graph = function (
           });
         });
       } else {
-        _.each(cluster_nodes, (node) => {
-          var patient_record = the_list.append("li");
-          patient_record
-            .append("code")
-            .text(this.cleanRedacted(this.entity_id(node)));
-          var patient_list = patient_record
-            .append("dl")
-            .classed("dl-horizontal", true);
-          _.each(column_ids, (column) => {
-            patient_list
-              .append("dt")
-              .text(column.label || column.raw_attribute_key);
-            patient_list
-              .append("dd")
-              .text(
-                self.attribute_node_value_by_id(node, column.raw_attribute_key)
-              );
+        // For MJC networks, nodes have a simpler structure directly from the API
+        if (self.isMJCNetwork) {
+          const mjcFields = [
+            { key: "jurisdiction", label: "Jurisdiction" },
+            { key: "dx_date", label: "Diagnosis Date" },
+            { key: "added", label: "Date Added to MJ ClusterOI" },
+            { key: "dx_within_12mo", label: "Diagnosed in Last 12 Months" },
+          ];
+          _.each(cluster_nodes, (node) => {
+            var patient_record = the_list.append("li");
+            patient_record
+              .append("code")
+              .text(this.cleanRedacted(node.name || "Unknown"));
+            var patient_list = patient_record
+              .append("dl")
+              .classed("dl-horizontal", true);
+            _.each(mjcFields, (field) => {
+              let value = node[field.key];
+              // Format dates nicely
+              if (field.key.includes("date") || field.key === "added") {
+                try {
+                  value = value
+                    ? timeDateUtil.DateViewFormatExport(new Date(value))
+                    : "N/A";
+                } catch (e) {
+                  value = value || "N/A";
+                }
+              }
+              // Format boolean
+              if (typeof value === "boolean") {
+                value = value ? "Yes" : "No";
+              }
+              patient_list.append("dt").text(field.label);
+              patient_list.append("dd").text(value || "N/A");
+            });
           });
-        });
+        } else {
+          _.each(cluster_nodes, (node) => {
+            var patient_record = the_list.append("li");
+            patient_record
+              .append("code")
+              .text(this.cleanRedacted(this.entity_id(node)));
+            var patient_list = patient_record
+              .append("dl")
+              .classed("dl-horizontal", true);
+            _.each(column_ids, (column) => {
+              patient_list
+                .append("dt")
+                .text(column.label || column.raw_attribute_key);
+              patient_list
+                .append("dd")
+                .text(
+                  self.attribute_node_value_by_id(
+                    node,
+                    column.raw_attribute_key
+                  )
+                );
+            });
+          });
+        }
       }
     };
 
@@ -2256,9 +2303,28 @@ var hivtrace_cluster_network_graph = function (
       $(self.get_ui_element_selector_by_role("cluster_list", true)).on(
         "show.bs.modal",
         (event) => {
-          var link_clicked = $(event.relatedTarget);
-          var cluster_id = link_clicked.data("cluster");
-          var priority_list = link_clicked.data("priority_set");
+          var $modal = $(event.target);
+          var link_clicked = event.relatedTarget
+            ? $(event.relatedTarget)
+            : null;
+
+          // Try to get priority_set from relatedTarget first, then from modal data (for programmatic triggers)
+          var cluster_id = link_clicked ? link_clicked.data("cluster") : null;
+          var priority_list = link_clicked
+            ? link_clicked.data("priority_set")
+            : null;
+
+          // Fall back to modal data for programmatic triggers
+          if (!priority_list) {
+            priority_list = $modal.data("priority_set_trigger");
+          }
+
+          console.log(
+            "Modal show - priority_list:",
+            priority_list,
+            "cluster_id:",
+            cluster_id
+          );
 
           var modal = d3.select(
             self.get_ui_element_selector_by_role("cluster_list", true)
@@ -2571,9 +2637,12 @@ var hivtrace_cluster_network_graph = function (
       }
     );
 
-    if (button_bar_ui) {
+    // Setup cluster list view for both regular networks (with button bar) and MJC networks
+    if (button_bar_ui || self.isMJCNetwork) {
       self._setup_cluster_list_view();
+    }
 
+    if (button_bar_ui) {
       var cluster_ui_container = d3.select(
         self.get_ui_element_selector_by_role("cluster_operations_container")
       );
@@ -2789,12 +2858,13 @@ var hivtrace_cluster_network_graph = function (
         cluster_commands.push([
           "Add filtered objects to cluster of interest",
           function (item) {
-            if (clustersOfInterest.get_editor())
+            if (clustersOfInterest.get_editor()) {
               clustersOfInterest
                 .get_editor()
                 .append_node_objects(
                   _.filter(self.json["Nodes"], (n) => n.match_filter)
                 );
+            }
           },
           clustersOfInterest.get_editor,
           "hivtrace-add-filtered-to-panel",
@@ -3873,13 +3943,15 @@ var hivtrace_cluster_network_graph = function (
                 if (
                   _.isObject(e.source) &&
                   HTX.HIVTxNetwork.is_new_node(e.source)
-                )
+                ) {
                   return "Newly added";
+                }
                 if (
                   _.isObject(e.target) &&
                   HTX.HIVTxNetwork.is_new_node(e.target)
-                )
+                ) {
                   return "Newly added";
+                }
 
                 return e.attributes.indexOf("added-to-prior") >= 0
                   ? "Newly added"
@@ -8714,6 +8786,6 @@ var hivtrace_cluster_network_graph = function (
 };
 
 export {
-  hivtrace_cluster_network_graph as clusterNetwork,
   hivtrace_cluster_depthwise_traversal as computeCluster,
+  hivtrace_cluster_network_graph as clusterNetwork,
 };
