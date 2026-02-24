@@ -1246,7 +1246,7 @@ function _action_drop_down(self, pg) {
     dropdown.push({
       label: "Create site ClusterOI from this MJ ClusterOI",
       action: function (button, value) {
-        const site_pg_name = "MANUAL_SITE_COPY_" + pg.name;
+        const site_pg_name = "SITE_COPY_" + pg.name;
         if (confirm("Creating new cluster of interest '" + site_pg_name + "' for this MJ ClusterOI. Proceed?")) {
           let existing_pg = self.overlap_defined_priority_groups.find((pg) => pg.name === site_pg_name);
           if (existing_pg) {
