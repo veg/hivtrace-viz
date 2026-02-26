@@ -19,6 +19,9 @@ import "jQuery-QueryBuilder";
 import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
 import "bootstrap-datepicker"; // Keep datepicker import
 
+// Import network configuration helpers
+import { initializeNetworkSettings } from "./networkConfig";
+
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
 
@@ -98,23 +101,12 @@ var hivtrace_cluster_network_graph = function (
 
   self.process_multiple_sequences();
 
-  self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
-  self.mjcUUID = self.isMJCNetwork ? options["mjc-uuid"] || null : null;
-  self.MJCVariables = self.isMJCNetwork ? options["mjc-variables"] || {} : {};
-
-  self._is_CDC_ = options && options["no_cdc"] ? false : true;
-
-  self._is_seguro = network.check_network_option(
+  initializeNetworkSettings(
+    self,
     options,
-    "seguro",
-    false,
-    true
-  );
-
-  self._is_CDC_executive_mode = network.check_network_option(
-    options,
-    "cdc-executive-mode",
-    false
+    parent_container,
+    network_container,
+    network_warning_tag
   );
 
   self.uniqValues = helpers.getUniqueValues(
@@ -124,43 +116,8 @@ var hivtrace_cluster_network_graph = function (
 
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
-  self.schema = self.json[kGlobals.network.GraphAttrbuteID];
-  // set initial color schemes
-  self.networkColorScheme = kGlobals.PresetColorSchemes;
-  self.networkShapeScheme = kGlobals.PresetShapeSchemes;
-
-  self.ww = network.check_network_option(
-    options,
-    "width",
-    d3.select(parent_container).property("clientWidth")
-  );
-
-  self.margin = {
-    top: 20,
-    right: 10,
-    bottom: 30,
-    left: 10,
-  };
-  self.width = self.ww - self.margin.left - self.margin.right;
-  self.height = (self.width * 9) / 16;
-
-  self.container = network_container;
-  self.nodes = [];
-
-  self.edges = [];
-  self.clusters = [];
-  self.cluster_sizes = [];
-  self.cluster_mapping = {};
-  self.percent_format = kGlobals.formats.PercentFormat;
-  self.missing = kGlobals.missing.label;
-  self.cluster_attributes = self.json["Cluster description"] || null;
-  self.precomputed_subclusters = self.json["Subclusters"] || null;
-  self.network_warning_tag = network_warning_tag;
-
   self.annotate_cluster_changes();
 
-  self.filter_edges = true;
-  self.hide_hxb2 = false;
   self.cluster_table = d3.select(clusters_table);
 
   if (self._is_CDC_) {
@@ -168,170 +125,18 @@ var hivtrace_cluster_network_graph = function (
       options,
       "priority-table"
     );
-    self.priority_set_table_write = network.check_network_option(
-      options,
-      "priority-table-writeback"
-    );
     if (self.priority_set_table) {
       self.priority_set_table = d3.select(self.priority_set_table);
     }
   } else {
     self.priority_set_table = null;
-    self.priority_set_table_write = null;
   }
-
-  self.needs_an_update = false;
-  self.hide_unselected = false;
-  self.show_percent_in_pairwise_table = false;
-
-  self.priority_set_table_writeable = !self.isMJCNetwork;
 
   /** if there's a function passed as "init_code", run it now */
 
   if (options && _.isFunction(options["init_code"])) {
     options["init_code"].call(null, self, options);
   }
-
-  /** Whenever the code creates a DOM element, it will be done using this prefix
-      to generate element IDs
-   */
-
-  self.dom_prefix = network.check_network_option(
-    options,
-    "prefix",
-    "hiv-trace"
-  );
-
-  /** Retrieve additional columns (as dict, see comments further down in the code)
-      for the "clusters" table
-
-   */
-  self.extra_cluster_table_columns = network.check_network_option(
-    options,
-    "cluster-table-columns",
-    null
-  );
-
-  self.parent_graph_object = network.check_network_option(
-    options,
-    "parent_graph",
-    null
-  );
-
-  /** set the TODAY date for the network*/
-
-  if (self.json.Settings && self.json.Settings.created) {
-    self.today = new Date(json.Settings.created);
-  } else {
-    self.today = network.check_network_option(
-      options,
-      "today",
-      timeDateUtil.getCurrentDate()
-    );
-  }
-
-  /** get the reference (creation) date for the network.
-      it's the same as "today" for primary networks,
-      but is inherited from parent networks for secondary graphs (e.g. cluster or subcluster views)
-  */
-
-  if (self._is_CDC_) {
-    // define various CDC settings
-
-    /** Do not automatically create CoI */
-    self._is_CDC_auto_mode = network.check_network_option(
-      options,
-      "cdc-no-auto-priority-set-mode",
-      true,
-      false
-    );
-
-    /** these are the default columns selected in the "nodes" table */
-
-    self.displayed_node_subset = network.check_network_option(
-      options,
-      "node-attributes",
-      [
-        tables._networkNodeIDField,
-        "sex_trans",
-        "race_cat",
-        "hiv_aids_dx_dt",
-        "cur_city_name",
-      ]
-    );
-
-    /** retrieve the target DOM ID for placing the "subcluster" table into */
-    self.subcluster_table = network.check_network_option(
-      options,
-      "subcluster-table",
-      null,
-      d3.select(options["subcluster-table"])
-    );
-
-    /** extra column definitions for the subcluster table */
-    self.extra_subcluster_table_columns = null;
-
-    // SLKP 20200727 issues
-
-    /** Secure HIV-TRACE specific settings */
-    self.CDC_data = {
-      jurisdiction: self
-        .lookup_option("jurisdiction", "unknown", options)
-        .toLowerCase()
-        .replace(/\s/g, ""),
-      timestamp: self.today,
-      "autocreate-priority-set-size": 5,
-    };
-
-    /** What jurisdiction are we using for Secure HIV-TRACE?
-        This determines the two-letter prefix for auto-naming Clusters of Interest
-        If none, use PG prefix
-     */
-
-    if (self.CDC_data.jurisdiction in kGlobals.CDCJurisdictionCodes) {
-      self.CDC_data["jurisdiction_code"] =
-        kGlobals.CDCJurisdictionCodes[self.CDC_data.jurisdiction].toUpperCase();
-    } else {
-      self.CDC_data["jurisdiction_code"] = "PG";
-    }
-
-    /** Check if this is a low morbidity jurisdiction */
-    if (
-      kGlobals.CDCJurisdictionLowMorbidity.has(self.CDC_data["jurisdiction"])
-    ) {
-      self.CDC_data["autocreate-priority-set-size"] = 3;
-    }
-
-    /** Populate column table definitions */
-    if (self.subcluster_table) {
-      self.extra_subcluster_table_columns =
-        columnDefinitions.secure_hiv_trace_subcluster_columns(self);
-    } else if (self.extra_cluster_table_columns) {
-      self.extra_cluster_table_columns =
-        self.extra_cluster_table_columns.concat(
-          columnDefinitions.secure_hiv_trace_subcluster_columns(self)
-        );
-    } else {
-      self.extra_cluster_table_columns =
-        columnDefinitions.secure_hiv_trace_subcluster_columns(self);
-    }
-  } // end self._is_CDC_
-
-  if (self._is_CDC_) {
-    self.extra_node_table_columns = null;
-  } else {
-    self.extra_node_table_columns = network.check_network_option(
-      options,
-      "node-table-columns"
-    );
-  }
-
-  /** default subcluster definition threshold */
-  self.subcluster_threshold = network.check_network_option(
-    options,
-    "subcluster-thershold",
-    0.005
-  );
 
   if (self.isPrimaryGraph) {
     clustersOfInterest.init(self);
@@ -358,27 +163,11 @@ var hivtrace_cluster_network_graph = function (
       they will precede all the fields that are shown based on selected labeling */
   self._additional_node_pop_fields = [];
 
-  self.minimum_cluster_size = network.check_network_option(
-    options,
-    "minimum size",
-    5
-  );
-
   timeDateUtil.init(options, self._is_CDC_, timeDateUtil._networkCDCDateField);
 
   if (self._is_CDC_) {
     self._additional_node_pop_fields.push(timeDateUtil._networkCDCDateField);
   }
-
-  self.core_link_length = network.check_network_option(
-    options,
-    "core-link",
-    -1
-  );
-  self.additional_edge_styler = network.check_network_option(
-    options,
-    "edge-styler"
-  );
 
   if (self.json.Notes) {
     _.each(self.json.Notes, (s) => (self.warning_string += s + "<br>"));
