@@ -31,7 +31,6 @@
     "jspanel4": "4.16.1",
     "latest": "^0.2.0",
     "taffydb": "^2.7.3",
-    "topojson": "3.x",
     "underscore": "1.x"
   },
   "devDependencies": {

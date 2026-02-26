@@ -22,5 +22,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
 - **Result**: Moved ~60 lines of attribute transformation logic from `clusternetwork.js` to `networkConfig.js`.
 - **Status**: Completed (2026-02-24)
 
+#### Step 3: Remove Legacy Map Overlay Logic
+- **Goal**: Remove unsupported/legacy topojson-based map rendering code.
+- **Result**: 
+    - Removed `topojson` dependency from `package.json`.
+    - Removed map rendering and projection logic from `clusternetwork.js` and `hiv_tx_network.js`.
+    - Retained `_get_node_country` helper as it is used for node attribute lookups.
+    - Restored `assets/mapping/` to avoid 404 errors in legacy data.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

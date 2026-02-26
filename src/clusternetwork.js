@@ -1,7 +1,6 @@
 import * as d3 from "d3";
 import _ from "underscore";
 import jsConvert from "js-convert-case";
-import * as topojson from "topojson";
 import * as helpers from "./helpers.js";
 import * as colorPicker from "./colorPicker.js";
 import * as scatterPlot from "./scatterplot.js";
@@ -143,22 +142,6 @@ var hivtrace_cluster_network_graph = function (
     nodesTab.init(d3.select(nodes_table));
   }
 
-  self.countryCentersObject = network.check_network_option(
-    options,
-    "country-centers"
-  );
-  self.countryOutlines = network.check_network_option(
-    options,
-    "country-outlines"
-  );
-
-  if (self.countryCentersObject && self.countryOutlines) {
-    self._calc_country_nodes(options);
-    self.showing_on_map = options.showing_on_map;
-  } else {
-    self.showing_on_map = false;
-  }
-
   /** this array contains fields that will be appended to node pop-overs in the network tab
       they will precede all the fields that are shown based on selected labeling */
   self._additional_node_pop_fields = [];
@@ -213,56 +196,6 @@ var hivtrace_cluster_network_graph = function (
       countryCodeAlpha2 = self.attribute_node_value_by_id(node, "Country");
     }
     return countryCodeAlpha2;
-  };
-
-  /**
-   * @function _draw_topomap
-   * @description This function draws the topological map.
-   * @param {boolean} no_redraw - If true, the map will not be redrawn.
-   * @returns {Object} The network object itself.
-   */
-  self._draw_topomap = function (no_redraw) {
-    if (options && "showing_on_map" in options) {
-      var countries = topojson.feature(
-        self.countryOutlines,
-        self.countryOutlines.objects.countries
-      ).features;
-      var mapsvg = d3.select("#" + self.dom_prefix + "-network-svg");
-      var path = d3.geo.path().projection(self.mapProjection);
-      countries = mapsvg.selectAll(".country").data(countries);
-
-      countries.enter().append("path");
-      countries.exit().remove();
-
-      self.countries_in_cluster = {};
-
-      _.each(self.nodes, (node) => {
-        var countryCodeAlpha2 = self._get_node_country(node);
-        var countryCodeNumeric =
-          self.countryCentersObject[countryCodeAlpha2].countryCodeNumeric;
-        if (!(countryCodeNumeric in self.countries_in_cluster)) {
-          self.countries_in_cluster[countryCodeNumeric] = true;
-        }
-      });
-
-      countries
-        .attr("class", "country")
-        .attr("d", path)
-        .attr("stroke", "saddlebrown")
-        .attr("fill", (d) => {
-          if (d.id in self.countries_in_cluster) {
-            return "navajowhite";
-          }
-          return "bisque";
-        })
-        .attr("stroke-width", (d) => {
-          if (d.id in self.countries_in_cluster) {
-            return 1.5;
-          }
-          return 0.5;
-        });
-    }
-    return self;
   };
 
   /**
@@ -497,33 +430,6 @@ var hivtrace_cluster_network_graph = function (
 
       if (option_extras) {
         _.extend(cluster_options, option_extras);
-      }
-
-      if (
-        option_extras.showing_on_map &&
-        self.countryCentersObject &&
-        self.countryOutlines
-      ) {
-        cluster_options["showing_on_map"] = true;
-        cluster_options["country-centers"] = self.countryCentersObject;
-        cluster_options["country-outlines"] = self.countryOutlines;
-
-        // Create an array of the countries in the selected cluster for use in styling the map.
-        if ("extra-graphics" in cluster_options) {
-          var draw_map = function (other_code, network) {
-            other_code(network);
-            return network._draw_topomap();
-          };
-
-          cluster_options["extra-graphics"] = _.wrap(
-            draw_map,
-            cluster_options["extra-graphics"]
-          );
-        } else {
-          cluster_options["extra-graphics"] = function (network) {
-            return network._draw_topomap();
-          };
-        }
       }
 
       cluster_options["today"] = self.today;
@@ -1453,8 +1359,6 @@ var hivtrace_cluster_network_graph = function (
 
     network_layout.size([self.width, self.height]);
     self.network_svg.attr("width", self.width).attr("height", self.height);
-    self._calc_country_nodes(options);
-    self._draw_topomap(true);
     if (trigger) {
       network_layout.start();
     } else if (delta) {
@@ -6710,21 +6614,6 @@ var hivtrace_cluster_network_graph = function (
           var yBoundLower = 10;
           var yBoundUpper = sizes[1] - 10;
 
-          if (self.showing_on_map) {
-            const allowed_offset_from_center_of_country = 15;
-            // If the country is in the list that we have, override the default values for the bounds.
-            var country_code = self._get_node_country(d);
-
-            if (country_code in self.countryCentersObject) {
-              const center = self.countryCentersObject[country_code].countryXY;
-
-              xBoundLower = center[0] - allowed_offset_from_center_of_country;
-              xBoundUpper = center[0] + allowed_offset_from_center_of_country;
-              yBoundLower = center[1] - allowed_offset_from_center_of_country;
-              yBoundUpper = center[1] + allowed_offset_from_center_of_country;
-            }
-          }
-
           return (
             "translate(" +
             (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) +
@@ -6849,9 +6738,6 @@ var hivtrace_cluster_network_graph = function (
    * @returns {number} The size of the node.
    */
   function node_size(d) {
-    if (self.showing_on_map) {
-      return 50;
-    }
     var r = 5 + Math.sqrt(d.degree); //return (d.match_filter ? 10 : 4)*r*r;
     return 4 * r * r;
   }
@@ -8382,9 +8268,6 @@ var hivtrace_cluster_network_graph = function (
       .force()
       .on("tick", tick)
       .charge((d) => {
-        if (self.showing_on_map) {
-          return -60;
-        }
         if (d.cluster_id) {
           return self.charge_correction * (-15 - 5 * d.children.length ** 0.4);
         }
@@ -8394,16 +8277,13 @@ var hivtrace_cluster_network_graph = function (
         (d) => link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
       )
       .linkStrength((d) => {
-        if (self.showing_on_map) {
-          return 0.01;
-        }
         if (d.support !== undefined) {
           return 0.75 - 0.5 * d.support;
         }
         return 1;
       })
       .chargeDistance(l_scale * 0.1)
-      .gravity(self.showing_on_map ? 0 : gravity_scale(self.json.Nodes.length))
+      .gravity(gravity_scale(self.json.Nodes.length))
       .friction(0.25);
   } else {
     network_layout = d3.layout.force();
@@ -8442,10 +8322,9 @@ var hivtrace_cluster_network_graph = function (
         "translate(" + [d3.event.x, d3.event.y] + ")"
       );
     });
-  const legend_vertical_offset = self.showing_on_map ? 100 : 5;
   self.legend_svg = self.network_svg
     .append("g")
-    .attr("transform", "translate(5," + legend_vertical_offset + ")")
+    .attr("transform", "translate(5,5)")
     .call(legend_drag);
 
   self.network_svg

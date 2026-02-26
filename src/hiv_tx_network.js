@@ -244,27 +244,6 @@ class HIVTxNetwork {
   }
 
   /**
-      this is a function which calculates country node centers
-      for the (experimental) option of rendering networks with
-      topo maps
-   */
-
-  _calc_country_nodes = (calc_options) => {
-    if (calc_options && "country-centers" in calc_options) {
-      this.mapProjection = d3.geo
-        .mercator()
-        .translate([
-          this.margin.left + this.width / 2,
-          this.margin.top + this.height / 2,
-        ])
-        .scale((150 * this.width) / 960);
-      _.each(this.countryCentersObject, (value) => {
-        value.countryXY = this.mapProjection([value.longt, value.lat]);
-      });
-    }
-  };
-
-  /**
         @cluster [dict] : cluster object
 
         return true if the cluster passes all the currently defined filters
