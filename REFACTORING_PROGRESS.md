@@ -17,5 +17,10 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
 - **Result**: Extracted nearly 200 lines of initialization logic into `src/networkConfig.js`.
 - **Status**: Completed (2026-02-24)
 
+#### Step 2: Move Attribute Transformation Calls to Configuration
+- **Goal**: Consolidate `_networkPredefinedAttributeTransforms` initialization into `initializeNetworkSettings`.
+- **Result**: Moved ~60 lines of attribute transformation logic from `clusternetwork.js` to `networkConfig.js`.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

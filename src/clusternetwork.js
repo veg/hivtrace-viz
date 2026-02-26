@@ -199,59 +199,6 @@ var hivtrace_cluster_network_graph = function (
   self.initial_packed =
     options && options["initial_layout"] === "tiled" ? false : true;
 
-  self._networkPredefinedAttributeTransforms = {
-    /** runtime computed node attributes, e.g. transforms of existing attributes */
-
-    binned_vl_recent_value: self.define_attribute_binned_vl(
-      "vl_recent_value",
-      "Most Recent Viral Load Category Binned"
-    ),
-
-    binned_vl_recent_value_adj: self.define_attribute_binned_vl(
-      "vl_recent_value_adj",
-      "Most Recent Viral Load Category Binned"
-    ),
-
-    vl_result_interpretation: self.define_attribute_vl_interpretaion(),
-
-    age_dx_normalized: self.define_attribute_age_dx(),
-
-    years_since_dx: self.define_attribute_dx_years(
-      true,
-      "Years since diagnosis"
-    ),
-
-    hiv_aids_dx_dt_year: self.define_attribute_dx_years(
-      false,
-      "Diagnosis Year"
-    ),
-
-    sequence_count: self.define_attribute_sequence_count("Number of sequences"),
-  };
-
-  if (self.isMJCNetwork) {
-    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_month_year"] =
-      self.define_attribute_dx_month_year("Diagnosis Month/Year");
-    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_last_year"] =
-      self.define_attribute_dx_last_year("DX in Last 12 Mo.");
-    self._networkPredefinedAttributeTransforms["mjc_date_added"] =
-      self.define_attribute_mjc_date_added("Date Added to MJ ClusterOI");
-  }
-
-  if (self.cluster_attributes) {
-    self._networkPredefinedAttributeTransforms["_newly_added"] =
-      self.define_attribute_network_update();
-  }
-
-  /** inject any attributes passed through "computed-attributes" */
-
-  if (options && options["computed-attributes"]) {
-    _.extend(
-      self._networkPredefinedAttributeTransforms,
-      options["computed-attributes"]
-    );
-  }
-
   /*------------ Network layout code ---------------*/
 
   /**
