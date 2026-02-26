@@ -31,5 +31,13 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Restored `assets/mapping/` to avoid 404 errors in legacy data.
 - **Status**: Completed (2026-02-24)
 
+#### Step 4: Extract Legend Rendering Logic
+- **Goal**: Move legend rendering and shape helper logic to `src/networkLegend.js`.
+- **Result**: 
+    - Created `src/networkLegend.js`.
+    - Extracted `draw_attribute_labels` and `check_for_predefined_shapes`.
+    - Reduced `clusternetwork.js` by ~400 lines.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
