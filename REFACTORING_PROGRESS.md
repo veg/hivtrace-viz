@@ -48,5 +48,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~250 lines.
 - **Status**: Completed (2026-02-24)
 
+#### Step 6: Extract Node and Link Stylers
+- **Goal**: Move `node_size`, `node_color`, `node_opacity`, `cluster_color`, `link_path_generator`, and `compute_cluster_gradient` to `src/networkStylers.js`.
+- **Result**: 
+    - Created `src/networkStylers.js`.
+    - Extracted core D3 mapping/styling logic.
+    - Replaced internal implementations in `clusternetwork.js` with thin wrappers.
+    - Reduced `clusternetwork.js` by ~300 lines.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
