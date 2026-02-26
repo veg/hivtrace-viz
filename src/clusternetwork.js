@@ -24,6 +24,11 @@ import {
   draw_attribute_labels,
   check_for_predefined_shapes,
 } from "./networkLegend";
+import {
+  open_exclusive_tab_close,
+  open_exclusive_tab_view,
+  open_exclusive_tab_view_aux,
+} from "./networkTabs";
 
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
@@ -202,6 +207,15 @@ var hivtrace_cluster_network_graph = function (
     return countryCodeAlpha2;
   };
 
+  const tab_context = {
+    kGlobals,
+    helpers,
+    attributes,
+    parent_container,
+    options,
+    hivtrace_cluster_network_graph,
+  };
+
   /**
    * @function open_exclusive_tab_close
    * @description This function closes an exclusive tab and restores the previous one.
@@ -215,10 +229,7 @@ var hivtrace_cluster_network_graph = function (
     tab_content,
     restore_to_tag
   ) {
-    //console.log (restore_to_tag);
-    $(restore_to_tag).tab("show");
-    $("#" + tab_element).remove();
-    $("#" + tab_content).remove();
+    open_exclusive_tab_close(tab_element, tab_content, restore_to_tag);
   };
 
   /**
@@ -238,88 +249,14 @@ var hivtrace_cluster_network_graph = function (
     additional_options,
     include_injected_edges
   ) {
-    var cluster = _.find(
-      self.clusters,
-      (c) => String(c.cluster_id) === String(cluster_id)
-    );
-
-    if (!cluster) {
-      return;
-    }
-
-    additional_options = additional_options || {};
-
-    additional_options["parent_graph"] = self;
-
-    var filtered_json = self.extract_single_cluster(
-      custom_filter
-        ? _.filter(self.json.Nodes, custom_filter)
-        : cluster.children,
-      null,
-      null,
-      null,
-      include_injected_edges
-    );
-
-    if (self.has_multiple_sequences) {
-      /**
-            20241030 SLKP
-            Perform a greedy collapse of all the sequences that map to the same primary key
-            For a reduced cluster view
-        */
-
-      _.each(filtered_json.Nodes, (n) => {
-        if (n["multiple clusters"]) n["multiple_membership"] = true;
-      });
-
-      if (additional_options["simplified-mspp"]) {
-        filtered_json = self.simplify_multisequence_cluster(filtered_json);
-      }
-    }
-
-    if (kGlobals.network.GraphAttrbuteID in self.json) {
-      filtered_json[kGlobals.network.GraphAttrbuteID] = {};
-      $.extend(
-        true,
-        filtered_json[kGlobals.network.GraphAttrbuteID],
-        self.json[kGlobals.network.GraphAttrbuteID]
-      );
-    }
-
-    var export_items = [];
-    if (!self._is_CDC_executive_mode) {
-      export_items.push([
-        "Export cluster to .CSV",
-        function (network) {
-          helpers.export_csv_button(
-            self._extract_attributes_for_nodes(
-              self._extract_nodes_by_id(cluster_id),
-              self._extract_exportable_attributes()
-            )
-          );
-        },
-      ]);
-    }
-
-    //self._check_for_time_series(export_items);
-
-    if ("extra_menu" in additional_options) {
-      _.each(export_items, (item) => {
-        additional_options["extra_menu"]["items"].push(item);
-      });
-    } else {
-      _.extend(additional_options, {
-        extra_menu: {
-          title: "Action",
-          items: export_items,
-        },
-      });
-    }
-
-    return self.open_exclusive_tab_view_aux(
-      filtered_json,
-      custom_name ? custom_name(cluster_id) : "Cluster " + cluster_id,
-      additional_options
+    return open_exclusive_tab_view(
+      self,
+      cluster_id,
+      custom_filter,
+      custom_name,
+      additional_options,
+      include_injected_edges,
+      tab_context
     );
   };
 
@@ -336,147 +273,13 @@ var hivtrace_cluster_network_graph = function (
     title,
     option_extras
   ) {
-    var random_prefix = misc.random_id();
-    var random_tab_id = random_prefix + "_tab";
-    var random_content_id = random_prefix + "_div";
-    var random_button_bar = random_prefix + "_ui";
-
-    while (
-      $("#" + random_tab_id).length ||
-      $("#" + random_content_id).length ||
-      $("#" + random_button_bar).length
-    ) {
-      random_prefix = misc.random_id();
-      random_tab_id = random_prefix + "_tab";
-      random_content_id = random_prefix + "_div";
-      random_button_bar = random_prefix + "_ui";
-    }
-
-    var tab_container = "top_level_tab_container";
-    var content_container = "top_level_tab_content";
-    var go_here_when_closed = "#trace-default-tab";
-
-    // add new tab to the menu bar and switch to it
-    var new_tab_header = $("<li></li>").attr("id", random_tab_id);
-
-    var new_link = $("<a></a>")
-      .attr("href", "#" + random_content_id)
-      .attr("data-toggle", "tab")
-      .text(title);
-    $(
-      '<button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
-    )
-      .appendTo(new_link)
-      .on("click", () => {
-        self.open_exclusive_tab_close(
-          random_tab_id,
-          random_content_id,
-          go_here_when_closed
-        );
-      });
-
-    new_link.appendTo(new_tab_header);
-    $("#" + tab_container).append(new_tab_header);
-
-    var new_tab_content = $("<div></div>")
-      .addClass("tab-pane")
-      .attr("id", random_content_id)
-      .data("cluster", option_extras.cluster_id);
-
-    if (option_extras.type === "subcluster") {
-      new_tab_content
-        .addClass("subcluster-view")
-        .addClass("subcluster-" + option_extras.cluster_id.replace(".", "_"));
-    }
-
-    //     <li class='disabled' id="attributes-tab"><a href="#trace-attributes" data-toggle="tab">Attributes</a></li>
-    var new_button_bar;
-    if (filtered_json) {
-      new_button_bar = $('[data-hivtrace="cluster-clone"]')
-        .clone()
-        .attr("data-hivtrace", null);
-      new_button_bar
-        .find("[data-hivtrace-button-bar='yes']")
-        .attr("id", random_button_bar)
-        .addClass("cloned-cluster-tab")
-        .attr("data-hivtrace-button-bar", null);
-
-      new_button_bar.appendTo(new_tab_content);
-    }
-    new_tab_content.appendTo("#" + content_container);
-
-    $(new_link).on("show.bs.tab", (e) => {
-      //console.log (e);
-      if (e.relatedTarget) {
-        //console.log (e.relatedTarget);
-        go_here_when_closed = e.relatedTarget;
-      }
-    });
-
-    // show the new tab
-    $(new_link).tab("show");
-
-    var cluster_view;
-
-    if (filtered_json) {
-      var cluster_options = {
-        no_cdc: options && options["no_cdc"],
-        "minimum size": 0,
-        secondary: true,
-        prefix: random_prefix,
-        extra_menu:
-          options && "extra_menu" in options ? options["extra_menu"] : null,
-        "edge-styler":
-          options && "edge-styler" in options ? options["edge-styler"] : null,
-        "no-subclusters": true,
-        "no-subcluster-compute": false,
-      };
-
-      if (option_extras) {
-        _.extend(cluster_options, option_extras);
-      }
-
-      cluster_options["today"] = self.today;
-      cluster_options["auto_expand_single_cluster"] = true;
-      cluster_view = hivtrace_cluster_network_graph(
-        filtered_json,
-        "#" + random_content_id,
-        null,
-        null,
-        random_button_bar,
-        attributes,
-        null,
-        null,
-        null,
-        parent_container,
-        cluster_options
-      );
-
-      if (self.colorizer["category_id"]) {
-        if (self.colorizer["continuous"]) {
-          cluster_view.handle_attribute_continuous(
-            self.colorizer["category_id"]
-          );
-        } else {
-          cluster_view.handle_attribute_categorical(
-            self.colorizer["category_id"]
-          );
-        }
-      }
-
-      if (self.node_shaper["id"]) {
-        cluster_view.handle_shape_categorical(self.node_shaper["id"]);
-      }
-
-      if (self.colorizer["opacity_id"]) {
-        cluster_view.handle_attribute_opacity(self.colorizer["opacity_id"]);
-      }
-
-      //cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
-    } else {
-      return new_tab_content.attr("id");
-    }
-    return cluster_view;
+    return open_exclusive_tab_view_aux(
+      self,
+      filtered_json,
+      title,
+      option_extras,
+      tab_context
+    );
   };
 
   // ensure all checkboxes are unchecked at initialization

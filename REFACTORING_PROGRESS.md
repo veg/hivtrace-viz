@@ -39,5 +39,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~400 lines.
 - **Status**: Completed (2026-02-24)
 
+#### Step 5: Extract Tab Management Logic
+- **Goal**: Move `open_exclusive_tab_...` functions to `src/networkTabs.js`.
+- **Result**: 
+    - Created `src/networkTabs.js`.
+    - Extracted `open_exclusive_tab_close`, `open_exclusive_tab_view`, and `open_exclusive_tab_view_aux`.
+    - Handled recursive dependencies by passing a shared context.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
