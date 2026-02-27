@@ -89,5 +89,12 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated `HIVTxNetwork` to extend `HTXModel`.
 - **Status**: Completed (2026-02-24)
 
+#### Step 5: Move attribute and extraction helpers to `HTXModel`
+- **Goal**: Move `attribute_node_value_by_id`, `inject_attribute_node_value_by_id`, `is_edge_injected`, and `extract_single_cluster` to core model.
+- **Result**: 
+    - Core logic isolated in `HTXModel`.
+    - Browser wrappers in `HIVTxNetwork` handle `kGlobals` injection.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

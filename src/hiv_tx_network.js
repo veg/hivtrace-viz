@@ -39,6 +39,21 @@ class HIVTxNetwork extends HTXModel {
     this.initialize_ui_ux_elements();
   }
 
+  attribute_node_value_by_id(d, id, number, is_date, check_redacted) {
+    return super.attribute_node_value_by_id(
+      d,
+      id,
+      number,
+      is_date,
+      check_redacted,
+      kGlobals
+    );
+  }
+
+  static inject_attribute_node_value_by_id(node, id, value) {
+    return HTXModel.inject_attribute_node_value_by_id(node, id, value, kGlobals);
+  }
+
   /** initialize UI/UX elements */
   initialize_ui_ux_elements() {
     /** define a D3 behavior to make node labels draggable */
@@ -821,109 +836,6 @@ class HIVTxNetwork extends HTXModel {
     @param check_redacted: [bool] if true, check if the attribute is redacted and return "REDACTED" label
 
  */
-
-  attribute_node_value_by_id(d, id, number, is_date, check_redacted) {
-    try {
-      if (kGlobals.network.NodeAttributeID in d && id) {
-        if (id in d[kGlobals.network.NodeAttributeID]) {
-          let v;
-
-          if (this.json[kGlobals.network.GraphAttrbuteID][id].volatile) {
-            v = this.json[kGlobals.network.GraphAttrbuteID][id].map(d, this);
-          } else {
-            v = d[kGlobals.network.NodeAttributeID][id];
-          }
-
-          if (_.isString(v)) {
-            if (check_redacted && v === "REDACTED") {
-              return "REDACTED";
-            } else if (v.length === 0) {
-              return kGlobals.missing.label;
-            } else if (number) {
-              v = Number(v);
-              return _.isNaN(v) ? kGlobals.missing.label : v;
-            } else if (is_date) {
-              return v.getTime();
-            }
-          }
-          return v;
-        }
-      }
-    } catch (e) {
-      console.log("attribute_node_value_by_id", e, d, id, number);
-    }
-    return kGlobals.missing.label;
-  }
-
-  /**
-        Is this node NOT genetic, i.e. added to the network via social or other means
-  */
-  static is_edge_injected(e) {
-    return "edge_type" in e;
-  }
-
-  /**
-        Extract the nodes and edges between them into a separate object
-        @param nodes [array]  the list of nodes to extract
-        @param filter [function, optional] (edge) -> bool filtering function for deciding which edges will be used to define clusters
-        @param no_clone [bool] if set to T, node objects are **not** shallow cloned in the return object
-        @return [dict] the object representing "Nodes" and "Edges" in the extracted cluster
-
-  */
-
-  extract_single_cluster(
-    nodes,
-    filter,
-    no_clone,
-    given_json,
-    include_extra_edges,
-    edge_subset
-  ) {
-    var cluster_json = {};
-    var map_to_id = {};
-
-    cluster_json.Nodes = _.map(nodes, (c, i) => {
-      map_to_id[c.id] = i;
-
-      if (no_clone) {
-        return c;
-      }
-
-      var cc = _.clone(c);
-      cc.cluster = 1;
-      return cc;
-    });
-
-    given_json = given_json || this.json;
-
-    cluster_json.Edges = _.filter(
-      edge_subset ? edge_subset : given_json.Edges,
-      (e) => {
-        if (_.isUndefined(e.source) || _.isUndefined(e.target)) {
-          return false;
-        }
-
-        return (
-          given_json.Nodes[e.source].id in map_to_id &&
-          given_json.Nodes[e.target].id in map_to_id &&
-          (include_extra_edges || !HIVTxNetwork.is_edge_injected(e))
-        );
-      }
-    );
-
-    if (filter) {
-      cluster_json.Edges = _.filter(cluster_json.Edges, filter);
-    }
-
-    cluster_json.Edges = _.map(cluster_json.Edges, (e) => {
-      var ne = _.clone(e);
-      ne.source = map_to_id[given_json.Nodes[e.source].id];
-      ne.target = map_to_id[given_json.Nodes[e.target].id];
-      return ne;
-    });
-
-    return cluster_json;
-  }
 
   /**
         Grow a CoI defined in @pg based on its growth mode
@@ -2236,12 +2148,6 @@ class HIVTxNetwork extends HTXModel {
       @param id [string] : attribute id
       @param value : attribute value
   */
-
-  static inject_attribute_node_value_by_id(node, id, value) {
-    if (kGlobals.network.NodeAttributeID in node && id) {
-      node[kGlobals.network.NodeAttributeID][id] = value;
-    }
-  }
 
   /** Generate a CoI node record
       @param node_id [string] : node name,
