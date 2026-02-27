@@ -68,5 +68,12 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated `src/network.js` to use the core version.
 - **Status**: Completed (2026-02-24)
 
+#### Step 2: Extract `normalize_node_attributes` to core
+- **Goal**: Move `normalize_node_attributes` to `src/core/networkUtils.js`.
+- **Result**: 
+    - Moved logic to core utility module.
+    - Updated browser wrapper to pass `kGlobals`.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

@@ -10,49 +10,6 @@ var d3 = require("d3"),
   networkUtils = require("./core/networkUtils.js");
 
 /**
-    normalize_node_attributes
-    
-    Iterate over node attributes, lower case all the keys for mapping.
-    If attributes are found that are not in the data dictionary, attempt to map them using 
-    "labels". 
-*/
-function normalize_node_attributes(json) {
-  const label_key_map = _.object(
-    _.map(json[kGlobals.network.GraphAttrbuteID], (d, k) => [d.label, k])
-  );
-
-  _.each(json.Nodes, (n) => {
-    if (kGlobals.network.NodeAttributeID in n) {
-      let new_attrs = {};
-      if (n[kGlobals.network.NodeAttributeID] !== null) {
-        new_attrs = Object.fromEntries(
-          Object.entries(n[kGlobals.network.NodeAttributeID]).map(([k, v]) => [
-            k.toLowerCase(),
-            v,
-          ])
-        );
-      }
-
-      // Map attributes from patient_schema labels to keys, if necessary
-      const unrecognizedKeys = _.difference(
-        _.keys(new_attrs),
-        _.keys(json[kGlobals.network.GraphAttrbuteID])
-      );
-
-      if (unrecognizedKeys.length) {
-        _.each(unrecognizedKeys, (k) => {
-          if (_.contains(_.keys(label_key_map), k)) {
-            new_attrs[label_key_map[k]] = new_attrs[k];
-            delete new_attrs[k];
-          }
-        });
-      }
-
-      n[kGlobals.network.NodeAttributeID] = new_attrs;
-    }
-  });
-}
-/**
     ensure_node_attributes_exist
     
     Iterate over nodes in the network. If a node does not have an array of attributes or 
@@ -248,7 +205,8 @@ function handle_cluster_click(self, cluster, release) {
 module.exports = {
   check_network_option,
   ensure_node_attributes_exist,
-  normalize_node_attributes,
+  normalize_node_attributes: (json) =>
+    networkUtils.normalize_node_attributes(json, kGlobals),
   unpack_compact_json: networkUtils.unpack_compact_json,
   handle_cluster_click,
 };
