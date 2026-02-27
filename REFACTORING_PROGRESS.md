@@ -75,5 +75,12 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated browser wrapper to pass `kGlobals`.
 - **Status**: Completed (2026-02-24)
 
+#### Step 3: Extract `ensure_node_attributes_exist` and `check_network_option` to core
+- **Goal**: Move remaining non-D3 utility functions to `src/core/networkUtils.js`.
+- **Result**: 
+    - Moved logic to core utility module.
+    - Simplified `network.js` to a clean delegator.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

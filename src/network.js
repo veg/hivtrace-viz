@@ -10,46 +10,6 @@ var d3 = require("d3"),
   networkUtils = require("./core/networkUtils.js");
 
 /**
-    ensure_node_attributes_exist
-    
-    Iterate over nodes in the network. If a node does not have an array of attributes or 
-    data dictionary records, create an empty one. This makes error checking less complex downstream.
-    Also add a "missing_attributes" flag for nodes that are missing them
-*/
-
-function ensure_node_attributes_exist(json) {
-  const validate_these_keys = new Set([
-    "attributes",
-    kGlobals.network.NodeAttributeID,
-  ]);
-  json.Nodes.forEach((n) => {
-    for (const i of validate_these_keys) {
-      if (!n[i]) {
-        n[i] = [];
-      }
-    }
-  });
-}
-
-/**
-    check_network_option
-    
-    Given a dictionary option list (can be null) and a key
-    checks to see if the key is present
-    
-        if the key is absent or "options" is null, the return value will be "if_absent" (null by default)
-        if the key is present, and `if_present` is set, will return the if_present value, otherwise will return options[key]
-*/
-function check_network_option(options, key, if_absent, if_present) {
-  if (options) {
-    if (key in options) {
-      return if_present === undefined ? options[key] : if_present;
-    }
-  }
-  return if_absent;
-}
-
-/**
     center_cluster_handler
     
     Centers a cluster on the screen and triggers a network update.
@@ -203,8 +163,9 @@ function handle_cluster_click(self, cluster, release) {
 }
 
 module.exports = {
-  check_network_option,
-  ensure_node_attributes_exist,
+  check_network_option: networkUtils.check_network_option,
+  ensure_node_attributes_exist: (json) =>
+    networkUtils.ensure_node_attributes_exist(json, kGlobals),
   normalize_node_attributes: (json) =>
     networkUtils.normalize_node_attributes(json, kGlobals),
   unpack_compact_json: networkUtils.unpack_compact_json,

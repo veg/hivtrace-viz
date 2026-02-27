@@ -74,7 +74,43 @@ function normalize_node_attributes(json, kGlobals) {
   });
 }
 
+/**
+ * ensure_node_attributes_exist
+ * 
+ * Iterate over nodes in the network. If a node does not have an array of attributes or 
+ * data dictionary records, create an empty one.
+ */
+function ensure_node_attributes_exist(json, kGlobals) {
+  const validate_these_keys = new Set([
+    "attributes",
+    kGlobals.network.NodeAttributeID,
+  ]);
+  json.Nodes.forEach((n) => {
+    for (const i of validate_these_keys) {
+      if (!n[i]) {
+        n[i] = [];
+      }
+    }
+  });
+}
+
+/**
+ * check_network_option
+ * 
+ * Checks if a key is present in an options dictionary.
+ */
+function check_network_option(options, key, if_absent, if_present) {
+  if (options) {
+    if (key in options) {
+      return if_present === undefined ? options[key] : if_present;
+    }
+  }
+  return if_absent;
+}
+
 module.exports = {
   unpack_compact_json: unpack_compact_json,
   normalize_node_attributes: normalize_node_attributes,
+  ensure_node_attributes_exist: ensure_node_attributes_exist,
+  check_network_option: check_network_option,
 };
