@@ -2,7 +2,8 @@ var _ = require("underscore"),
   timeDateUtil = require("./timeDateUtil.js"),
   kGlobals = require("./globals.js"),
   misc = require("./misc.js"),
-  clustersOfInterest = require("./clustersOfInterest.js");
+  clustersOfInterest = require("./clustersOfInterest.js"),
+  HTXModel = require("./core/HTXModel.js");
 
 /*------------------------------------------------------------
      define a barebones class for the network object
@@ -20,100 +21,22 @@ var _ = require("underscore"),
  * @param {Object} cluster_attributes - Attributes related to clusters within the network.
  */
 
-class HIVTxNetwork {
+class HIVTxNetwork extends HTXModel {
   constructor(json, button_bar_ui, primary_key_function, secondaryGraph) {
-    this.json = json;
+    super(json, primary_key_function);
     this.button_bar_ui = button_bar_ui;
-    this.warning_string = "";
     this.subcluster_table = null;
     this.priority_set_table_write = null;
     this.priority_set_table_writeable = null;
-    this.cluster_attributes = [];
-    this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
     this.nodeFilterObject = null;
-    /** SLKP 20241029
-        this function is used to identify which nodes are duplicates
-        it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
-        all sequences/nodes that map to the same primary key are assumed to represent the same entity / individual
-    **/
-    this.primary_key = _.isFunction(primary_key_function)
-      ? primary_key_function
-      : (node) => {
-          if (this.isMJCNetwork && !node.id) {
-            return node.name;
-          }
-          const i = node.id.indexOf("|");
-          if (i >= 0) {
-            return node.id.substr(0, i);
-          }
-          return node.id;
-        };
+    this.defined_priority_groups = [];
+    this.using_time_filter = null;
 
-    this.tabulate_multiple_sequences();
+    this.tabulate_multiple_sequences(kGlobals);
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
-
-    /** the list of defined clusters of interest,
-      format as follows (SLKP, 20240715: may need updating)
-      {
-         'name'  : 'unique name',
-         'nodes' : [
-          {
-              'node_id' : text,
-              'added' : date,
-              'kind' : text
-          }],
-         'created' : date,
-         'description' : 'text',
-         'modified' : date,
-         'kind' : 'text'
-     }
-    */
-    this.defined_priority_groups = [];
-
-    /**
-       time filter element for various displays
-    */
-    this.using_time_filter = null;
-  }
-
-  /**
-   * Groups all edges in `this.json.Edges` by the primary key of their source and target nodes.
-   * The result is returned
-   * An edge will appear in the list for its source's primary key and its target's primary key.
-   */
-  group_edges_by_primary_key() {
-    let edges_by_primary_key = {};
-
-    _.each(this.json.Edges, (edge) => {
-      try {
-        const source_pk = this.primary_key(this.json.Nodes[edge.source]);
-        const target_pk = this.primary_key(this.json.Nodes[edge.target]);
-
-        if (!edges_by_primary_key[source_pk]) {
-          edges_by_primary_key[source_pk] = [];
-        }
-
-        edges_by_primary_key[source_pk].push(edge);
-
-        if (source_pk !== target_pk) {
-          if (!edges_by_primary_key[target_pk]) {
-            edges_by_primary_key[target_pk] = [];
-          }
-          // Add only if it's not already there (to avoid duplicates if an edge is within the same PK group but processed twice)
-          // However, the current logic adds it once for source and once for target if different, which is fine.
-          // If an edge is between two nodes of the same PK, it's added only once via the source_pk.
-          edges_by_primary_key[target_pk].push(edge);
-        }
-      } catch (err) {
-        console.log(err);
-        throw err;
-      }
-    });
-
-    return edges_by_primary_key;
   }
 
   /** initialize UI/UX elements */
@@ -174,87 +97,6 @@ class HIVTxNetwork {
   }
 
   /**
-    Iterate over nodes in the network, identify all those which share the same
-    primary key (i.e., the same individual), tabulate them, and collate node attributes
-  */
-
-  tabulate_multiple_sequences() {
-    /**
-        generate a primary key to node ID map
-        [primary key] => [array of IDs]
-    */
-    this.primary_key_list = {};
-    this.has_multiple_sequences = false;
-    _.each(this.json.Nodes, (n) => {
-      const p_key = this.primary_key(n);
-      if (!(p_key in this.primary_key_list)) {
-        this.primary_key_list[p_key] = [n];
-      } else {
-        this.primary_key_list[p_key].push(n);
-        this.has_multiple_sequences = true;
-        this.legend_multiple_sequences = true;
-      }
-      if (!this.legend_multiple_sequences) {
-        if (n[kGlobals.network.AliasedSequencesID]) {
-          this.legend_multiple_sequences = true;
-        }
-      }
-    });
-
-    /**
-        iterate over all duplicate sequences, synchronize node attributes
-    */
-    if (this.has_multiple_sequences) {
-      _.each(this.primary_key_list, (seqs, primary_id) => {
-        if (seqs.length > 1) {
-          let consensus_attributes = {};
-
-          _.each(seqs, (seq_record) => {
-            _.each(seq_record[kGlobals.network.NodeAttributeID], (v, k) => {
-              if (!(k in consensus_attributes)) {
-                consensus_attributes[k] = [v];
-              } else {
-                consensus_attributes[k].push(v);
-              }
-            });
-          });
-
-          // only copy values if there's strict consensus
-
-          consensus_attributes = _.omit(
-            _.mapObject(consensus_attributes, (d, k) => {
-              let freq = _.countBy(d, (i) => i);
-              if (_.size(freq) == 1) {
-                return _.keys(freq)[0];
-              }
-              return null;
-            }),
-            (d) => !d
-          );
-
-          _.each(seqs, (seq_record) => {
-            _.extend(
-              seq_record[kGlobals.network.NodeAttributeID],
-              consensus_attributes
-            );
-          });
-        }
-      });
-    }
-  }
-
-  /**
-        @cluster [dict] : cluster object
-
-        return true if the cluster passes all the currently defined filters
-        see this.cluster_filtering_functions
-  */
-
-  cluster_display_filter(cluster) {
-    return _.every(this.cluster_filtering_functions, (f) => f(cluster));
-  }
-
-  /**
         @cluster [dict] : cluster object
 
         return true if cluster size is at least this.minimum_cluster_size
@@ -262,45 +104,6 @@ class HIVTxNetwork {
 
   filter_by_size = (cluster) => {
     return cluster.children.length >= this.minimum_cluster_size;
-  };
-
-  /**
-        @node_list [array] : list of nodes
-
-        returns the list of unique "individuals", collapsing nodes representing
-        multiple sequences from the same entity into a single blob
-  */
-
-  unique_entity_list = (node_list) => {
-    return _.map(
-      _.groupBy(node_list, (n) => this.primary_key(n)),
-      (d, k) => k
-    );
-  };
-
-  /**
-        @node_list [array] : list of node IDs
-
-        returns the list of unique "individuals", collapsing nodes representing
-        multiple sequences from the same entity into a single blob
-  */
-
-  unique_entity_list_from_ids = (node_list) => {
-    return this.unique_entity_list(
-      _.map(node_list, (d) => {
-        return { id: d };
-      })
-    );
-  };
-
-  /**
-        @node_list [array] : list of nodes
-
-        returns [primary key] => [objects] dict
-  */
-
-  unique_entity_object_list = (node_list) => {
-    return _.groupBy(node_list, (n) => this.primary_key(n));
   };
 
   /**

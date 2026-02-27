@@ -82,5 +82,12 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Simplified `network.js` to a clean delegator.
 - **Status**: Completed (2026-02-24)
 
+#### Step 4: Extract `HTXModel` base class
+- **Goal**: Create `src/core/HTXModel.js` and move core data model logic (tabulation, grouping) from `HIVTxNetwork`.
+- **Result**: 
+    - Created `HTXModel.js` with `group_edges_by_primary_key`, `tabulate_multiple_sequences`, and entity list helpers.
+    - Updated `HIVTxNetwork` to extend `HTXModel`.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
