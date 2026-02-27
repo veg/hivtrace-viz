@@ -57,5 +57,16 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~300 lines.
 - **Status**: Completed (2026-02-24)
 
+### Phase 2: Extract Core Engine for Standalone Package
+
+- **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
+
+#### Step 1: Extract `unpack_compact_json` to core
+- **Goal**: Move `unpack_compact_json` to `src/core/networkUtils.js`.
+- **Result**: 
+    - Created `src/core/networkUtils.js` (CommonJS compatible).
+    - Updated `src/network.js` to use the core version.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
