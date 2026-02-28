@@ -33,9 +33,56 @@ class HTXModel {
     this.using_time_filter = null;
     
     this.cluster_filtering_functions = {
-      size: (cluster) => cluster.children.length >= this.minimum_cluster_size,
-      singletons: (cluster) => cluster.children.length > 1,
+      size: (cluster) => this.filter_by_size(cluster),
+      singletons: (cluster) => this.filter_singletons(cluster),
     };
+  }
+
+  filter_by_size(cluster) {
+    return cluster.children.length >= this.minimum_cluster_size;
+  }
+
+  filter_singletons(cluster) {
+    return cluster.children.length > 1;
+  }
+
+  filter_if_added(cluster) {
+    return this.cluster_attributes[cluster.cluster_id].type !== "existing";
+  }
+
+  filter_time_period(cluster, timeDateUtil, kGlobals) {
+    return _.some(
+      this.nodes_by_cluster[cluster.cluster_id],
+      (n) =>
+        this.attribute_node_value_by_id(
+          n,
+          timeDateUtil.getClusterTimeScale(),
+          false,
+          false,
+          false,
+          kGlobals
+        ) >= this.using_time_filter
+    );
+  }
+
+  cluster_display_filter(cluster) {
+    return _.every(this.cluster_filtering_functions, (f) => f(cluster));
+  }
+
+  get_reference_date() {
+    if (!this.isPrimaryGraph && this.parent_graph_object) {
+      return this.parent_graph_object.today;
+    }
+
+    return this.today;
+  }
+
+  lookup_option(key, default_value, options) {
+    if (this.json.Settings && this.json.Settings[key]) {
+      return this.json.Settings[key];
+    }
+    if (options && options[key]) return options[key];
+    return default_value;
   }
 
   /**

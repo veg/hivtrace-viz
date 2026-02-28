@@ -33,6 +33,11 @@ class HIVTxNetwork extends HTXModel {
     this.defined_priority_groups = [];
     this.using_time_filter = null;
 
+    this.filter_by_size = this.filter_by_size.bind(this);
+    this.filter_singletons = this.filter_singletons.bind(this);
+    this.filter_if_added = this.filter_if_added.bind(this);
+    this.filter_time_period = this.filter_time_period.bind(this);
+
     this.tabulate_multiple_sequences(kGlobals);
 
     /** initialize UI/UX elements */
@@ -52,6 +57,22 @@ class HIVTxNetwork extends HTXModel {
 
   static inject_attribute_node_value_by_id(node, id, value) {
     return HTXModel.inject_attribute_node_value_by_id(node, id, value, kGlobals);
+  }
+
+  filter_time_period(cluster) {
+    return super.filter_time_period(cluster, timeDateUtil, kGlobals);
+  }
+
+  filter_if_added(cluster) {
+    return super.filter_if_added(cluster);
+  }
+
+  filter_by_size(cluster) {
+    return super.filter_by_size(cluster);
+  }
+
+  filter_singletons(cluster) {
+    return super.filter_singletons(cluster);
   }
 
   /** initialize UI/UX elements */
@@ -109,78 +130,6 @@ class HIVTxNetwork extends HTXModel {
       size: this.filter_by_size,
       singletons: this.filter_singletons,
     };
-  }
-
-  /**
-        @cluster [dict] : cluster object
-
-        return true if cluster size is at least this.minimum_cluster_size
-  */
-
-  filter_by_size = (cluster) => {
-    return cluster.children.length >= this.minimum_cluster_size;
-  };
-
-  /**
-        @cluster [dict] : cluster object
-
-        return true if cluster size is at least 2
-  */
-
-  filter_singletons = (cluster) => {
-    return cluster.children.length > 1;
-  };
-
-  /**
-        @cluster [dict] : cluster object
-
-        return true if the cluster is new compared to the previous network
-  */
-
-  filter_if_added = (cluster) => {
-    return this.cluster_attributes[cluster.cluster_id].type !== "existing";
-  };
-
-  /**
-        @cluster [dict] : cluster object
-
-        return true if the cluster has nodes newer than this.using_time_filter
-  */
-
-  filter_time_period = (cluster) => {
-    return _.some(
-      this.nodes_by_cluster[cluster.cluster_id],
-      (n) =>
-        this.attribute_node_value_by_id(
-          n,
-          timeDateUtil.getClusterTimeScale()
-        ) >= this.using_time_filter
-    );
-  };
-
-  /**
-        get the reference (creation) date for the network
-        same as "today", unless this is not the primary network (cluster or subcluster view),
-        in which case the reference date for the parent is used
-    */
-  get_reference_date() {
-    if (!this.isPrimaryGraph && this.parent_graph_object) {
-      return this.parent_graph_object.today;
-    }
-
-    return this.today;
-  }
-
-  /**
-        retrieve an option associated with "key"
-        if not found in Settings or options, return "default value"
-    */
-  lookup_option(key, default_value, options) {
-    if (this.json.Settings && this.json.Settings[key]) {
-      return this.json.Settings[key];
-    }
-    if (options && options[key]) return options[key];
-    return default_value;
   }
 
   /**

@@ -96,5 +96,12 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Browser wrappers in `HIVTxNetwork` handle `kGlobals` injection.
 - **Status**: Completed (2026-02-24)
 
+#### Step 6: Move cluster filtering and helpers to `HTXModel`
+- **Goal**: Move `cluster_display_filter`, `filter_by_size`, `filter_singletons`, `filter_if_added`, `filter_time_period`, `get_reference_date`, and `lookup_option` to core model.
+- **Result**: 
+    - Logic moved to `HTXModel`.
+    - Methods bound in `HIVTxNetwork` constructor to maintain `this` context for callbacks.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*
