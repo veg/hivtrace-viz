@@ -103,5 +103,13 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Methods bound in `HIVTxNetwork` constructor to maintain `this` context for callbacks.
 - **Status**: Completed (2026-02-24)
 
+#### Step 7: Move priority group helpers and date utilities to `HTXModel`
+- **Goal**: Move `generateClusterOfInterestID`, `priority_group_node_record`, `parse_dates`, `filter_by_date`, and status helpers to `HTXModel`.
+- **Result**: 
+    - Moved core COI and date parsing logic to `HTXModel`.
+    - Added state properties (`CDC_data`, `clusters`, `defined_priority_groups`) to `HTXModel` constructor.
+    - Updated `HIVTxNetwork` with thin wrappers.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

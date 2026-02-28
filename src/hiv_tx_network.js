@@ -75,6 +75,58 @@ class HIVTxNetwork extends HTXModel {
     return super.filter_singletons(cluster);
   }
 
+  priority_groups_pending() {
+    return super.priority_groups_pending();
+  }
+
+  priority_groups_expanded() {
+    return super.priority_groups_expanded();
+  }
+
+  priority_groups_automatic() {
+    return super.priority_groups_automatic(kGlobals);
+  }
+
+  priority_groups_find_by_name(name) {
+    return super.priority_groups_find_by_name(name);
+  }
+
+  priority_group_entity_count(pg) {
+    return super.priority_group_entity_count(pg);
+  }
+
+  generateClusterOfInterestID(subcluster_id) {
+    return super.generateClusterOfInterestID(subcluster_id, timeDateUtil);
+  }
+
+  priority_group_node_record(node_id, date) {
+    return super.priority_group_node_record(node_id, date, kGlobals);
+  }
+
+  static is_new_node(node) {
+    return HTXModel.is_new_node(node);
+  }
+
+  map_ids_to_objects() {
+    return super.map_ids_to_objects();
+  }
+
+  parse_dates(value) {
+    return super.parse_dates(value, timeDateUtil);
+  }
+
+  filter_by_date(cutoff, date_field, start_date, node, count_newly_added) {
+    return super.filter_by_date(
+      cutoff,
+      date_field,
+      start_date,
+      node,
+      count_newly_added,
+      timeDateUtil,
+      kGlobals
+    );
+  }
+
   /** initialize UI/UX elements */
   initialize_ui_ux_elements() {
     /** define a D3 behavior to make node labels draggable */
@@ -738,43 +790,7 @@ class HIVTxNetwork extends HTXModel {
 
   /** generate the name for a cluster of interest */
   generateClusterOfInterestID(subcluster_id) {
-    const id =
-      this.CDC_data["jurisdiction_code"] +
-      "_" +
-      timeDateUtil.DateViewFormatClusterCreate(this.CDC_data["timestamp"]) +
-      "_" +
-      subcluster_id;
-
-    let suffix = "";
-    let k = 1;
-    let found =
-      this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
-      this.defined_priority_groups.find((d) => d.name === id + suffix);
-    while (found !== undefined) {
-      suffix = "_" + k;
-      k++;
-      found =
-        this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
-        this.defined_priority_groups.find((d) => d.name === id + suffix);
-    }
-    return id + suffix;
-  }
-
-  /** does the node have "new node" attribute */
-
-  static is_new_node(node) {
-    return node.attributes.indexOf("new_node") >= 0;
-  }
-
-  /** create a map between node IDs and node objects */
-  map_ids_to_objects() {
-    if (!this.node_id_to_object) {
-      this.node_id_to_object = {};
-
-      _.each(this.json.Nodes, (n, i) => {
-        this.node_id_to_object[n.id] = n;
-      });
-    }
+    return super.generateClusterOfInterestID(subcluster_id, timeDateUtil);
   }
 
   /** Fetch the value of an attribute from the node
@@ -1266,10 +1282,6 @@ class HIVTxNetwork extends HTXModel {
         Counts the number of unique entities in a priority group.
         @param pg: The priority group object.
     */
-  priority_group_entity_count(pg) {
-    return this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
-      .length;
-  }
   /**
   
       validate the list of CoI
@@ -2103,15 +2115,6 @@ class HIVTxNetwork extends HTXModel {
       @param date (optional) : creation date
       @param kind (optional) : node creation mode
   */
-
-  priority_group_node_record(node_id, date, kind) {
-    return {
-      name: node_id,
-      added: date || this.get_reference_date(),
-      kind: kind || kGlobals.CDCCOINodeKindDefault,
-      autoadded: true,
-    };
-  }
 
   /** read and process JSON files defining COI
         @param url [string]: load the data from here

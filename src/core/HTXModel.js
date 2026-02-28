@@ -8,9 +8,14 @@ class HTXModel {
   constructor(json, primary_key_function, options) {
     this.json = json;
     this.options = options || {};
+    this.CDC_data = json.CDC_data || {};
+    this.clusters = [];
     this.warning_string = "";
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
+    this.defined_priority_groups = [];
+    this.auto_create_priority_sets = [];
+    this.node_id_to_object = null;
     
     /** 
      * Identify which nodes are duplicates
@@ -83,6 +88,145 @@ class HTXModel {
     }
     if (options && options[key]) return options[key];
     return default_value;
+  }
+
+  priority_groups_pending() {
+    return _.filter(this.defined_priority_groups, (pg) => pg.pending).length;
+  }
+
+  priority_groups_expanded() {
+    return _.filter(this.defined_priority_groups, (pg) => pg.expanded).length;
+  }
+
+  priority_groups_automatic(kGlobals) {
+    return _.filter(
+      this.defined_priority_groups,
+      (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem
+    ).length;
+  }
+
+  priority_groups_find_by_name(name) {
+    if (this.defined_priority_groups) {
+      const result = _.find(
+        this.defined_priority_groups,
+        (g) => g.name === name
+      );
+      if (result) return result;
+    }
+    if (this.options.isMJCNetwork && this.own_defined_priority_groups) {
+      return _.find(this.own_defined_priority_groups, (g) => g.name === name);
+    }
+    return null;
+  }
+
+  static is_new_node(node) {
+    return node.attributes.indexOf("new_node") >= 0;
+  }
+
+  map_ids_to_objects() {
+    if (!this.node_id_to_object) {
+      this.node_id_to_object = {};
+
+      _.each(this.json.Nodes, (n, i) => {
+        this.node_id_to_object[n.id] = n;
+      });
+    }
+  }
+
+  parse_dates(value, timeDateUtil) {
+    if (value instanceof Date) {
+      return value;
+    }
+    var parsed_value = null;
+
+    var passed = _.any(timeDateUtil.DateFormats, (f) => {
+      parsed_value = f.parse(value);
+      return parsed_value;
+    });
+
+    if (passed) {
+      if (
+        this.options._is_CDC_ &&
+        (parsed_value.getFullYear() < 1970 ||
+          parsed_value.getFullYear() > timeDateUtil.DateUpperBoundYear)
+      ) {
+        throw Error("Invalid date");
+      }
+      return parsed_value;
+    }
+
+    throw Error("Invalid date");
+  }
+
+  filter_by_date(
+    cutoff,
+    date_field,
+    start_date,
+    node,
+    count_newly_added,
+    timeDateUtil,
+    kGlobals
+  ) {
+    if (count_newly_added && HTXModel.is_new_node(node)) {
+      return true;
+    }
+    var node_dx = this.attribute_node_value_by_id(
+      node,
+      date_field,
+      false,
+      false,
+      false,
+      kGlobals
+    );
+    if (node_dx instanceof Date) {
+      return node_dx >= cutoff && node_dx <= start_date;
+    }
+    try {
+      node_dx = this.parse_dates(node_dx, timeDateUtil);
+      if (node_dx instanceof Date) {
+        return node_dx >= cutoff && node_dx <= start_date;
+      }
+    } catch (e) {
+      return undefined;
+    }
+    return false;
+  }
+
+  priority_group_entity_count(pg) {
+    return this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+      .length;
+  }
+
+  generateClusterOfInterestID(subcluster_id, timeDateUtil) {
+    const id =
+      this.CDC_data["jurisdiction_code"] +
+      "_" +
+      timeDateUtil.DateViewFormatClusterCreate(this.CDC_data["timestamp"]) +
+      "_" +
+      subcluster_id;
+
+    let suffix = "";
+    let k = 1;
+    let found =
+      this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
+      this.defined_priority_groups.find((d) => d.name === id + suffix);
+    while (found !== undefined) {
+      suffix = "_" + k;
+      k++;
+      found =
+        this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
+        this.defined_priority_groups.find((d) => d.name === id + suffix);
+    }
+    return id + suffix;
+  }
+
+  priority_group_node_record(node_id, date, kGlobals) {
+    return {
+      name: node_id,
+      added: date || this.get_reference_date(),
+      kind: kGlobals ? kGlobals.CDCCOINodeKindDefault : "Default",
+      autoadded: true,
+    };
   }
 
   /**
