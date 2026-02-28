@@ -111,5 +111,13 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated `HIVTxNetwork` with thin wrappers.
 - **Status**: Completed (2026-02-24)
 
+#### Step 8: Move `auto_expand_pg_handler` to `HTXModel`
+- **Goal**: Move COI growth logic to core model.
+- **Result**: 
+    - Moved `auto_expand_pg_handler` to `HTXModel`.
+    - Parameterized with `kGlobals`, `timeDateUtil`, and `misc`.
+    - Updated `HIVTxNetwork` with a thin wrapper.
+- **Status**: Completed (2026-02-24)
+
 ---
 *Note: This document will be updated after each step.*

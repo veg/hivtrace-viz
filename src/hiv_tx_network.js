@@ -811,132 +811,16 @@ class HIVTxNetwork extends HTXModel {
 
   */
 
-  auto_expand_pg_handler = function (pg, nodeID2idx, edgesByNode) {
-    if (!nodeID2idx) {
-      nodeID2idx = {};
-      _.each(this.json.Nodes, (n, i) => {
-        nodeID2idx[n.id] = i;
-      });
-    }
-
-    const core_node_set = new Set(_.map(pg.nodes, (n) => nodeID2idx[n.name]));
-    const added_nodes = new Set();
-    const filter = kGlobals.CDCCOITrackingOptionsDistanceFilter[pg.tracking];
-
-    const ref_date = this.get_reference_date();
-
-    if (filter) {
-      const time_cutoff = timeDateUtil.n_months_ago(
-        ref_date,
-        kGlobals.CDCCOITrackingOptionsDateFilter[pg.tracking]
-      );
-
-      let edge_set;
-
-      if (edgesByNode) {
-        let node_list = [...core_node_set];
-        let node_set = new Set(node_list);
-
-        for (let i = 0; i < node_list.length; i++) {
-          let d = node_list[i];
-          if (d in this.json.Nodes) {
-            _.each([...edgesByNode[d]], (e) => {
-              let add_nodes = [];
-
-              if (!node_set.has(e.source)) {
-                add_nodes.push(e.source);
-              }
-              if (!node_set.has(e.target)) {
-                add_nodes.push(e.target);
-              }
-              /*if (this.has_multiple_sequences) {
-                let extra_nodes = [];
-                _.each (add_nodes, n2a=> {
-                    let node_object = this.json.Nodes[n2a];
-                    _.each (this.primary_key_list [this.primary_key(node_object)], (no)=> {
-                        let nidx = nodeID2idx[no.id];
-                        if (!node_set.has(nidx)) {
-                            extra_nodes.push (nidx);
-                            node_set.add (nidx);
-                        }
-                    });
-                });
-                if (extra_nodes.length) {
-                    add_nodes.push (...extra_nodes);
-                }
-              }*/
-
-              _.each(add_nodes, (n2a) => {
-                node_list.push(n2a);
-                node_set.add(n2a);
-              });
-            });
-          }
-        }
-
-        edge_set = new Set();
-        _.each(
-          _.filter(node_list, (d) => d in this.json.Nodes),
-          (d) => {
-            for (const e of edgesByNode[d]) {
-              edge_set.add(e);
-            }
-          }
-        );
-
-        edge_set = [...edge_set];
-
-        /*edge_set = [
-          ...existing_nodes.reduce((acc, set) => {
-            return new Set([...acc, ...set]);
-          }, new Set()),
-        ];*/
-      } else {
-        edge_set = this.json.Edges;
-      }
-
-      const expansion_test = misc.hivtrace_cluster_depthwise_traversal(
-        this.json.Nodes,
-        edge_set,
-        (e) => {
-          let pass = filter(e);
-          if (pass) {
-            if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
-              pass =
-                pass &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.source]
-                ) &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.target]
-                );
-            }
-          }
-          return pass;
-        },
-        false,
-        _.filter(
-          _.map([...core_node_set], (d) => this.json.Nodes[d]),
-          (d) => d
-        )
-      );
-
-      _.each(expansion_test, (c) => {
-        _.each(c, (n) => {
-          if (!core_node_set.has(nodeID2idx[n.id])) {
-            added_nodes.add(nodeID2idx[n.id]);
-          }
-        });
-      });
-    }
-    return added_nodes;
-  };
+  auto_expand_pg_handler(pg, nodeID2idx, edgesByNode) {
+    return super.auto_expand_pg_handler(
+      pg,
+      nodeID2idx,
+      edgesByNode,
+      kGlobals,
+      timeDateUtil,
+      misc
+    );
+  }
 
   /**
         export CoI records for interactions with the external DB
