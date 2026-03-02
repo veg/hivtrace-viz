@@ -16,6 +16,7 @@ class HTXModel {
     this.defined_priority_groups = [];
     this.auto_create_priority_sets = [];
     this.node_id_to_object = null;
+    this.priority_node_overlap = {};
     
     /** 
      * Identify which nodes are duplicates
@@ -345,6 +346,265 @@ class HTXModel {
       });
     }
     return added_nodes;
+  }
+
+  priority_groups_compute_overlap(groups, kGlobals) {
+    this.priority_node_overlap = {};
+
+    var entities_by_pg = {};
+    var size_by_pg = {};
+    _.each(groups, (pg) => {
+      entities_by_pg[pg.name] = this.aggregate_indvidual_level_records(
+        pg.node_objects,
+        kGlobals
+      );
+      size_by_pg[pg.name] = entities_by_pg[pg.name].length;
+      _.each(entities_by_pg[pg.name], (n) => {
+        const entity_id = this.entity_id(n);
+        if (!(entity_id in this.priority_node_overlap)) {
+          this.priority_node_overlap[entity_id] = new Set();
+        }
+        this.priority_node_overlap[entity_id].add(pg.name);
+      });
+    });
+
+    _.each(groups, (pg) => {
+      const overlap = {
+        sets: new Set(),
+        nodes: 0,
+        supersets: [],
+        duplicates: [],
+      };
+
+      const by_set_count = {};
+      _.each(entities_by_pg[pg.name], (n) => {
+        const entity_id = this.entity_id(n);
+        if (this.priority_node_overlap[entity_id].size > 1) {
+          overlap.nodes++;
+          this.priority_node_overlap[entity_id].forEach((pgn) => {
+            if (pgn !== pg.name) {
+              if (!(pgn in by_set_count)) {
+                by_set_count[pgn] = [];
+              }
+              by_set_count[pgn].push(entity_id);
+            }
+            overlap.sets.add(pgn);
+          });
+        }
+      });
+
+      _.each(by_set_count, (nodes, name) => {
+        if (nodes.length == size_by_pg[pg.name]) {
+          if (size_by_pg[name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(name);
+          } else {
+            overlap.supersets.push(name);
+          }
+        }
+      });
+
+      pg.overlap = {
+        nodes: overlap.nodes,
+        sets: Math.max(0, overlap.sets.size - 1),
+        superset: overlap.supersets,
+        duplicate: overlap.duplicates,
+      };
+    });
+  }
+
+  priority_groups_compute_overlap_mjc(mjc_groups, own_groups, kGlobals) {
+    this.priority_node_overlap = {};
+
+    if (!mjc_groups || !own_groups) {
+      return;
+    }
+
+    // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
+    var size_by_pg = {};
+
+    // Also keep sizes for own_groups for superset/duplicate checks
+    var size_by_own = {};
+
+    // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
+    _.each(own_groups, (pg) => {
+      const ents = this.aggregate_indvidual_level_records(pg.nodes, kGlobals);
+      size_by_own[pg.name] = ents.length;
+
+      _.each(ents, (n) => {
+        const entity_id = this.entity_id(n);
+        if (!(entity_id in this.priority_node_overlap)) {
+          this.priority_node_overlap[entity_id] = new Set();
+        }
+        this.priority_node_overlap[entity_id].add(pg.name);
+      });
+    });
+
+    // 3) For each mjc group, compute overlap only considering nodes that are present in own_groups
+    _.each(mjc_groups, (pg) => {
+      const overlap = {
+        sets: new Set(),
+        nodes: 0,
+        supersets: [],
+        duplicates: [],
+      };
+
+      const by_set_count = {};
+      _.each(pg.nodes, (n) => {
+        const entity_id = this.entity_id(n);
+
+        // Only care about nodes in mjc_groups that are present in own_groups
+        if (
+          entity_id in this.priority_node_overlap &&
+          this.priority_node_overlap[entity_id].size > 0
+        ) {
+          overlap.nodes++;
+          this.priority_node_overlap[entity_id].forEach((own_pg_name) => {
+            // Collect counts per owning PG (these are names from own_groups)
+            if (!(own_pg_name in by_set_count)) {
+              by_set_count[own_pg_name] = [];
+            }
+            by_set_count[own_pg_name].push(entity_id);
+
+            overlap.sets.add(own_pg_name);
+          });
+        }
+      });
+
+      // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
+      // then it's either a superset or a duplicate (same size).
+      _.each(by_set_count, (nodes, own_name) => {
+        if (nodes.length == size_by_pg[pg.name]) {
+          if (size_by_own[own_name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(own_name);
+          } else {
+            overlap.supersets.push(own_name);
+          }
+        }
+      });
+
+      // assign overlap summary to the mjc group
+      pg.overlap = {
+        nodes: overlap.nodes,
+        // sets = number of distinct own_groups that share nodes with this mjc_group
+        sets: overlap.sets.size,
+        superset: overlap.supersets,
+        duplicate: overlap.duplicates,
+      };
+    });
+  }
+
+  aggregate_indvidual_level_records(node_list, kGlobals) {
+    if (this.options.isMJCNetwork) {
+      return _.uniq(node_list, (n) => n.id ?? n.name);
+    }
+    node_list = node_list || this.json.Nodes;
+
+    const aggregator = (values, key, record, store_key) => {
+      let unique_values = _.countBy(values, (dn) => dn[key]);
+
+      delete unique_values["undefined"];
+
+      if (_.size(unique_values) == 1) {
+        record[store_key] = values[0][key];
+      } else {
+        if (_.size(unique_values) > 0) {
+          record[store_key] = _.map(unique_values, (d3, k3) => k3).join(";");
+        }
+      }
+    };
+
+    if (this.has_multiple_sequences) {
+      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
+      let new_list = [];
+      _.each(binned, (values, key) => {
+        if (values.length == 1) {
+          new_list.push(_.clone(values[0]));
+        } else {
+          let new_record = _.clone(values[0]);
+          new_record[kGlobals.network.NodeAttributeID] = _.object(
+            _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
+              const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
+              let unique_values = _.countBy(
+                values,
+                (dn) => dn[kGlobals.network.NodeAttributeID][k]
+              );
+
+              if (_.size(unique_values) == 1) {
+                return [k, values[0][kGlobals.network.NodeAttributeID][k]];
+              } else {
+                if (proto.type == "Date") {
+                  try {
+                    return [
+                      k,
+                      new Date(
+                        Date.parse(_.min(_.map(unique_values, (d3, k3) => k3)))
+                      ),
+                    ];
+                  } catch {
+                    return [k, null];
+                  }
+                } else {
+                  return [
+                    k,
+                    _.sortBy(_.map(unique_values, (d3, k3) => k3)).join(";"),
+                  ];
+                }
+              }
+            })
+          );
+
+          aggregator(values, "cluster", new_record, "cluster");
+          aggregator(
+            values,
+            "subcluster_label",
+            new_record,
+            "subcluster_label"
+          );
+
+          new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
+            _.map(values, (d) =>
+              d[kGlobals.network.AliasedSequencesID]
+                ? d[kGlobals.network.AliasedSequencesID]
+                : d.id
+            )
+          );
+          new_record[kGlobals.network.NodeAttributeID]["sequence_count"] =
+            new_record[kGlobals.network.AliasedSequencesID].length;
+          new_list.push(new_record);
+        }
+      });
+      return new_list;
+    }
+    return node_list;
+  }
+
+  entity_id_from_string(node_name) {
+    return this.primary_key({ id: node_name });
+  }
+
+  entity_id(node) {
+    return this.primary_key(node);
+  }
+
+  cleanRedacted(id) {
+    if (id.startsWith("REDACTED_")) {
+      return "REDACTED";
+    }
+    return id;
+  }
+
+  apply_to_entities(cb) {
+    if (this.has_multiple_sequences) {
+      _.each(this.primary_key_list, (d, k) => {
+        cb(k, d);
+      });
+    }
+  }
+
+  list_of_aliased_sequences(node, kGlobals) {
+    return node[kGlobals.network.AliasedSequencesID]
+      ? node[kGlobals.network.AliasedSequencesID]
+      : [node.id];
   }
 
   /**
