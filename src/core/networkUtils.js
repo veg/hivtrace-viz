@@ -88,7 +88,7 @@ function ensure_node_attributes_exist(json, kGlobals) {
   json.Nodes.forEach((n) => {
     for (const i of validate_these_keys) {
       if (!n[i]) {
-        n[i] = [];
+        n[i] = i === "attributes" ? [] : {};
       }
     }
   });

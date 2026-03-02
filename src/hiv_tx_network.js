@@ -125,6 +125,35 @@ class HIVTxNetwork extends HTXModel {
     return super.apply_to_entities(cb);
   }
 
+  priority_groups_is_new_node(node) {
+    return super.priority_groups_is_new_node(node);
+  }
+
+  priority_groups_export(group_set, include_unvalidated) {
+    return super.priority_groups_export(
+      group_set,
+      include_unvalidated,
+      timeDateUtil
+    );
+  }
+
+  priority_groups_export_nodes(group_set, include_unvalidated) {
+    return super.priority_groups_export_nodes(
+      group_set,
+      include_unvalidated,
+      kGlobals,
+      timeDateUtil
+    );
+  }
+
+  priority_groups_export_sets() {
+    return super.priority_groups_export_sets(kGlobals, timeDateUtil);
+  }
+
+  priority_groups_automatic_creation() {
+    return super.priority_groups_automatic_creation(kGlobals, timeDateUtil);
+  }
+
   list_of_aliased_sequences(node) {
     return super.list_of_aliased_sequences(node, kGlobals);
   }
@@ -256,173 +285,12 @@ class HIVTxNetwork extends HTXModel {
 
   */
   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-    if (this.has_multiple_sequences && this.isPrimaryGraph) {
-      reduce_distance_within = reduce_distance_within || 0.000001;
-      reduce_distance_between = reduce_distance_between || 0.015;
-
-      let clusters = misc.hivtrace_cluster_depthwise_traversal(
-        this.json.Nodes,
-        this.json.Edges
-      );
-
-      let complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
-        this.json.Nodes,
-        this.json.Edges,
-        (d) => d.length <= reduce_distance_within
-      );
-
-      let adjacency = misc.hivtrace_compute_adjacency(
-        this.json.Nodes,
-        this.json.Edges,
-        (d) => d.length <= reduce_distance_between
-      );
-
-      let adjacency05 = misc.hivtrace_compute_adjacency(
-        this.json.Nodes,
-        this.json.Edges,
-        (d) => d.length <= 0.005
-      );
-      let nodes_to_delete = new Set();
-
-      _.each(clusters, (cluster, cluster_index) => {
-        let entity_list = this.unique_entity_list(cluster);
-        if (entity_list.length == 1) {
-          _.each(cluster, (ncn) => {
-            nodes_to_delete.add(ncn.id);
-            // these are all null nodes (clusters made of single individual sequences)
-          });
-        }
-      });
-
-      //let c95 = this.extract_single_cluster (clusters[95]);
-      //console.log (misc.hivtrace_cluster_depthwise_traversal (c95.Nodes, c95.Edges, (d)=>d.length <= reduce_distance_within));
-
-      let null_size = nodes_to_delete.size;
-
-      _.each(complete_clusters, (cluster, cluster_index) => {
-        if (cluster.length > 1) {
-          if (_.some(cluster, (n) => nodes_to_delete.has(n.id))) {
-            return;
-          }
-
-          let uel = this.unique_entity_object_list(cluster);
-
-          _.each(uel, (dup_seqs, uid) => {
-            if (dup_seqs.length > 1) {
-              let dup_ids = new Set(_.map(dup_seqs, (d) => d.id));
-
-              let neighborhood = new Set(
-                _.map(
-                  _.filter(
-                    [...adjacency[dup_seqs[0].id]],
-                    (d) => !dup_ids.has(d)
-                  )
-                )
-              );
-              let neighborhood05 = new Set(
-                _.map(
-                  _.filter(
-                    [...adjacency05[dup_seqs[0].id]],
-                    (d) => !dup_ids.has(d)
-                  )
-                )
-              );
-              let reduce = true;
-
-              //if (neighborhood.size > 0) {
-              for (let idx = 1; idx < dup_seqs.length; idx += 1) {
-                let other_nbhd = new Set(
-                  _.map(
-                    _.filter(
-                      [...adjacency[dup_seqs[idx].id]],
-                      (d) => !dup_ids.has(d)
-                    )
-                  )
-                );
-                let other_nbhd05 = new Set(
-                  _.map(
-                    _.filter(
-                      [...adjacency05[dup_seqs[idx].id]],
-                      (d) => !dup_ids.has(d)
-                    )
-                  )
-                );
-
-                if (
-                  !(
-                    other_nbhd.isSubsetOf(neighborhood) &&
-                    neighborhood.isSubsetOf(other_nbhd)
-                  ) ||
-                  !(
-                    other_nbhd.isSubsetOf(neighborhood05) &&
-                    neighborhood.isSubsetOf(other_nbhd05)
-                  )
-                ) {
-                  reduce = false;
-                  break;
-                }
-              }
-              //}
-              if (reduce) {
-                dup_seqs[0][kGlobals.network.AliasedSequencesID] = _.map(
-                  dup_seqs,
-                  (d) => d.id
-                );
-                _.each(dup_seqs, (d, i) => {
-                  if (i > 0) {
-                    nodes_to_delete.add(d.id);
-                  }
-                });
-              }
-            }
-          });
-        }
-      });
-
-      console.log(
-        "Marked ",
-        nodes_to_delete.size - null_size,
-        " collapsible nodes"
-      );
-
-      /** now iterate over non-trivial clusters, and see if any nodes are collapsible **/
-
-      // delete designated nodes and update network structures
-      if (nodes_to_delete.size) {
-        let new_node_list = [];
-        let new_edge_set = [];
-        let old_node_idx_to_new_node_idx = [];
-        let new_counter = 0;
-
-        _.each(this.json.Nodes, (n, i) => {
-          if (nodes_to_delete.has(n.id)) {
-            old_node_idx_to_new_node_idx.push(-1);
-          } else {
-            new_node_list.push(n);
-            old_node_idx_to_new_node_idx.push(new_counter);
-            new_counter++;
-          }
-        });
-
-        _.each(this.json.Edges, (e, i) => {
-          let new_source = old_node_idx_to_new_node_idx[e.source],
-            new_target = old_node_idx_to_new_node_idx[e.target];
-
-          if (new_source >= 0 && new_target >= 0) {
-            e.source = new_source;
-            e.target = new_target;
-            new_edge_set.push(e);
-          }
-        });
-
-        //console.log (new_edge_set);
-
-        this.json.Nodes = new_node_list;
-        this.json.Edges = new_edge_set;
-
-        this.tabulate_multiple_sequences();
-      }
-    }
+    super.process_multiple_sequences(
+      kGlobals,
+      misc,
+      reduce_distance_within,
+      reduce_distance_between
+    );
   }
 
   /**
@@ -431,51 +299,7 @@ class HIVTxNetwork extends HTXModel {
   */
 
   annotate_multiple_clusters_on_nodes() {
-    if (this.has_multiple_sequences) {
-      let entities_in_multiple_clusters = {};
-      _.each(this.primary_key_list, (nodes, key) => {
-        if (nodes.length >= 2) {
-          let cl = _.groupBy(nodes, (n) => n.cluster);
-          if (_.size(cl) > 1) {
-            entities_in_multiple_clusters[key] = _.keys(cl);
-            _.each(nodes, (n) => {
-              n["multiple clusters"] = _.keys(cl);
-            });
-          } else {
-            _.each(nodes, (n) => {
-              delete n["multiple clusters"];
-            });
-          }
-          cl = _.filter(
-            _.map(
-              _.groupBy(nodes, (n) => n.subcluster_label),
-              (d, k) => k
-            ),
-            (d) => d != "undefined"
-          );
-          if (_.size(cl) > 1) {
-            _.each(nodes, (n) => {
-              n["multiple subclusters"] = cl;
-            });
-          } else {
-            _.each(nodes, (n) => {
-              delete n["multiple subclusters"];
-            });
-          }
-        }
-      });
-      this.entities_in_multiple_clusters = entities_in_multiple_clusters;
-      /*let by_cluster = {};
-      _.each (this.entities_in_multiple_clusters, (c,n)=> {
-        _.each (c, (ci)=> {
-            if (ci in by_cluster) {
-                by_cluster[ci].push (n);
-            } else {
-                by_cluster[ci] = [n];
-            }
-        });
-      });*/
-    }
+    super.annotate_multiple_clusters_on_nodes();
   }
 
   /**
@@ -492,70 +316,7 @@ class HIVTxNetwork extends HTXModel {
   */
 
   simplify_multisequence_cluster(filtered_json) {
-    /**
-            20241030 SLKP
-            Perform a greedy collapse of all the sequences that map to the same primary key
-            For a reduced cluster view
-        */
-
-    let reduced_nodes = _.pairs(
-      _.mapObject(
-        this.unique_entity_object_list(filtered_json.Nodes),
-        (v) => this.aggregate_indvidual_level_records(v)[0]
-      )
-    );
-
-    let uid_index = _.object(_.map(reduced_nodes, (d, i) => [d[0], i]));
-    let oui_index = {};
-
-    _.each(reduced_nodes, (d) => {
-      let aliased = d[1][kGlobals.network.AliasedSequencesID] || [d[1].id];
-      _.each(aliased, (nn) => {
-        oui_index[nn] = uid_index[d[0]];
-      });
-    });
-
-    let adjacency = misc.hivtrace_compute_adjacency(
-      filtered_json.Nodes,
-      filtered_json.Edges
-    );
-    let reduced_adjacency = _.map(uid_index, (d) =>
-      _.map(uid_index, (d2) => 0)
-    );
-    let reduced_lengths = _.map(uid_index, (d) => _.map(uid_index, (d2) => 0));
-
-    _.each(filtered_json.Edges, (e) => {
-      let reduced_src = oui_index[filtered_json.Nodes[e.source].id],
-        reduced_tgt = oui_index[filtered_json.Nodes[e.target].id];
-
-      if (reduced_src != reduced_tgt) {
-        reduced_adjacency[reduced_src][reduced_tgt] += 1;
-        reduced_adjacency[reduced_tgt][reduced_src] += 1;
-        reduced_lengths[reduced_src][reduced_tgt] += e.length;
-        reduced_lengths[reduced_tgt][reduced_src] += e.length;
-      }
-    });
-
-    let reduced_edges = [];
-
-    _.each(reduced_adjacency, (row, i) => {
-      for (let j = i + 1; j < row.length; j++) {
-        if (row[j] > 0) {
-          reduced_edges.push({
-            source: i,
-            target: j,
-            attributes: [],
-            length: reduced_lengths[i][j] / row[j],
-            weight: row[j],
-          });
-        }
-      }
-    });
-
-    filtered_json.Edges = reduced_edges;
-    filtered_json.Nodes = _.map(reduced_nodes, (d) => d[1]);
-
-    return filtered_json;
+    return super.simplify_multisequence_cluster(filtered_json, kGlobals, misc);
   }
 
   /**
@@ -623,10 +384,7 @@ class HIVTxNetwork extends HTXModel {
 
   /** filter the list of CoI to return those which have been created by the system */
   priority_groups_automatic() {
-    return _.filter(
-      this.defined_priority_groups,
-      (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem
-    ).length;
+    return super.priority_groups_automatic(kGlobals);
   }
 
   /** lookup a CoI by name; null if not found */
@@ -717,34 +475,6 @@ class HIVTxNetwork extends HTXModel {
         @group_set : custom set or all (if null)
         @include_unvalidated: if true will include CoI which did not undergo/pass validation
   */
-
-  priority_groups_export = function (group_set, include_unvalidated) {
-    group_set = group_set || this.defined_priority_groups;
-
-    return _.map(
-      _.filter(group_set, (g) => include_unvalidated || g.validated),
-      (g) => ({
-        name: g.name,
-        description: g.description,
-        nodes: g.nodes,
-        modified:
-          g.modified === "REDACTED"
-            ? g.modified
-            : timeDateUtil.DateFormats[0](g.modified),
-        kind: g.kind,
-        created:
-          g.modified === "REDACTED"
-            ? g.created
-            : timeDateUtil.DateFormats[0](g.created),
-        createdBy: g.createdBy,
-        tracking: g.tracking,
-        autocreated: g.autocreated,
-        autoexpanded: g.autoexpanded,
-        pending: g.pending,
-        history: g.history,
-      })
-    );
-  };
 
   /** interact with the remote DB to send updates of CoI operations
         @name: the name of the CoI
@@ -860,136 +590,6 @@ class HIVTxNetwork extends HTXModel {
 
         @return an array of node records
   */
-
-  priority_groups_export_nodes = function (group_set, include_unvalidated) {
-    group_set = group_set || this.defined_priority_groups;
-
-    return _.flatten(
-      _.map(
-        _.filter(group_set, (g) => include_unvalidated || g.validated),
-        (g) => {
-          const exclude_nodes = new Set(g.not_in_network);
-          let cluster_detect_size = 0;
-          /** 20241101 MSPP
-                added some sloppy code to handle MSPP
-          **/
-
-          let entities = this.aggregate_indvidual_level_records(g.node_objects);
-
-          cluster_detect_size = this.unique_entity_list_from_ids(
-            _.map(
-              _.filter(g.nodes, (node) => {
-                return node.added <= g.created;
-              }),
-              (node) => node.name
-            )
-          ).length;
-
-          const entity_to_pg_records = _.groupBy(
-            _.filter(g.nodes, (nr) => !exclude_nodes.has(nr.name)),
-            (nr) => this.entity_id_from_string(nr.name)
-          );
-
-          const entity_to_g_records = _.groupBy(
-            _.filter(g.node_objects, (nr) => !exclude_nodes.has(nr.id)),
-            (nr) => this.entity_id_from_string(nr.id)
-          );
-
-          return _.map(
-            _.filter(entities, (gn) => {
-              return (
-                new Set(this.list_of_aliased_sequences(gn)).difference(
-                  exclude_nodes
-                ).size > 0
-              );
-            }),
-            (gn) => {
-              const eid = this.entity_id(gn);
-              return {
-                eHARS_uid: this.cleanRedacted(eid),
-                cluster_uid: this.cleanRedacted(g.name),
-                cluster_ident_method: g.kind,
-                person_ident_method: entity_to_pg_records[eid][0].kind,
-                person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-                  entity_to_pg_records[eid][0].added
-                ),
-                sample_dt: d3.min(entity_to_g_records[eid], (g) =>
-                  timeDateUtil.hivtrace_date_or_na_if_missing(
-                    this.attribute_node_value_by_id(g, "sample_dt")
-                  )
-                ),
-                new_linked_case: this.priority_groups_is_new_node(
-                  entity_to_pg_records[eid][0]
-                )
-                  ? 1
-                  : 0,
-                cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-                  g.created
-                ),
-                network_date: timeDateUtil.hivtrace_date_or_na_if_missing(
-                  this.today
-                ),
-                cluster_detect_size: cluster_detect_size,
-                cluster_type: g.createdBy,
-                cluster_modified_dt:
-                  timeDateUtil.hivtrace_date_or_na_if_missing(g.modified),
-                cluster_growth:
-                  kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-                national_priority: g.meets_priority_def,
-                cluster_current_size: entities.length,
-                cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-                cluster_overlap: g.overlap.sets,
-                SequenceID: this.list_of_aliased_sequences(gn)
-                  .map((seq) => {
-                    return seq.split("|")[1];
-                  })
-                  .join(";"),
-              };
-            }
-          );
-        }
-      )
-    );
-  };
-
-  /**
-        Export CoI summary info
-  
-        @return an array of CoI records
-  */
-  priority_groups_export_sets = function () {
-    return _.flatten(
-      _.map(
-        _.filter(this.defined_priority_groups, (g) => g.validated),
-        (g) => ({
-          cluster_type: g.createdBy,
-          cluster_uid: this.cleanRedacted(g.name),
-          cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.modified
-          ),
-          cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.created
-          ),
-          cluster_ident_method: g.kind,
-          cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-          cluster_current_size: this.aggregate_indvidual_level_records(
-            g.node_objects
-          ).length,
-          national_priority: g.meets_priority_def,
-          cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-          cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
-          cluster_overlap: g.overlap.sets,
-        })
-      )
-    );
-  };
-
-  /**
-        returns true is the node was added by the system during CoI definition/expansion
-  */
-  priority_groups_is_new_node = function (node) {
-    return node.autoadded;
-  };
 
   /** parse a date record
         @param value (date object or string)
@@ -1275,131 +875,26 @@ class HIVTxNetwork extends HTXModel {
 
   load_priority_sets(url, is_writeable) {
     this.fetch_priority_sets(url, (results) => {
-      let latest_date = new Date();
-      latest_date.setFullYear(1900);
-      this.defined_priority_groups = _.clone(results);
-      _.each(this.defined_priority_groups, (pg) => {
-        _.each(pg.nodes, (n) => {
-          try {
-            if (n.added === "REDACTED") {
-              return;
-            }
-            n.added = timeDateUtil.DateFormats[0].parse(n.added);
-            if (n.added > latest_date) {
-              latest_date = n.added;
-            }
-          } catch {
-            // do nothing
-          }
-        });
-      });
+      const stats = this.priority_groups_process_data(
+        results,
+        this._is_CDC_auto_mode,
+        kGlobals,
+        timeDateUtil,
+        misc
+      );
 
       this.priority_set_table_writeable = is_writeable === "writeable";
 
-      this.priority_groups_validate(
-        this.defined_priority_groups,
-        this._is_CDC_auto_mode
-      );
-
-      this.auto_create_priority_sets = [];
-      /**
-          check if the system needs to create/expand CoI
-      */
-      const today_string = timeDateUtil.DateFormats[0](
-        this.get_reference_date()
-      );
-      this.map_ids_to_objects();
-
-      if (this._is_CDC_auto_mode) {
-        _.each(this.clusters, (cluster_data, cluster_id) => {
-          _.each(cluster_data.subclusters, (subcluster_data) => {
-            _.each(subcluster_data.priority_score, (priority_score, i) => {
-              let priority_entities = this.unique_entity_list(
-                _.map(priority_score, (d) => ({ id: d }))
-              );
-              if (
-                priority_entities.length >=
-                this.CDC_data["autocreate-priority-set-size"]
-              ) {
-                // only generate a new set if it doesn't match what is already there
-                const node_set = {};
-                _.each(subcluster_data.recent_nodes[i], (n) => {
-                  node_set[n] = 1;
-                });
-
-                const matched_groups = _.filter(
-                  _.filter(
-                    this.defined_priority_groups,
-                    (pg) =>
-                      pg.kind in kGlobals.CDCCOICanAutoExpand &&
-                      pg.createdBy === kGlobals.CDCCOICreatedBySystem &&
-                      pg.tracking === kGlobals.CDCCOITrackingOptionsDefault
-                  ),
-                  (pg) => {
-                    const matched = _.countBy(
-                      _.map(pg.nodes, (pn) => pn.name in node_set)
-                    );
-                    return matched[true] >= 1;
-                  }
-                );
-
-                if (matched_groups.length >= 1) {
-                  return;
-                }
-
-                const autoname = this.generateClusterOfInterestID(
-                  subcluster_data.cluster_id
-                );
-
-                this.auto_create_priority_sets.push({
-                  name: autoname,
-                  description:
-                    "Automatically created cluster of interest " + autoname,
-                  nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
-                    this.priority_group_node_record(
-                      n,
-                      this.get_reference_date()
-                    )
-                  ),
-                  created: today_string,
-                  kind: kGlobals.CDCCOIKindAutomaticCreation,
-                  tracking: kGlobals.CDCCOITrackingOptions[0],
-                  createdBy: kGlobals.CDCCOICreatedBySystem,
-                  autocreated: true,
-                  autoexpanded: false,
-                  pending: true,
-                });
-              }
-            });
-          });
-        });
-      }
-
-      if (this.auto_create_priority_sets.length) {
-        // SLKP 20200727 now check to see if any of the priority sets
-        // need to be auto-generated
-        //console.log (this.auto_create_priority_sets);
-        this.defined_priority_groups.push(...this.auto_create_priority_sets);
-      }
-      const autocreated = this.defined_priority_groups.filter(
-          (pg) => pg.autocreated
-        ).length,
-        autoexpanded = this.defined_priority_groups.filter(
-          (pg) => pg.autoexpanded
-        ).length,
-        automatic_action_taken = autocreated + autoexpanded > 0,
-        left_to_review = this.defined_priority_groups.filter(
-          (pg) => pg.pending
-        ).length;
+      const automatic_action_taken = stats.autocreated + stats.autoexpanded > 0;
 
       if (automatic_action_taken) {
         this.warning_string +=
           "<br/>Automatically created <b>" +
-          autocreated +
+          stats.autocreated +
           "</b> and expanded <b>" +
-          autoexpanded +
+          stats.autoexpanded +
           "</b> clusters of interest." +
-          (left_to_review > 0
+          (stats.pending > 0
             ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
             : "");
         this.display_warning(this.warning_string, true);
@@ -1421,17 +916,14 @@ class HIVTxNetwork extends HTXModel {
         if (tab_pill) {
           d3.select(tab_pill).text("Read-only");
         }
-      } else if (tab_pill && left_to_review > 0) {
-        d3.select(tab_pill).text(left_to_review);
-        d3.select("#banner_coi_counts").text(left_to_review);
+      } else if (tab_pill && stats.pending > 0) {
+        d3.select(tab_pill).text(stats.pending);
+        d3.select("#banner_coi_counts").text(stats.pending);
       }
 
-      this.priority_groups_validate(this.defined_priority_groups);
       // Update the DB with the new ClusterOI
-      const auto_create_priority_sets_names =
-        this.auto_create_priority_sets.map((pg) => pg.name);
       _.each(this.defined_priority_groups, (pg) => {
-        if (pg.name in auto_create_priority_sets_names) {
+        if (pg.autocreated) {
           this.priority_groups_update_node_sets(pg.name, "insert");
         } else {
           // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
@@ -1446,6 +938,8 @@ class HIVTxNetwork extends HTXModel {
       ) {
         this.handle_attribute_categorical("subcluster_or_priority_node");
       }
+    });
+  }
       //this.update();
     });
   }
@@ -2169,25 +1663,7 @@ class HIVTxNetwork extends HTXModel {
     */
 
   annotate_cluster_changes() {
-    if (this.cluster_attributes) {
-      _.each(this.cluster_attributes, (cluster) => {
-        if ("old_size" in cluster && "size" in cluster) {
-          cluster["delta"] = cluster["size"] - cluster["old_size"];
-          cluster["deleted"] =
-            cluster["old_size"] +
-            (cluster["new_nodes"] ? cluster["new_nodes"] : 0) -
-            cluster["size"];
-        } else if (cluster["type"] === "new") {
-          cluster["delta"] = cluster["size"];
-          if ("moved" in cluster) {
-            cluster["delta"] -= cluster["moved"];
-          }
-        } else {
-          cluster["delta"] = 0;
-        }
-        cluster["flag"] = cluster["moved"] || cluster["deleted"] ? 2 : 3;
-      });
-    }
+    return super.annotate_cluster_changes();
   }
 
   /**

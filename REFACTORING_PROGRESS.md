@@ -119,5 +119,39 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated `HIVTxNetwork` with a thin wrapper.
 - **Status**: Completed (2026-02-24)
 
+#### Step 9: Move entity aggregation and overlap logic to `HTXModel`
+- **Goal**: Move `aggregate_indvidual_level_records` and `priority_groups_compute_overlap` to core model.
+- **Result**: 
+    - Moved aggregation, entity identification, and overlap computation logic to `HTXModel`.
+    - Removed D3 dependency from aggregator (replaced `d3.min` with `_.min`).
+    - Fixed typo in `priority_groups_compute_overlap_mjc`.
+- **Status**: Completed (2026-03-02)
+
+#### Step 10: Move `priority_groups_validate` to `HTXModel`
+- **Goal**: Move the primary COI validation logic to core model.
+- **Result**: 
+    - Migrated the massive `priority_groups_validate` method to `HTXModel`.
+    - Parameterized all browser-specific globals (`kGlobals`, `timeDateUtil`, `misc`).
+    - Simplified redundant logic and fixed typos during migration.
+- **Status**: Completed (2026-03-02)
+
+#### Step 11: Move MSPP processing logic to `HTXModel`
+- **Goal**: Move `process_multiple_sequences`, `annotate_multiple_clusters_on_nodes`, and `simplify_multisequence_cluster` to core model.
+- **Result**: 
+    - Migrated MSPP (Multiple Sequences Per Person) core logic to `HTXModel`.
+    - Added `is_primary_graph` state to `HTXModel` to control deletion logic.
+    - Replaced implementations in `HIVTxNetwork` with thin wrappers.
+    - Verified identical cluster counts and sizes using server-side analysis script on large jurisdictional data.
+- **Status**: Completed (2026-03-02)
+
+#### Step 12: Consolidated Priority Group Processing in `HTXModel`
+- **Goal**: Move the core logic of `load_priority_sets` to the model, separating it from UI/DOM manipulation.
+- **Result**: 
+    - Created `priority_groups_process_data` in `HTXModel` to encapsulate date parsing, validation, auto-creation, and overlap computation.
+    - Updated `HIVTxNetwork.load_priority_sets` to use this new method, reducing its size and complexity.
+    - Enhanced `HTXModel` constructor to handle jurisdiction-based defaults (e.g., low-morbidity threshold settings) and reference dates (`today`).
+    - Verified **perfect match** (25/25 CoI groups and names) between server-side script and browser reference data.
+- **Status**: Completed (2026-03-02)
+
 ---
 *Note: This document will be updated after each step.*
