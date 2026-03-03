@@ -39,6 +39,8 @@ import {
   compute_cluster_gradient as compute_cluster_gradient_ext,
 } from "./networkStylers";
 
+import * as Tooltips from "./networkTooltips";
+
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
 
@@ -155,7 +157,7 @@ var hivtrace_cluster_network_graph = function (
     options["init_code"].call(null, self, options);
   }
 
-  if (self.isPrimaryGraph) {
+  if (self.is_primary_graph) {
     clustersOfInterest.init(self);
     nodesTab.init(d3.select(nodes_table));
   }
@@ -4981,7 +4983,7 @@ var hivtrace_cluster_network_graph = function (
       true
     );
 
-    if (self.node_search_div && self.isPrimaryGraph) {
+    if (self.node_search_div && self.is_primary_graph) {
       const compute_type = (t, d) => {
         if (t == "String") return "string";
         if (t == "Number") return d.is_integer ? "integer" : "double";
@@ -5280,7 +5282,7 @@ var hivtrace_cluster_network_graph = function (
       });
     }
 
-    if (self.isPrimaryGraph) {
+    if (self.is_primary_graph) {
       self.draw_extended_node_table([], null, null, { "no-filter": true });
     }
   };
@@ -5636,7 +5638,7 @@ var hivtrace_cluster_network_graph = function (
       );
 
       /*try {
-        if (self.isPrimaryGraph) {
+        if (self.is_primary_graph) {
           self.priority_groups_compute_node_membership();
         }
       } catch (err) {
@@ -6116,139 +6118,27 @@ var hivtrace_cluster_network_graph = function (
    * @returns {string} The information string for the node.
    */
   function node_info_string(n) {
-    var str;
-
-    if (!self._is_CDC_) {
-      str =
-        "Degree <em>" +
-        n.degree +
-        "</em><br>Clustering coefficient <em> " +
-        misc.format_value(n.lcc, kGlobals.formats.FloatFormat) +
-        "</em>";
-    } else {
-      str = "# links <em>" + n.degree + "</em>";
-      try {
-        if (
-          n[kGlobals.network.AliasedSequencesID] &&
-          n[kGlobals.network.AliasedSequencesID].length > 1
-        ) {
-          str +=
-            "<br> Represents <em>" +
-            n[kGlobals.network.AliasedSequencesID].length +
-            "</em> sequences";
-        }
-      } catch {}
-    }
-
-    _.each(
-      _.union(self._additional_node_pop_fields, [
-        self.colorizer["category_id"],
-        self.node_shaper["id"],
-        self.colorizer["opacity_id"],
-      ]),
-      (key) => {
-        if (key) {
-          if (key in graph_data[kGlobals.network.GraphAttrbuteID]) {
-            var attribute = self.attribute_node_value_by_id(n, key);
-
-            if (
-              graph_data[kGlobals.network.GraphAttrbuteID][key]["type"] ===
-              "Date"
-            ) {
-              try {
-                attribute = timeDateUtil.DateViewFormat(attribute);
-              } catch (err) {
-                // do nothing
-              }
-            }
-            if (attribute) {
-              str +=
-                "<br>" +
-                graph_data[kGlobals.network.GraphAttrbuteID][key].label +
-                " <em>" +
-                attribute +
-                "</em>";
-            }
-          }
-        }
-      }
-    );
-
-    return str;
+    return Tooltips.node_info_string(self, n, kGlobals, misc, timeDateUtil);
   }
 
-  /**
-   * @function edge_info_string
-   * @description Generates an information string for an edge, including its length and support.
-   * @param {Object} n - The edge object.
-   * @returns {string} The information string for the edge.
-   */
   function edge_info_string(n) {
-    var str = "Length <em>" + kGlobals.formats.FloatFormat(n.length) + "</em>";
-    if ("support" in n) {
-      str +=
-        "<br>Worst triangle-based support (p): <em>" +
-        kGlobals.formats.FloatFormat(n.support) +
-        "</em>";
-    }
-
-    return str;
+    return Tooltips.edge_info_string(n, kGlobals);
   }
 
-  /**
-   * @function node_pop_on
-   * @description Shows a tooltip for a node when the mouse is over it.
-   * @param {Object} d - The node object.
-   * @returns {void}
-   */
   function node_pop_on(d) {
-    if (d3.event.defaultPrevented) return;
-
-    toggle_tooltip(
-      this,
-      true,
-      (self._is_CDC_ ? "Individual " : "Node ") + self.entity_id(d),
-      node_info_string(d),
-      self.container
-    );
+    Tooltips.node_pop_on(self, d, this, kGlobals, misc, timeDateUtil);
   }
 
-  /**
-   * @function node_pop_off
-   * @description Hides the tooltip for a node when the mouse is no longer over it.
-   * @param {Object} d - The node object.
-   * @returns {void}
-   */
   function node_pop_off(d) {
-    if (d3.event.defaultPrevented) return;
-
-    toggle_tooltip(this, false);
+    Tooltips.node_pop_off(this);
   }
 
-  /**
-   * @function edge_pop_on
-   * @description Shows a tooltip for an edge when the mouse is over it.
-   * @param {Object} e - The edge object.
-   * @returns {void}
-   */
   function edge_pop_on(e) {
-    toggle_tooltip(
-      this,
-      true,
-      e.source.id + " - " + e.target.id,
-      edge_info_string(e),
-      self.container
-    );
+    Tooltips.edge_pop_on(self, e, this, kGlobals);
   }
 
-  /**
-   * @function edge_pop_off
-   * @description Hides the tooltip for an edge when the mouse is no longer over it.
-   * @param {Object} d - The edge object.
-   * @returns {void}
-   */
   function edge_pop_off(d) {
-    toggle_tooltip(this, false);
+    Tooltips.edge_pop_off(this);
   }
 
   /*------------ Cluster Methods ---------------*/
@@ -6794,78 +6684,15 @@ var hivtrace_cluster_network_graph = function (
    * @returns {string} The information string for the cluster.
    */
   function cluster_info_string(id) {
-    var the_cluster = self.clusters[self.cluster_mapping[id]],
-      attr_info = the_cluster["binned_attributes"];
-
-    var str;
-
-    if (self._is_CDC_) {
-      str =
-        "<strong>" +
-        (self.has_multiple_sequences
-          ? self.cluster_sizes_in_entities[id]
-          : self.cluster_sizes[id - 1]) +
-        "</strong> individuals." +
-        (self.has_multiple_sequences
-          ? "<br><strong> " +
-            self.cluster_sizes[id - 1] +
-            "</strong> sequences."
-          : "") +
-        "<br>Mean links/individual <em> = " +
-        kGlobals.formats.FloatFormat(the_cluster.degrees["mean"]) +
-        "</em>" +
-        "<br>Max links/individual <em> = " +
-        the_cluster.degrees["max"] +
-        "</em>";
-    } else {
-      str =
-        "<strong>" +
-        self.cluster_sizes[id - 1] +
-        "</strong> nodes." +
-        "<br>Mean degree <em>" +
-        kGlobals.formats.FloatFormat(the_cluster.degrees["mean"]) +
-        "</em>" +
-        "<br>Max degree <em>" +
-        the_cluster.degrees["max"] +
-        "</em>" +
-        "<br>Clustering coefficient <em> " +
-        misc.format_value(the_cluster.cc, kGlobals.formats.FloatFormat) +
-        "</em>";
-    }
-
-    if (attr_info) {
-      attr_info.forEach((d) => {
-        str += "<br>" + d[0] + " <em>" + d[1] + "</em>";
-      });
-    }
-
-    return str;
+    return Tooltips.cluster_info_string(self, id, kGlobals, misc);
   }
 
-  /**
-   * @function cluster_pop_on
-   * @description Shows a tooltip for a cluster when the mouse is over it.
-   * @param {Object} d - The cluster object.
-   * @returns {void}
-   */
   function cluster_pop_on(d) {
-    toggle_tooltip(
-      this,
-      true,
-      "Cluster " + d.cluster_id,
-      cluster_info_string(d.cluster_id),
-      self.container
-    );
+    Tooltips.cluster_pop_on(self, d, this, kGlobals, misc);
   }
 
-  /**
-   * @function cluster_pop_off
-   * @description Hides the tooltip for a cluster when the mouse is no longer over it.
-   * @param {Object} d - The cluster object.
-   * @returns {void}
-   */
   function cluster_pop_off(d) {
-    toggle_tooltip(this, false);
+    Tooltips.cluster_pop_off(this);
   }
 
   /**
@@ -7507,33 +7334,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   function toggle_tooltip(element, turn_on, title, tag, container) {
-    //if (d3.event.defaultPrevented) return;
-    if (!element) {
-      return;
-    }
-
-    if (turn_on && !element.tooltip) {
-      // check to see if there are any other tooltips shown
-      $("[role='tooltip']").each(function (d) {
-        $(this).remove();
-      });
-
-      var this_box = $(element);
-
-      // var this_data = d3.select(element).datum();
-      //this_data.fixed = true;
-
-      element.tooltip = this_box.tooltip({
-        title: title + "<br>" + tag,
-        html: true,
-        container: container ? container : "body",
-      });
-
-      _.delay(_.bind(element.tooltip.tooltip, element.tooltip), 500, "show");
-    } else if (!turn_on && element.tooltip) {
-      element.tooltip.tooltip("destroy");
-      element.tooltip = undefined;
-    }
+    Tooltips.toggle_tooltip(element, turn_on, title, tag, container);
   }
 
   /*------------ Init code ---------------*/
@@ -7582,7 +7383,7 @@ var hivtrace_cluster_network_graph = function (
   }
   d3.select(self.container).selectAll("svg").remove();
 
-  if (self.isPrimaryGraph) {
+  if (self.is_primary_graph) {
     d3.select(self.container)
       .selectAll(".my_progress")
       .style("display", "none");
@@ -7677,7 +7478,7 @@ var hivtrace_cluster_network_graph = function (
     }
   }
 
-  if (self.isPrimaryGraph) {
+  if (self.is_primary_graph) {
     self.annotate_multiple_clusters_on_nodes();
   }
 

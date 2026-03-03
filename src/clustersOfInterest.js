@@ -20,7 +20,7 @@ let priority_set_editor = null;
  */
 
 function init(self) {
-  if (self._is_CDC_ && self.isPrimaryGraph) {
+  if (self._is_CDC_ && self.is_primary_graph) {
     let new_set = misc.get_ui_element_selector_by_role("new_priority_set");
     if (new_set) {
       window.addEventListener("beforeunload", (e) => {
@@ -112,7 +112,7 @@ function open_editor(
         - "validate" (validate an automatically generated dataset)
         - "revise" (revise a dataset)
   */
-  if (priority_set_editor || !self.isPrimaryGraph) return;
+  if (priority_set_editor || !self.is_primary_graph) return;
   // only open one editor at a time
   // only primary network supports editor view
 

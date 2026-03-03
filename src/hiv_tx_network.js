@@ -23,12 +23,15 @@ var _ = require("underscore"),
 
 class HIVTxNetwork extends HTXModel {
   constructor(json, button_bar_ui, primary_key_function, secondaryGraph) {
-    super(json, primary_key_function);
+    super(json, primary_key_function, {
+      is_primary_graph: !secondaryGraph,
+      kGlobals: kGlobals,
+    });
     this.button_bar_ui = button_bar_ui;
     this.subcluster_table = null;
     this.priority_set_table_write = null;
     this.priority_set_table_writeable = null;
-    this.isPrimaryGraph = !secondaryGraph;
+    this.is_primary_graph = !secondaryGraph;
     this.nodeFilterObject = null;
     this.defined_priority_groups = [];
     this.using_time_filter = null;
@@ -37,8 +40,6 @@ class HIVTxNetwork extends HTXModel {
     this.filter_singletons = this.filter_singletons.bind(this);
     this.filter_if_added = this.filter_if_added.bind(this);
     this.filter_time_period = this.filter_time_period.bind(this);
-
-    this.tabulate_multiple_sequences(kGlobals);
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
@@ -260,7 +261,7 @@ class HIVTxNetwork extends HTXModel {
                      which does not have primary button_ui elements
  */
   get_ui_element_selector_by_role(role, not_nested) {
-    if (not_nested && !this.isPrimaryGraph) {
+    if (not_nested && !this.is_primary_graph) {
       return undefined;
     }
     return (
@@ -938,9 +939,6 @@ class HIVTxNetwork extends HTXModel {
       ) {
         this.handle_attribute_categorical("subcluster_or_priority_node");
       }
-    });
-  }
-      //this.update();
     });
   }
 

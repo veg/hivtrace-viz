@@ -86,7 +86,7 @@ function handle_cluster_click(self, cluster, release) {
         menu_object.style("display", "none");
       });
 
-    if (self.isPrimaryGraph) {
+    if (self.is_primary_graph) {
       menu_object
         .append("li")
         .append("a")

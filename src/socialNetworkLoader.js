@@ -567,7 +567,7 @@ export function load_nodes_edges(
   }
 
   if (
-    tx_network.isPrimaryGraph &&
+    tx_network.is_primary_graph &&
     (nodes_and_attributes || edges_and_attributes)
   ) {
     tx_network.draw_cluster_table(

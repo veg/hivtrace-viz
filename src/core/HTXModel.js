@@ -85,7 +85,7 @@ class HTXModel {
         };
 
     this.tabulate_multiple_sequences(options && options.kGlobals);
-    this.defined_priority_groups = [];
+    this.map_ids_to_objects();
     this.using_time_filter = null;
     
     this.cluster_filtering_functions = {
@@ -190,7 +190,7 @@ class HTXModel {
       if (auto_created.length) {
         this.defined_priority_groups.push(...auto_created);
         this.priority_groups_validate(
-          this.defined_priority_groups,
+          auto_created,
           false,
           kGlobals,
           timeDateUtil,
@@ -367,6 +367,7 @@ class HTXModel {
         this.json.Edges = new_edge_set;
 
         this.tabulate_multiple_sequences(kGlobals);
+        this.map_ids_to_objects();
       }
     }
   }
@@ -498,13 +499,20 @@ class HTXModel {
   }
 
   map_ids_to_objects() {
-    if (!this.node_id_to_object) {
-      this.node_id_to_object = {};
+    this.node_id_to_object = {};
+    const kGlobals = this.options.kGlobals;
+    const AliasedSequencesID = kGlobals
+      ? kGlobals.network.AliasedSequencesID
+      : "aliased_sequences";
 
-      _.each(this.json.Nodes, (n, i) => {
-        this.node_id_to_object[n.id] = n;
-      });
-    }
+    _.each(this.json.Nodes, (n, i) => {
+      this.node_id_to_object[n.id] = n;
+      if (n[AliasedSequencesID]) {
+        _.each(n[AliasedSequencesID], (id) => {
+          this.node_id_to_object[id] = n;
+        });
+      }
+    });
   }
 
   parse_dates(value, timeDateUtil) {
@@ -1267,7 +1275,7 @@ class HTXModel {
         if (!pg.validated) {
           pg.node_objects = [];
           pg.not_in_network = [];
-          pg.validated = true;
+
           if (pg.created !== "REDACTED") {
             pg.created = _.isDate(pg.created)
               ? pg.created
@@ -1297,51 +1305,50 @@ class HTXModel {
             }
           }
 
-          /** check for nodes that are in the CoI but may be missing from the network */
+          /** Step 1: Normalization, Deduplication, and MSPP Migration */
 
-          let updated_pg_record = false;
-          let inject_mspp_nodes = [];
-          let mspp_ms_nodes = {};
-          let existing_subclusters = new Set();
-          let existing_clusters = new Set();
-
-          let node_records_to_delete = new Set();
-          let do_not_add_duplicates = new Set();
+          const seen_ids = new Set();
+          const unique_nodes = [];
+          const mspp_ms_nodes = {};
+          const existing_subclusters = new Set();
+          const existing_clusters = new Set();
 
           _.each(pg.nodes, (node) => {
             const nodeid = node.name;
+            if (seen_ids.has(nodeid)) return;
+
             if (nodeid in this.node_id_to_object) {
               const n = this.node_id_to_object[nodeid];
               existing_subclusters.add(n.subcluster_label);
               existing_clusters.add(n.cluster);
               pg.node_objects.push(n);
-              do_not_add_duplicates.add(nodeid);
+              seen_ids.add(nodeid);
+              unique_nodes.push(node);
             } else {
+              // Not in network
               if (this.has_multiple_sequences) {
-                let entities = this.primary_key_list[nodeid];
-                if (entities) {
-                  if (entities.length == 1) {
-                    node.name = entities[0].id;
-                    pg.node_objects.push(entities[0]);
-                    existing_subclusters.add(entities[0].subcluster_label);
-                    existing_clusters.add(entities[0].cluster);
-                    do_not_add_duplicates.add(nodeid);
-                    return;
-                  } else {
-                    mspp_ms_nodes[nodeid] = {
-                      subclusters: new Set(),
-                      clusters: new Set(),
-                    };
-                    mspp_ms_nodes[nodeid] = [entities, _.clone(node)];
+                const p_key = this.primary_key({ id: nodeid });
+                const is_subject_only = nodeid === p_key;
+                const entities = this.primary_key_list[p_key];
 
-                    return;
+                if (is_subject_only && entities) {
+                  // Trigger migration for subject-only record
+                  if (!(p_key in mspp_ms_nodes)) {
+                    mspp_ms_nodes[p_key] = [entities, node];
                   }
+                  return;
                 }
               }
+              // It's a missing sequence (or a person not in network)
               pg.not_in_network.push(nodeid);
+              seen_ids.add(nodeid);
+              unique_nodes.push(node);
             }
           });
 
+          pg.nodes = unique_nodes;
+
+          let inject_mspp_nodes = [];
           let discordant_node_record = [];
 
           if (_.size(mspp_ms_nodes)) {
@@ -1363,22 +1370,24 @@ class HTXModel {
             }
 
             if (!entity_tracker || entity_tracker.size == 0) {
-              entity_tracker = {};
-              entity_tracker.has = (n) => true;
+              entity_tracker = { has: (n) => true };
             }
 
-            _.each(mspp_ms_nodes, (n) => {
-              const ref_node = n[1];
-              node_records_to_delete.add(ref_node.name);
+            _.each(mspp_ms_nodes, (data, p_key) => {
+              const entities = data[0];
+              const ref_node = data[1];
 
-              _.each(n[0], (e) => {
+              _.each(entities, (e) => {
                 if (entity_tracker.has(e.subcluster_label)) {
-                  pg.node_objects.push(e);
-                  let node_entry = _.clone(ref_node);
-                  node_entry.name = e.id;
-                  node_entry.added = ref_node.added;
-                  inject_mspp_nodes.push(node_entry);
-                  pg.nodes.push(node_entry);
+                  if (!seen_ids.has(e.id)) {
+                    pg.node_objects.push(e);
+                    let node_entry = _.clone(ref_node);
+                    node_entry.name = e.id;
+                    node_entry.added = ref_node.added;
+                    inject_mspp_nodes.push(node_entry);
+                    pg.nodes.push(node_entry);
+                    seen_ids.add(e.id);
+                  }
                 } else {
                   discordant_node_record.push(e);
                 }
@@ -1386,88 +1395,25 @@ class HTXModel {
             });
           }
 
-          /** spaghetti code to check for duplicates **/
-
-          const check_for_ID_duplicates = _.groupBy(pg.nodes, (n) => n.name);
-          const prune_duplicates = new Set();
-
-          _.each(check_for_ID_duplicates, (grp, id) => {
-            if (_.size(grp) > 1) {
-              prune_duplicates.add(id);
-            }
-          });
-
-          if (node_records_to_delete.size) {
-            pg.nodes = _.filter(
-              pg.nodes,
-              (n) => !node_records_to_delete.has(n.name)
-            );
-          }
-
-          if (prune_duplicates.size) {
-            let already_processed = new Set();
-            let filtered_nodes = [];
-            _.each(pg.nodes, (n) => {
-              if (prune_duplicates.has(n.name)) {
-                if (already_processed.has(n.name)) {
-                  return;
-                } else {
-                  already_processed.add(n.name);
-                }
-              }
-              filtered_nodes.push(n);
-            });
-            pg.nodes = filtered_nodes;
-            let filtered_node_objects = [];
-            already_processed = new Set();
-            _.each(pg.node_objects, (n) => {
-              if (prune_duplicates.has(n.id)) {
-                if (already_processed.has(n.id)) {
-                  return;
-                } else {
-                  already_processed.add(n.id);
-                }
-              }
-              filtered_node_objects.push(n);
-            });
-            pg.node_objects = filtered_node_objects;
-          }
-
           const migration_tag =
             " Migrated to multiple sequences per person cluster";
 
-          if (prune_duplicates.size || node_records_to_delete.size) {
-            let notes_cleanup = pg.description.split(migration_tag);
-            if (notes_cleanup.length > 1) {
-              const bits = _.countBy(notes_cleanup.slice(1, -1));
-              pg.description = notes_cleanup[0] + migration_tag;
-              _.each(bits, (v, k) => {
-                pg.description += k;
-              });
-            }
-          }
-
           if (inject_mspp_nodes.length || discordant_node_record.length) {
-            pg.description += migration_tag;
+            let notes_cleanup = pg.description.split(migration_tag);
+            pg.description = notes_cleanup[0] + migration_tag;
 
             _.each(
               [
                 [inject_mspp_nodes, "used the following sequences "],
                 [discordant_node_record, "ignored the following sequences "],
               ],
-              (pair, i) => {
+              (pair) => {
                 if (pair[0].length) {
                   let desc = {};
-
                   _.each(pair[0], (n) => {
                     let k = this.primary_key("id" in n ? n : { id: n.name });
-                    if (!(k in desc)) {
-                      desc[k] = [];
-                    }
+                    if (!(k in desc)) desc[k] = [];
                     desc[k].push(n);
-                    if (i == 0) {
-                      pg.nodes.push(n);
-                    }
                   });
 
                   pg.description +=
@@ -1486,13 +1432,43 @@ class HTXModel {
             );
           }
 
-          /**     extract network data at 0.015 and subcluster thresholds
-                            filter on dates subsequent to the created date
-          */
+          /** Step 2: Auto-expansion (BEFORE expensive traversals) */
+
+          if (
+            auto_extend &&
+            pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
+          ) {
+            const added_nodes = this.auto_expand_pg_handler(
+              pg,
+              nodeID2idx,
+              edgesByNode,
+              kGlobals,
+              timeDateUtil,
+              misc
+            );
+
+            if (added_nodes.size) {
+              const current_time = this.get_reference_date();
+              _.each([...added_nodes], (nid) => {
+                const n = this.json.Nodes[nid];
+                pg.nodes.push({
+                  name: n.id,
+                  added: current_time,
+                  kind: kGlobals.CDCCOINodeKindDefault,
+                  autoadded: true,
+                });
+                pg.node_objects.push(n);
+              });
+              pg.autoexpanded = true;
+              pg.pending = true;
+              pg.expanded = added_nodes.size;
+              pg.modified = current_time;
+            }
+          }
+
+          /** Step 3: Expensive Network Traversals and Partitioning */
 
           const my_nodeset = new Set(_.map(pg.node_objects, (n) => n.id));
-
-          /** all the network nodes connected to the nodes in the CoI at 1.5%; directly or indirectly*/
 
           if (!traversal_cache) {
             traversal_cache = [
@@ -1523,10 +1499,6 @@ class HTXModel {
           );
 
           let saved_traversal_edges_sub = [];
-
-          /** all the network nodes connected to the nodes in the subcluster threshold (0.5%);
-              also saves all the edges that have been taken if auto_extend is true  */
-
           const node_set_subcluster = _.flatten(
             misc.hivtrace_cluster_depthwise_traversal(
               this.json["Nodes"],
@@ -1539,10 +1511,8 @@ class HTXModel {
             )
           );
 
+          const current_time = this.get_reference_date();
           const direct_at_15 = new Set();
-
-          /** all the network nodes connected to the nodes in the CoI at 1.5%; only directly */
-
           const json15 = this.extract_single_cluster(
             node_set15,
             (e) =>
@@ -1553,8 +1523,6 @@ class HTXModel {
             saved_traversal_edges
           );
 
-          /** all the network nodes connected to the nodes in the CoI at 1.5%; only directly */
-
           _.each(json15["Edges"], (e) => {
             _.each([e.source, e.target], (nid) => {
               if (!my_nodeset.has(json15["Nodes"][nid].id)) {
@@ -1563,9 +1531,6 @@ class HTXModel {
             });
           });
 
-          const current_time = this.get_reference_date();
-
-          /**  extract the 1.5% cluster network object */
           const json_subcluster = this.extract_single_cluster(
             node_set_subcluster,
             (e) =>
@@ -1577,34 +1542,14 @@ class HTXModel {
           );
 
           const direct_subcluster = new Set();
-          const direct_subcluster_new = new Set();
-
-          /** process the cluster object to extract directly connected
-              subcluster nodes and new nodes */
-
           _.each(json_subcluster["Edges"], (e) => {
             _.each([e.source, e.target], (nid) => {
               if (!my_nodeset.has(json_subcluster["Nodes"][nid].id)) {
                 direct_subcluster.add(json_subcluster["Nodes"][nid].id);
-
-                if (
-                  this.filter_by_date(
-                    pg.modified || pg.created,
-                    timeDateUtil._networkCDCDateField,
-                    current_time,
-                    json_subcluster["Nodes"][nid],
-                    true,
-                    timeDateUtil,
-                    kGlobals
-                  )
-                ) {
-                  direct_subcluster_new.add(json_subcluster["Nodes"][nid].id);
-                }
               }
             });
           });
 
-          /** partition all the CoI nodes into groups */
           pg.partitioned_nodes = _.map(
             [
               [node_set15, direct_at_15],
@@ -1636,53 +1581,14 @@ class HTXModel {
                 } else {
                   key = "existing";
                 }
-
-                if (ns[1].has(n.id)) {
-                  key += "_direct";
-                } else {
-                  key += "_indirect";
-                }
-
+                key += ns[1].has(n.id) ? "_direct" : "_indirect";
                 nodesets[key].push(n);
               });
-
               return nodesets;
             }
           );
 
-          if (
-            auto_extend &&
-            pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
-          ) {
-            const added_nodes = this.auto_expand_pg_handler(
-              pg,
-              nodeID2idx,
-              edgesByNode,
-              kGlobals,
-              timeDateUtil,
-              misc
-            );
-
-            if (added_nodes.size) {
-              _.each([...added_nodes], (nid) => {
-                const n = this.json.Nodes[nid];
-                pg.nodes.push({
-                  name: n.id,
-                  added: current_time,
-                  kind: kGlobals.CDCCOINodeKindDefault,
-                  autoadded: true,
-                });
-                pg.node_objects.push(n);
-              });
-              pg.validated = false;
-              pg.autoexpanded = true;
-              pg.pending = true;
-              pg.expanded = added_nodes.size;
-              pg.modified = this.get_reference_date();
-            }
-          }
-
-          /** check to see the CoI meets priority definitions */
+          /** Step 4: Finalize Validation Metrics */
 
           const node_set = new Set(
             this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
@@ -1693,31 +1599,22 @@ class HTXModel {
               _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
           );
 
-          const recent_dx_cutoffs = [
-            {
-              field_name: "cluster_dx_recent12_mo",
-              months: 12,
-            },
-            {
-              field_name: "cluster_dx_recent36_mo",
-              months: 36,
-            },
+          const dx_cutoffs = [
+            { name: "cluster_dx_recent12_mo", months: 12 },
+            { name: "cluster_dx_recent36_mo", months: 36 },
           ];
 
-          const ref_date = this.get_reference_date();
-
-          for (let dx of recent_dx_cutoffs) {
+          for (let dx of dx_cutoffs) {
             const cutoff = timeDateUtil.n_months_ago(
               this.get_reference_date(),
               dx.months
             );
-
-            pg[dx.field_name] = this.unique_entity_list(
+            pg[dx.name] = this.unique_entity_list(
               _.filter(pg.node_objects, (n) =>
                 this.filter_by_date(
                   cutoff,
                   timeDateUtil._networkCDCDateField,
-                  ref_date,
+                  current_time,
                   n,
                   false,
                   timeDateUtil,
@@ -1727,24 +1624,18 @@ class HTXModel {
             ).length;
           }
 
-          // create / update history field of priority group
           pg.history = pg.history || [];
-
           const currDate = timeDateUtil.getCurrentDate();
-
           const history_entry = {
             date: currDate,
             size: this.priority_group_entity_count(pg),
-            // TODO determine new nodes
             new_nodes: 0,
             national_priority: pg.meets_priority_def,
             cluster_dx_recent12_mo: pg.cluster_dx_recent12_mo,
             cluster_dx_recent36_mo: pg.cluster_dx_recent36_mo,
           };
 
-          // remove any duplicate history entries from last 24 hours
-          // (retain entries within 24 hours only if they differ from the current entry)
-          pg.history = pg.history.filter(function (h) {
+          pg.history = pg.history.filter((h) => {
             if (
               h.size !== history_entry.size ||
               h.national_priority !== history_entry.national_priority ||
@@ -1756,16 +1647,14 @@ class HTXModel {
             ) {
               return true;
             }
-            if (
+            return (
               new Date(h.date) <
               new Date(new Date(currDate) - 24 * 60 * 60 * 1000)
-            ) {
-              return true;
-            }
-            return false;
+            );
           });
 
           pg.history.push(history_entry);
+          pg.validated = true;
         }
       });
     }
@@ -1978,7 +1867,7 @@ class HTXModel {
           cluster_nodes
         );
 
-        const rr_cluster = _.filter(
+        const components = _.filter(
           misc.hivtrace_cluster_depthwise_traversal(
             subcluster_json.Nodes,
             _.filter(
@@ -1988,29 +1877,36 @@ class HTXModel {
           ),
           (cc) => {
             const entities = this.unique_entity_list(cc);
-            if (entities.length >= 2) {
-              const dx12 = _.filter(cc, (n) =>
-                this.filter_by_date(
-                  cutoff_short,
-                  date_field,
-                  ref_date,
-                  n,
-                  false,
-                  timeDateUtil,
-                  kGlobals
-                )
-              );
-              return (
-                this.unique_entity_list(dx12).length >=
-                this.CDC_data["autocreate-priority-set-size"]
-              );
-            }
-            return false;
+            return entities.length >= 2;
           }
         );
 
-        sub.priority_score = _.map(rr_cluster, (cc) => _.map(cc, (n) => n.id));
-        sub.recent_nodes = _.map(rr_cluster, (cc) => _.map(cc, (n) => n.id));
+        sub.priority_score = [];
+        sub.recent_nodes = [];
+
+        _.each(components, (cc) => {
+          const entities = this.unique_entity_list(cc);
+          const dx12 = _.filter(cc, (n) =>
+            this.filter_by_date(
+              cutoff_short,
+              date_field,
+              ref_date,
+              n,
+              false,
+              timeDateUtil,
+              kGlobals
+            )
+          );
+
+          sub.recent_nodes.push(_.map(cc, (n) => n.id));
+
+          if (
+            this.unique_entity_list(dx12).length >=
+            this.CDC_data["autocreate-priority-set-size"]
+          ) {
+            sub.priority_score.push(_.map(cc, (n) => n.id));
+          }
+        });
 
         if (sub.priority_score.length) {
           _.each(sub.priority_score, (ps, i) => {
