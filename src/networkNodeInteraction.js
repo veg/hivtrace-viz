@@ -143,3 +143,81 @@ export function get_initial_xy(packed, self, max_points_to_render) {
   var clusters = treemap.nodes(d_clusters);
   return [clusters, all_clusters];
 }
+
+/**
+ * @function node_pop_on
+ * @description Displays a tooltip for a node.
+ * @param {Object} self - The network object.
+ * @param {Object} d - The node data.
+ * @param {HTMLElement} element - The node element.
+ * @param {Object} kGlobals - Global constants.
+ * @param {Object} misc - Misc utilities.
+ * @param {Object} timeDateUtil - Time/date utilities.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function node_pop_on(self, d, element, kGlobals, misc, timeDateUtil, Tooltips) {
+  Tooltips.node_pop_on(self, d, element, kGlobals, misc, timeDateUtil);
+}
+
+/**
+ * @function node_pop_off
+ * @description Hides the node tooltip.
+ * @param {HTMLElement} element - The node element.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function node_pop_off(element, Tooltips) {
+  Tooltips.node_pop_off(element);
+}
+
+/**
+ * @function edge_pop_on
+ * @description Displays a tooltip for an edge.
+ * @param {Object} self - The network object.
+ * @param {Object} e - The edge data.
+ * @param {HTMLElement} element - The edge element.
+ * @param {Object} kGlobals - Global constants.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function edge_pop_on(self, e, element, kGlobals, Tooltips) {
+  Tooltips.edge_pop_on(self, e, element, kGlobals);
+}
+
+/**
+ * @function edge_pop_off
+ * @description Hides the edge tooltip.
+ * @param {HTMLElement} element - The edge element.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function edge_pop_off(element, Tooltips) {
+  Tooltips.edge_pop_off(element);
+}
+
+/**
+ * @function cluster_pop_on
+ * @description Displays a tooltip for a cluster.
+ * @param {Object} self - The network object.
+ * @param {Object} d - The cluster data.
+ * @param {HTMLElement} element - The cluster element.
+ * @param {Object} kGlobals - Global constants.
+ * @param {Object} misc - Misc utilities.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function cluster_pop_on(self, d, element, kGlobals, misc, Tooltips) {
+  Tooltips.cluster_pop_on(self, d, element, kGlobals, misc);
+}
+
+/**
+ * @function cluster_pop_off
+ * @description Hides the cluster tooltip.
+ * @param {HTMLElement} element - The cluster element.
+ * @param {Object} Tooltips - The tooltips module.
+ * @returns {void}
+ */
+export function cluster_pop_off(element, Tooltips) {
+  Tooltips.cluster_pop_off(element);
+}

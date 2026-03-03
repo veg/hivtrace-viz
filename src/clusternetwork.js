@@ -2973,19 +2973,27 @@ var hivtrace_cluster_network_graph = function (
   }
 
   function node_pop_on(d) {
-    Tooltips.node_pop_on(self, d, this, kGlobals, misc, timeDateUtil);
+    return NetworkNodeInteraction.node_pop_on(
+      self,
+      d,
+      this,
+      kGlobals,
+      misc,
+      timeDateUtil,
+      Tooltips
+    );
   }
 
   function node_pop_off(d) {
-    Tooltips.node_pop_off(this);
+    return NetworkNodeInteraction.node_pop_off(this, Tooltips);
   }
 
   function edge_pop_on(e) {
-    Tooltips.edge_pop_on(self, e, this, kGlobals);
+    return NetworkNodeInteraction.edge_pop_on(self, e, this, kGlobals, Tooltips);
   }
 
   function edge_pop_off(d) {
-    Tooltips.edge_pop_off(this);
+    return NetworkNodeInteraction.edge_pop_off(this, Tooltips);
   }
 
   /*------------ Cluster Methods ---------------*/
@@ -3382,11 +3390,18 @@ var hivtrace_cluster_network_graph = function (
   }
 
   function cluster_pop_on(d) {
-    Tooltips.cluster_pop_on(self, d, this, kGlobals, misc);
+    return NetworkNodeInteraction.cluster_pop_on(
+      self,
+      d,
+      this,
+      kGlobals,
+      misc,
+      Tooltips
+    );
   }
 
   function cluster_pop_off(d) {
-    Tooltips.cluster_pop_off(this);
+    return NetworkNodeInteraction.cluster_pop_off(this, Tooltips);
   }
 
   /**

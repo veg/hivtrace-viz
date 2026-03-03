@@ -140,6 +140,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~100 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 16: Extract Node, Edge, and Cluster Pop-over Handlers
+- **Goal**: Move mouseover and mouseout logic for network elements to a specialized module.
+- **Result**: 
+    - Moved wrappers for `node_pop_on/off`, `edge_pop_on/off`, and `cluster_pop_on/off` to `src/networkNodeInteraction.js`.
+    - Cleaned up event listener registrations in `clusternetwork.js`.
+    - Reduced `clusternetwork.js` by ~50 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
