@@ -123,6 +123,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~400 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 14: Extract Node Table UI Logic
+- **Goal**: Move node table rendering and volatile element update logic to a specialized module.
+- **Result**: 
+    - Created `src/networkNodeTableUI.js`.
+    - Extracted `draw_node_table`, `draw_extended_node_table`, `node_table_draw_buttons`, `update_volatile_elements`, and `redraw_tables`.
+    - Integrated with `js-convert-case` for header formatting.
+    - Reduced `clusternetwork.js` by ~350 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
