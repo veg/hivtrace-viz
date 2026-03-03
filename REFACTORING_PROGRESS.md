@@ -66,6 +66,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~200 lines.
 - **Status**: Completed (2026-03-02)
 
+#### Step 8: Extract Node Search Logic
+- **Goal**: Move node search table definition and rule processing to `src/networkSearch.js`.
+- **Result**: 
+    - Created `src/networkSearch.js`.
+    - Extracted `define_node_search_table`, `process_search`, `process_search_field`, and `rule_lc`.
+    - Parameterized dependencies via a `search_context` object.
+    - Reduced `clusternetwork.js` by ~300 lines.
+- **Status**: Completed (2026-03-02)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
