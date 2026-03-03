@@ -93,6 +93,25 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~400 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 11: Extract Network Control Bar Logic
+- **Goal**: Move network operations menu and action button group setup to a specialized module.
+- **Result**: 
+    - Created `src/networkControls.js`.
+    - Extracted `cluster_commands`, various UI handlers (fix, labels, layout), and action button groups (spacing, window size, export).
+    - Promoted several internal helpers (`change_spacing`, `change_window_size`, `default_layout`, `render_binned_table`, `render_chord_diagram`) to `self` methods for cross-module accessibility.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-03-03)
+
+#### Step 12: Extract Cluster Table UI Logic
+- **Goal**: Move `draw_cluster_table` and its specific cell drawing helpers to a specialized module.
+- **Result**: 
+    - Created `src/networkTablesUI.js`.
+    - Extracted `draw_cluster_table`, `_cluster_table_draw_id`, and `_cluster_table_draw_buttons`.
+    - Promoted `expand_cluster` and `collapse_cluster` to `self` methods to support table interactions from the new module.
+    - Resolved a test-side "undefined" attribute reporting issue by making table cell cleaning more robust.
+    - Reduced `clusternetwork.js` by ~300 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

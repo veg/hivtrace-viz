@@ -174,7 +174,8 @@ function format_a_cell(data, index, item, priority_set_editor) {
   handle_sort.selectAll("*").remove();
 
   if ("callback" in data) {
-    handle_sort = data.callback(item, current_value);
+    this_sel.text("");
+    handle_sort = data.callback(item, current_value) || this_sel;
   } else {
     var repr = "format" in data ? data.format(current_value) : current_value;
     if ("html" in data && data.html) this_sel.html(repr);
