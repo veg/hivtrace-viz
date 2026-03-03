@@ -223,6 +223,7 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
 - **Goal**: Improve `scripts/compute_coi.js` for pipeline integration and document its usage.
 - **Result**: 
     - Updated `compute_coi.js` to handle nested `trace_results` JSON structure.
+    - Added reporting of network statistics (nodes, edges, clusters, subclusters).
     - Added comprehensive CLI documentation in `scripts/README.md`.
     - Synchronized `debug_rc_171.js` with the new data loading logic.
 - **Status**: Completed (2026-03-03)
