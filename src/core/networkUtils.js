@@ -85,6 +85,7 @@ function ensure_node_attributes_exist(json, kGlobals) {
     "attributes",
     kGlobals.network.NodeAttributeID,
   ]);
+    
   json.Nodes.forEach((n) => {
     for (const i of validate_these_keys) {
       if (!n[i]) {

@@ -57,8 +57,12 @@ async function main() {
 
   // 1. Load Network
   console.log(`[1/7] Loading network from ${args.network}...`);
-  const networkData = JSON.parse(fs.readFileSync(args.network, "utf8"));
-  
+  let networkData = JSON.parse(fs.readFileSync(args.network, "utf8"));
+
+  if ("trace_results" in networkData) {
+    networkData = networkData["trace_results"];
+  }
+
   if (networkData.Settings && networkData.Settings.compact_json) {
     networkUtils.unpack_compact_json(networkData);
   }

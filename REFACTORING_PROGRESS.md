@@ -115,9 +115,10 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
 #### Step 13: Extract Category and Attribute Menu Logic
 - **Goal**: Move categorical, shape, and continuous attribute menu population logic to a specialized module.
 - **Result**: 
-    - Created `src/networkAttributeMenus.js`.
-    - Extracted `_aux_populate_category_menus`, `_aux_populate_category_fields`, `_aux_get_attribute_dimension`, and `_aux_process_category_values`.
-    - Promoted `compute_cluster_gradient` to a `self` method.
+    - Created `src/networkAttributeMenus.js` and `src/networkAttributeHandlers.js`.
+    - Extracted attribute menu population and handler logic.
+    - Promoted several internal helpers (`attribute_cluster_distribution`, `attribute_pairwise_distribution`, `stratify`, `compute_cluster_gradient`) to `self` methods.
+    - Resolved `ReferenceError: stratify is not defined` by ensuring all internal calls use the `self.` prefix.
     - Handled complex "stable-ish" attribute ordering and compressed value range logic.
     - Reduced `clusternetwork.js` by ~400 lines.
 - **Status**: Completed (2026-03-03)
@@ -217,6 +218,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Enhanced `HTXModel` constructor to handle jurisdiction-based defaults (e.g., low-morbidity threshold settings) and reference dates (`today`).
     - Verified **perfect match** (25/25 CoI groups and names) between server-side script and browser reference data.
 - **Status**: Completed (2026-03-02)
+
+#### Step 13: Enhanced Standalone COI Processing Script
+- **Goal**: Improve `scripts/compute_coi.js` for pipeline integration and document its usage.
+- **Result**: 
+    - Updated `compute_coi.js` to handle nested `trace_results` JSON structure.
+    - Added comprehensive CLI documentation in `scripts/README.md`.
+    - Synchronized `debug_rc_171.js` with the new data loading logic.
+- **Status**: Completed (2026-03-03)
 
 ---
 *Note: This document will be updated after each step.*
