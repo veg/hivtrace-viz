@@ -15,8 +15,7 @@ export function check_for_predefined_shapes(self, cat_id) {
   if (cat_id in self.networkShapeScheme) {
     var domain = _.range(
       0,
-      graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_range"]
-        .length
+      graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_range"].length
     );
 
     return {
@@ -25,9 +24,9 @@ export function check_for_predefined_shapes(self, cat_id) {
         domain,
         (v) =>
           self.networkShapeScheme[cat_id][
-            graph_data[kGlobals.network.GraphAttrbuteID][cat_id][
-              "value_range"
-            ][v]
+            graph_data[kGlobals.network.GraphAttrbuteID][cat_id]["value_range"][
+              v
+            ]
           ]
       ),
     };
@@ -98,10 +97,7 @@ export function draw_attribute_labels(self) {
     offset += 24;
   }
 
-  if (
-    self.rendered_object_counts &&
-    self.rendered_object_counts.has_hatching
-  ) {
+  if (self.rendered_object_counts && self.rendered_object_counts.has_hatching) {
     self.legend_svg
       .append("g")
       .classed("hiv-trace-legend", true)
@@ -111,10 +107,7 @@ export function draw_attribute_labels(self) {
       .attr("cy", "-4")
       .attr("r", "8")
       .classed("legend", true)
-      .style(
-        "fill",
-        "url(#" + self.generate_cross_hatch_pattern("#cab") + ")"
-      );
+      .style("fill", "url(#" + self.generate_cross_hatch_pattern("#cab") + ")");
     self.legend_svg
       .append("g")
       .classed("hiv-trace-legend", true)
@@ -301,7 +294,10 @@ export function draw_attribute_labels(self) {
       .style("font-weight", "bold");
     offset += 18;
 
-    var domain_range = check_for_predefined_shapes(self, self.node_shaper["id"]);
+    var domain_range = check_for_predefined_shapes(
+      self,
+      self.node_shaper["id"]
+    );
     var shape_mapper = d3.scale
       .ordinal()
       .domain(domain_range["domain"])
@@ -346,9 +342,7 @@ export function draw_attribute_labels(self) {
     offset += 18;
 
     var anchor_format_opacity = determine_label_format_cont(
-      graph_data[kGlobals.network.GraphAttrbuteID][
-        self.colorizer["opacity_id"]
-      ]
+      graph_data[kGlobals.network.GraphAttrbuteID][self.colorizer["opacity_id"]]
     );
 
     var scale_opacity =

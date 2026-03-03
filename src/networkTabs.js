@@ -7,7 +7,11 @@ import * as misc from "./misc";
  * @param {string} tab_content - The ID of the tab content to remove.
  * @param {string} restore_to_tag - The ID of the tab to restore to.
  */
-export function open_exclusive_tab_close(tab_element, tab_content, restore_to_tag) {
+export function open_exclusive_tab_close(
+  tab_element,
+  tab_content,
+  restore_to_tag
+) {
   $(restore_to_tag).tab("show");
   $("#" + tab_element).remove();
   $("#" + tab_content).remove();
@@ -48,9 +52,7 @@ export function open_exclusive_tab_view(
   additional_options["parent_graph"] = self;
 
   var filtered_json = self.extract_single_cluster(
-    custom_filter
-      ? _.filter(self.json.Nodes, custom_filter)
-      : cluster.children,
+    custom_filter ? _.filter(self.json.Nodes, custom_filter) : cluster.children,
     null,
     null,
     null,
@@ -129,7 +131,12 @@ export function open_exclusive_tab_view_aux(
   option_extras,
   context
 ) {
-  const { attributes, parent_container, options, hivtrace_cluster_network_graph } = context;
+  const {
+    attributes,
+    parent_container,
+    options,
+    hivtrace_cluster_network_graph,
+  } = context;
 
   var random_prefix = misc.random_id();
   var random_tab_id = random_prefix + "_tab";
@@ -244,9 +251,7 @@ export function open_exclusive_tab_view_aux(
 
     if (self.colorizer["category_id"]) {
       if (self.colorizer["continuous"]) {
-        cluster_view.handle_attribute_continuous(
-          self.colorizer["category_id"]
-        );
+        cluster_view.handle_attribute_continuous(self.colorizer["category_id"]);
       } else {
         cluster_view.handle_attribute_categorical(
           self.colorizer["category_id"]

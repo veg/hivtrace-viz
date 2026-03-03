@@ -57,6 +57,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~300 lines.
 - **Status**: Completed (2026-02-24)
 
+#### Step 7: Extract Network Statistics Logic
+- **Goal**: Move adjacency list and clustering coefficient calculations to `src/networkStatistics.js`.
+- **Result**: 
+    - Created `src/networkStatistics.js`.
+    - Extracted `compute_adjacency_list`, `compute_local_clustering_coefficients`, `compute_local_clustering_coefficients_worker`, `compute_global_clustering_coefficients`, and `compute_graph_stats`.
+    - Handled `_.once` and `_.memoize` patterns to maintain performance.
+    - Reduced `clusternetwork.js` by ~200 lines.
+- **Status**: Completed (2026-03-02)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

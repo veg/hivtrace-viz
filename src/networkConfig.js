@@ -13,7 +13,13 @@ import * as tables from "./tables.js";
  * @param {Object} options - Configuration options.
  * @param {string} parent_container - Selector for the parent container.
  */
-export function initializeNetworkSettings(self, options, parent_container, network_container, network_warning_tag) {
+export function initializeNetworkSettings(
+  self,
+  options,
+  parent_container,
+  network_container,
+  network_warning_tag
+) {
   const json = self.json;
   self.container = network_container;
   self.network_warning_tag = network_warning_tag;
@@ -157,7 +163,9 @@ export function initializeNetworkSettings(self, options, parent_container, netwo
       self.CDC_data["jurisdiction_code"] = "PG";
     }
 
-    if (kGlobals.CDCJurisdictionLowMorbidity.has(self.CDC_data["jurisdiction"])) {
+    if (
+      kGlobals.CDCJurisdictionLowMorbidity.has(self.CDC_data["jurisdiction"])
+    ) {
       self.CDC_data["autocreate-priority-set-size"] = 3;
     }
 
@@ -209,7 +217,7 @@ export function initializeNetworkSettings(self, options, parent_container, netwo
     options,
     "edge-styler"
   );
-  
+
   self.initial_packed =
     options && options["initial_layout"] === "tiled" ? false : true;
 

@@ -57,7 +57,12 @@ class HIVTxNetwork extends HTXModel {
   }
 
   static inject_attribute_node_value_by_id(node, id, value) {
-    return HTXModel.inject_attribute_node_value_by_id(node, id, value, kGlobals);
+    return HTXModel.inject_attribute_node_value_by_id(
+      node,
+      id,
+      value,
+      kGlobals
+    );
   }
 
   filter_time_period(cluster) {

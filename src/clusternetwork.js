@@ -40,6 +40,7 @@ import {
 } from "./networkStylers";
 
 import * as Tooltips from "./networkTooltips";
+import * as NetworkStats from "./networkStatistics";
 
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
@@ -1190,14 +1191,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.compute_adjacency_list = _.once(() => {
-    self.nodes.forEach((n) => {
-      n.neighbors = d3.set();
-    });
-
-    self.edges.forEach((e) => {
-      self.nodes[e.source].neighbors.add(e.target);
-      self.nodes[e.target].neighbors.add(e.source);
-    });
+    NetworkStats.compute_adjacency_list(self);
   });
 
   /**
@@ -1206,34 +1200,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.compute_local_clustering_coefficients = _.once(() => {
-    self.compute_adjacency_list();
-
-    self.nodes.forEach((n) => {
-      _.defer((a_node) => {
-        const neighborhood_size = a_node.neighbors.size();
-        if (neighborhood_size < 2) {
-          a_node.lcc = misc.undefined;
-        } else if (neighborhood_size > 500) {
-          a_node.lcc = misc.too_large;
-        } else {
-          // count triangles
-          const neighborhood = a_node.neighbors.values();
-          let counter = 0;
-          for (let n1 = 0; n1 < neighborhood_size; n1 += 1) {
-            for (let n2 = n1 + 1; n2 < neighborhood_size; n2 += 1) {
-              if (
-                self.nodes[neighborhood[n1]].neighbors.has(neighborhood[n2])
-              ) {
-                counter++;
-              }
-            }
-          }
-
-          a_node.lcc =
-            (2 * counter) / neighborhood_size / (neighborhood_size - 1);
-        }
-      }, n);
-    });
+    NetworkStats.compute_local_clustering_coefficients(self, misc);
   });
 
   /**
@@ -1243,7 +1210,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {Object} The node object with the specified ID, or undefined if not found.
    */
   self.get_node_by_id = function (id) {
-    return self.nodes.filter((n) => n.id === id)[0];
+    return NetworkStats.get_node_by_id(self, id);
   };
 
   /**
@@ -1252,40 +1219,8 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.compute_local_clustering_coefficients_worker = _.once(() => {
-    var worker = new Worker("workers/lcc.js");
-
-    worker.onmessage = function (event) {
-      var nodes = event.data.Nodes;
-
-      nodes.forEach((n) => {
-        const node_to_update = self.get_node_by_id(n.id);
-        node_to_update.lcc = n.lcc ? n.lcc : misc.undefined;
-      });
-    };
-
-    var worker_obj = {};
-    worker_obj["Nodes"] = self.nodes;
-    worker_obj["Edges"] = self.edges;
-    worker.postMessage(worker_obj);
+    NetworkStats.compute_local_clustering_coefficients_worker(self, misc);
   });
-
-  /**
-   * @function estimate_cubic_compute_cost
-   * @description Estimates the cubic computational cost for a given cluster.
-   * @param {Object} c - The cluster object.
-   * @returns {number} The estimated cubic computational cost.
-   */
-  var estimate_cubic_compute_cost = _.memoize(
-    (c) => {
-      self.compute_adjacency_list();
-      return _.reduce(
-        _.first(_.pluck(c.children, "degree").sort(d3.descending), 3),
-        (memo, value) => memo * value,
-        1
-      );
-    },
-    (c) => c.cluster_id
-  );
 
   /**
    * @function compute_global_clustering_coefficients
@@ -1293,48 +1228,11 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.compute_global_clustering_coefficients = _.once(() => {
-    self.compute_adjacency_list();
-
-    self.clusters.forEach((c) => {
-      _.defer((a_cluster) => {
-        const cluster_size = a_cluster.children.length;
-        if (cluster_size < 3) {
-          a_cluster.cc = misc.undefined;
-        } else if (estimate_cubic_compute_cost(a_cluster, true) >= 5000000) {
-          a_cluster.cc = misc.too_large;
-        } else {
-          // pull out all the nodes that have this cluster id
-          const member_nodes = [];
-
-          var triads = 0;
-          var triangles = 0;
-
-          self.nodes.forEach((n, i) => {
-            if (n.cluster === a_cluster.cluster_id) {
-              member_nodes.push(i);
-            }
-          });
-          member_nodes.forEach((node) => {
-            const my_neighbors = self.nodes[node].neighbors
-              .values()
-              .map((d) => Number(d))
-              .sort(d3.ascending);
-            for (let n1 = 0; n1 < my_neighbors.length; n1 += 1) {
-              for (let n2 = n1 + 1; n2 < my_neighbors.length; n2 += 1) {
-                triads += 1;
-                if (
-                  self.nodes[my_neighbors[n1]].neighbors.has(my_neighbors[n2])
-                ) {
-                  triangles += 1;
-                }
-              }
-            }
-          });
-
-          a_cluster.cc = triangles / triads;
-        }
-      }, c);
-    });
+    NetworkStats.compute_global_clustering_coefficients(
+      self,
+      misc,
+      estimate_cubic_compute_cost
+    );
   });
 
   /**
@@ -1344,9 +1242,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.mark_nodes_as_processing = function (property) {
-    self.nodes.forEach((n) => {
-      n[property] = misc.processing;
-    });
+    NetworkStats.mark_nodes_as_processing(self, property, misc);
   };
 
   /**
@@ -1355,15 +1251,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.compute_graph_stats = function () {
-    d3.select(this).classed("disabled", true).select("i").classed({
-      "fa-calculator": false,
-      "fa-cog": true,
-      "fa-spin": true,
-    });
-    self.mark_nodes_as_processing("lcc");
-    self.compute_local_clustering_coefficients_worker();
-    self.compute_global_clustering_coefficients();
-    d3.select(this).remove();
+    NetworkStats.compute_graph_stats(self, misc, this);
   };
 
   /*------------ Constructor ---------------*/
