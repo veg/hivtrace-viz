@@ -148,6 +148,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~50 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 17: Extract Node Label and Cluster Collapse Handlers
+- **Goal**: Move `handle_node_label` and `collapse_cluster_handler` to a specialized module.
+- **Result**: 
+    - Moved logic to `src/networkNodeInteraction.js`.
+    - Maintained consistency with existing interaction handlers.
+    - Reduced `clusternetwork.js` by ~30 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

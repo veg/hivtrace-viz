@@ -221,3 +221,31 @@ export function cluster_pop_on(self, d, element, kGlobals, misc, Tooltips) {
 export function cluster_pop_off(element, Tooltips) {
   Tooltips.cluster_pop_off(element);
 }
+
+/**
+ * @function handle_node_label
+ * @description Toggles the display of a node label and updates the network.
+ * @param {Object} self - The network object.
+ * @param {HTMLElement} container - The container element.
+ * @param {Object} node - The node object.
+ * @returns {void}
+ */
+export function handle_node_label(self, container, node) {
+  node.show_label = !node.show_label;
+  self.update(true);
+}
+
+/**
+ * @function collapse_cluster_handler
+ * @description Handles the collapse of a cluster and updates the network.
+ * @param {Object} self - The network object.
+ * @param {Object} d - The cluster object to collapse.
+ * @param {boolean} do_update - If true, updates the network visualization.
+ * @returns {void}
+ */
+export function collapse_cluster_handler(self, d, do_update) {
+  self.collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
+  if (do_update) {
+    self.update(false, 0.4);
+  }
+}

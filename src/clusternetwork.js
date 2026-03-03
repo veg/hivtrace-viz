@@ -3491,8 +3491,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.handle_node_label = function (container, node) {
-    node.show_label = !node.show_label;
-    self.update(true);
+    return NetworkNodeInteraction.handle_node_label(self, container, node);
   };
 
   /**
@@ -3503,10 +3502,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.collapse_cluster_handler = function (d, do_update) {
-    self.collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
-    if (do_update) {
-      self.update(false, 0.4);
-    }
+    return NetworkNodeInteraction.collapse_cluster_handler(self, d, do_update);
   };
 
   /**
