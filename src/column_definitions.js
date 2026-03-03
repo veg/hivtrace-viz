@@ -4,6 +4,7 @@
 
 var d3 = require("d3"),
   _ = require("underscore"),
+  $ = require("jquery"),
   clustersOfInterest = require("./clustersOfInterest.js"),
   HTX = require("./hiv_tx_network.js"),
   kGlobals = require("./globals.js");

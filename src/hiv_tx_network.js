@@ -1,4 +1,5 @@
 var _ = require("underscore"),
+  $ = require("jquery"),
   timeDateUtil = require("./timeDateUtil.js"),
   kGlobals = require("./globals.js"),
   misc = require("./misc.js"),

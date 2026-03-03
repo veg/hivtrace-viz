@@ -1,5 +1,6 @@
 import * as d3 from "d3";
-import _, { drop } from "underscore";
+import _ from "underscore";
+import $ from "jquery";
 import { jsPanel } from "jspanel4";
 import autocomplete from "autocomplete.js";
 import * as timeDateUtil from "./timeDateUtil.js";

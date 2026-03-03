@@ -1,4 +1,5 @@
 var download = require("downloadjs");
+var $ = require("jquery");
 
 const _OTHER = __("general")["other"];
 const CATEGORY_UNIQUE_VALUE_LIMIT = 12;

@@ -1,5 +1,6 @@
 const d3 = require("d3");
 const _ = require("underscore");
+const $ = require("jquery");
 const misc = require("./misc.js");
 const timeDateUtil = require("./timeDateUtil.js");
 const nodesTab = require("./nodesTab.js");

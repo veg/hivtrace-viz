@@ -75,6 +75,24 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~300 lines.
 - **Status**: Completed (2026-03-02)
 
+#### Step 9: Extract Subcluster View and Node Interaction Logic
+- **Goal**: Move `view_subcluster`, `oldest_nodes_first`, `handle_node_click`, and `get_initial_xy` to specialized modules.
+- **Result**: 
+    - Created `src/networkSubcluster.js` and `src/networkNodeInteraction.js`.
+    - Extracted subcluster tab rendering and node context menu handling.
+    - Promoted several internal helpers (`_compute_cluster_degrees`, `get_all_clusters`, `handle_node_label`, `collapse_cluster_handler`) to `self` methods for cross-module accessibility.
+    - Reduced `clusternetwork.js` by ~300 lines.
+- **Status**: Completed (2026-03-03)
+
+#### Step 10: Extract Attribute Extraction and Cluster List View Logic
+- **Goal**: Move `_extract_attributes_for_nodes`, `_extract_exportable_attributes`, `_extract_mjc_attributes`, `_extract_nodes_by_id`, `_cluster_list_view_render`, and `_setup_cluster_list_view` to a specialized module.
+- **Result**: 
+    - Created `src/networkUIHelpers.js`.
+    - Extracted attribute extraction, node subsetting, and cluster list modal rendering.
+    - Resolved global dependency issues (`__`, `$`, `tables`) by parameterization.
+    - Reduced `clusternetwork.js` by ~400 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

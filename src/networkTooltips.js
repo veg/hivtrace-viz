@@ -1,5 +1,6 @@
 import _ from "underscore";
 import * as d3 from "d3";
+import $ from "jquery";
 
 /**
  * @function toggle_tooltip
