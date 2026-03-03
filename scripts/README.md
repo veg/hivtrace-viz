@@ -34,7 +34,7 @@ The script expects a standard HIV-TRACE JSON output. If the JSON contains a top-
 1. **Network Loading**: Loads and unpacks compact JSON (if necessary). Normalizes node attributes.
 2. **Model Initialization**: Sets up the jurisdictional defaults (e.g., North Carolina uses a different morbidity threshold than other jurisdictions).
 3. **MSPP Processing**: Links multiple sequences to a single person based on primary keys.
-4. **Partitioning**: Computes clusters and subclusters (default 0.5% threshold).
+4. **Partitioning**: Computes clusters and subclusters (default 0.5% threshold). **Reports network statistics (nodes, edges, clusters, subclusters).**
 5. **COI Engine**: 
    - Validates existing COIs provided via `--coi`.
    - Auto-detects new "Recent and Rapid" clusters (36-month window for nodes, 12-month window for rapid growth).
