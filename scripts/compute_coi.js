@@ -96,6 +96,17 @@ async function main() {
   model.compute_subclusters(kGlobals, timeDateUtil, misc);
   model.annotate_cluster_changes();
 
+  const subclusterCount = _.reduce(
+    model.clusters,
+    (memo, c) => memo + (c.subclusters ? c.subclusters.length : 0),
+    0
+  );
+
+  console.log(`      Nodes: ${model.json.Nodes.length}`);
+  console.log(`      Edges: ${model.json.Edges.length}`);
+  console.log(`      Clusters: ${model.clusters.length}`);
+  console.log(`      Subclusters: ${subclusterCount}`);
+
   // 5. Load COIs
   let rawCOIs = [];
   if (args.coi) {
