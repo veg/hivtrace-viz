@@ -132,6 +132,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~350 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 15: Extract Graph Data Preparation
+- **Goal**: Move `prepare_data_to_graph` to a specialized module.
+- **Result**: 
+    - Created `src/networkGraphData.js`.
+    - Extracted core filtering and mapping logic for graph preparation.
+    - Reduced `clusternetwork.js` by ~100 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
