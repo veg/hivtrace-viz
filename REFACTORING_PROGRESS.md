@@ -112,6 +112,16 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~300 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 13: Extract Category and Attribute Menu Logic
+- **Goal**: Move categorical, shape, and continuous attribute menu population logic to a specialized module.
+- **Result**: 
+    - Created `src/networkAttributeMenus.js`.
+    - Extracted `_aux_populate_category_menus`, `_aux_populate_category_fields`, `_aux_get_attribute_dimension`, and `_aux_process_category_values`.
+    - Promoted `compute_cluster_gradient` to a `self` method.
+    - Handled complex "stable-ish" attribute ordering and compressed value range logic.
+    - Reduced `clusternetwork.js` by ~400 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
