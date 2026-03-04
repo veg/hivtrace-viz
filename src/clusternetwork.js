@@ -20,6 +20,7 @@ import "bootstrap-datepicker"; // Keep datepicker import
 
 // Import network configuration helpers
 import { initializeNetworkSettings } from "./networkConfig";
+import { initializeNetworkScales } from "./networkScales";
 import {
   draw_attribute_labels,
   check_for_predefined_shapes,
@@ -370,8 +371,7 @@ var hivtrace_cluster_network_graph = function (
   function get_initial_xy(packed) {
     return NetworkNodeInteraction.get_initial_xy(
       packed,
-      self,
-      max_points_to_render
+      self
     );
   }
 
@@ -1345,7 +1345,7 @@ var hivtrace_cluster_network_graph = function (
     }
 
     // Initialize class attributes
-    singletons = graph_data.Nodes.filter((v, i) => v.cluster === null).length;
+    self.singletons = graph_data.Nodes.filter((v, i) => v.cluster === null).length;
 
     self.nodes_by_cluster = {};
 
@@ -1502,7 +1502,7 @@ var hivtrace_cluster_network_graph = function (
       self._aux_populate_category_menus();
     }
 
-    if (self.cluster_sizes.length > max_points_to_render) {
+    if (self.cluster_sizes.length > self.max_points_to_render) {
       var sorted_array = _.filter(
         _.map(self.cluster_sizes, (d, i) => [d, i + 1]),
         (d) => !_.isUndefined(d[0])
@@ -1512,7 +1512,7 @@ var hivtrace_cluster_network_graph = function (
       //.map((d, i) => [d, i + 1])
       //.sort((a, b) => a[0] - b[0]);
 
-      for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
+      for (var k = 0; k < sorted_array.length - self.max_points_to_render; k++) {
         self.exclude_cluster_ids[sorted_array[k][1]] = 1;
       }
 
@@ -1520,11 +1520,11 @@ var hivtrace_cluster_network_graph = function (
         self.warning_string +=
           (self.warning_string.length ? "<br>" : "") +
           "Excluded " +
-          (sorted_array.length - max_points_to_render) +
+          (sorted_array.length - self.max_points_to_render) +
           " clusters (maximum size " +
           sorted_array[k - 1][0] +
           " nodes) because only " +
-          max_points_to_render +
+          self.max_points_to_render +
           " objects can be shown at once.";
       }
     }
@@ -1657,8 +1657,7 @@ var hivtrace_cluster_network_graph = function (
       kGlobals,
       tables,
       timeDateUtil,
-      jsConvert,
-      max_nodes_to_show
+      jsConvert
     );
   };
 
@@ -1898,12 +1897,12 @@ var hivtrace_cluster_network_graph = function (
       ).length;
 
       // const clusters_removed = self.cluster_sizes.length - self.clusters.length;
-      // const nodes_removed = graph_data.Nodes.length - singletons - self.nodes.length;
+      // const nodes_removed = graph_data.Nodes.length - self.singletons - self.nodes.length;
       // const networkString = "Displaying a network on <strong>" + self.nodes.length + "</strong> nodes, <strong>" + self.clusters.length + "</strong> clusters"
       //         + (clusters_removed > 0 ? " (an additional " + clusters_removed + " clusters and " + nodes_removed + " nodes have been removed due to network size constraints)" : "") + ". <strong>"
       //         + clusters_shown +"</strong> clusters are expanded. Of <strong>" + self.edges.length + "</strong> edges, <strong>" + draw_me.edges.length + "</strong>, and of  <strong>" + self.nodes.length  + " </strong> nodes,  <strong>" + draw_me.nodes.length + " </strong> are displayed. ";
-      // if (singletons > 0) {
-      //   networkString += "<strong>" +singletons + "</strong> singleton nodes are not shown. ";
+      // if (self.singletons > 0) {
+      //   networkString += "<strong>" +self.singletons + "</strong> singleton nodes are not shown. ";
       // }
 
       const networkString =
@@ -3213,11 +3212,11 @@ var hivtrace_cluster_network_graph = function (
     if (d.collapsed) {
       var new_nodes = self.cluster_sizes[d.cluster_id - 1] - 1;
 
-      if (new_nodes > max_points_to_render) {
+      if (new_nodes > self.max_points_to_render) {
         self.warning_string = "This cluster is too large to be displayed";
       } else {
         var leftover =
-          new_nodes + self.currently_displayed_objects - max_points_to_render;
+          new_nodes + self.currently_displayed_objects - self.max_points_to_render;
         if (leftover > 0) {
           var k = 0;
           for (; k < self.open_cluster_queue.length && leftover > 0; k++) {
@@ -3841,17 +3840,8 @@ var hivtrace_cluster_network_graph = function (
 
   /*------------ Init code ---------------*/
 
-  var l_scale = 5000, // link scale
-    graph_data = self.json, // the raw JSON network object
-    max_points_to_render = 1536,
-    max_nodes_to_show = 4096,
-    singletons = 0,
-    gravity_scale = d3.scale
-      .pow()
-      .exponent(0.5)
-      .domain([1, 100000])
-      .range([0.1, 0.15]),
-    link_scale = d3.scale.pow().exponent(1.25).clamp(true).domain([0, 0.1]);
+  initializeNetworkScales(self);
+  var graph_data = self.json; // the raw JSON network object
 
   self.open_cluster_queue = [];
   self.currently_displayed_objects = 0;
@@ -3870,7 +3860,7 @@ var hivtrace_cluster_network_graph = function (
         return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
       })
       .linkDistance(
-        (d) => link_scale(d.length) * l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
+        (d) => self.link_scale(d.length) * self.l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
       )
       .linkStrength((d) => {
         if (d.support !== undefined) {
@@ -3878,8 +3868,8 @@ var hivtrace_cluster_network_graph = function (
         }
         return 1;
       })
-      .chargeDistance(l_scale * 0.1)
-      .gravity(gravity_scale(self.json.Nodes.length))
+      .chargeDistance(self.l_scale * 0.1)
+      .gravity(self.gravity_scale(self.json.Nodes.length))
       .friction(0.25);
   } else {
     self.network_layout = d3.layout.force();

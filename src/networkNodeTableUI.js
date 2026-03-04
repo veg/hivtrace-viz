@@ -256,7 +256,6 @@ export function draw_node_table(
  * @param {Object} tables - The tables module.
  * @param {Object} timeDateUtil - Time/date utility module.
  * @param {Object} jsConvert - js-convert-case module.
- * @param {number} max_nodes_to_show - Maximum nodes to display.
  * @returns {void}
  */
 export function draw_extended_node_table(
@@ -270,8 +269,7 @@ export function draw_extended_node_table(
   kGlobals,
   tables,
   timeDateUtil,
-  jsConvert,
-  max_nodes_to_show
+  jsConvert
 ) {
   container = container || nodesTab.getNodeTable();
   options = options || {};
@@ -281,8 +279,8 @@ export function draw_extended_node_table(
 
     const N = node_list.length;
 
-    if (node_list.length > max_nodes_to_show) {
-      node_list = node_list.slice(0, max_nodes_to_show);
+    if (node_list.length > self.max_nodes_to_show) {
+      node_list = node_list.slice(0, self.max_nodes_to_show);
     }
 
     container.node_table_N = N;

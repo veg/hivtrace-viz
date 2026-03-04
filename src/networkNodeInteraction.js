@@ -84,10 +84,9 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
  * @description Calculates initial x and y coordinates for clusters based on packing or treemap layout.
  * @param {boolean} packed - If true, uses a pack layout; otherwise, uses a treemap layout.
  * @param {Object} self - The network object.
- * @param {number} max_points_to_render - Maximum number of clusters to render.
  * @returns {Array} A tuple containing the laid out clusters and all clusters.
  */
-export function get_initial_xy(packed, self, max_points_to_render) {
+export function get_initial_xy(packed, self) {
   // create clusters from nodes
   var mapped_clusters = self.get_all_clusters(self.nodes);
 
@@ -106,13 +105,13 @@ export function get_initial_xy(packed, self, max_points_to_render) {
     children: value,
   }));
 
-  if (_.size(mapped_clusters) > max_points_to_render) {
+  if (_.size(mapped_clusters) > self.max_points_to_render) {
     let reduced_clusters = _.chain(all_clusters)
       .pairs()
       .sortBy((d) => (-d.children ? d.children.length : 0))
       .value();
     d_clusters.children = [];
-    for (let i = 0; i < max_points_to_render; i++) {
+    for (let i = 0; i < self.max_points_to_render; i++) {
       d_clusters.children.push({
         cluster_id: reduced_clusters[i][0],
         children: reduced_clusters[i][1],

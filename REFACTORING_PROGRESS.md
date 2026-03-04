@@ -165,6 +165,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~100 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 21: Extract Network Scales and Constants
+- **Goal**: Move `l_scale`, `max_points_to_render`, `max_nodes_to_show`, `singletons`, `gravity_scale`, and `link_scale` to a specialized module.
+- **Result**: 
+    - Created `src/networkScales.js`.
+    - Attached scales and constants to the `self` instance.
+    - Simplified `get_initial_xy` and `draw_extended_node_table` by removing redundant arguments.
+    - Updated `clusternetwork.js` to use `self` properties for these values.
+- **Status**: Completed (2026-03-04)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
