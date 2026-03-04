@@ -174,6 +174,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Updated `clusternetwork.js` to use `self` properties for these values.
 - **Status**: Completed (2026-03-04)
 
+#### Step 22: Extract Priority Cluster Annotation
+- **Goal**: Move `annotate_priority_clusters` to a specialized module.
+- **Result**: 
+    - Created `src/networkPriority.js`.
+    - Promoted `_compute_cluster_degrees` and `oldest_nodes_first` to `self` methods.
+    - Parameterized dependencies (`timeDateUtil`, `kGlobals`, `helpers`) for the extracted function.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-03-04)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
