@@ -156,6 +156,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~30 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 20: Extract Cluster Management Logic
+- **Goal**: Move `get_all_clusters`, `expand_cluster`, and `collapse_cluster` to a specialized module.
+- **Result**: 
+    - Created `src/networkClusters.js`.
+    - Promoted `open_cluster_queue` and `currently_displayed_objects` to `self` properties.
+    - Moved core cluster manipulation logic out of `clusternetwork.js`.
+    - Reduced `clusternetwork.js` by ~100 lines.
+- **Status**: Completed (2026-03-03)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

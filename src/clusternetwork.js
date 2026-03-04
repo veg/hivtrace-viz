@@ -43,6 +43,7 @@ import * as Tooltips from "./networkTooltips";
 import * as NetworkStats from "./networkStatistics";
 import * as NetworkSearch from "./networkSearch";
 import * as NetworkSubcluster from "./networkSubcluster";
+import * as NetworkClusters from "./networkClusters";
 import * as NetworkNodeInteraction from "./networkNodeInteraction";
 import * as NetworkUIHelpers from "./networkUIHelpers";
 import * as NetworkControls from "./networkControls";
@@ -2621,7 +2622,7 @@ var hivtrace_cluster_network_graph = function (
       );
 
     if (!soft) {
-      currently_displayed_objects =
+      self.currently_displayed_objects =
         rendered_clusters[0].length + rendered_nodes[0].length;
 
       self.network_layout.on("tick", () => {
@@ -2848,31 +2849,8 @@ var hivtrace_cluster_network_graph = function (
    * @returns {Object} An object where keys are cluster IDs and values are arrays of nodes.
    */
   self.get_all_clusters = function (nodes) {
-    var by_cluster = _.groupBy(nodes, "cluster");
-    return by_cluster;
+    return NetworkClusters.get_all_clusters(nodes);
   };
-
-  /**
-   * @function compute_cluster_centroids
-   * @description Computes the centroids of clusters based on the positions of their children nodes.
-   * @param {Object} clusters - An object containing cluster data.
-   * @returns {void}
-   */
-  function compute_cluster_centroids(clusters) {
-    for (var c in clusters) {
-      var cls = clusters[c];
-      cls.x = 0;
-      cls.y = 0;
-      if (_.has(cls, "children")) {
-        cls.children.forEach((x) => {
-          cls.x += x.x;
-          cls.y += x.y;
-        });
-        cls.x /= cls.children.length;
-        cls.y /= cls.children.length;
-      }
-    }
-  }
 
   /**
    * @function collapse_cluster
@@ -2882,17 +2860,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {number} The number of children in the collapsed cluster.
    */
   self.collapse_cluster = function (x, keep_in_q) {
-    self.needs_an_update = true;
-    x.collapsed = true;
-    currently_displayed_objects -= self.cluster_sizes[x.cluster_id - 1] - 1;
-    if (!keep_in_q) {
-      var idx = open_cluster_queue.indexOf(x.cluster_id);
-      if (idx >= 0) {
-        open_cluster_queue.splice(idx, 1);
-      }
-    }
-    compute_cluster_centroids([x]);
-    return x.children.length;
+    return NetworkClusters.collapse_cluster(self, x, keep_in_q);
   };
 
   /**
@@ -2903,22 +2871,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.expand_cluster = function (x, copy_coord) {
-    self.needs_an_update = true;
-    x.collapsed = false;
-    currently_displayed_objects += self.cluster_sizes[x.cluster_id - 1] - 1;
-    open_cluster_queue.push(x.cluster_id);
-
-    if (copy_coord) {
-      x.children.forEach((n) => {
-        n.x = x.x + (Math.random() - 0.5) * x.children.length;
-        n.y = x.y + (Math.random() - 0.5) * x.children.length;
-      });
-    } else {
-      x.children.forEach((n) => {
-        n.x = self.width * 0.25 + (Math.random() - 0.5) * x.children.length;
-        n.y = 0.25 * self.height + (Math.random() - 0.5) * x.children.length;
-      });
-    }
+    return NetworkClusters.expand_cluster(self, x, copy_coord);
   };
 
   /**
@@ -3264,17 +3217,17 @@ var hivtrace_cluster_network_graph = function (
         self.warning_string = "This cluster is too large to be displayed";
       } else {
         var leftover =
-          new_nodes + currently_displayed_objects - max_points_to_render;
+          new_nodes + self.currently_displayed_objects - max_points_to_render;
         if (leftover > 0) {
           var k = 0;
-          for (; k < open_cluster_queue.length && leftover > 0; k++) {
+          for (; k < self.open_cluster_queue.length && leftover > 0; k++) {
             var cluster =
-              self.clusters[self.cluster_mapping[open_cluster_queue[k]]];
+              self.clusters[self.cluster_mapping[self.open_cluster_queue[k]]];
             leftover -= cluster.children.length - 1;
             self.collapse_cluster(cluster, true);
           }
-          if (k || open_cluster_queue.length) {
-            open_cluster_queue.splice(0, k);
+          if (k || self.open_cluster_queue.length) {
+            self.open_cluster_queue.splice(0, k);
           }
         }
 
@@ -3893,14 +3846,15 @@ var hivtrace_cluster_network_graph = function (
     max_points_to_render = 1536,
     max_nodes_to_show = 4096,
     singletons = 0,
-    open_cluster_queue = [],
-    currently_displayed_objects,
     gravity_scale = d3.scale
       .pow()
       .exponent(0.5)
       .domain([1, 100000])
       .range([0.1, 0.15]),
     link_scale = d3.scale.pow().exponent(1.25).clamp(true).domain([0, 0.1]);
+
+  self.open_cluster_queue = [];
+  self.currently_displayed_objects = 0;
 
   /*------------ D3 globals and SVG elements ---------------*/
 
