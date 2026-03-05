@@ -1,10 +1,10 @@
-var _ = require("underscore"),
-  $ = require("jquery"),
-  timeDateUtil = require("./timeDateUtil.js"),
-  kGlobals = require("./globals.js"),
-  misc = require("./misc.js"),
-  clustersOfInterest = require("./clustersOfInterest.js"),
-  HTXModel = require("./core/HTXModel.js");
+const _ = require("underscore");
+const $ = require("jquery");
+const timeDateUtil = require("./timeDateUtil.js");
+const kGlobals = require("./globals.js");
+const misc = require("./misc.js");
+const clustersOfInterest = require("./clustersOfInterest.js");
+const HTXModel = require("./core/HTXModel.js");
 
 /*------------------------------------------------------------
      define a barebones class for the network object
@@ -207,11 +207,7 @@ class HIVTxNetwork extends HTXModel {
         d.label_y += d3.event.dy;
         d3.select(this).attr(
           "transform",
-          "translate(" +
-            (d.label_x + d.rendered_size * 1.25) +
-            "," +
-            (d.label_y + d.rendered_size * 0.5) +
-            ")"
+          `translate(${d.label_x + d.rendered_size * 1.25},${d.label_y + d.rendered_size * 0.5})`
         );
       })
       .on("dragstart", () => {
@@ -223,9 +219,7 @@ class HIVTxNetwork extends HTXModel {
 
     /** default node colorizer */
     this.colorizer = {
-      selected: function (d) {
-        return d === "selected" ? d3.rgb(51, 122, 183) : "#FFF";
-      },
+      selected: (d) => (d === "selected" ? d3.rgb(51, 122, 183) : "#FFF"),
     };
 
     /** if there is computed support for network edges, use it to highlight
@@ -236,9 +230,7 @@ class HIVTxNetwork extends HTXModel {
     /** default node shaper */
     this.node_shaper = {
       id: null,
-      shaper: function () {
-        return "circle";
-      },
+      shaper: () => "circle",
     };
 
     /** d3 layout option setting */
@@ -271,7 +263,7 @@ class HIVTxNetwork extends HTXModel {
       return undefined;
     }
     return (
-      (not_nested ? "" : "#" + this.button_bar_ui) +
+      (not_nested ? "" : `#${this.button_bar_ui}`) +
       misc.get_ui_element_selector_by_role(role)
     );
   }
@@ -332,29 +324,17 @@ class HIVTxNetwork extends HTXModel {
   */
 
   generate_cross_hatch_pattern(color) {
-    let id = "id" + this.dom_prefix + "_diagonalHatch_" + color.substr(1, 10);
-    if (this.network_svg.select("#" + id).empty()) {
+    const id = `id${this.dom_prefix}_diagonalHatch_${color.substr(1, 10)}`;
+    if (this.network_svg.select(`#${id}`).empty()) {
       function getComplementaryColor(backgroundColor) {
-        const color = d3.rgb(backgroundColor);
-        const luminance = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
+        const bg_color = d3.rgb(backgroundColor);
+        const luminance = bg_color.r * 0.299 + bg_color.g * 0.587 + bg_color.b * 0.114;
         return luminance > 128 ? "#000000" : "#ffffff";
       }
 
-      let defs = this.network_svg.append("defs");
+      const defs = this.network_svg.append("defs");
 
-      /*defs.append("pattern")
-        .attr("id", id)
-        .attr("patternUnits", "userSpaceOnUse")
-        .attr("width", "2")
-        .attr("height", "4")
-        .attr("patternTransform", "rotate(30 2 2)")
-        .append("path")
-        .attr("d", "M -1,2 l 6,0")
-        .attr("stroke", color)
-        .attr("stroke-width", "3"); //this is actual shape for arrowhead
-        */
-
-      let pattern = defs
+      const pattern = defs
         .append("pattern")
         .attr("id", id)
         .attr("patternUnits", "userSpaceOnUse")
@@ -574,7 +554,7 @@ class HIVTxNetwork extends HTXModel {
 
   priority_groups_remove_set = function (name, update_table) {
     if (this.defined_priority_groups) {
-      var idx = _.findIndex(
+      const idx = _.findIndex(
         this.defined_priority_groups,
         (g) => g.name === name
       );
@@ -607,9 +587,9 @@ class HIVTxNetwork extends HTXModel {
     if (value instanceof Date) {
       return value;
     }
-    var parsed_value = null;
+    let parsed_value = null;
 
-    var passed = _.any(timeDateUtil.DateFormats, (f) => {
+    const passed = _.any(timeDateUtil.DateFormats, (f) => {
       parsed_value = f.parse(value);
       return parsed_value;
     });
@@ -642,7 +622,7 @@ class HIVTxNetwork extends HTXModel {
     if (count_newly_added && HIVTxNetwork.is_new_node(node)) {
       return true;
     }
-    var node_dx = this.attribute_node_value_by_id(node, date_field);
+    let node_dx = this.attribute_node_value_by_id(node, date_field);
     if (node_dx instanceof Date) {
       return node_dx >= cutoff && node_dx <= start_date;
     }
@@ -690,7 +670,7 @@ class HIVTxNetwork extends HTXModel {
   display_warning(warning_string, is_html) {
     if (this.network_warning_tag) {
       if (warning_string.length) {
-        var warning_box = d3.select(this.network_warning_tag);
+        const warning_box = d3.select(this.network_warning_tag);
         warning_box.selectAll("div").remove();
         if (is_html) {
           warning_box.append("div").html(warning_string);
@@ -712,7 +692,7 @@ class HIVTxNetwork extends HTXModel {
   priority_groups_compute_node_membership() {
     const pg_nodesets = [];
 
-    let node2set = {};
+    const node2set = {};
 
     _.each(this.defined_priority_groups, (g) => {
       pg_nodesets.push([
@@ -750,8 +730,7 @@ class HIVTxNetwork extends HTXModel {
         enum: pg_enum,
         type: "String",
         volatile: true,
-        color_scale: function () {
-          return d3.scale
+        color_scale: () => d3.scale
             .ordinal()
             .domain(pg_enum.concat([kGlobals.missing.label]))
             .range([
@@ -760,9 +739,8 @@ class HIVTxNetwork extends HTXModel {
               "yellow",
               "steelblue",
               kGlobals.missing.color,
-            ]);
-        },
-        map: function (node) {
+            ]),
+        map: (node) => {
           const npcoi =
             node.id in node2set
               ? _.some(node2set[node.id], (d) => pg_nodesets[d][1])
@@ -806,7 +784,7 @@ class HIVTxNetwork extends HTXModel {
         label: "Clusters of Interest",
         type: "String",
         volatile: true,
-        map: function (node) {
+        map: (node) => {
           const memberships = node2set[node.id] || [];
           if (memberships.length === 1) {
             return pg_nodesets[memberships[0]][0];
@@ -821,7 +799,7 @@ class HIVTxNetwork extends HTXModel {
         label: "Subcluster ID",
         type: "String",
         //label_format: d3.format(".2f"),
-        map: function (node) {
+        map: (node) => {
           /*if (node && node.subcluster_label && node.subcluster_label == "10.2") {
              console.log (node);
           }*/
@@ -833,7 +811,7 @@ class HIVTxNetwork extends HTXModel {
       },
     };
 
-    let subset = new Set();
+    const subset = new Set();
 
     for (const [key, def] of Object.entries(attrib_defs)) {
       subset.add(key);
@@ -872,7 +850,7 @@ class HIVTxNetwork extends HTXModel {
     d3.json(url, (error, results) => {
       if (error) {
         throw Error(
-          "Failed loading cluster of interest file " + error.responseURL
+          `Failed loading cluster of interest file ${error.responseURL}`
         );
       } else {
         callback(results);
@@ -896,11 +874,7 @@ class HIVTxNetwork extends HTXModel {
 
       if (automatic_action_taken) {
         this.warning_string +=
-          "<br/>Automatically created <b>" +
-          stats.autocreated +
-          "</b> and expanded <b>" +
-          stats.autoexpanded +
-          "</b> clusters of interest." +
+          `<br/>Automatically created <b>${stats.autocreated}</b> and expanded <b>${stats.autoexpanded}</b> clusters of interest.` +
           (stats.pending > 0
             ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>"
             : "");
@@ -966,7 +940,7 @@ class HIVTxNetwork extends HTXModel {
 
   inject_attribute_description(key, d) {
     if (kGlobals.network.GraphAttrbuteID in this.json) {
-      var new_attr = {};
+      const new_attr = {};
       new_attr[key] = d;
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
       //this.json[kGlobals.network.GraphAttrbuteID][key] = _.clone (d);
@@ -1011,7 +985,7 @@ class HIVTxNetwork extends HTXModel {
       if (computed.enum) {
         this.uniqValues[key] = computed.enum;
       } else {
-        var uniq_value_set = new Set();
+        const uniq_value_set = new Set();
 
         if (computed.type === "Date") {
           _.each(this.json.Nodes, (n) => {
@@ -1034,8 +1008,8 @@ class HIVTxNetwork extends HTXModel {
         }
 
         this.uniqValues[key] = [...uniq_value_set];
-        if (computed.type === "Number" || computed.type == "Date") {
-          var color_stops =
+        if (computed.type === "Number" || computed.type === "Date") {
+          let color_stops =
             computed["color_stops"] || kGlobals.network.ContinuousColorStops;
 
           if (color_stops > this.uniqValues[key].length) {
@@ -1051,7 +1025,7 @@ class HIVTxNetwork extends HTXModel {
       }
       this.uniqs[key] = this.uniqValues[key].length;
 
-      var extension = {};
+      const extension = {};
       extension[key] = computed;
 
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
@@ -1108,23 +1082,22 @@ class HIVTxNetwork extends HTXModel {
 
     const subcluster_enum = [
       "No, dx>36 months", // 0
-      "No, but dx�12 months",
-      "Yes (dx�12 months)",
-      "Yes (12<dx� 36 months)",
+      "No, but dx≤12 months",
+      "Yes (dx≤12 months)",
+      "Yes (12<dx≤36 months)",
       "Future node", // 4
       "Not a member of subcluster", // 5
       "Not in a subcluster",
-      "No, but 12<dx� 36 months",
+      "No, but 12<dx≤36 months",
     ];
 
     return {
       depends: [timeDateUtil._networkCDCDateField],
-      label: "ClusterOI membership as of " + timeDateUtil.DateViewFormat(date),
+      label: `ClusterOI membership as of ${timeDateUtil.DateViewFormat(date)}`,
       enum: subcluster_enum,
       //type: "String",
       volatile: true,
-      color_scale: function () {
-        return d3.scale
+      color_scale: () => d3.scale
           .ordinal()
           .domain(subcluster_enum.concat([kGlobals.missing.label]))
           .range(
@@ -1141,10 +1114,9 @@ class HIVTxNetwork extends HTXModel {
               ],
               [kGlobals.missing.color]
             )
-          );
-      },
+          ),
 
-      map: function (node) {
+      map: (node) => {
         if (node.subcluster_label) {
           if (node.priority_flag > 0) {
             return subcluster_enum[node.priority_flag];
@@ -1172,17 +1144,15 @@ class HIVTxNetwork extends HTXModel {
       label: title,
       enum: vl_bins,
       type: "String",
-      color_scale: function () {
-        return d3.scale
+      color_scale: () => d3.scale
           .ordinal()
           .domain(vl_bins.concat([kGlobals.missing.label]))
           .range(
             _.union(kGlobals.SequentialColor[3], [kGlobals.missing.color])
-          );
-      },
+          ),
 
       map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(node, field, true);
+        const vl_value = this.attribute_node_value_by_id(node, field, true);
 
         if (vl_value !== kGlobals.missing.label) {
           if (vl_value <= 200) {
@@ -1213,7 +1183,7 @@ class HIVTxNetwork extends HTXModel {
       category_values: ["Suppressed", "Viremic (above assay limit)"],
       type: "Number-categories",
       color_scale: (attr) => {
-        var color_scale_d3 = d3.scale
+        const color_scale_d3 = d3.scale
           .linear()
           .range([
             "#d53e4f",
@@ -1241,12 +1211,12 @@ class HIVTxNetwork extends HTXModel {
       },
       label_format: d3.format(",.0f"),
       map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(
+        const vl_value = this.attribute_node_value_by_id(
           node,
           "vl_recent_value",
           true
         );
-        var result_interpretation = this.attribute_node_value_by_id(
+        const result_interpretation = this.attribute_node_value_by_id(
           node,
           "result_interpretation"
         );
@@ -1285,7 +1255,7 @@ class HIVTxNetwork extends HTXModel {
       label: "Sequence updates compared to previous network",
       enum: ["Existing", "New", "Moved clusters"],
       type: "String",
-      map: function (node) {
+      map: (node) => {
         if (HIVTxNetwork.is_new_node(node)) {
           return "New";
         }
@@ -1294,12 +1264,10 @@ class HIVTxNetwork extends HTXModel {
         }
         return "Existing";
       },
-      color_scale: function () {
-        return d3.scale
+      color_scale: () => d3.scale
           .ordinal()
           .domain(["Existing", "New", "Moved clusters", kGlobals.missing.label])
-          .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]);
-      },
+          .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]),
     };
   }
 
@@ -1308,10 +1276,7 @@ class HIVTxNetwork extends HTXModel {
       depends: [],
       label: label,
       type: "Date",
-      map: (node) => {
-        // will be dynamically injected into node every time a MJ ClusterOI is viewed
-        return kGlobals.missing.label;
-      },
+      map: (node) => kGlobals.missing.label,
     };
   }
 
@@ -1332,7 +1297,7 @@ class HIVTxNetwork extends HTXModel {
       label_format: relative ? d3.format(".2f") : d3.format(".0f"),
       map: (node) => {
         try {
-          var value = this.parse_dates(
+          let value = this.parse_dates(
             this.attribute_node_value_by_id(
               node,
               timeDateUtil._networkCDCDateField,
@@ -1355,7 +1320,7 @@ class HIVTxNetwork extends HTXModel {
           return kGlobals.missing.label;
         }
       },
-      color_scale: function (attr) {
+      color_scale: (attr) => {
         const range_without_missing = _.without(
           attr.value_range,
           kGlobals.missing.label
@@ -1486,7 +1451,7 @@ class HIVTxNetwork extends HTXModel {
         }
         return 1;
       },
-      color_scale: function (attr) {
+      color_scale: (attr) => {
         const range_without_missing = _.without(
           attr.value_range,
           kGlobals.missing.label
@@ -1520,10 +1485,9 @@ class HIVTxNetwork extends HTXModel {
       depends: ["age_dx"],
       overwrites: "age_dx",
       label: "Age at Diagnosis",
-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
+      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
       type: "String",
-      color_scale: function () {
-        return d3.scale
+      color_scale: () => d3.scale
           .ordinal()
           .domain([
             "<13",
@@ -1532,7 +1496,7 @@ class HIVTxNetwork extends HTXModel {
             "30-39",
             "40-49",
             "50-59",
-            "�60",
+            "≥60",
             kGlobals.missing.label,
           ])
           .range([
@@ -1544,18 +1508,17 @@ class HIVTxNetwork extends HTXModel {
             "#fed976",
             "#ffffb2",
             "#636363",
-          ]);
-      },
+          ]),
       map: (node) => {
-        var vl_value = this.attribute_node_value_by_id(node, "age_dx");
+        const vl_value = this.attribute_node_value_by_id(node, "age_dx");
         if (vl_value === ">=60") {
-          return "�60";
+          return "≥60";
         }
         if (vl_value === "\ufffd60") {
-          return "�60";
+          return "≥60";
         }
         if (Number(vl_value) >= 60) {
-          return "�60";
+          return "≥60";
         }
         return vl_value;
       },
@@ -1573,24 +1536,23 @@ class HIVTxNetwork extends HTXModel {
       */
 
   check_for_time_series = function (export_items) {
-    var event_handler = (network, e) => {
-      if (e) {
-        e = d3.select(e);
-      }
+    const event_handler = (network, e) => {
+      let e_sel = e ? d3.select(e) : null;
+      
       if (!network.network_cluster_dynamics) {
         network.network_cluster_dynamics = network.network_svg
           .append("g")
-          .attr("id", this.dom_prefix + "-dynamics-svg")
-          .attr("transform", "translate (" + network.width * 0.45 + ",0)");
+          .attr("id", `${this.dom_prefix}-dynamics-svg`)
+          .attr("transform", `translate (${network.width * 0.45},0)`);
 
         network.handle_inline_charts = function (plot_filter) {
-          var attr = null;
-          var color = null;
+          let attr = null;
+          let color = null;
           if (
             network.colorizer["category_id"] &&
             !network.colorizer["continuous"]
           ) {
-            var attr_desc =
+            const attr_desc =
               network.json[kGlobals.network.GraphAttrbuteID][
                 network.colorizer["category_id"]
               ];
@@ -1632,12 +1594,12 @@ class HIVTxNetwork extends HTXModel {
           );
         };
         network.handle_inline_charts();
-        if (e) {
-          e.text("Hide time-course plots");
+        if (e_sel) {
+          e_sel.text("Hide time-course plots");
         }
       } else {
-        if (e) {
-          e.text("Show time-course plots");
+        if (e_sel) {
+          e_sel.text("Show time-course plots");
         }
         network.network_cluster_dynamics.remove();
         network.network_cluster_dynamics = null;
@@ -1683,8 +1645,8 @@ class HIVTxNetwork extends HTXModel {
 
   extract_individual_level_records() {
     if (this.has_multiple_sequences && this.primary_key_list) {
-      let patient_records = [];
-      _.each(this.primary_key_list, (records, pkey) => {
+      const patient_records = [];
+      _.each(this.primary_key_list, (records) => {
         if (records.length > 1) {
           //console.log (_.find (records, (r)=> !r['missing_attributes']));
           patient_records.push(

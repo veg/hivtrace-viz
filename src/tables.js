@@ -42,18 +42,18 @@ function add_a_sortable_table(
 
   container.style("display", "none");
 
-  var thead = container.selectAll("thead");
-  var tbody = container.selectAll("tbody");
+  let thead = container.selectAll("thead");
+  let tbody = container.selectAll("tbody");
 
   const set_table_elements = (d, cell) => {
     if (d.hidden) {
       d3.select(cell).style("display", "none");
     }
     if (d.width || d.text_wrap) {
-      cell = d3.select(cell);
-      if (d.width) cell.style("width", String(d.width) + "px");
+      const cell_selection = d3.select(cell);
+      if (d.width) cell_selection.style("width", `${d.width}px`);
       if (d.text_wrap) {
-        cell
+        cell_selection
           .style("overflow", "hidden")
           .style("white-space", "nowrap")
           .style("text-overflow", "ellipsis");
@@ -112,7 +112,7 @@ function add_a_sortable_table(
   }
 
   if (caption) {
-    var table_caption = container.selectAll("caption").data([caption]);
+    const table_caption = container.selectAll("caption").data([caption]);
     table_caption.enter().insert("caption", ":first-child");
     table_caption.html((d) => d);
     table_caption
@@ -125,7 +125,7 @@ function add_a_sortable_table(
       table_caption
         .select(misc.get_ui_element_selector_by_role("table-count-warning"))
         .style("color", "black")
-        .text("Truncated due to the large number of rows (" + N + ")");
+        .text(`Truncated due to the large number of rows (${N})`);
     }
   }
 
@@ -167,9 +167,9 @@ function table_get_cell_value(data) {
 */
 
 function format_a_cell(data, index, item, priority_set_editor) {
-  var this_sel = d3.select(item);
-  var current_value = table_get_cell_value(data);
-  var handle_sort = this_sel;
+  const this_sel = d3.select(item);
+  const current_value = table_get_cell_value(data);
+  let handle_sort = this_sel;
 
   handle_sort.selectAll("*").remove();
 
@@ -521,13 +521,13 @@ function filter_table(element) {
     d3.event.preventDefault();
   }
 
-  var table_element = $(element).closest("table");
+  const table_element = $(element).closest("table");
 
   if (table_element.length) {
     // construct compound filters over all columns
 
-    var filter_array = [];
-    var filter_handlers = [];
+    const filter_array = [];
+    const filter_handlers = [];
 
     d3.select(table_element[0])
       .selectAll("thead th")
@@ -545,14 +545,14 @@ function filter_table(element) {
         }
       });
 
-    var shown_rows = 0;
+    let shown_rows = 0;
 
     d3.select(table_element[0])
       .select("tbody")
       .selectAll("tr")
       .each(function (d, r) {
-        var this_row = d3.select(this);
-        var hide_me = false;
+        const this_row = d3.select(this);
+        let hide_me = false;
 
         this_row.selectAll("td").each((d, i) => {
           if (!hide_me) {
@@ -675,14 +675,14 @@ function sort_table_by_column(element, datum) {
   if (d3.event) {
     d3.event.preventDefault();
   }
-  var table_element = $(element).closest("table");
+  const table_element = $(element).closest("table");
   if (table_element.length) {
-    var sort_on = parseInt($(element).data("column-id"));
-    var sort_key = datum.sort;
+    const sort_on = parseInt($(element).data("column-id"));
+    const sort_key = datum.sort;
 
-    var sorted_function = sort_table_toggle_icon(element);
+    const sorted_function = sort_table_toggle_icon(element);
 
-    var sort_accessor;
+    let sort_accessor;
 
     if (sort_key) {
       if (_.isFunction(sort_key)) {
@@ -691,7 +691,7 @@ function sort_table_by_column(element, datum) {
         };
       } else {
         sort_accessor = function (x) {
-          var val = x[sort_key];
+          const val = x[sort_key];
           if (_.isFunction(val)) return val();
           return val;
         };

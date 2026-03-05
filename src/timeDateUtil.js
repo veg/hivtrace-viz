@@ -1,4 +1,4 @@
-var d3 = require("d3");
+const d3 = require("d3");
 
 const _networkCDCDateField = "hiv_aids_dx_dt";
 const _networkCDCLastYearField = "hiv_aids_dx_dt_last_year";
@@ -49,8 +49,7 @@ function getClusterTimeScale() {
 }
 
 function getCurrentDate() {
-  let cdate = new Date();
-  return cdate;
+  return new Date();
 }
 
 function getAncientDate() {
@@ -59,13 +58,7 @@ function getAncientDate() {
 
 /**
  * Formats a date using a specified formatter, or returns "N/A" if the date is missing.
-
- * @param {Date} date - The date object to be formatted.
- * @param {Function} [formatter] - An optional formatter function used to format the date. If not provided, `DateViewFormatExport` is used.
-
- * @returns {string} The formatted date string, or "N/A" if the date is missing.
  */
-
 function hivtrace_date_or_na_if_missing(date, formatter) {
   if (date) {
     formatter = formatter || DateViewFormatExport;
@@ -80,18 +73,12 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
 
 /**
  * Calculates a date that is `months` months ago from a given reference date.
-
- * @param {Date} reference_date - The reference date from which to calculate the past date.
- * @param {number} months - The number of months to go back.
-
- * @returns {Date} A new Date object representing the date `months` months ago from the reference date.
 */
-
 function n_months_ago(reference_date, months) {
-  var past_date = new Date(reference_date);
-  var past_months = past_date.getMonth();
-  var diff_year = Math.floor(months / 12);
-  var left_over = months - diff_year * 12;
+  const past_date = new Date(reference_date);
+  const past_months = past_date.getMonth();
+  const diff_year = Math.floor(months / 12);
+  const left_over = months - diff_year * 12;
 
   if (left_over > past_months) {
     past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
