@@ -1,0 +1,3677 @@
+[
+  {
+    "_id": "647a262917b056c47b1fe4f2",
+    "name": "CA_202306_28.3",
+    "description": "Automatically created cluster of interest CA_202306_28.3",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006459724-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a922"
+      },
+      {
+        "name": "CA00S006510631-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a921"
+      },
+      {
+        "name": "CA00S006744118-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a920"
+      },
+      {
+        "name": "CA00S006836488-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91f"
+      },
+      {
+        "name": "CA00S006794907-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91e"
+      },
+      {
+        "name": "CA00S006674148-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91d"
+      },
+      {
+        "name": "CA00S007065322-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91c"
+      },
+      {
+        "name": "CA00S006836698-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91b"
+      },
+      {
+        "name": "CA00S006836702-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a91a"
+      },
+      {
+        "name": "CA00S006936895-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a919"
+      },
+      {
+        "name": "CA00S007030012-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a918"
+      },
+      {
+        "name": "CA00S007030238-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a917"
+      },
+      {
+        "name": "CA00S006936901-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a916"
+      },
+      {
+        "name": "CA00S007456077-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a915"
+      },
+      {
+        "name": "CA00S007416770-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a914"
+      },
+      {
+        "name": "CA00S007581255-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a913"
+      },
+      {
+        "name": "CA00S007823177-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a912"
+      },
+      {
+        "name": "CA00S007991911-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a911"
+      },
+      {
+        "name": "CA00S006769668-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a910"
+      },
+      {
+        "name": "CA00S007868470-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a90f"
+      },
+      {
+        "name": "CA00S006978243-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a90e"
+      },
+      {
+        "name": "CA00S007053047-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a90d"
+      },
+      {
+        "name": "CA00S008220806-4",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a90c"
+      },
+      {
+        "name": "CA00S008221104-4",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b161965a0a53a86f4a90b"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe4f9",
+    "name": "CA_202306_45.1",
+    "description": "Automatically created cluster of interest CA_202306_45.1",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006544540-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a968"
+      },
+      {
+        "name": "CA00S006619287-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a967"
+      },
+      {
+        "name": "CA00S006619298-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a966"
+      },
+      {
+        "name": "CA00S006676162-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a965"
+      },
+      {
+        "name": "CA00S006637623-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a964"
+      },
+      {
+        "name": "CA00S006669458-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a963"
+      },
+      {
+        "name": "CA00S006665330-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a962"
+      },
+      {
+        "name": "CA00S006669395-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a961"
+      },
+      {
+        "name": "CA00S006597945-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a960"
+      },
+      {
+        "name": "CA00S006936161-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95f"
+      },
+      {
+        "name": "CA00S006864339-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95e"
+      },
+      {
+        "name": "CA00S006953922-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95d"
+      },
+      {
+        "name": "CA00S006955751-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95c"
+      },
+      {
+        "name": "CA00S007343417-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95b"
+      },
+      {
+        "name": "CA00S007353241-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a95a"
+      },
+      {
+        "name": "CA00S007353546-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a959"
+      },
+      {
+        "name": "CA00S007025404-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a958"
+      },
+      {
+        "name": "CA00S006755983-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a957"
+      },
+      {
+        "name": "CA00S006751191-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a956"
+      },
+      {
+        "name": "CA00S006862276-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a955"
+      },
+      {
+        "name": "CA00S007195263-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a954"
+      },
+      {
+        "name": "CA00S007614697-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a953"
+      },
+      {
+        "name": "CA00S007195337-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a952"
+      },
+      {
+        "name": "CA00S006903012-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a951"
+      },
+      {
+        "name": "CA00S007044378-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a950"
+      },
+      {
+        "name": "CA00S007149878-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94f"
+      },
+      {
+        "name": "CA00S007195261-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94e"
+      },
+      {
+        "name": "CA00S007400463-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94d"
+      },
+      {
+        "name": "CA00S007929694-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94c"
+      },
+      {
+        "name": "CA00S007835927-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94b"
+      },
+      {
+        "name": "CA00S007835925-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a94a"
+      },
+      {
+        "name": "CA00S007035062-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a949"
+      },
+      {
+        "name": "CA00S007933663-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a948"
+      },
+      {
+        "name": "CA00S007778930-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a947"
+      },
+      {
+        "name": "CA00S007398150-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a946"
+      },
+      {
+        "name": "CA00S008113350-3",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a945"
+      },
+      {
+        "name": "CA00S008181243-1",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19e965a0a53a86f4a944"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe500",
+    "name": "CA_202306_89.1",
+    "description": "Automatically created cluster of interest CA_202306_89.1",
+    "modified": "2023-08-03T18:22:20.564Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006663534-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2876c"
+      },
+      {
+        "name": "CA00S007898687-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2876b"
+      },
+      {
+        "name": "CA00S007058875-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2876a"
+      },
+      {
+        "name": "CA00S007179495-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28769"
+      },
+      {
+        "name": "CA00S007400543-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28768"
+      },
+      {
+        "name": "CA00S007443248-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28767"
+      },
+      {
+        "name": "CA00S007633277-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28766"
+      },
+      {
+        "name": "CA00S007751268-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28765"
+      },
+      {
+        "name": "CA00S007004425-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28764"
+      },
+      {
+        "name": "CA00S007118123-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28763"
+      },
+      {
+        "name": "CA00S007918944-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28762"
+      },
+      {
+        "name": "CA00S007220071-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc3"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe507",
+    "name": "CA_202306_119.8",
+    "description": "Automatically created cluster of interest CA_202306_119.8",
+    "modified": "2023-06-02T16:50:10.860Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006852436-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28773"
+      },
+      {
+        "name": "CA00S007482085-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28772"
+      },
+      {
+        "name": "CA00S007797198-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28771"
+      },
+      {
+        "name": "CA00S007610786-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28770"
+      },
+      {
+        "name": "CA00S007752172-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2876f"
+      },
+      {
+        "name": "CA00S007823157-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2876e"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe50e",
+    "name": "CA_202306_126.2",
+    "description": "Automatically created cluster of interest CA_202306_126.2",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006390384-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2878b"
+      },
+      {
+        "name": "CA00S006394306-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2878a"
+      },
+      {
+        "name": "CA00S006597953-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28789"
+      },
+      {
+        "name": "CA00S006992361-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28788"
+      },
+      {
+        "name": "CA00S006449544-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28787"
+      },
+      {
+        "name": "CA00S007149816-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28786"
+      },
+      {
+        "name": "CA00S006818585-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28785"
+      },
+      {
+        "name": "CA00S006870329-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28784"
+      },
+      {
+        "name": "CA00S007060155-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28783"
+      },
+      {
+        "name": "CA00S007149689-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28782"
+      },
+      {
+        "name": "CA00S007169224-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28781"
+      },
+      {
+        "name": "CA00S007195221-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28780"
+      },
+      {
+        "name": "CA00S007222334-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877f"
+      },
+      {
+        "name": "CA00S007259436-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877e"
+      },
+      {
+        "name": "CA00S007397968-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877d"
+      },
+      {
+        "name": "CA00S007393234-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877c"
+      },
+      {
+        "name": "CA00S007353058-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877b"
+      },
+      {
+        "name": "CA00S007397978-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2877a"
+      },
+      {
+        "name": "CA00S007618604-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28779"
+      },
+      {
+        "name": "CA00S007426713-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28778"
+      },
+      {
+        "name": "CA00S007542563-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28777"
+      },
+      {
+        "name": "CA00S007462670-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28776"
+      },
+      {
+        "name": "CA00S007670254-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28775"
+      },
+      {
+        "name": "CA00S007542507-6",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af83"
+      },
+      {
+        "name": "CA00S008254318-3",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af82"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe515",
+    "name": "CA_202306_171.17",
+    "description": "Automatically created cluster of interest CA_202306_171.17",
+    "modified": "2023-08-03T18:22:20.564Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006476843-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879f"
+      },
+      {
+        "name": "CA00S006597289-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879e"
+      },
+      {
+        "name": "CA00S006625113-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879d"
+      },
+      {
+        "name": "CA00S006756145-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879c"
+      },
+      {
+        "name": "CA00S006721572-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879b"
+      },
+      {
+        "name": "CA00S006856195-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2879a"
+      },
+      {
+        "name": "CA00S006556110-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28799"
+      },
+      {
+        "name": "CA00S006515322-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28798"
+      },
+      {
+        "name": "CA00S006584949-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28797"
+      },
+      {
+        "name": "CA00S007398152-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28796"
+      },
+      {
+        "name": "CA00S007314226-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28795"
+      },
+      {
+        "name": "CA00S007343311-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28794"
+      },
+      {
+        "name": "CA00S007879769-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28793"
+      },
+      {
+        "name": "CA00S007481909-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28792"
+      },
+      {
+        "name": "CA00S006870442-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28791"
+      },
+      {
+        "name": "CA00S006929268-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28790"
+      },
+      {
+        "name": "CA00S007521303-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2878f"
+      },
+      {
+        "name": "CA00S007868605-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2878e"
+      },
+      {
+        "name": "CA00S007043960-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2878d"
+      },
+      {
+        "name": "CA00S007727997-0",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0c9b"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe51c",
+    "name": "CA_202306_212.2",
+    "description": "Automatically created cluster of interest CA_202306_212.2",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006718076-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a988"
+      },
+      {
+        "name": "CA00S007118127-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a987"
+      },
+      {
+        "name": "CA00S007157213-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a986"
+      },
+      {
+        "name": "CA00S007192665-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a985"
+      },
+      {
+        "name": "CA00S007239069-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a984"
+      },
+      {
+        "name": "CA00S007303596-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a983"
+      },
+      {
+        "name": "CA00S007327871-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a982"
+      },
+      {
+        "name": "CA00S007372689-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a981"
+      },
+      {
+        "name": "CA00S007202110-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a980"
+      },
+      {
+        "name": "CA00S007403165-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97f"
+      },
+      {
+        "name": "CA00S007426705-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97e"
+      },
+      {
+        "name": "CA00S007435777-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97d"
+      },
+      {
+        "name": "CA00S007436522-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97c"
+      },
+      {
+        "name": "CA00S007455928-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97b"
+      },
+      {
+        "name": "CA00S007522245-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a97a"
+      },
+      {
+        "name": "CA00S007502066-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a979"
+      },
+      {
+        "name": "CA00S007687769-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a978"
+      },
+      {
+        "name": "CA00S007533944-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a977"
+      },
+      {
+        "name": "CA00S007761113-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a976"
+      },
+      {
+        "name": "CA00S007855024-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a975"
+      },
+      {
+        "name": "CA00S007855128-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a974"
+      },
+      {
+        "name": "CA00S007874385-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a973"
+      },
+      {
+        "name": "CA00S007897671-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a972"
+      },
+      {
+        "name": "CA00S007969815-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a971"
+      },
+      {
+        "name": "CA00S008066413-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a970"
+      },
+      {
+        "name": "CA00S007859596-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96f"
+      },
+      {
+        "name": "CA00S007669984-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96e"
+      },
+      {
+        "name": "CA00S007920809-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96d"
+      },
+      {
+        "name": "CA00S008042643-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96c"
+      },
+      {
+        "name": "CA00S008144880-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96b"
+      },
+      {
+        "name": "CA00S008219337-9",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19f465a0a53a86f4a96a"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe523",
+    "name": "CA_202306_516.1",
+    "description": "Automatically created cluster of interest CA_202306_516.1",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006398537-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a9a4"
+      },
+      {
+        "name": "CA00S006496496-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a9a3"
+      },
+      {
+        "name": "CA00S006398527-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a9a2"
+      },
+      {
+        "name": "CA00S006755969-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a9a1"
+      },
+      {
+        "name": "CA00S006513599-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a9a0"
+      },
+      {
+        "name": "CA00S006861418-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99f"
+      },
+      {
+        "name": "CA00S007443268-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99e"
+      },
+      {
+        "name": "CA00S007487415-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99d"
+      },
+      {
+        "name": "CA00S006539944-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99c"
+      },
+      {
+        "name": "CA00S007403171-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99b"
+      },
+      {
+        "name": "CA00S007746467-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a99a"
+      },
+      {
+        "name": "CA00S007761165-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a999"
+      },
+      {
+        "name": "CA00S006924836-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a998"
+      },
+      {
+        "name": "CA00S007761141-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a997"
+      },
+      {
+        "name": "CA00S007823071-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a996"
+      },
+      {
+        "name": "CA00S006669327-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a995"
+      },
+      {
+        "name": "CA00S006862308-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a994"
+      },
+      {
+        "name": "CA00S007382899-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a993"
+      },
+      {
+        "name": "CA00S007439062-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a992"
+      },
+      {
+        "name": "CA00S008036387-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a991"
+      },
+      {
+        "name": "CA00S007014652-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a990"
+      },
+      {
+        "name": "CA00S007058901-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98f"
+      },
+      {
+        "name": "CA00S007148164-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98e"
+      },
+      {
+        "name": "CA00S007823073-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98d"
+      },
+      {
+        "name": "CA00S007382933-1",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98c"
+      },
+      {
+        "name": "CA00S008197388-2",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98b"
+      },
+      {
+        "name": "CA00S008233134-6",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19fc65a0a53a86f4a98a"
+      },
+      {
+        "name": "CA00S008228950-6",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af7b"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe52a",
+    "name": "CA_202306_3028.3",
+    "description": "Automatically created cluster of interest CA_202306_3028.3",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006371348-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa1e"
+      },
+      {
+        "name": "CA00S006334526-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa1d"
+      },
+      {
+        "name": "CA00S006373812-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa1c"
+      },
+      {
+        "name": "CA00S006405405-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa1b"
+      },
+      {
+        "name": "CA00S006521762-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa1a"
+      },
+      {
+        "name": "CA00S006463502-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa19"
+      },
+      {
+        "name": "CA00S006637469-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa18"
+      },
+      {
+        "name": "CA00S006657686-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa17"
+      },
+      {
+        "name": "CA00S006553658-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa16"
+      },
+      {
+        "name": "CA00S006716161-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa15"
+      },
+      {
+        "name": "CA00S006524004-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa14"
+      },
+      {
+        "name": "CA00S006539876-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa13"
+      },
+      {
+        "name": "CA00S006641521-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa12"
+      },
+      {
+        "name": "CA00S006423276-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa11"
+      },
+      {
+        "name": "CA00S006718078-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa10"
+      },
+      {
+        "name": "CA00S006700480-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0f"
+      },
+      {
+        "name": "CA00S006750029-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0e"
+      },
+      {
+        "name": "CA00S006597943-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0d"
+      },
+      {
+        "name": "CA00S006933000-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0c"
+      },
+      {
+        "name": "CA00S006810248-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0b"
+      },
+      {
+        "name": "CA00S006985632-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa0a"
+      },
+      {
+        "name": "CA00S006986482-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa09"
+      },
+      {
+        "name": "CA00S007215129-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa08"
+      },
+      {
+        "name": "CA00S007030154-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa07"
+      },
+      {
+        "name": "CA00S007033511-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa06"
+      },
+      {
+        "name": "CA00S007275515-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa05"
+      },
+      {
+        "name": "CA00S007823387-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa04"
+      },
+      {
+        "name": "CA00S007511863-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa03"
+      },
+      {
+        "name": "CA00S007688956-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa02"
+      },
+      {
+        "name": "CA00S007344601-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa01"
+      },
+      {
+        "name": "CA00S007149828-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4aa00"
+      },
+      {
+        "name": "CA00S007292846-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9ff"
+      },
+      {
+        "name": "CA00S007344720-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9fe"
+      },
+      {
+        "name": "CA00S007476900-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9fd"
+      },
+      {
+        "name": "CA00S007491908-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9fc"
+      },
+      {
+        "name": "CA00S008041848-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9fb"
+      },
+      {
+        "name": "CA00S007859566-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9fa"
+      },
+      {
+        "name": "CA00S007662136-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9f9"
+      },
+      {
+        "name": "CA00S007783228-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9f8"
+      },
+      {
+        "name": "CA00S007179543-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9f7"
+      },
+      {
+        "name": "CA00S007694048-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9f6"
+      },
+      {
+        "name": "CA00S008142501-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b749e65a0a53a86f4a9f5"
+      },
+      {
+        "name": "CA00S008220951-5",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af7e"
+      },
+      {
+        "name": "CA00S008270128-8",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af7d"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe533",
+    "name": "CA_202306_4268.1",
+    "description": "Automatically created cluster of interest CA_202306_4268.1",
+    "modified": "2023-06-02T16:50:10.860Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006326903-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28810"
+      },
+      {
+        "name": "CA00S006390318-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880f"
+      },
+      {
+        "name": "CA00S006496611-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880e"
+      },
+      {
+        "name": "CA00S006544466-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880d"
+      },
+      {
+        "name": "CA00S006756111-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880c"
+      },
+      {
+        "name": "CA00S006597971-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880b"
+      },
+      {
+        "name": "CA00S006638644-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2880a"
+      },
+      {
+        "name": "CA00S006638672-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28809"
+      },
+      {
+        "name": "CA00S006789794-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28808"
+      },
+      {
+        "name": "CA00S007542467-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28807"
+      },
+      {
+        "name": "CA00S007491341-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28806"
+      },
+      {
+        "name": "CA00S007544915-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28805"
+      },
+      {
+        "name": "CA00S007542475-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28804"
+      },
+      {
+        "name": "CA00S007240375-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28803"
+      },
+      {
+        "name": "CA00S007207860-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28802"
+      },
+      {
+        "name": "CA00S007610770-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28801"
+      },
+      {
+        "name": "CA00S007928214-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28800"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe538",
+    "name": "CA_202306_59.13",
+    "description": "Automatically created cluster of interest CA_202306_59.13",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006514977-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9ae"
+      },
+      {
+        "name": "CA00S007521213-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9ad"
+      },
+      {
+        "name": "CA00S007720373-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9ac"
+      },
+      {
+        "name": "CA00S007874445-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9ab"
+      },
+      {
+        "name": "CA00S007879252-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9aa"
+      },
+      {
+        "name": "CA00S007873299-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9a9"
+      },
+      {
+        "name": "CA00S007995298-5",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9a8"
+      },
+      {
+        "name": "CA00S007389262-7",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9a7"
+      },
+      {
+        "name": "CA00S008239053-2",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a0f65a0a53a86f4a9a6"
+      },
+      {
+        "name": "CA00S008228932-4",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af80"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe541",
+    "name": "CA_202306_1596.1",
+    "description": "Automatically created cluster of interest CA_202306_1596.1",
+    "modified": "2023-06-02T16:50:10.860Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006985759-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2881e"
+      },
+      {
+        "name": "CA00S007741550-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2881d"
+      },
+      {
+        "name": "CA00S007431804-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2881c"
+      },
+      {
+        "name": "CA00S007906885-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2881b"
+      },
+      {
+        "name": "CA00S007919030-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2881a"
+      },
+      {
+        "name": "CA00S007444804-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28819"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe554",
+    "name": "CA_202306_5080.1",
+    "description": "Automatically created cluster of interest CA_202306_5080.1",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S007118151-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9c4"
+      },
+      {
+        "name": "CA00S007533232-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9c3"
+      },
+      {
+        "name": "CA00S007558353-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9c2"
+      },
+      {
+        "name": "CA00S007695211-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9c1"
+      },
+      {
+        "name": "CA00S007708735-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9c0"
+      },
+      {
+        "name": "CA00S007761197-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9bf"
+      },
+      {
+        "name": "CA00S007803104-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9be"
+      },
+      {
+        "name": "CA00S007803124-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9bd"
+      },
+      {
+        "name": "CA00S007823041-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9bc"
+      },
+      {
+        "name": "CA00S007859594-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9bb"
+      },
+      {
+        "name": "CA00S007938371-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9ba"
+      },
+      {
+        "name": "CA00S007955007-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b9"
+      },
+      {
+        "name": "CA00S007983049-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b8"
+      },
+      {
+        "name": "CA00S007991907-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b7"
+      },
+      {
+        "name": "CA00S008021642-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b6"
+      },
+      {
+        "name": "CA00S007955570-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b5"
+      },
+      {
+        "name": "CA00S008021524-4",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b4"
+      },
+      {
+        "name": "CA00S007619453-9",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b3"
+      },
+      {
+        "name": "CA00S008202024-0",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b2"
+      },
+      {
+        "name": "CA00S008185471-8",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b1"
+      },
+      {
+        "name": "CA00S008235503-6",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a2965a0a53a86f4a9b0"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe556",
+    "name": "CA_202306_934.7",
+    "description": "Automatically created cluster of interest CA_202306_934.7",
+    "modified": "2023-06-02T16:50:10.860Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006389875-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28838"
+      },
+      {
+        "name": "CA00S006878393-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28837"
+      },
+      {
+        "name": "CA00S007241742-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28836"
+      },
+      {
+        "name": "CA00S007511867-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28835"
+      },
+      {
+        "name": "CA00S007823175-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28834"
+      },
+      {
+        "name": "CA00S007879361-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28833"
+      },
+      {
+        "name": "CA00S007935435-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28832"
+      },
+      {
+        "name": "CA00S007855110-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28831"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe55a",
+    "name": "CA_202306_309.4",
+    "description": "Automatically created cluster of interest CA_202306_309.4",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S007435229-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9eb"
+      },
+      {
+        "name": "CA00S007483153-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9ea"
+      },
+      {
+        "name": "CA00S007568565-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9e9"
+      },
+      {
+        "name": "CA00S007695198-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9e8"
+      },
+      {
+        "name": "CA00S007823093-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9e7"
+      },
+      {
+        "name": "CA00S008021878-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9e6"
+      },
+      {
+        "name": "CA00S008045285-6",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b653865a0a53a86f4a9e5"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe55c",
+    "name": "CA_202306_4613.1",
+    "description": "Automatically created cluster of interest CA_202306_4613.1",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006716151-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2884a"
+      },
+      {
+        "name": "CA00S006783394-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28849"
+      },
+      {
+        "name": "CA00S007462668-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28848"
+      },
+      {
+        "name": "CA00S007463475-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28847"
+      },
+      {
+        "name": "CA00S007483012-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28846"
+      },
+      {
+        "name": "CA00S007904640-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28845"
+      },
+      {
+        "name": "CA00S006836700-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28844"
+      },
+      {
+        "name": "CA00S007955043-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28843"
+      },
+      {
+        "name": "CA00S006812856-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28842"
+      },
+      {
+        "name": "CA00S006870655-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28841"
+      },
+      {
+        "name": "CA00S007991915-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca8"
+      },
+      {
+        "name": "CA00S008212001-6",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af8a"
+      },
+      {
+        "name": "CA00S007662124-8",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af89"
+      },
+      {
+        "name": "CA00S008254052-2",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af88"
+      },
+      {
+        "name": "CA00S008262376-8",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af87"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe563",
+    "name": "CA_202306_170.4",
+    "description": "Automatically created cluster of interest CA_202306_170.4",
+    "modified": "2023-08-03T18:22:20.564Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006953971-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28858"
+      },
+      {
+        "name": "CA00S007014640-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28857"
+      },
+      {
+        "name": "CA00S007004435-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28856"
+      },
+      {
+        "name": "CA00S007088883-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28855"
+      },
+      {
+        "name": "CA00S007157251-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28854"
+      },
+      {
+        "name": "CA00S007193631-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28853"
+      },
+      {
+        "name": "CA00S007274892-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28852"
+      },
+      {
+        "name": "CA00S007281202-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28851"
+      },
+      {
+        "name": "CA00S007415554-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f28850"
+      },
+      {
+        "name": "CA00S007587960-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2884f"
+      },
+      {
+        "name": "CA00S007619660-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2884e"
+      },
+      {
+        "name": "CA00S007662168-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2884d"
+      },
+      {
+        "name": "CA00S007879258-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "647a2629f89b8b3e56f2884c"
+      },
+      {
+        "name": "CA00S007713898-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb6"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe570",
+    "name": "CA_202306_1094.1",
+    "description": "Automatically created cluster of interest CA_202306_1094.1",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006349827-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9e0"
+      },
+      {
+        "name": "CA00S006394310-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9df"
+      },
+      {
+        "name": "CA00S006625115-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9de"
+      },
+      {
+        "name": "CA00S006751187-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9dd"
+      },
+      {
+        "name": "CA00S006754694-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9dc"
+      },
+      {
+        "name": "CA00S006813408-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9db"
+      },
+      {
+        "name": "CA00S007240536-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9da"
+      },
+      {
+        "name": "CA00S006744371-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d9"
+      },
+      {
+        "name": "CA00S006879860-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d8"
+      },
+      {
+        "name": "CA00S006985746-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d7"
+      },
+      {
+        "name": "CA00S007247092-7",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d6"
+      },
+      {
+        "name": "CA00S006879044-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d5"
+      },
+      {
+        "name": "CA00S006973003-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d4"
+      },
+      {
+        "name": "CA00S006950671-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d3"
+      },
+      {
+        "name": "CA00S007263837-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d2"
+      },
+      {
+        "name": "CA00S007337329-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d1"
+      },
+      {
+        "name": "CA00S007240058-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9d0"
+      },
+      {
+        "name": "CA00S007436536-0",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9cf"
+      },
+      {
+        "name": "CA00S007496649-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9ce"
+      },
+      {
+        "name": "CA00S007066710-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9cd"
+      },
+      {
+        "name": "CA00S007713896-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9cc"
+      },
+      {
+        "name": "CA00S007890043-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9cb"
+      },
+      {
+        "name": "CA00S007687851-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9ca"
+      },
+      {
+        "name": "CA00S007476879-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9c9"
+      },
+      {
+        "name": "CA00S007544891-4",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9c8"
+      },
+      {
+        "name": "CA00S007934147-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9c7"
+      },
+      {
+        "name": "CA00S008206889-1",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b1a3a65a0a53a86f4a9c6"
+      },
+      {
+        "name": "CA00S008232966-8",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af8e"
+      }
+    ]
+  },
+  {
+    "_id": "647a262917b056c47b1fe574",
+    "name": "CA_202306_4731.2",
+    "description": "Automatically created cluster of interest CA_202306_4731.2",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S007168205-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a942"
+      },
+      {
+        "name": "CA00S007105954-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a941"
+      },
+      {
+        "name": "CA00S007192725-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a940"
+      },
+      {
+        "name": "CA00S007511688-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93f"
+      },
+      {
+        "name": "CA00S007633301-3",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93e"
+      },
+      {
+        "name": "CA00S007521279-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93d"
+      },
+      {
+        "name": "CA00S007746491-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93c"
+      },
+      {
+        "name": "CA00S007879230-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93b"
+      },
+      {
+        "name": "CA00S008062822-6",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a93a"
+      },
+      {
+        "name": "CA00S008161980-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a939"
+      },
+      {
+        "name": "CA00S008223255-9",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a938"
+      },
+      {
+        "name": "CA00S008219307-8",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b19d865a0a53a86f4a937"
+      }
+    ]
+  },
+  {
+    "_id": "647a262a17b056c47b1fe577",
+    "name": "CA_202306_4910.1",
+    "description": "Automatically created cluster of interest CA_202306_4910.1",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-06-02T16:50:10.860Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S007324375-5",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9f3"
+      },
+      {
+        "name": "CA00S007720901-8",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9f2"
+      },
+      {
+        "name": "CA00S007846583-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9f1"
+      },
+      {
+        "name": "CA00S007919040-2",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9f0"
+      },
+      {
+        "name": "CA00S007933980-1",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9ef"
+      },
+      {
+        "name": "CA00S007991917-9",
+        "added": "2023-06-02T16:50:10.860Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9ee"
+      },
+      {
+        "name": "CA00S008134306-9",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b71f765a0a53a86f4a9ed"
+      }
+    ]
+  },
+  {
+    "_id": "64a32ee717b056c47ba910f0",
+    "name": "CA_202307_2.5",
+    "description": "Automatically created cluster of interest CA_202307_2.5",
+    "modified": "2023-07-03T19:49:43.469Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-07-03T19:49:43.469Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006710687-7",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941f"
+      },
+      {
+        "name": "CA00S006910329-2",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941e"
+      },
+      {
+        "name": "CA00S007395573-5",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941d"
+      },
+      {
+        "name": "CA00S007662126-0",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941c"
+      },
+      {
+        "name": "CA00S007222414-6",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941b"
+      },
+      {
+        "name": "CA00S007803080-4",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f2941a"
+      },
+      {
+        "name": "CA00S007823173-7",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f29419"
+      },
+      {
+        "name": "CA00S007443272-7",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f29418"
+      },
+      {
+        "name": "CA00S008122450-8",
+        "added": "2023-07-03T19:49:43.469Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64a32ee7f89b8b3e56f29417"
+      }
+    ]
+  },
+  {
+    "_id": "64cbf8f3683dd4854e9429ea",
+    "name": "CA_202308_4776.1",
+    "description": "Automatically created cluster of interest CA_202308_4776.1",
+    "modified": "2023-08-03T18:22:20.564Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-08-03T18:22:20.564Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006716143-4",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca6"
+      },
+      {
+        "name": "CA00S007010533-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca5"
+      },
+      {
+        "name": "CA00S007052887-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca4"
+      },
+      {
+        "name": "CA00S007587908-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca3"
+      },
+      {
+        "name": "CA00S007159640-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca2"
+      },
+      {
+        "name": "CA00S007687763-2",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca1"
+      },
+      {
+        "name": "CA00S007642792-5",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ca0"
+      },
+      {
+        "name": "CA00S008006920-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0c9f"
+      },
+      {
+        "name": "CA00S008163110-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0c9e"
+      },
+      {
+        "name": "CA00S007247191-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0c9d"
+      }
+    ]
+  },
+  {
+    "_id": "64cbf8f3683dd4854e9429f7",
+    "name": "CA_202308_4739.1",
+    "description": "Automatically created cluster of interest CA_202308_4739.1",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-08-03T18:22:20.564Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006957489-0",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb2"
+      },
+      {
+        "name": "CA00S007235642-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb1"
+      },
+      {
+        "name": "CA00S007436987-0",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb0"
+      },
+      {
+        "name": "CA00S007633315-4",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0caf"
+      },
+      {
+        "name": "CA00S007842095-9",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cae"
+      },
+      {
+        "name": "CA00S008142503-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cad"
+      },
+      {
+        "name": "CA00S007935510-6",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cac"
+      },
+      {
+        "name": "CA00S008186439-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cab"
+      },
+      {
+        "name": "CA00S007731926-9",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0caa"
+      },
+      {
+        "name": "CA00S008252100-8",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af8c"
+      }
+    ]
+  },
+  {
+    "_id": "64cbf8f3683dd4854e942a12",
+    "name": "CA_202308_4078.2",
+    "description": "Automatically created cluster of interest CA_202308_4078.2",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-08-03T18:22:20.564Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": true,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006606405-9",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc1"
+      },
+      {
+        "name": "CA00S006810233-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc0"
+      },
+      {
+        "name": "CA00S006818084-9",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cbf"
+      },
+      {
+        "name": "CA00S006984534-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cbe"
+      },
+      {
+        "name": "CA00S007207855-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cbd"
+      },
+      {
+        "name": "CA00S007581011-5",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cbc"
+      },
+      {
+        "name": "CA00S007785754-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cbb"
+      },
+      {
+        "name": "CA00S007963969-5",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cba"
+      },
+      {
+        "name": "CA00S008062830-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb9"
+      },
+      {
+        "name": "CA00S008160678-6",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cb8"
+      },
+      {
+        "name": "CA00S008250498-4",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af85"
+      }
+    ]
+  },
+  {
+    "_id": "64cbf8f3683dd4854e942a22",
+    "name": "CA_202308_4614.1",
+    "description": "Automatically created cluster of interest CA_202308_4614.1",
+    "modified": "2023-08-03T18:22:20.564Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-08-03T18:22:20.564Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006513971-6",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd8"
+      },
+      {
+        "name": "CA00S006813168-5",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd7"
+      },
+      {
+        "name": "CA00S006818104-4",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd6"
+      },
+      {
+        "name": "CA00S006861504-0",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd5"
+      },
+      {
+        "name": "CA00S006840143-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd4"
+      },
+      {
+        "name": "CA00S006984508-6",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd3"
+      },
+      {
+        "name": "CA00S006874876-4",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd2"
+      },
+      {
+        "name": "CA00S007263853-8",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd1"
+      },
+      {
+        "name": "CA00S006984884-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cd0"
+      },
+      {
+        "name": "CA00S007324207-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ccf"
+      },
+      {
+        "name": "CA00S007382881-3",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cce"
+      },
+      {
+        "name": "CA00S007444800-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ccd"
+      },
+      {
+        "name": "CA00S007395591-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ccc"
+      },
+      {
+        "name": "CA00S007846657-5",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0ccb"
+      },
+      {
+        "name": "CA00S007521205-6",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cca"
+      },
+      {
+        "name": "CA00S008062773-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc9"
+      },
+      {
+        "name": "CA00S008042641-1",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc8"
+      },
+      {
+        "name": "CA00S007918862-7",
+        "added": "2023-08-03T18:22:20.564Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "64cbf8f3755357f37dca0cc7"
+      }
+    ]
+  },
+  {
+    "_id": "64f22f1e683dd4854e13cc71",
+    "name": "CA_202309_2573.4",
+    "description": "Automatically created cluster of interest CA_202309_2573.4",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-09-01T17:59:12.418Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006597259-3",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a935"
+      },
+      {
+        "name": "CA00S006853501-2",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a934"
+      },
+      {
+        "name": "CA00S007417834-4",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a933"
+      },
+      {
+        "name": "CA00S007904584-1",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a932"
+      },
+      {
+        "name": "CA00S007450916-2",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a931"
+      },
+      {
+        "name": "CA00S008145064-8",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a930"
+      },
+      {
+        "name": "CA00S008062775-3",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a92f"
+      },
+      {
+        "name": "CA00S007848060-7",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a92e"
+      },
+      {
+        "name": "CA00S008220989-4",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b18eb65a0a53a86f4a92d"
+      }
+    ]
+  },
+  {
+    "_id": "64f22f1e683dd4854e13cc78",
+    "name": "CA_202309_126.5",
+    "description": "Automatically created cluster of interest CA_202309_126.5",
+    "modified": "2023-09-01T17:59:12.418Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-09-01T17:59:12.418Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": false,
+    "autoexpanded": false,
+    "pending": false,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S007691462-7",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a92b"
+      },
+      {
+        "name": "CA00S007882315-8",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a92a"
+      },
+      {
+        "name": "CA00S007398156-7",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a929"
+      },
+      {
+        "name": "CA00S007483175-1",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a928"
+      },
+      {
+        "name": "CA00S008113256-8",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a927"
+      },
+      {
+        "name": "CA00S008186522-4",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a926"
+      },
+      {
+        "name": "CA00S008221144-2",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a925"
+      },
+      {
+        "name": "CA00S008232944-2",
+        "added": "2023-09-01T17:59:12.418Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": false,
+        "_id": "650b17bd65a0a53a86f4a924"
+      }
+    ]
+  },
+  {
+    "_id": "651b12e0683dd4854eb2b851",
+    "name": "CA_202310_59.15",
+    "description": "Automatically created cluster of interest CA_202310_59.15",
+    "modified": "2023-10-02T18:20:50.240Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-10-02T18:20:50.240Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "site_id": "california",
+    "active": true,
+    "nodes": [
+      {
+        "name": "CA00S006618082-9",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af79"
+      },
+      {
+        "name": "CA00S007761139-0",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af78"
+      },
+      {
+        "name": "CA00S006646153-1",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af77"
+      },
+      {
+        "name": "CA00S006729855-0",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af76"
+      },
+      {
+        "name": "CA00S007403191-7",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af75"
+      },
+      {
+        "name": "CA00S008194314-2",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af74"
+      },
+      {
+        "name": "CA00S007972483-2",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af73"
+      },
+      {
+        "name": "CA00S008117549-3",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af72"
+      },
+      {
+        "name": "CA00S008242243-7",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af71"
+      },
+      {
+        "name": "CA00S006836696-2",
+        "added": "2023-10-02T18:20:50.240Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true,
+        "_id": "651b12e065a0a53a86f4af70"
+      }
+    ]
+  }
+]

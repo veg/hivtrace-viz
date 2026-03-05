@@ -1047,6 +1047,7 @@ function open_editor(
     onclosed: function () {
       priority_set_editor = null;
       self.redraw_tables();
+      window.reinitalizeDropdown && window.reinitalizeDropdown();
     },
   });
 }
@@ -1155,7 +1156,7 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
 function _action_drop_down(self, pg) {
   let dropdown = [];
 
-  if (!self.isMJCNetwork) {
+  if (!self.isMJCNetwork || self.fullMJCNetwork) {
     const viewClusterOptions = _.flatten([
       _.map([self.subcluster_threshold, 0.015], (threshold) => {
         let items = [
@@ -1171,6 +1172,7 @@ function _action_drop_down(self, pg) {
                 title:
                   pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
               });
+              window.reinitalizeDropdown && window.reinitalizeDropdown();
             },
           },
         ];
@@ -1192,6 +1194,7 @@ function _action_drop_down(self, pg) {
                   " (sequence level)",
                 raw_mspp: true,
               });
+              window.reinitalizeDropdown && window.reinitalizeDropdown();
             },
           });
         }
@@ -1331,6 +1334,65 @@ function _action_drop_down(self, pg) {
         }
       },
     });
+  } else {
+    dropdown.push({
+      label: "Create site ClusterOI from this MJ ClusterOI",
+      action: function (button, value) {
+        const site_pg_name = "SITE_COPY_" + pg.name;
+        if (
+          confirm(
+            "Creating new cluster of interest '" +
+              site_pg_name +
+              "' for this MJ ClusterOI. Proceed?"
+          )
+        ) {
+          let existing_pg = self.overlap_defined_priority_groups.find(
+            (pg) => pg.name === site_pg_name
+          );
+          if (existing_pg) {
+            alert(
+              "A cluster of interest with the name '" +
+                site_pg_name +
+                "' already exists in the jurisdiction's ClusterOI. Please rename that clusterOI before creating a new one with the same name."
+            );
+            return;
+          }
+          let ref_set = self.priority_groups_find_by_name(pg.name);
+          if (ref_set) {
+            let copied_node_objects = _.clone(ref_set.node_objects)
+              .filter((n) => !n.id.startsWith("REDACTED_"))
+              .map((n) => n.id);
+            self.priority_groups_add_from_mjc(
+              site_pg_name,
+              copied_node_objects,
+              "A copy of " + pg.name + " that contains site sequences only.",
+              "02 national molecular cluster analysis",
+              pg.tracking
+            );
+          }
+        }
+      },
+    });
+    dropdown.push({
+      label: pg.archived
+        ? "Unarchive this MJ cluster of interest"
+        : "Archive this MJ cluster of interest",
+      action: function (button, value) {
+        let ref_set = self.priority_groups_find_by_name(pg.name);
+        if (
+          confirm(
+            "Are you sure you want to " +
+              (pg.archived ? "unarchive" : "archive") +
+              " MJ cluster of interest '" +
+              pg.name +
+              "'?"
+          )
+        ) {
+          self.priority_groups_archive_mjc_set(ref_set.name, !pg.archived);
+          window.reinitalizeDropdown && window.reinitalizeDropdown();
+        }
+      },
+    });
   }
 
   /**dropdown.push({
@@ -1355,26 +1417,48 @@ function _action_drop_down(self, pg) {
 }
 
 /**
- * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views). 
- * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.own_defined_priority_groups is the jurisdiction's ClusterOI.
-
+ * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
+ * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
+ * For the case of ClusterOI, we assume that self.defined_priority_groups is regular ClusterOI and self.overlap_defined_priority_groups is MJ ClusterOI (if any).
  * @param {Object} self - The main network visualization object.
  * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
  * @param {Array} priority_groups - An array of objects representing the priority sets (optional).
-*/
+ * @param {boolean} archive_table - A flag indicating whether the table is for archived clusters of interest (optional).
+ */
 
-function draw_priority_set_table(self, container, priority_groups) {
-  container = container || self.priority_set_table;
+function draw_priority_set_table(
+  self,
+  container,
+  priority_groups,
+  archive_table = false
+) {
+  container =
+    container ||
+    (archive_table ? self.priority_set_archive_table : self.priority_set_table);
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
+    if (archive_table) {
+      priority_groups = _.filter(priority_groups, (pg) => pg.archived);
+    } else {
+      priority_groups = _.filter(priority_groups, (pg) => !pg.archived);
+    }
     self.priority_groups_compute_node_membership();
     if (self.isMJCNetwork) {
-      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.own_defined_priority_groups)
+      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
       self.priority_groups_compute_overlap_mjc(
-        self.defined_priority_groups,
-        self.own_defined_priority_groups
+        priority_groups,
+        self.overlap_defined_priority_groups,
+        "priority_node_overlap",
+        "overlap"
       );
     } else {
+      // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
+      self.priority_groups_compute_overlap_mjc(
+        priority_groups,
+        self.overlap_defined_priority_groups,
+        "priority_node_overlap_mjc",
+        "overlap_mjc"
+      );
       self.priority_groups_compute_overlap(priority_groups);
     }
     var headers = [
@@ -1386,16 +1470,15 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
           help: "How was this cluster of interest created",
           width: 50,
-          hidden: self.isMJCNetwork,
         },
         {
           value: "Name",
           sort: "value",
           filter: true,
-          width: 325,
+          width: 200,
           text_wrap: true,
           help: "Cluster of interest name",
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           value: "Modified/created",
@@ -1404,14 +1487,14 @@ function draw_priority_set_table(self, container, priority_groups) {
             return c.value[0];
           },
           help: "When was the cluster of interest created/last modified",
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           value: "Growth",
           sort: "value",
           help: "How growth is handled",
           width: 100,
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
           //text_wrap: true
         },
         {
@@ -1425,44 +1508,56 @@ function draw_priority_set_table(self, container, priority_groups) {
             }
             return 0;
           },
-          help: "Number of nodes in the cluster of interest",
-          hidden:
-            self.isMJCNetwork &&
-            self.MJCVariables.mjcCurrentSizeEnabled === false,
+          help:
+            "Number of nodes in the " +
+            (self.isMJCNetwork ? "MJ " : "") +
+            "clusterOI",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
-          value: "Size (mine)",
+          value: "My Size",
           width: 100,
-          sort: "value",
-          help: "Number of nodes from your jurisdiction in this cluster",
-          hidden: (function () {
-            console.log(
-              "Size (mine) column - isMJCNetwork:",
-              self.isMJCNetwork,
-              "hidden:",
-              !self.isMJCNetwork
-            );
-            return !self.isMJCNetwork;
-          })(),
+          sort: function (c) {
+            c = c.value;
+            if (c) {
+              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+            }
+            return 0;
+          },
+          help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
+          hidden: !self.isMJCNetwork,
         },
         {
           value: "Priority",
           width: 60,
           sort: "value",
           help: "Does the cluster of interest continue to meet priority criteria?",
-          hidden:
-            self.isMJCNetwork &&
-            self.MJCVariables.mjcCurrentPriorityEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
           value: "DXs in last 12 mo.",
           width: 100,
           sort: "value",
           help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
-          value: self.isMJCNetwork ? "My ClusterOI Overlap Count" : "Overlap",
+          value: "Overlap",
+          width: 140,
+          sort: function (c) {
+            c = c.value;
+            if (c) {
+              return c[1];
+            }
+            return 0;
+          },
+          help: "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
+          hidden: self.isMJCNetwork,
+        },
+        {
+          value: self.isMJCNetwork
+            ? "My ClusterOI Overlap Count"
+            : "MJ ClusterOI Overlap Count",
           width: 140,
           sort: function (c) {
             c = c.value;
@@ -1472,8 +1567,9 @@ function draw_priority_set_table(self, container, priority_groups) {
             return 0;
           },
           help: self.isMJCNetwork
-            ? "How many of my jurisdiction's ClusterOI have overlapping nodes with this MJ ClusterOI?"
-            : "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
+            ? "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?"
+            : "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+          hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
         },
         /*,
           {
@@ -1494,7 +1590,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           return c.value;
         },
         help: "Method of cluster identification",
-        // hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
+        // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
       });
     }
 
@@ -1522,24 +1618,28 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: pg.createdBy,
           html: true,
           width: 50,
-          format: (value) =>
-            pg.createdBy === kGlobals.CDCCOICreatedBySystem
+          format: (value) => {
+            if (self.isMJCNetwork) {
+              return "<i class='fa fa-2x fa-globe' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+            }
+
+            return pg.createdBy === kGlobals.CDCCOICreatedBySystem
               ? '<i class="fa fa-2x fa-desktop" title="' +
-                kGlobals.CDCCOICreatedBySystem +
-                '" data-text-export=' +
-                kGlobals.CDCCOICreatedBySystem +
-                "></i>"
+                  kGlobals.CDCCOICreatedBySystem +
+                  '" data-text-export=' +
+                  kGlobals.CDCCOICreatedBySystem +
+                  "></i>"
               : '<i class="fa fa-2x fa-user" title="' +
-                kGlobals.CDCCOICreatedManually +
-                '" data-text-export=' +
-                kGlobals.CDCCOICreatedManually +
-                "></i>",
-          hidden: self.isMJCNetwork,
+                  kGlobals.CDCCOICreatedManually +
+                  '" data-text-export=' +
+                  kGlobals.CDCCOICreatedManually +
+                  "></i>";
+          },
         },
         {
           // name
           value: self.cleanRedacted(pg.name),
-          width: 325,
+          width: 200,
           help:
             pg.description +
             (pg.pending ? " (new, pending confirmation)" : "") +
@@ -1566,7 +1666,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             "</div>",
           html: true,
           actions: [],
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           // modification / creation date
@@ -1582,7 +1682,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             }
             return vs[0];
           },
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           // tracking mode
@@ -1595,7 +1695,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             }
             return kGlobals.CDCCOIConciseTrackingOptions[value];
           },
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
         },
         {
           // size / new nodes
@@ -1623,6 +1723,13 @@ function draw_priority_set_table(self, container, priority_groups) {
           ],
           width: 100,
           format: function (v) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentSizeEnabled === false
+            ) {
+              return "REDACTED";
+            }
             //console.log (pg);
             if (v) {
               return (
@@ -1637,33 +1744,75 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          hidden:
-            self.isMJCNetwork &&
-            self.MJCVariables.mjcCurrentSizeEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
-          // size in my jurisdiction (MJC only)
+          // size / new nodes in my jurisdiction (for MJ ClusterOI, filtered to just nodes from jurisdiction)
+          value: [
+            self
+              .unique_entity_list(pg.node_objects)
+              .filter((n) => !n.includes("REDACTED")).length,
+            _.chain(pg.nodes)
+              .filter((n) => !n.name.includes("REDACTED"))
+              .groupBy((n) => self.entity_id_from_string(n.name))
+              .mapObject((v) =>
+                _.uniq(_.map(v, (n) => self.priority_groups_is_new_node(n)))
+              )
+              .filter((v) => v.length == 1 && v[0])
+              .size()
+              .value(),
+          ],
           width: 100,
-          value: pg.size_in_jurisdiction || 0,
+          format: function (v) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentSizeEnabled === false
+            ) {
+              return "REDACTED";
+            }
+            if (v) {
+              return (
+                v[0] +
+                (v[1]
+                  ? ' <span title="Number of nodes from my jurisdiction added by the system since the last network update" class="label label-default">' +
+                    v[1] +
+                    " new</span>"
+                  : "")
+              );
+            }
+            return "N/A";
+          },
+          html: true,
           hidden: !self.isMJCNetwork,
         },
         {
           // meets priority definition
           width: 60,
+          format: function (v) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentPriorityEnabled === false
+            ) {
+              return "<span title='REDACTED'>RED.</span>";
+            }
+            return v ? "Yes" : "No";
+          },
           value: pg.meets_priority_def ? "Yes" : "No",
-          hidden:
-            self.isMJCNetwork &&
-            self.MJCVariables.mjcCurrentPriorityEnabled === false,
+          html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
           width: 100,
           // TODO: actually redact the data on the backend
           value:
             self.isMJCNetwork &&
+            !self.fullMJCNetwork &&
             self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false
               ? "REDACTED"
               : pg.cluster_dx_recent12_mo,
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           width: 140,
@@ -1722,8 +1871,88 @@ function draw_priority_set_table(self, container, priority_groups) {
                     ],
                   },
                 ],
+          hidden: self.isMJCNetwork,
         },
       ];
+
+      // MJC Overlap column
+      if (
+        self.isMJCNetwork ||
+        (!self.isMJCNetwork && self.overlap_defined_priority_groups)
+      ) {
+        const overlap = self.isMJCNetwork ? pg.overlap : pg.overlap_mjc;
+        this_row.push({
+          width: 140,
+          value: [
+            overlap.sets,
+            overlap.nodes,
+            overlap.duplicate,
+            overlap.superset,
+          ],
+          format: function (v) {
+            if (v) {
+              return (
+                String(v[0]) +
+                (v[1]
+                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
+                    v[1] +
+                    " persons</span>"
+                  : "") +
+                (v[2].length
+                  ? ' <span title="' +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOIs which are exact duplicates of this " +
+                    (self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI: " +
+                    v[2].join(", ") +
+                    '" class="label label-danger pull-right">' +
+                    v[2].length +
+                    " duplicate " +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI</span>"
+                  : "") +
+                (v[3].length
+                  ? ' <span title="' +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOIs which contain this " +
+                    (self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI: " +
+                    v[3].join(", ") +
+                    '" class="label label-warning pull-right">Fully contained in ' +
+                    v[3].length +
+                    " " +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI</span>"
+                  : "")
+              );
+            }
+            return "N/A";
+          },
+          html: true,
+          actions:
+            overlap.sets === 0
+              ? []
+              : [
+                  {
+                    icon: "fa-eye",
+                    dropdown: [
+                      {
+                        label: "List overlaps",
+                        data: {
+                          toggle: "modal",
+                          target:
+                            misc.get_ui_element_selector_by_role(
+                              "overlap_list"
+                            ),
+                          priority_set: pg.name,
+                          use_mjc_overlap_list: !self.isMJCNetwork, // for MJ ClusterOI table, show the ClusterOI overlap list; for regular ClusterOI table, show the MJ ClusterOI overlap list
+                        },
+                      },
+                    ],
+                  },
+                ],
+        });
+      }
 
       if (self._is_CDC_auto_mode) {
         this_row.splice(3, 0, {
@@ -1737,7 +1966,7 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
-          // hidden: self.isMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
         });
       }
 
@@ -1864,14 +2093,14 @@ function draw_priority_set_table(self, container, priority_groups) {
       true,
       has_required_actions +
         `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${
-          self.isMJCNetwork ? "MJ " : ""
-        }clusters of interest.
+          archive_table ? "archived " : ""
+        }${self.isMJCNetwork ? "MJ " : ""}clusters of interest.
           ${
             self.isMJCNetwork
               ? ""
               : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'
           }
-          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV"><i class="fa fa-download"></i> Export Nodes to CSV</button>`,
+          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV">Export to CSV</button>`,
       get_editor()
     );
 

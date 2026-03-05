@@ -99,6 +99,7 @@ var hivtrace_cluster_network_graph = function (
   self.process_multiple_sequences();
 
   self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
+  self.fullMJCNetwork = options && options["full-mjc-network"] ? true : false;
   self.mjcUUID = self.isMJCNetwork ? options["mjc-uuid"] || null : null;
   self.MJCVariables = self.isMJCNetwork ? options["mjc-variables"] || {} : {};
 
@@ -168,12 +169,21 @@ var hivtrace_cluster_network_graph = function (
       options,
       "priority-table"
     );
+    self.priority_set_archive_table = network.check_network_option(
+      options,
+      "priority-table-archive"
+    );
     self.priority_set_table_write = network.check_network_option(
       options,
       "priority-table-writeback"
     );
     if (self.priority_set_table) {
       self.priority_set_table = d3.select(self.priority_set_table);
+    }
+    if (self.priority_set_archive_table) {
+      self.priority_set_archive_table = d3.select(
+        self.priority_set_archive_table
+      );
     }
   } else {
     self.priority_set_table = null;
@@ -441,12 +451,31 @@ var hivtrace_cluster_network_graph = function (
   };
 
   if (self.isMJCNetwork) {
+    // not actually displayed in node list view
+    self._networkPredefinedAttributeTransforms["mjc_date_identified"] =
+      self.define_attribute_mjc_date_identified(
+        "Date Identified in MJ ClusterOI (Contains All ClusterOI Dates)"
+      );
+    self._networkPredefinedAttributeTransforms["selected_mjc_date_identified"] =
+      self.define_attribute_sel_mjc_date_identified(
+        "Date Identified in MJ ClusterOI"
+      );
+    // not actually displayed in node list view
+    self._networkPredefinedAttributeTransforms["mjc_date_identified_12mo"] =
+      self.define_attribute_mjc_date_identified_12mo(
+        "Identified in Last 12 Mo (Contains All ClusterOI Dates)"
+      );
+    self._networkPredefinedAttributeTransforms[
+      "selected_mjc_date_identified_12mo"
+    ] = self.define_attribute_sel_mjc_date_identified_12mo(
+      "Identified in Last 12 Mo"
+    );
     self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_month_year"] =
       self.define_attribute_dx_month_year("Diagnosis Month/Year");
-    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_last_year"] =
-      self.define_attribute_dx_last_year("DX in Last 12 Mo.");
-    self._networkPredefinedAttributeTransforms["mjc_date_added"] =
-      self.define_attribute_mjc_date_added("Date Added to MJ ClusterOI");
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_12mo"] =
+      self.define_attribute_dx_12mo("DX in Last 12 Mo.");
+    self._networkPredefinedAttributeTransforms["hiv_aids_dx_dt_36mo"] =
+      self.define_attribute_dx_36mo("DX in Last 36 Mo.");
   }
 
   if (self.cluster_attributes) {
@@ -2067,24 +2096,61 @@ var hivtrace_cluster_network_graph = function (
         return [];
       }
 
-      // for all nodes in the priority group, update the mjc_date_added to the current viewed priority group
+      // pull from the mjc_date_identified attribute of the nodes directly
       if (priority_group_name) {
-        let priority_group =
+        const priority_group =
           self.priority_groups_find_by_name(priority_group_name);
-        let nodeToAddedDateMap = {};
-        for (let n of priority_group.nodes) {
-          let value = n.added;
-          if (value !== "REDACTED") {
-            value = timeDateUtil.DateViewFormatExport(this.parse_dates(value));
+        for (const node of priority_group.node_objects) {
+          if (
+            node.patient_attributes &&
+            "mjc_date_identified" in node.patient_attributes
+          ) {
+            if (node.patient_attributes.mjc_date_identified === "REDACTED") {
+              node.patient_attributes.selected_mjc_date_identified = "REDACTED";
+            } else if (
+              !(
+                priority_group_name in
+                node.patient_attributes.mjc_date_identified
+              )
+            ) {
+              node.patient_attributes.selected_mjc_date_identified = "";
+            } else {
+              node.patient_attributes.selected_mjc_date_identified =
+                timeDateUtil.DateViewFormatExport(
+                  this.parse_dates(
+                    new Date(
+                      node.patient_attributes.mjc_date_identified[
+                        priority_group_name
+                      ]
+                    )
+                  )
+                );
+            }
           }
-          nodeToAddedDateMap[n.name] = value;
-        }
 
-        if (priority_group) {
-          const cluster_nodes = priority_group.node_objects;
-          _.each(cluster_nodes, (n) => {
-            n.patient_attributes.mjc_date_added = nodeToAddedDateMap[n.id];
-          });
+          if (
+            node.patient_attributes &&
+            "mjc_date_identified_12mo" in node.patient_attributes
+          ) {
+            if (
+              node.patient_attributes.mjc_date_identified_12mo === "REDACTED"
+            ) {
+              node.patient_attributes.selected_mjc_date_identified_12mo =
+                "REDACTED";
+            } else if (
+              !(
+                priority_group_name in
+                node.patient_attributes.mjc_date_identified_12mo
+              )
+            ) {
+              node.patient_attributes.selected_mjc_date_identified_12mo = "";
+            } else {
+              node.patient_attributes.selected_mjc_date_identified_12mo =
+                node.patient_attributes.mjc_date_identified_12mo[
+                  priority_group_name
+                ];
+            }
+          }
         }
       }
 
@@ -2092,9 +2158,11 @@ var hivtrace_cluster_network_graph = function (
         "mjc_data_owners",
         "cur_state_cd",
         "rsd_state_cd",
-        "mjc_date_added",
-        "hiv_aids_dx_dt_last_year",
+        "selected_mjc_date_identified",
+        "selected_mjc_date_identified_12mo",
         "hiv_aids_dx_dt_month_year",
+        "hiv_aids_dx_dt_12mo",
+        "hiv_aids_dx_dt_36mo",
       ];
 
       return MJC_ATTRIBUTES.filter(
@@ -2202,66 +2270,29 @@ var hivtrace_cluster_network_graph = function (
           });
         });
       } else {
-        // For MJC networks, nodes have a simpler structure directly from the API
-        if (self.isMJCNetwork) {
-          const mjcFields = [
-            { key: "jurisdiction", label: "Jurisdiction" },
-            { key: "dx_date", label: "Diagnosis Date" },
-            { key: "added", label: "Date Added to MJ ClusterOI" },
-            { key: "dx_within_12mo", label: "Diagnosed in Last 12 Months" },
-          ];
-          _.each(cluster_nodes, (node) => {
-            var patient_record = the_list.append("li");
-            patient_record
-              .append("code")
-              .text(this.cleanRedacted(node.name || "Unknown"));
-            var patient_list = patient_record
-              .append("dl")
-              .classed("dl-horizontal", true);
-            _.each(mjcFields, (field) => {
-              let value = node[field.key];
-              // Format dates nicely
-              if (field.key.includes("date") || field.key === "added") {
-                try {
-                  value = value
-                    ? timeDateUtil.DateViewFormatExport(new Date(value))
-                    : "N/A";
-                } catch (e) {
-                  value = value || "N/A";
-                }
-              }
-              // Format boolean
-              if (typeof value === "boolean") {
-                value = value ? "Yes" : "No";
-              }
-              patient_list.append("dt").text(field.label);
-              patient_list.append("dd").text(value || "N/A");
-            });
+        _.each(cluster_nodes, (node) => {
+          var patient_record = the_list.append("li");
+          patient_record
+            .append("code")
+            .text(this.cleanRedacted(this.entity_id(node)));
+          var patient_list = patient_record
+            .append("dl")
+            .classed("dl-horizontal", true);
+          _.each(column_ids, (column) => {
+            patient_list
+              .append("dt")
+              .text(column.label || column.raw_attribute_key)
+              .attr("title", column.label || column.raw_attribute_key)
+              .style("width", "50%")
+              .style("text-align", "left")
+              .style("margin-left", "1em");
+            patient_list
+              .append("dd")
+              .text(
+                self.attribute_node_value_by_id(node, column.raw_attribute_key)
+              );
           });
-        } else {
-          _.each(cluster_nodes, (node) => {
-            var patient_record = the_list.append("li");
-            patient_record
-              .append("code")
-              .text(this.cleanRedacted(this.entity_id(node)));
-            var patient_list = patient_record
-              .append("dl")
-              .classed("dl-horizontal", true);
-            _.each(column_ids, (column) => {
-              patient_list
-                .append("dt")
-                .text(column.label || column.raw_attribute_key);
-              patient_list
-                .append("dd")
-                .text(
-                  self.attribute_node_value_by_id(
-                    node,
-                    column.raw_attribute_key
-                  )
-                );
-            });
-          });
-        }
+        });
       }
     };
 
@@ -2377,6 +2408,7 @@ var hivtrace_cluster_network_graph = function (
         (event) => {
           var link_clicked = $(event.relatedTarget);
           var priority_list = link_clicked.data("priority_set");
+          var use_mjc_overlap_list = link_clicked.data("use_mjc_overlap_list");
 
           var modal = d3.select(
             self.get_ui_element_selector_by_role("overlap_list", true)
@@ -2384,15 +2416,21 @@ var hivtrace_cluster_network_graph = function (
           modal
             .selectAll(".modal-title")
             .text(
-              "View how nodes in cluster of interest " +
+              "View how nodes in " +
+                (self.isMJCNetwork ? "MJ " : "") +
+                "clusterOI " +
                 priority_list +
                 (self.isMJCNetwork
                   ? " overlap with your jurisdiction's clusterOI"
+                  : use_mjc_overlap_list
+                  ? " overlap with MJ clusterOI"
                   : " overlap with other clusterOI")
             );
 
           const ps = self.priority_groups_find_by_name(priority_list);
-          if (!(ps && self.priority_node_overlap)) return;
+          if (!ps) return;
+          if (!use_mjc_overlap_list && !self.priority_node_overlap) return;
+          if (use_mjc_overlap_list && !self.priority_node_overlap_mjc) return;
 
           var headers = [
             [
@@ -2423,10 +2461,18 @@ var hivtrace_cluster_network_graph = function (
           ];
 
           _.each(
-            self.aggregate_indvidual_level_records(ps.node_objects),
+            self.aggregate_indvidual_level_records(
+              use_mjc_overlap_list ? ps.nodes : ps.node_objects
+            ),
             (n) => {
               const eid = self.entity_id(n);
-              const overlap = self.priority_node_overlap[eid];
+              if (eid.includes("REDACTED")) {
+                return;
+              }
+              const overlap =
+                use_mjc_overlap_list && !self.isMJCNetwork
+                  ? self.priority_node_overlap_mjc[eid]
+                  : self.priority_node_overlap[eid];
               let other_sets = "None";
               if (overlap && overlap.size > 1) {
                 other_sets = _.sortBy(
@@ -4077,6 +4123,9 @@ var hivtrace_cluster_network_graph = function (
     );
     if (self.priority_set_table) {
       self.update_volatile_elements(self.priority_set_table);
+    }
+    if (self.priority_set_archive_table) {
+      self.update_volatile_elements(self.priority_set_archive_table);
     }
   };
 
@@ -6677,7 +6726,7 @@ var hivtrace_cluster_network_graph = function (
       }*/
     }
 
-    if (self.isMJCNetwork) {
+    if (self.isMJCNetwork && !self.fullMJCNetwork) {
       return;
     }
 
@@ -8760,9 +8809,19 @@ var hivtrace_cluster_network_graph = function (
     if (options["priority-sets-url"]) {
       const is_writeable = options["is-writeable"];
       //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI,
-      // while self.own_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the MJCloadOwnPrioritySets callback)
-      self.load_priority_sets(options["priority-sets-url"], is_writeable);
-      self.MJCloadOwnPrioritySets(options);
+      // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
+      self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], () =>
+        self.load_priority_sets(options["priority-sets-url"], is_writeable)
+      );
+    }
+
+    if (options["priority-set-add-from-mjc-url"]) {
+      self.priority_set_add_from_mjc_url =
+        options["priority-set-add-from-mjc-url"];
+    }
+
+    if (options["mjc-archive-url"]) {
+      self.mjc_archive_url = options["mjc-archive-url"];
     }
 
     if (self.showing_diff) {

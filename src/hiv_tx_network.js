@@ -40,14 +40,12 @@ class HIVTxNetwork {
     this.primary_key = _.isFunction(primary_key_function)
       ? primary_key_function
       : (node) => {
-          if (this.isMJCNetwork && !node.id) {
-            return node.name;
-          }
-          const i = node.id.indexOf("|");
+          const key = node.id || node.name || "";
+          const i = key.indexOf("|");
           if (i >= 0) {
-            return node.id.substr(0, i);
+            return key.substr(0, i);
           }
-          return node.id;
+          return key;
         };
 
     this.tabulate_multiple_sequences();
@@ -806,9 +804,12 @@ class HIVTxNetwork {
       );
       if (result) return result;
     }
-    // For MJC networks, also check own_defined_priority_groups
-    if (this.isMJCNetwork && this.own_defined_priority_groups) {
-      return _.find(this.own_defined_priority_groups, (g) => g.name === name);
+    // For MJC networks, also check overlap_defined_priority_groups
+    if (this.isMJCNetwork && this.overlap_defined_priority_groups) {
+      return _.find(
+        this.overlap_defined_priority_groups,
+        (g) => g.name === name
+      );
     }
     return null;
   };
@@ -909,35 +910,40 @@ class HIVTxNetwork {
     });
   };
 
-  priority_groups_compute_overlap_mjc = (mjc_groups, own_groups) => {
-    this.priority_node_overlap = {};
+  priority_groups_compute_overlap_mjc = (
+    defined_groups,
+    overlap_groups,
+    output_key,
+    group_key
+  ) => {
+    this[output_key] = {};
 
-    if (!mjc_groups || !own_groups) {
+    if (!defined_groups || !overlap_groups) {
       return;
     }
 
-    // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
+    // Build a map of entity lists & sizes for defined_groups
     var size_by_pg = {};
 
-    // Also keep sizes for own_groups for superset/duplicate checks
-    var size_by_own = {};
+    // Also keep sizes for overlap_groups for superset/duplicate checks
+    var size_by_overlap = {};
 
-    // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
-    _.each(own_groups, (pg) => {
+    // Build this[output_key] from overlap_groups (entity => Set of overlap PG names)
+    _.each(overlap_groups, (pg) => {
       const ents = this.aggregate_indvidual_level_records(pg.nodes);
-      size_by_own[pg.name] = ents.length;
+      size_by_overlap[pg.name] = ents.length;
 
       _.each(ents, (n) => {
         const entity_id = this.entity_id(n);
-        if (!(entity_id in this.priority_node_overlap)) {
-          this.priority_node_overlap[entity_id] = new Set();
+        if (!(entity_id in this[output_key])) {
+          this[output_key][entity_id] = new Set();
         }
-        this.priority_node_overlap[entity_id].add(pg.name);
+        this[output_key][entity_id].add(pg.name);
       });
     });
 
-    // 3) For each mjc group, compute overlap only considering nodes that are present in own_groups
-    _.each(mjc_groups, (pg) => {
+    // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
+    _.each(defined_groups, (pg) => {
       const overlap = {
         sets: new Set(),
         nodes: 0,
@@ -949,40 +955,40 @@ class HIVTxNetwork {
       _.each(pg.nodes, (n) => {
         const entity_id = this.entity_id(n);
 
-        // Only care about nodes in mjc_groups that are present in own_groups
+        // Only care about nodes in defined_groups that are present in overlap_groups
         if (
-          entity_id in this.priority_node_overlap &&
-          this.priority_node_overlap[entity_id].size > 0
+          entity_id in this[output_key] &&
+          this[output_key][entity_id].size > 1
         ) {
           overlap.nodes++;
-          this.priority_node_overlap[entity_id].forEach((own_pg_name) => {
-            // Collect counts per owning PG (these are names from own_groups)
-            if (!(own_pg_name in by_set_count)) {
-              by_set_count[own_pg_name] = [];
+          this[output_key][entity_id].forEach((overlap_pg_name) => {
+            // Collect counts per PG (these are names from overlap_groups)
+            if (!(overlap_pg_name in by_set_count)) {
+              by_set_count[overlap_pg_name] = [];
             }
-            by_set_count[own_pg_name].push(entity_id);
+            by_set_count[overlap_pg_name].push(entity_id);
 
-            overlap.sets.add(own_pg_name);
+            overlap.sets.add(overlap_pg_name);
           });
         }
       });
 
-      // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
+      // Determine supersets/duplicates: if an overlap_group contains ALL entities of this mjc_group (within our intersection),
       // then it's either a superset or a duplicate (same size).
-      _.each(by_set_count, (nodes, own_name) => {
+      _.each(by_set_count, (nodes, overlap_name) => {
         if (nodes.length == size_by_pg[pg.name]) {
-          if (size_by_own[own_name] == size_by_pg[pg.name]) {
-            overlap.duplicates.push(own_name);
+          if (size_by_overlap[overlap_name] == size_by_pg[pg.name]) {
+            overlap.duplicates.push(overlap_name);
           } else {
-            overlap.supersets.push(own_name);
+            overlap.supersets.push(overlap_name);
           }
         }
       });
 
       // assign overlap summary to the mjc group
-      pg.overlap = {
+      pg[group_key] = {
         nodes: overlap.nodes,
-        // sets = number of distinct own_groups that share nodes with this mjc_group
+        // sets = number of distinct overlap_groups that share nodes with this mjc_group
         sets: overlap.sets.size,
         superset: overlap.supersets,
         duplicate: overlap.duplicates,
@@ -1345,6 +1351,44 @@ class HIVTxNetwork {
           });
       }
     }
+  };
+
+  /**
+   *
+   */
+  priority_groups_add_from_mjc = function (
+    name,
+    node_ids,
+    description,
+    kind,
+    tracking
+  ) {
+    fetch(this.priority_set_add_from_mjc_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: name,
+        node_ids: node_ids,
+        description: description,
+        kind: kind,
+        tracking: tracking,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        alert("ClusterOI '" + name + "' added successfully from MJC.");
+      })
+      .catch((error) => {
+        console.error("Error adding ClusterOI from MJC:", error);
+        alert("Error adding ClusterOI from MJC. Please try again later.");
+      });
   };
 
   /**
@@ -2662,6 +2706,7 @@ class HIVTxNetwork {
       });
 
       clustersOfInterest.draw_priority_set_table(this);
+      clustersOfInterest.draw_priority_set_table(this, null, null, true); // null just uses defaults (for archived MJ clusterOI)
       if (
         this.showing_diff &&
         this.has_network_attribute("subcluster_or_priority_node")
@@ -2672,13 +2717,53 @@ class HIVTxNetwork {
     });
   }
 
-  MJCloadOwnPrioritySets(options) {
-    if (this.isMJCNetwork && options["own-priority-sets-url"]) {
-      this.own_priority_set_url = options["own-priority-sets-url"];
-      this.fetch_priority_sets(this.own_priority_set_url, (results) => {
-        this.own_defined_priority_groups = results;
+  loadOverlapPrioritySets(overlap_priority_sets_url, callback) {
+    if (overlap_priority_sets_url) {
+      this.overlap_priority_set_url = overlap_priority_sets_url;
+      this.fetch_priority_sets(this.overlap_priority_set_url, (results) => {
+        this.overlap_defined_priority_groups = results;
+        callback();
       });
+    } else {
+      callback();
     }
+  }
+
+  priority_groups_archive_mjc_set(name, archived) {
+    // currently only for MJC networks
+    if (!this.isMJCNetwork) {
+      return;
+    }
+    const pg = _.find(this.defined_priority_groups, (pg) => pg.name === name);
+    if (!pg) {
+      console.warn("Could not find priority group with name " + name);
+      return;
+    }
+
+    pg.archived = archived;
+
+    fetch(this.mjc_archive_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: pg.name,
+        archived: pg.archived,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "Network response was not ok: " + response.statusText
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        clustersOfInterest.draw_priority_set_table(this);
+        clustersOfInterest.draw_priority_set_table(this, null, null, true);
+      });
   }
 
   /**  add an attribute description
@@ -3027,7 +3112,7 @@ class HIVTxNetwork {
     };
   }
 
-  define_attribute_mjc_date_added(label) {
+  define_attribute_sel_mjc_date_identified(label) {
     return {
       depends: [],
       label: label,
@@ -3035,6 +3120,60 @@ class HIVTxNetwork {
       map: (node) => {
         // will be dynamically injected into node every time a MJ ClusterOI is viewed
         return kGlobals.missing.label;
+      },
+    };
+  }
+
+  define_attribute_mjc_date_identified(label) {
+    return {
+      depends: [],
+      label: label,
+      type: "Object",
+      map: (node) => {
+        try {
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCIdentified,
+            false,
+            false,
+            true
+          );
+        } catch {
+          return kGlobals.missing.label;
+        }
+      },
+    };
+  }
+
+  define_attribute_sel_mjc_date_identified_12mo(label) {
+    return {
+      depends: [],
+      label: label,
+      type: "Date",
+      map: (node) => {
+        // will be dynamically injected into node every time a MJ ClusterOI is viewed
+        return kGlobals.missing.label;
+      },
+    };
+  }
+
+  define_attribute_mjc_date_identified_12mo(label) {
+    return {
+      depends: [],
+      label: label,
+      type: "Object",
+      map: (node) => {
+        try {
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCIdentified_12Mo,
+            false,
+            false,
+            true
+          );
+        } catch {
+          return kGlobals.missing.label;
+        }
       },
     };
   }
@@ -3105,21 +3244,21 @@ class HIVTxNetwork {
   }
 
   /**
-   * Define an attribute generator for month/year at diagnosis
-   *
+   * Define an attribute generator for boolean value of dx in last year
    * @param {*} label : use this label
    * @returns attribute definition dict
    */
-  define_attribute_dx_month_year(label) {
+  define_attribute_dx_12mo(label) {
     return {
-      depends: [timeDateUtil._networkCDCMonthYearField],
+      depends: [timeDateUtil._networkCDCLast12Mo],
       label: label,
       type: "String",
+      enum: ["Yes", "No"],
       map: (node) => {
         try {
           return this.attribute_node_value_by_id(
             node,
-            timeDateUtil._networkCDCMonthYearField,
+            timeDateUtil._networkCDCLast12Mo,
             false,
             false,
             true
@@ -3131,14 +3270,9 @@ class HIVTxNetwork {
     };
   }
 
-  /**
-   * Define an attribute generator for boolean value of dx in last year
-   * @param {*} label : use this label
-   * @returns attribute definition dict
-   */
-  define_attribute_dx_last_year(label) {
+  define_attribute_dx_36mo(label) {
     return {
-      depends: [timeDateUtil._networkCDCLastYearField],
+      depends: [timeDateUtil._networkCDCLast36Mo],
       label: label,
       type: "String",
       enum: ["Yes", "No"],
@@ -3146,7 +3280,7 @@ class HIVTxNetwork {
         try {
           return this.attribute_node_value_by_id(
             node,
-            timeDateUtil._networkCDCLastYearField,
+            timeDateUtil._networkCDCLast36Mo,
             false,
             false,
             true
@@ -3161,7 +3295,7 @@ class HIVTxNetwork {
   /**
           Retrieve the list of sequences associated with a node
           @param pid: use this entity id
-    
+
           @return list of sequence_ids
       */
 
@@ -3172,7 +3306,7 @@ class HIVTxNetwork {
   /**
           Retrieve the list of sequences associated with a node
           @param pid: use this entity id
-    
+
           @return list of sequence_ids
       */
 
@@ -3418,7 +3552,7 @@ class HIVTxNetwork {
       for networks that have multiple sequences per individual, this function
       will reduce the list of node records to only include those that have
       attribute data. If more than one node has attribute data, the first one
-      (chosen based on the sorting order when this.primary_key_list was initialized)
+      (chosen based on the sorting order whfen this.primary_key_list was initialized)
       is returned.
     
     */
@@ -3452,6 +3586,7 @@ class HIVTxNetwork {
 
   aggregate_indvidual_level_records(node_list) {
     if (this.isMJCNetwork) {
+      // TODO: improve this to actually merge the node attributes
       return _.uniq(node_list, (n) => n.id ?? n.name);
     }
     node_list = node_list || this.json.Nodes;
