@@ -1376,8 +1376,10 @@ function hivtrace_plot_cluster_dynamics(
  * @returns {string} A CSS selector string targeting elements with the specified role.
 */
 
-function get_ui_element_selector_by_role(role) {
-  return ` [data-hivtrace-ui-role='${role}']`;
+function get_ui_element_selector_by_role(role, no_leading_space) {
+  // Leading space is for descendant selection, but should be omitted for Bootstrap targets
+  const prefix = no_leading_space ? "" : " ";
+  return `${prefix}[data-hivtrace-ui-role='${role}']`;
 }
 
 module.exports = {

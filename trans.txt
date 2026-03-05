@@ -1,0 +1,2281 @@
+
+start at: 419ms for duration 2s
+hello
+==========
+
+
+start at: 1s for duration 3s
+um can you hear me
+==========
+
+
+start at: 3s for duration 4s
+um I&#39;m Avery selberg and I&#39;ll be
+==========
+
+
+start at: 5s for duration 5s
+presenting on busted pH which stands for
+==========
+
+
+start at: 7s for duration 5s
+the branch site unrestricted statistical
+==========
+
+
+start at: 10s for duration 5s
+test for episodic diversification and it
+==========
+
+
+start at: 13s for duration 4s
+incorporates phenotypes
+==========
+
+
+start at: 16s for duration 4s
+um this is a collaboration between
+==========
+
+
+start at: 18s for duration 6s
+myself and Sergey Pond as well as Maria
+==========
+
+
+start at: 21s for duration 3s
+chiquina and Nathan Clark
+==========
+
+
+start at: 25s for duration 5s
+so the goal of sobuster pH comes from
+==========
+
+
+start at: 28s for duration 4s
+the common goal in genomics which is to
+==========
+
+
+start at: 30s for duration 5s
+understand the relationship between
+==========
+
+
+start at: 33s for duration 5s
+genotype and phenotype we can do this by
+==========
+
+
+start at: 36s for duration 5s
+identifying selection on genes in a
+==========
+
+
+start at: 38s for duration 4s
+particular species or population with a
+==========
+
+
+start at: 41s for duration 5s
+specific phenotype which is the genetic
+==========
+
+
+start at: 43s for duration 5s
+basis for morphological adaptation
+==========
+
+
+start at: 47s for duration 3s
+um we can use convergent traits or
+==========
+
+
+start at: 49s for duration 3s
+traits that have evolved multiple times
+==========
+
+
+start at: 50s for duration 4s
+independently to provide increased
+==========
+
+
+start at: 52s for duration 3s
+statistical power through their natural
+==========
+
+
+start at: 54s for duration 4s
+replications
+==========
+
+
+start at: 56s for duration 5s
+in known case of convergent evolution
+==========
+
+
+start at: 59s for duration 5s
+selection is repeatedly targeting the
+==========
+
+
+start at: 1.0349999745666667m 2099998474s for duration 5s
+same gene
+==========
+
+
+start at: 1.0759833018m 4558998108s for duration 5s
+so to leverage this power of convergent
+==========
+
+
+start at: 1.1199999491333332m 7199996948s for duration 6s
+evolution there&#39;s been a widely used
+==========
+
+
+start at: 1.1693166097m 10158996582s for duration 6s
+workflow that has been used in hundreds
+==========
+
+
+start at: 1.2219999949166667m 13319999695s for duration 6s
+of papers I&#39;ll go over kind of the gist
+==========
+
+
+start at: 1.2710000356m 16260002136s for duration 5s
+of that the first step is to choose a
+==========
+
+
+start at: 1.3280000050833334m 19680000305s for duration 6s
+convergent species in this presentation
+==========
+
+
+start at: 1.36200002035m 21720001221s for duration 6s
+I&#39;ll be talking about marine mammals the
+==========
+
+
+start at: 1.4310000101666667m 25860000610s for duration 4s
+next step is to perform a sequencing and
+==========
+
+
+start at: 1.4709833781m 28259002686s for duration 4s
+Alignment or get this information from a
+==========
+
+
+start at: 1.51299997965m 30779998779s for duration 5s
+database such as the UCSC 100 way
+==========
+
+
+start at: 1.5539999644m 33239997864s for duration 5s
+alignment so here we&#39;ll have a multiple
+==========
+
+
+start at: 1.5979999542166667m 35879997253s for duration 6s
+sequence alignment of marine mammals and
+==========
+
+
+start at: 1.6509999593166667m 39059997559s for duration 7s
+terrestrial mammals the third step is to
+==========
+
+
+start at: 1.7090000152666667m 42540000916s for duration 5s
+create a phylogenetic tree I have here a
+==========
+
+
+start at: 1.767983373m 46079002380s for duration 4s
+species tree but a gene tree is also
+==========
+
+
+start at: 1.80498339335m 48299003601s for duration 2s
+often necessary
+==========
+
+
+start at: 1.8399833679166666m 50399002075s for duration 2s
+um
+==========
+
+
+start at: 1.8519833882666668m 51119003296s for duration 5s
+here um you can&#39;t really see but in
+==========
+
+
+start at: 1.88799997965m 53279998779s for duration 5s
+boxes we have the marine mammals and
+==========
+
+
+start at: 1.94199994405m 56519996643s for duration 4s
+those marine mammals are designated as
+==========
+
+
+start at: 1.9780000050833333m 58680000305s for duration 4s
+the foreground species whereas the
+==========
+
+
+start at: 2.017983373m 1079002380s for duration 4s
+remaining species the terrestrial
+==========
+
+
+start at: 2.046999994916667m 2819999695s for duration 5s
+species are designated as the background
+==========
+
+
+start at: 2.0989833831833336m 5939002991s for duration 3s
+species
+==========
+
+
+start at: 2.13498331705m 8098999023s for duration 4s
+so this fourth step is the step that
+==========
+
+
+start at: 2.164983367916667m 9899002075s for duration 5s
+I&#39;ll be focusing on this is the
+==========
+
+
+start at: 2.2069999694833333m 12419998169s for duration 6s
+selection analysis so in this step we&#39;re
+==========
+
+
+start at: 2.256999969483333m 15419998169s for duration 6s
+looking to identify adaptive evolution
+==========
+
+
+start at: 2.3143333435m 18860000610s for duration 4s
+in genes that are in the foreground
+==========
+
+
+start at: 2.3649998982666665m 21899993896s for duration 4s
+species
+==========
+
+
+start at: 2.39599990845m 23759994507s for duration 5s
+um so I&#39;m a part of the Hi-Fi lab that&#39;s
+==========
+
+
+start at: 2.4399998982666666m 26399993896s for duration 4s
+hypothesis testing using phylogenies
+==========
+
+
+start at: 2.493999989833333m 29639999390s for duration 2s
+um so
+==========
+
+
+start at: 2.511000061033333m 30660003662s for duration 3s
+um I&#39;ll be talking about ways that we
+==========
+
+
+start at: 2.5339998881m 32039993286s for duration 4s
+can improve this step but another
+==========
+
+
+start at: 2.5610000610333334m 33660003662s for duration 4s
+commonly used method is pamel which
+==========
+
+
+start at: 2.6060000101666665m 36360000610s for duration 4s
+stands for phylogenetic analyzes by
+==========
+
+
+start at: 2.6430000305166668m 38580001831s for duration 5s
+maximum likelihood
+==========
+
+
+start at: 2.6839998881m 41039993286s for duration 5s
+so after the selection analysis is run
+==========
+
+
+start at: 2.7329999288m 43979995728s for duration 4s
+it&#39;s common to perform an enrichment
+==========
+
+
+start at: 2.77099990845m 46259994507s for duration 6s
+analysis this may be done using a
+==========
+
+
+start at: 2.8139999389666666m 48839996338s for duration 6s
+program such as keg or Panther to
+==========
+
+
+start at: 2.8719833374m 52319000244s for duration 4s
+identify like Pathways or Gene
+==========
+
+
+start at: 2.9139999389666666m 54839996338s for duration 5s
+ontologies terms of those adaptively
+==========
+
+
+start at: 2.9509999593166665m 57059997559s for duration 4s
+evolving genes
+==========
+
+
+start at: 2.9990000406833333m 59940002441s for duration 2s
+so one
+==========
+
+
+start at: 3.0259999593166667m 1559997559s for duration 3s
+um now that we&#39;re focusing on the
+==========
+
+
+start at: 3.0469833374m 2819000244s for duration 4s
+selection models um one alternative
+==========
+
+
+start at: 3.0800000508666665m 4800003052s for duration 4s
+model is rate based methods to
+==========
+
+
+start at: 3.1240000406833333m 7440002441s for duration 3s
+understand these rate based methods it&#39;s
+==========
+
+
+start at: 3.153983306883333m 9238998413s for duration 4s
+important to understand the difference
+==========
+
+
+start at: 3.1759999593166666m 10559997559s for duration 5s
+between relaxation of selection and
+==========
+
+
+start at: 3.2229832967166665m 13378997803s for duration 5s
+adaptive Evolution so I like to
+==========
+
+
+start at: 3.2639999389666667m 15839996338s for duration 6s
+visualize this on a number line where we
+==========
+
+
+start at: 3.3169832865333335m 19018997192s for duration 5s
+have the dotted line we have neutral
+==========
+
+
+start at: 3.363999938966667m 21839996338s for duration 4s
+Evolution and to the left of the dotted
+==========
+
+
+start at: 3.4050000508666667m 24300003052s for duration 5s
+line we have negative selection our
+==========
+
+
+start at: 3.4439999898333333m 26639999390s for duration 4s
+purifying selection that&#39;s where dnds
+==========
+
+
+start at: 3.493000030516667m 29580001831s for duration 4s
+which is the non-synonymous to
+==========
+
+
+start at: 3.519999949133333m 31199996948s for duration 5s
+synonymous substitution rate ratio is
+==========
+
+
+start at: 3.57099990845m 34259994507s for duration 5s
+less than one and then to the right of
+==========
+
+
+start at: 3.6109832763666665m 36658996582s for duration 5s
+the dotted line we have adaptive
+==========
+
+
+start at: 3.6560000101666668m 39360000610s for duration 5s
+Evolution or positive selection that&#39;s
+==========
+
+
+start at: 3.6969833374m 41819000244s for duration 6s
+where dnds is greater than one
+==========
+
+
+start at: 3.7539833068833333m 45238998413s for duration 5s
+so if we start out with a gene that is
+==========
+
+
+start at: 3.8019999186166666m 48119995117s for duration 4s
+under very strong negative selection
+==========
+
+
+start at: 3.8399998982666665m 50399993896s for duration 5s
+this Gene is under evolutionary
+==========
+
+
+start at: 3.8759999593166667m 52559997559s for duration 5s
+constraint it&#39;s highly conserved if over
+==========
+
+
+start at: 3.9299832662m 55798995972s for duration 4s
+time the selective pressures on this
+==========
+
+
+start at: 3.9649998982666665m 57899993896s for duration 5s
+Gene change so now that Gene is under
+==========
+
+
+start at: 4.003983306883334m 238998413s for duration 5s
+weaker negative selection it&#39;s still
+==========
+
+
+start at: 4.056000010166667m 3360000610s for duration 5s
+under purifying selection but it&#39;s not
+==========
+
+
+start at: 4.093999989833334m 5639999390s for duration 6s
+as strong as it was before this shift
+==========
+
+
+start at: 4.140983327233333m 8458999634s for duration 5s
+signifies relaxation of selection now
+==========
+
+
+start at: 4.2009999593166665m 12059997559s for duration 3s
+that relaxation of selection is
+==========
+
+
+start at: 4.2310000101666665m 13860000610s for duration 4s
+different than if that Gene would
+==========
+
+
+start at: 4.265983327233333m 15958999634s for duration 4s
+suddenly become like adaptively evolving
+==========
+
+
+start at: 4.313999938966667m 18839996338s for duration 4s
+because then the gene would be under
+==========
+
+
+start at: 4.342983500166667m 20579010010s for duration 5s
+positive selection so rate based methods
+==========
+
+
+start at: 4.394983418783333m 23699005127s for duration 4s
+such as rer converged which was
+==========
+
+
+start at: 4.426999918616667m 25619995117s for duration 4s
+developed by our collaborator they
+==========
+
+
+start at: 4.46299997965m 27779998779s for duration 5s
+identify genes at different rates or the
+==========
+
+
+start at: 4.507983398433334m 30479003906s for duration 6s
+shifts in the selection values in the
+==========
+
+
+start at: 4.5579833984333336m 33479003906s for duration 5s
+convergently evolving species however
+==========
+
+
+start at: 4.613999938966667m 36839996338s for duration 4s
+they cannot distinguish between the
+==========
+
+
+start at: 4.647000122066666m 38820007324s for duration 4s
+selective forces of relaxation of
+==========
+
+
+start at: 4.6829833984333336m 40979003906s for duration 4s
+selection and adaptive Evolution because
+==========
+
+
+start at: 4.72999979655m 43799987793s for duration 5s
+they both elevate
+==========
+
+
+start at: 4.76200002035m 45720001221s for duration 5s
+um mean evolutionary rates so rer
+==========
+
+
+start at: 4.8209833781m 49259002686s for duration 4s
+converge is a great model it was
+==========
+
+
+start at: 4.8519999186166665m 51119995117s for duration 4s
+developed by our collaborators but we
+==========
+
+
+start at: 4.890999857583333m 53459991455s for duration 5s
+wanted to have a way to identify
+==========
+
+
+start at: 4.9209833781m 55259002686s for duration 6s
+adaptive Evolution so that brings us to
+==========
+
+
+start at: 4.974333190916667m 58459991455s for duration 6s
+codon models codon models inherently
+==========
+
+
+start at: 5.0360000610333335m 2160003662s for duration 6s
+consider both the nucleotide and amino
+==========
+
+
+start at: 5.081983439133333m 4919006348s for duration 5s
+acid substitutions and they do track The
+==========
+
+
+start at: 5.13799997965m 8279998779s for duration 5s
+Selective pressures as Omega which
+==========
+
+
+start at: 5.177999877933333m 10679992676s for duration 4s
+approximates dnds again the
+==========
+
+
+start at: 5.224000040683333m 13440002441s for duration 4s
+non-synonymous to synonymous
+==========
+
+
+start at: 5.250999959316666m 15059997559s for duration 4s
+substitution rate ratio
+==========
+
+
+start at: 5.293983459466666m 17639007568s for duration 4s
+so they do this by designating a
+==========
+
+
+start at: 5.332983398433333m 19979003906s for duration 4s
+foreground foreground and background
+==========
+
+
+start at: 5.3649998982666665m 21899993896s for duration 5s
+species in advance so in the phylogenic
+==========
+
+
+start at: 5.413999938966667m 24839996338s for duration 5s
+tree I have here the foreground species
+==========
+
+
+start at: 5.452999877933333m 27179992676s for duration 5s
+are the marine mammals in Orange and the
+==========
+
+
+start at: 5.50499979655m 30299987793s for duration 5s
+background species are the terrestrial
+==========
+
+
+start at: 5.53799997965m 32279998779s for duration 5s
+mammals in blue that way we can identify
+==========
+
+
+start at: 5.598000081383334m 35880004883s for duration 5s
+and compare selective pressures between
+==========
+
+
+start at: 5.63398335775m 38039001465s for duration 5s
+these subsets of branches and then codon
+==========
+
+
+start at: 5.68799997965m 41279998779s for duration 5s
+models they work as a finite State
+==========
+
+
+start at: 5.718983459466667m 43139007568s for duration 7s
+continuous time Markov process
+==========
+
+
+start at: 5.785000101733333m 47100006104s for duration 8s
+so one one existing codon model
+==========
+
+
+start at: 5.8519999186166665m 51119995117s for duration 6s
+is pamel oracote ml within pamel but the
+==========
+
+
+start at: 5.925m 55500000000s for duration 4s
+problem with using Pama is that it uses
+==========
+
+
+start at: 5.961000061033333m 57660003662s for duration 5s
+very restrictive selective profiles that
+==========
+
+
+start at: 6.000999959316666m 59997559s for duration 6s
+do not allow for positive selection in
+==========
+
+
+start at: 6.056983439133333m 3419006348s for duration 5s
+the background so because of this any
+==========
+
+
+start at: 6.106983439133334m 6419006348s for duration 5s
+selective forces in those um background
+==========
+
+
+start at: 6.150999959316667m 9059997559s for duration 5s
+species that&#39;s the terrestrial mammals
+==========
+
+
+start at: 6.190999857583333m 11459991455s for duration 5s
+in our example they can be mistaken for
+==========
+
+
+start at: 6.236000061033334m 14160003662s for duration 4s
+selection in the foreground in the
+==========
+
+
+start at: 6.275999959316667m 16559997559s for duration 4s
+Marine Mammal species which can cause
+==========
+
+
+start at: 6.31299997965m 18779998779s for duration 5s
+uncontrolled rates of positive selection
+==========
+
+
+start at: 6.355999755866667m 21359985352s for duration 6s
+or of false positives now there are some
+==========
+
+
+start at: 6.41200002035m 24720001221s for duration 4s
+ways to rectify this our collaborators
+==========
+
+
+start at: 6.455999755866666m 27359985352s for duration 4s
+came up with a really nice way to do
+==========
+
+
+start at: 6.488999938966667m 29339996338s for duration 6s
+this but it involves removing data which
+==========
+
+
+start at: 6.528999837233333m 31739990234s for duration 6s
+can create biases and reduces power and
+==========
+
+
+start at: 6.590999857583333m 35459991455s for duration 5s
+then additionally this is not very well
+==========
+
+
+start at: 6.630999755866666m 37859985352s for duration 6s
+known many people just use code ml as it
+==========
+
+
+start at: 6.681983439133333m 40919006348s for duration 6s
+is written and they don&#39;t pay attention
+==========
+
+
+start at: 6.730999755866667m 43859985352s for duration 5s
+to selection in the background I have
+==========
+
+
+start at: 6.78700002035m 47220001221s for duration 4s
+here four papers that have done this but
+==========
+
+
+start at: 6.827999877933333m 49679992676s for duration 5s
+there are hundreds more on Google
+==========
+
+
+start at: 6.861000061033334m 51660003662s for duration 5s
+Scholar that are doing this process
+==========
+
+
+start at: 6.918983459466666m 55139007568s for duration 4s
+um so to kind of attack this issue we
+==========
+
+
+start at: 6.949000040683333m 56940002441s for duration 4s
+developed busted pH which again stands
+==========
+
+
+start at: 6.9959833781m 59759002686s for duration 4s
+for the branch site unrestricted
+==========
+
+
+start at: 7.0279998779333335m 1679992676s for duration 5s
+statistical test for episodic
+==========
+
+
+start at: 7.063999938966667m 3839996338s for duration 5s
+diversification with phenotype and it
+==========
+
+
+start at: 7.11200002035m 6720001221s for duration 5s
+tests for foreground specific positive
+==========
+
+
+start at: 7.150999959316667m 9059997559s for duration 5s
+selection busted pH Works in a series of
+==========
+
+
+start at: 7.20499979655m 12299987793s for duration 6s
+four models and makes three comparisons
+==========
+
+
+start at: 7.2469833374m 14819000244s for duration 7s
+between those four models so the inputs
+==========
+
+
+start at: 7.311000061033333m 18660003662s for duration 5s
+of busted pH include a species tree that
+==========
+
+
+start at: 7.374000040683334m 22440002441s for duration 4s
+denotes the foreground and background
+==========
+
+
+start at: 7.401999918616666m 24119995117s for duration 5s
+species as well as a multiple sequence
+==========
+
+
+start at: 7.45m 27000000000s for duration 5s
+alignment and from there HiFi will
+==========
+
+
+start at: 7.48799997965m 29279998779s for duration 6s
+create a gene tree for each individual
+==========
+
+
+start at: 7.5469833374m 32819000244s for duration 5s
+Gene that you run through busted pH
+==========
+
+
+start at: 7.6m 36000000000s for duration 4s
+so going to those four models the first
+==========
+
+
+start at: 7.643983459466667m 38639007568s for duration 5s
+model is known as the universal
+==========
+
+
+start at: 7.681983439133333m 40919006348s for duration 6s
+alternative model it gets compared to
+==========
+
+
+start at: 7.73498331705m 44098999023s for duration 6s
+each of the three upcoming null models
+==========
+
+
+start at: 7.78498331705m 47098999023s for duration 5s
+through a likelihood ratio test
+==========
+
+
+start at: 7.83799997965m 50279998779s for duration 5s
+so in this first Universal alternative
+==========
+
+
+start at: 7.880999755866666m 52859985352s for duration 6s
+model we are estimating
+==========
+
+
+start at: 7.923000081383333m 55380004883s for duration 6s
+Omega or dnds distributions for both the
+==========
+
+
+start at: 7.98398335775m 59039001465s for duration 4s
+foreground and background branches this
+==========
+
+
+start at: 8.030999755866667m 1859985352s for duration 3s
+is done from the data using maximum
+==========
+
+
+start at: 8.06299997965m 3779998779s for duration 4s
+likelihood with a random effects
+==========
+
+
+start at: 8.0919998169m 5519989014s for duration 5s
+likelihood model so what I mean by
+==========
+
+
+start at: 8.130999755866666m 7859985352s for duration 5s
+distributions by default we have three
+==========
+
+
+start at: 8.18799997965m 11279998779s for duration 5s
+Omega values which might represent
+==========
+
+
+start at: 8.218316650383333m 13098999023s for duration 5s
+positive selection neutral selection and
+==========
+
+
+start at: 8.273000081383334m 16380004883s for duration 5s
+negative selection and so we have three
+==========
+
+
+start at: 8.311000061033333m 18660003662s for duration 5s
+values for the foreground species and
+==========
+
+
+start at: 8.35898335775m 21539001465s for duration 5s
+corresponding percentages for the
+==========
+
+
+start at: 8.40499979655m 24299987793s for duration 5s
+percentage of codon sites for each Omega
+==========
+
+
+start at: 8.450999959316666m 27059997559s for duration 4s
+value that is being binned so we have
+==========
+
+
+start at: 8.490999857583333m 29459991455s for duration 4s
+one distribution for the foreground here
+==========
+
+
+start at: 8.524000040683333m 31440002441s for duration 5s
+and one distribution for the background
+==========
+
+
+start at: 8.574000040683334m 34440002441s for duration 5s
+now like I said this model serves as the
+==========
+
+
+start at: 8.623000081383333m 37380004883s for duration 5s
+universal alternative for all the three
+==========
+
+
+start at: 8.668000284833333m 40080017090s for duration 6s
+upcoming models
+==========
+
+
+start at: 8.7149831136m 42898986816s for duration 6s
+so the first null model is used to test
+==========
+
+
+start at: 8.781999715166666m 46919982910s for duration 5s
+for foreground specific positive
+==========
+
+
+start at: 8.828999837233333m 49739990234s for duration 4s
+selection or episodic diversifying
+==========
+
+
+start at: 8.868000284833334m 52080017090s for duration 4s
+selection
+==========
+
+
+start at: 8.896000162766667m 53760009766s for duration 6s
+um in this null model we constrain the
+==========
+
+
+start at: 8.950999959316666m 57059997559s for duration 5s
+foreground species so we say like what
+==========
+
+
+start at: 9.000999959316667m 59997559s for duration 5s
+if positive selection was not allowed in
+==========
+
+
+start at: 9.049000040683334m 2940002441s for duration 6s
+the foreground by forcing Omega to be
+==========
+
+
+start at: 9.09500020345m 5700012207s for duration 5s
+less than or equal to one now we do this
+==========
+
+
+start at: 9.149000040683333m 8940002441s for duration 4s
+because it serves as the null model and
+==========
+
+
+start at: 9.1889831543m 11338989258s for duration 4s
+then we can use the likelihood ratio
+==========
+
+
+start at: 9.216983032233333m 13018981934s for duration 4s
+test to compare this model to the
+==========
+
+
+start at: 9.260999552416667m 15659973145s for duration 5s
+unconstrained model from the previous
+==========
+
+
+start at: 9.291983032233333m 17518981934s for duration 6s
+step now conceptually this model is very
+==========
+
+
+start at: 9.352999877933334m 21179992676s for duration 7s
+similar to what&#39;s done within pamel and
+==========
+
+
+start at: 9.399000040683333m 23940002441s for duration 8s
+codamel and also previous Hi-Fi models
+==========
+
+
+start at: 9.472000122066667m 28320007324s for duration 6s
+now we&#39;re a busted pH becomes new is in
+==========
+
+
+start at: 9.5349995931m 32099975586s for duration 5s
+these tests this incl this is the test
+==========
+
+
+start at: 9.576999918616666m 34619995117s for duration 4s
+for positive selection in the background
+==========
+
+
+start at: 9.631999715166666m 37919982910s for duration 3s
+species
+==========
+
+
+start at: 9.658999633783333m 39539978027s for duration 4s
+so similar to the previous test where
+==========
+
+
+start at: 9.696000162766667m 41760009766s for duration 4s
+this time we&#39;re constraining the
+==========
+
+
+start at: 9.731999715166667m 43919982910s for duration 4s
+background so we&#39;re saying what if
+==========
+
+
+start at: 9.774000040683333m 46440002441s for duration 4s
+um positive selection we&#39;re not at all
+==========
+
+
+start at: 9.805999755866667m 48359985352s for duration 4s
+not allowed at all in the background so
+==========
+
+
+start at: 9.849000040683332m 50940002441s for duration 4s
+we&#39;re enforcing Omega less than or equal
+==========
+
+
+start at: 9.881999715166666m 52919982910s for duration 5s
+to one on all the background branches
+==========
+
+
+start at: 9.925m 55500000000s for duration 5s
+this allows us to use a likelihood ratio
+==========
+
+
+start at: 9.972000122066667m 58320007324s for duration 5s
+test to compare this null model to the
+==========
+
+
+start at: 10.022000122066666m 1320007324s for duration 4s
+unconstrained model from step one and
+==========
+
+
+start at: 10.071000162766667m 4260009766s for duration 4s
+like I said this test is new to busted
+==========
+
+
+start at: 10.10499979655m 6299987793s for duration 2s
+pH
+==========
+
+
+start at: 10.156999715166666m 9419982910s for duration 3s
+um the fourth and final model is to test
+==========
+
+
+start at: 10.187983194983333m 11278991699s for duration 4s
+whether or not the Omega distributions
+==========
+
+
+start at: 10.218000284833334m 13080017090s for duration 5s
+are different between the foreground and
+==========
+
+
+start at: 10.258999633783333m 15539978027s for duration 5s
+background branches so in this null
+==========
+
+
+start at: 10.301999918616668m 18119995117s for duration 4s
+model we will have a single shared
+==========
+
+
+start at: 10.350999959316667m 21059997559s for duration 4s
+distribution over the entire
+==========
+
+
+start at: 10.378999837233334m 22739990234s for duration 4s
+phylogenetic tree so we&#39;re kind of
+==========
+
+
+start at: 10.418000284833333m 25080017090s for duration 3s
+ignoring the foreground and background
+==========
+
+
+start at: 10.451999918616666m 27119995117s for duration 4s
+partitions
+==========
+
+
+start at: 10.481999715166667m 28919982910s for duration 4s
+so once again we&#39;re using this model and
+==========
+
+
+start at: 10.525m 31500000000s for duration 4s
+comparing it to the universal
+==========
+
+
+start at: 10.55m 33000000000s for duration 6s
+alternative model of step one and again
+==========
+
+
+start at: 10.601999918616666m 36119995117s for duration 7s
+this test is a new addition to busted pH
+==========
+
+
+start at: 10.651333618166667m 39080017090s for duration 6s
+so to help us interpret these four
+==========
+
+
+start at: 10.723000081383333m 43380004883s for duration 4s
+different models and comparisons I have
+==========
+
+
+start at: 10.765983072916667m 45958984375s for duration 4s
+here a decision tree which Hi-Fi
+==========
+
+
+start at: 10.800999959316666m 48059997559s for duration 6s
+automatically runs through but I have it
+==========
+
+
+start at: 10.842982991533333m 50578979492s for duration 5s
+Illustrated here so the first test is
+==========
+
+
+start at: 10.902999877933333m 54179992676s for duration 4s
+the test for positive selection in the
+==========
+
+
+start at: 10.9389831543m 56338989258s for duration 4s
+foreground again we have the
+==========
+
+
+start at: 10.97000020345m 58200012207s for duration 4s
+unrestrictive universal alternative
+==========
+
+
+start at: 11.006999715166666m 419982910s for duration 5s
+model which this time is compared to the
+==========
+
+
+start at: 11.050999959316666m 3059997559s for duration 4s
+constrained foreground model if this
+==========
+
+
+start at: 11.091983032233333m 5518981934s for duration 4s
+test is not significant at a value of
+==========
+
+
+start at: 11.130999755866666m 7859985352s for duration 4s
+0.05 then we can say there is no
+==========
+
+
+start at: 11.173000081383334m 10380004883s for duration 4s
+evidence of selection associated with
+==========
+
+
+start at: 11.212983194983334m 12778991699s for duration 4s
+the phenotype if this test is
+==========
+
+
+start at: 11.247000122066666m 14820007324s for duration 4s
+significant then we move on to the test
+==========
+
+
+start at: 11.281999715166666m 16919982910s for duration 5s
+for positive selection in the background
+==========
+
+
+start at: 11.325m 19500000000s for duration 4s
+this time our null model was the
+==========
+
+
+start at: 11.365983072916666m 21958984375s for duration 5s
+constrained background model if this
+==========
+
+
+start at: 11.40499979655m 24299987793s for duration 4s
+test was not significant then we move on
+==========
+
+
+start at: 11.450999959316666m 27059997559s for duration 4s
+to the test for the difference between
+==========
+
+
+start at: 11.475999959316667m 28559997559s for duration 6s
+the background and foreground branches
+==========
+
+
+start at: 11.5293334961m 31760009766s for duration 4s
+once again that test was where we
+==========
+
+
+start at: 11.578999837233333m 34739990234s for duration 3s
+constrained the foreground and
+==========
+
+
+start at: 11.599000040683332m 35940002441s for duration 4s
+background to a single Omega
+==========
+
+
+start at: 11.632999674483333m 37979980469s for duration 5s
+distribution over the entire tree to
+==========
+
+
+start at: 11.67000020345m 40200012207s for duration 5s
+serve as our null model if that test is
+==========
+
+
+start at: 11.723000081383333m 43380004883s for duration 4s
+not significant then we can say there is
+==========
+
+
+start at: 11.760999552416667m 45659973145s for duration 3s
+evidence of selection associated with
+==========
+
+
+start at: 11.796000162766667m 47760009766s for duration 4s
+the phenotype but it is not
+==========
+
+
+start at: 11.822316487633334m 49338989258s for duration 3s
+statistically significant there is not a
+==========
+
+
+start at: 11.862983194983334m 51778991699s for duration 3s
+statistically significant difference
+==========
+
+
+start at: 11.8849995931m 53099975586s for duration 4s
+between the foreground and background
+==========
+
+
+start at: 11.92000020345m 55200012207s for duration 4s
+selective regimes
+==========
+
+
+start at: 11.95499979655m 57299987793s for duration 3s
+if that test is significant then we can
+==========
+
+
+start at: 11.994000244133334m 59640014648s for duration 4s
+say there is strong evidence of
+==========
+
+
+start at: 12.021000162766667m 1260009766s for duration 4s
+selection associated with the phenotype
+==========
+
+
+start at: 12.065983072916667m 3958984375s for duration 4s
+so jumping back to that test for
+==========
+
+
+start at: 12.097000122066667m 5820007324s for duration 4s
+positive selection in the background if
+==========
+
+
+start at: 12.133999633783333m 8039978027s for duration 4s
+that test is significant then we look at
+==========
+
+
+start at: 12.174000040683334m 10440002441s for duration 3s
+the test for the difference between the
+==========
+
+
+start at: 12.200999959316666m 12059997559s for duration 4s
+background and foreground branches if
+==========
+
+
+start at: 12.2399831136m 14398986816s for duration 4s
+that test is not significant then we can
+==========
+
+
+start at: 12.278999837233334m 16739990234s for duration 3s
+say selection is occurring with or
+==========
+
+
+start at: 12.307999674483334m 18479980469s for duration 4s
+without the phenotype but with similar
+==========
+
+
+start at: 12.342982991533333m 20578979492s for duration 4s
+selective regimes and if that test is
+==========
+
+
+start at: 12.3889831543m 23338989258s for duration 3s
+significant then we can say selection is
+==========
+
+
+start at: 12.421000162766667m 25260009766s for duration 3s
+occurring with or without the phenotype
+==========
+
+
+start at: 12.450999959316666m 27059997559s for duration 5s
+but with a different selective regimes
+==========
+
+
+start at: 12.485999552416667m 29159973145s for duration 5s
+now I think this like decision tree is a
+==========
+
+
+start at: 12.536999511716667m 32219970703s for duration 4s
+lot easier to understand if we look at
+==========
+
+
+start at: 12.571000162766667m 34260009766s for duration 6s
+empirical data so I&#39;ll continue to talk
+==========
+
+
+start at: 12.610999552416667m 36659973145s for duration 6s
+about Marine mammalian species so going
+==========
+
+
+start at: 12.672000122066667m 40320007324s for duration 5s
+into this analysis we had some observed
+==========
+
+
+start at: 12.712983194983334m 42778991699s for duration 5s
+morphological adaptations which include
+==========
+
+
+start at: 12.758999633783333m 45539978027s for duration 4s
+limb reduction in thickening of the
+==========
+
+
+start at: 12.798000081383334m 47880004883s for duration 5s
+epidermis and some other adaptations
+==========
+
+
+start at: 12.835999552416666m 50159973145s for duration 5s
+that I have listed here so our
+==========
+
+
+start at: 12.883999633783333m 53039978027s for duration 4s
+hypothesis was that genes related to
+==========
+
+
+start at: 12.926999918616668m 55619995117s for duration 4s
+these morphological traits of a adapting
+==========
+
+
+start at: 12.965983072916666m 57958984375s for duration 4s
+to life underwater would be under
+==========
+
+
+start at: 12.997000122066666m 59820007324s for duration 5s
+positive selection at higher rates than
+==========
+
+
+start at: 13.040983072916667m 2458984375s for duration 4s
+other genes specifically in the Marine
+==========
+
+
+start at: 13.081999715166667m 4919982910s for duration 5s
+mammalian species but not in the
+==========
+
+
+start at: 13.122000122066666m 7320007324s for duration 5s
+terrestrial mammalian species so to do
+==========
+
+
+start at: 13.17999979655m 10799987793s for duration 5s
+this we use the data from the UCSC
+==========
+
+
+start at: 13.217982991533333m 13078979492s for duration 6s
+100-way alignment and we only pulled
+==========
+
+
+start at: 13.265983072916667m 15958984375s for duration 3s
+from the mammalian species
+==========
+
+
+start at: 13.325999959316666m 19559997559s for duration 4s
+so the first Gene that I&#39;ll be talking
+==========
+
+
+start at: 13.352999877933334m 21179992676s for duration 5s
+about that we looked at is col 9a2 which
+==========
+
+
+start at: 13.40499979655m 24299987793s for duration 5s
+is a collagen hyaline joint cartilage
+==========
+
+
+start at: 13.442982991533333m 26578979492s for duration 5s
+protein if we think back to our observed
+==========
+
+
+start at: 13.498000081383333m 29880004883s for duration 4s
+morphological adaptation of epidermis
+==========
+
+
+start at: 13.541983032233333m 32518981934s for duration 4s
+thickening in marine mammals we thought
+==========
+
+
+start at: 13.577999877933333m 34679992676s for duration 4s
+that this Gene might be under positive
+==========
+
+
+start at: 13.608999633783334m 36539978027s for duration 5s
+selection and I have here the gene tree
+==========
+
+
+start at: 13.648000081383334m 38880004883s for duration 5s
+that HiFi produced for this specific
+==========
+
+
+start at: 13.70499979655m 42299987793s for duration 4s
+Gene so
+==========
+
+
+start at: 13.736999511716666m 44219970703s for duration 7s
+I&#39;m looking at the data from running
+==========
+
+
+start at: 13.787333170566667m 47239990234s for duration 6s
+col9a2 through busted pH we have at the
+==========
+
+
+start at: 13.85499979655m 51299987793s for duration 4s
+top of these circles here the largest
+==========
+
+
+start at: 13.899000040683333m 53940002441s for duration 4s
+Omega values for the foreground
+==========
+
+
+start at: 13.923000081383334m 55380004883s for duration 4s
+background and the distribution over the
+==========
+
+
+start at: 13.966983032233333m 58018981934s for duration 4s
+entire tree we&#39;ll notice that they&#39;re
+==========
+
+
+start at: 13.997000122066666m 59820007324s for duration 4s
+all greater than one which remind her
+==========
+
+
+start at: 14.035999552416667m 2159973145s for duration 5s
+that indicates positive selection
+==========
+
+
+start at: 14.071000162766667m 4260009766s for duration 6s
+however looking at the P values only the
+==========
+
+
+start at: 14.128999837233334m 7739990234s for duration 4s
+test for selection in the foreground as
+==========
+
+
+start at: 14.171000162766667m 10260009766s for duration 3s
+well as the test for the difference in
+==========
+
+
+start at: 14.199000040683334m 11940002441s for duration 4s
+selection between the two sets of
+==========
+
+
+start at: 14.227999877933334m 13679992676s for duration 5s
+branches were significant
+==========
+
+
+start at: 14.278999837233334m 16739990234s for duration 5s
+so in the test for selection in the
+==========
+
+
+start at: 14.3149831136m 18898986816s for duration 6s
+foreground our largest Omega value was
+==========
+
+
+start at: 14.362333170566666m 21739990234s for duration 7s
+5.7 and this value was the case for 0.5
+==========
+
+
+start at: 14.42999979655m 25799987793s for duration 7s
+percent of codon sites that&#39;s in the col
+==========
+
+
+start at: 14.4893330892m 29359985352s for duration 7s
+9a2 Gene in only the foreground species
+==========
+
+
+start at: 14.552999877933333m 33179992676s for duration 6s
+and over the chest over the entire tree
+==========
+
+
+start at: 14.610999552416667m 36659973145s for duration 6s
+that distribution the largest Omega
+==========
+
+
+start at: 14.65499979655m 39299987793s for duration 6s
+value was 15.48 which was the case for
+==========
+
+
+start at: 14.7139831543m 42838989258s for duration 6s
+0.33 percent of codon sites in the
+==========
+
+
+start at: 14.766983032233334m 46018981934s for duration 3s
+col9a2 gene over the entire phylogenetic
+==========
+
+
+start at: 14.81898295085m 49138977051s for duration 2s
+tree
+==========
+
+
+start at: 14.830999755866667m 49859985352s for duration 4s
+so we can
+==========
+
+
+start at: 14.862983194983334m 51778991699s for duration 4s
+um plug this data back into the decision
+==========
+
+
+start at: 14.901999918616667m 54119995117s for duration 4s
+tree so first we have our test for
+==========
+
+
+start at: 14.94398295085m 56638977051s for duration 6s
+selection in the foreground this test
+==========
+
+
+start at: 14.9849995931m 59099975586s for duration 5s
+was significant at a value of 0.05 next
+==========
+
+
+start at: 15.048000081383334m 2880004883s for duration 4s
+we have our test for positive selection
+==========
+
+
+start at: 15.075m 4500000000s for duration 4s
+in the background this test was not
+==========
+
+
+start at: 15.11898295085m 7138977051s for duration 4s
+significant and then finally we have our
+==========
+
+
+start at: 15.155999755866667m 9359985352s for duration 4s
+test for the difference between the
+==========
+
+
+start at: 15.1889831543m 11338989258s for duration 5s
+background and foreground branches and
+==========
+
+
+start at: 15.225999959316667m 13559997559s for duration 4s
+this test was also significant so this
+==========
+
+
+start at: 15.274000040683333m 16440002441s for duration 4s
+tells us that there is strong evidence
+==========
+
+
+start at: 15.301999918616668m 18119995117s for duration 6s
+of selection associated with the
+==========
+
+
+start at: 15.341983032233333m 20518981934s for duration 7s
+phenotype in col 9a2 which agreed with
+==========
+
+
+start at: 15.407999674483333m 24479980469s for duration 5s
+our initial hypothesis there
+==========
+
+
+start at: 15.4649831136m 27898986816s for duration 5s
+um so the next Gene that I&#39;ll be talking
+==========
+
+
+start at: 15.498000081383333m 29880004883s for duration 6s
+about is this June GST M1 which is
+==========
+
+
+start at: 15.552999877933333m 33179992676s for duration 5s
+responsible for detoxification of our OS
+==========
+
+
+start at: 15.60499979655m 36299987793s for duration 4s
+and environmental pollutants now I&#39;m
+==========
+
+
+start at: 15.648000081383334m 38880004883s for duration 4s
+highlighting this Gene because of this
+==========
+
+
+start at: 15.681999715166667m 40919982910s for duration 5s
+paper I have listed down here from the
+==========
+
+
+start at: 15.730999755866666m 43859985352s for duration 2s
+Xi&#39;an group they found that
+==========
+
+
+start at: 15.76998291015m 46198974609s for duration 3s
+um
+==========
+
+
+start at: 15.778999837233334m 46739990234s for duration 4s
+or they studied the GST Gene families
+==========
+
+
+start at: 15.828999837233333m 49739990234s for duration 5s
+and they found that this Gene in
+==========
+
+
+start at: 15.860999552416667m 51659973145s for duration 5s
+particular the GST M1 was under positive
+==========
+
+
+start at: 15.9139831543m 54838989258s for duration 6s
+selection in pinnipeds which includes
+==========
+
+
+start at: 15.955999755866667m 57359985352s for duration 5s
+seals and walruses so I thought since we
+==========
+
+
+start at: 16.015983072916665m 958984375s for duration 5s
+had this Gene in our data set I would
+==========
+
+
+start at: 16.052999877933335m 3179992676s for duration 5s
+look at the these results specifically
+==========
+
+
+start at: 16.108999633783334m 6539978027s for duration 4s
+so once again
+==========
+
+
+start at: 16.142982991533334m 8578979492s for duration 5s
+um all of these top values the Omega
+==========
+
+
+start at: 16.190983072916666m 11458984375s for duration 5s
+values are greater than one indicating
+==========
+
+
+start at: 16.227999877933332m 13679992676s for duration 3s
+there was some positive selection this
+==========
+
+
+start at: 16.277999877933333m 16679992676s for duration 2s
+time
+==========
+
+
+start at: 16.292982991533332m 17578979492s for duration 3s
+um when we did our test the test for
+==========
+
+
+start at: 16.324000040683334m 19440002441s for duration 4s
+positive selection in the foreground and
+==========
+
+
+start at: 16.353999837233335m 21239990234s for duration 4s
+the test for positive selection in the
+==========
+
+
+start at: 16.390983072916665m 23458984375s for duration 4s
+background were both significant however
+==========
+
+
+start at: 16.430999755866665m 25859985352s for duration 4s
+the test for the difference in selection
+==========
+
+
+start at: 16.4649831136m 27898986816s for duration 5s
+between the two sets of branches was not
+==========
+
+
+start at: 16.5099995931m 30599975586s for duration 5s
+significant so looking at our foreground
+==========
+
+
+start at: 16.561999511716667m 33719970703s for duration 4s
+distribution our largest Omega value
+==========
+
+
+start at: 16.60933329265m 36559997559s for duration 5s
+bin was
+==========
+
+
+start at: 16.6403330485m 38419982910s for duration 7s
+18.19 which was the case for 1.3 percent
+==========
+
+
+start at: 16.69398295085m 41638977051s for duration 6s
+of codon sites in the GST M1 Gene for
+==========
+
+
+start at: 16.757999674483333m 45479980469s for duration 5s
+the foreground Marine Mammal species
+==========
+
+
+start at: 16.801999918616666m 48119995117s for duration 6s
+only and now for the background our
+==========
+
+
+start at: 16.855999755866666m 51359985352s for duration 6s
+largest Omega value was 2.56 which was
+==========
+
+
+start at: 16.912983194983333m 54778991699s for duration 6s
+the case for 26 percent of codon sites
+==========
+
+
+start at: 16.965983072916668m 57958984375s for duration 7s
+for the GST M1 Gene for the terrestrial
+==========
+
+
+start at: 17.022000122066668m 1320007324s for duration 6s
+mammal species so when we look at
+==========
+
+
+start at: 17.098000081383333m 5880004883s for duration 4s
+um the the results put into this
+==========
+
+
+start at: 17.127982584633333m 7678955078s for duration 4s
+decision tree first we&#39;re looking at the
+==========
+
+
+start at: 17.175982666016665m 10558959961s for duration 3s
+test for positive selection in the
+==========
+
+
+start at: 17.211000569666666m 12660034180s for duration 5s
+foreground
+==========
+
+
+start at: 17.234000651033334m 14040039062s for duration 5s
+um this did get a significant p-value so
+==========
+
+
+start at: 17.301999918616666m 18119995117s for duration 4s
+next we have the test for positive
+==========
+
+
+start at: 17.328999837233333m 19739990234s for duration 5s
+selection in the background this also
+==========
+
+
+start at: 17.378999837233334m 22739990234s for duration 3s
+achieves significance and then finally
+==========
+
+
+start at: 17.415983072916667m 24958984375s for duration 3s
+we have the test for the difference
+==========
+
+
+start at: 17.4400004069m 26400024414s for duration 5s
+between the background and foreground
+==========
+
+
+start at: 17.481982421866668m 28918945312s for duration 5s
+this did not achieve significance So
+==========
+
+
+start at: 17.53299967448333m 31979980469s for duration 4s
+based on this result through Hi-Fi we
+==========
+
+
+start at: 17.576999918616668m 34619995117s for duration 4s
+can say selection is occurring with or
+==========
+
+
+start at: 17.6099995931m 36599975586s for duration 5s
+without the phenotype but with similar
+==========
+
+
+start at: 17.648999023433333m 38939941406s for duration 6s
+selective regimes and I wanted to put up
+==========
+
+
+start at: 17.706982421866666m 42418945312s for duration 4s
+here what Hi-Fi prints out they make it
+==========
+
+
+start at: 17.752982584633333m 45178955078s for duration 4s
+very clear they say selection is acting
+==========
+
+
+start at: 17.788999430333334m 47339965820s for duration 5s
+on the branches with the phenotype and
+==========
+
+
+start at: 17.828999837233333m 49739990234s for duration 5s
+trait but is also acting on the
+==========
+
+
+start at: 17.873999023433335m 52439941406s for duration 5s
+background branches so this makes it
+==========
+
+
+start at: 17.923000081383332m 55380004883s for duration 5s
+very difficult to misinterpret the
+==========
+
+
+start at: 17.96700032551667m 58020019531s for duration 6s
+results we had here on like if you would
+==========
+
+
+start at: 18.006982421866667m 418945312s for duration 3s
+use a different program such as code ml
+==========
+
+
+start at: 18.076999918616668m 4619995117s for duration 6s
+okay so busted pH is available
+==========
+
+
+start at: 18.127982584633333m 7678955078s for duration 6s
+um on our GitHub page that top QR code
+==========
+
+
+start at: 18.186999511716667m 11219970703s for duration 5s
+as well as I put some visualizations on
+==========
+
+
+start at: 18.244000244133332m 14640014648s for duration 4s
+the website observable with that Marine
+==========
+
+
+start at: 18.281982421866665m 16918945312s for duration 5s
+mammalian data set I&#39;d like to
+==========
+
+
+start at: 18.319000244133335m 19140014648s for duration 5s
+acknowledge the pond lab specifically my
+==========
+
+
+start at: 18.367999267583333m 22079956055s for duration 5s
+advisor Sergey Pond as well as our
+==========
+
+
+start at: 18.411000569666665m 24660034180s for duration 5s
+collaborators Nathan Maria and Amanda
+==========
+
+
+start at: 18.4653157552m 27918945312s for duration 8s
+thank you
+==========
+
+
+start at: 18.503000895183334m 30180053711s for duration 10s
+[Applause]
+==========
+
+
+start at: 18.6150004069m 36900024414s for duration 5s
+thank you Avery are they questioned to
+==========
+
+
+start at: 18.673000081383332m 40380004883s for duration 4s
+to everyone we have time for one
+==========
+
+
+start at: 18.702982584633332m 42178955078s for duration 2s
+question
+==========
+
+
+start at: 18.778999837233332m 46739990234s for duration 3s
+Danny
+==========
+
+
+start at: 18.846999104816668m 50819946289s for duration 4s
+I don&#39;t have a question but I really
+==========
+
+
+start at: 18.87998250325m 52798950195s for duration 5s
+loved your decision trees oh thank you
+==========
+
+
+start at: 18.919000244133333m 55140014648s for duration 5s
+so so then I I get to ask a question can
+==========
+
+
+start at: 18.9650004069m 57900024414s for duration 4s
+you go back to the example I don&#39;t know
+==========
+
+
+start at: 19.002982584633333m 178955078s for duration 3s
+if it&#39;s the last of the second last oh
+==========
+
+
+start at: 19.042000325516668m 2520019531s for duration 4s
+uh
+==========
+
+
+start at: 19.061315917966667m 3678955078s for duration 5s
+gsgm one yes this one I think this one
+==========
+
+
+start at: 19.117000325516667m 7020019531s for duration 5s
+so here you don&#39;t see any difference
+==========
+
+
+start at: 19.15498250325m 9298950195s for duration 6s
+between the two but there&#39;s clearly the
+==========
+
+
+start at: 19.213999430333335m 12839965820s for duration 6s
+the branches are very long right this on
+==========
+
+
+start at: 19.26399943033333m 15839965820s for duration 5s
+on the on the foreground so what how do
+==========
+
+
+start at: 19.3150004069m 18900024414s for duration 4s
+you explain this if it&#39;s uh if there&#39;s
+==========
+
+
+start at: 19.355999755866666m 21359985352s for duration 5s
+no difference there yeah
+==========
+
+
+start at: 19.388000488283332m 23280029297s for duration 5s
+um so the branches the branch length can
+==========
+
+
+start at: 19.448999023433334m 26939941406s for duration 3s
+um account for both synonymous and
+==========
+
+
+start at: 19.478999837233335m 28739990234s for duration 4s
+non-synonymous change but we are
+==========
+
+
+start at: 19.5143330892m 30859985352s for duration 5s
+specifically looking for that
+==========
+
+
+start at: 19.557999674483334m 33479980469s for duration 4s
+non-synonymous change so that might have
+==========
+
+
+start at: 19.598999023433333m 35939941406s for duration 5s
+some account for why the branch length
+==========
+
+
+start at: 19.628999837233334m 37739990234s for duration 4s
+was so long would be my guess
+==========
+
+

@@ -1,0 +1,2943 @@
+diff --git a/docs/scripts/linenumber.js b/docs/scripts/linenumber.js
+new file mode 100644
+index 0000000..4354785
+--- /dev/null
++++ b/docs/scripts/linenumber.js
+@@ -0,0 +1,25 @@
++/*global document */
++(() => {
++    const source = document.getElementsByClassName('prettyprint source linenums');
++    let i = 0;
++    let lineNumber = 0;
++    let lineId;
++    let lines;
++    let totalLines;
++    let anchorHash;
++
++    if (source && source[0]) {
++        anchorHash = document.location.hash.substring(1);
++        lines = source[0].getElementsByTagName('li');
++        totalLines = lines.length;
++
++        for (; i < totalLines; i++) {
++            lineNumber++;
++            lineId = `line${lineNumber}`;
++            lines[i].id = lineId;
++            if (lineId === anchorHash) {
++                lines[i].className += ' selected';
++            }
++        }
++    }
++})();
+diff --git a/docs/scripts/prettify/lang-css.js b/docs/scripts/prettify/lang-css.js
+index 5450439..041e1f5 100644
+--- a/docs/scripts/prettify/lang-css.js
++++ b/docs/scripts/prettify/lang-css.js
+@@ -1,36 +1,2 @@
+-PR.registerLangHandler(
+-  PR.createSimpleLexer(
+-    [["pln", /^[\t\n\f\r ]+/, null, " \t\r\n"]],
+-    [
+-      ["str", /^"(?:[^\n\f\r"\\]|\\(?:\r\n?|\n|\f)|\\[\S\s])*"/, null],
+-      ["str", /^'(?:[^\n\f\r'\\]|\\(?:\r\n?|\n|\f)|\\[\S\s])*'/, null],
+-      ["lang-css-str", /^url\(([^"')]*)\)/i],
+-      [
+-        "kwd",
+-        /^(?:url|rgb|!important|@import|@page|@media|@charset|inherit)(?=[^\w-]|$)/i,
+-        null,
+-      ],
+-      [
+-        "lang-css-kw",
+-        /^(-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*)\s*:/i,
+-      ],
+-      ["com", /^\/\*[^*]*\*+(?:[^*/][^*]*\*+)*\//],
+-      ["com", /^(?:<\!--|--\>)/],
+-      ["lit", /^(?:\d+|\d*\.\d+)(?:%|[a-z]+)?/i],
+-      ["lit", /^#[\da-f]{3,6}/i],
+-      ["pln", /^-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*/i],
+-      ["pun", /^[^\s\w"']+/],
+-    ]
+-  ),
+-  ["css"]
+-);
+-PR.registerLangHandler(
+-  PR.createSimpleLexer(
+-    [],
+-    [["kwd", /^-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*/i]]
+-  ),
+-  ["css-kw"]
+-);
+-PR.registerLangHandler(PR.createSimpleLexer([], [["str", /^[^"')]+/]]), [
+-  "css-str",
+-]);
++PR.registerLangHandler(PR.createSimpleLexer([["pln",/^[\t\n\f\r ]+/,null," \t\r\n"]],[["str",/^"(?:[^\n\f\r"\\]|\\(?:\r\n?|\n|\f)|\\[\S\s])*"/,null],["str",/^'(?:[^\n\f\r'\\]|\\(?:\r\n?|\n|\f)|\\[\S\s])*'/,null],["lang-css-str",/^url\(([^"')]*)\)/i],["kwd",/^(?:url|rgb|!important|@import|@page|@media|@charset|inherit)(?=[^\w-]|$)/i,null],["lang-css-kw",/^(-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*)\s*:/i],["com",/^\/\*[^*]*\*+(?:[^*/][^*]*\*+)*\//],["com",
++/^(?:<\!--|--\>)/],["lit",/^(?:\d+|\d*\.\d+)(?:%|[a-z]+)?/i],["lit",/^#[\da-f]{3,6}/i],["pln",/^-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*/i],["pun",/^[^\s\w"']+/]]),["css"]);PR.registerLangHandler(PR.createSimpleLexer([],[["kwd",/^-?(?:[_a-z]|\\[\da-f]+ ?)(?:[\w-]|\\\\[\da-f]+ ?)*/i]]),["css-kw"]);PR.registerLangHandler(PR.createSimpleLexer([],[["str",/^[^"')]+/]]),["css-str"]);
+diff --git a/docs/scripts/prettify/prettify.js b/docs/scripts/prettify/prettify.js
+index ef6ed9c..eef5ad7 100644
+--- a/docs/scripts/prettify/prettify.js
++++ b/docs/scripts/prettify/prettify.js
+@@ -1,798 +1,28 @@
+-var q = null;
+-window.PR_SHOULD_USE_CONTINUATION = !0;
+-(function () {
+-  function L(a) {
+-    function m(a) {
+-      var f = a.charCodeAt(0);
+-      if (f !== 92) return f;
+-      var b = a.charAt(1);
+-      return (f = r[b])
+-        ? f
+-        : "0" <= b && b <= "7"
+-        ? parseInt(a.substring(1), 8)
+-        : b === "u" || b === "x"
+-        ? parseInt(a.substring(2), 16)
+-        : a.charCodeAt(1);
+-    }
+-
+-    function e(a) {
+-      if (a < 32) return (a < 16 ? "\\x0" : "\\x") + a.toString(16);
+-      a = String.fromCharCode(a);
+-      if (a === "\\" || a === "-" || a === "[" || a === "]") a = "\\" + a;
+-      return a;
+-    }
+-
+-    function h(a) {
+-      for (
+-        var f = a
+-            .substring(1, a.length - 1)
+-            .match(
+-              /\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\[0-3][0-7]{0,2}|\\[0-7]{1,2}|\\[\S\s]|[^\\]/g
+-            ),
+-          a = [],
+-          b = [],
+-          o = f[0] === "^",
+-          c = o ? 1 : 0,
+-          i = f.length;
+-        c < i;
+-        ++c
+-      ) {
+-        var j = f[c];
+-        if (/\\[bdsw]/i.test(j)) a.push(j);
+-        else {
+-          var j = m(j),
+-            d;
+-          c + 2 < i && "-" === f[c + 1]
+-            ? ((d = m(f[c + 2])), (c += 2))
+-            : (d = j);
+-          b.push([j, d]);
+-          d < 65 ||
+-            j > 122 ||
+-            (d < 65 ||
+-              j > 90 ||
+-              b.push([Math.max(65, j) | 32, Math.min(d, 90) | 32]),
+-            d < 97 ||
+-              j > 122 ||
+-              b.push([Math.max(97, j) & -33, Math.min(d, 122) & -33]));
+-        }
+-      }
+-      b.sort(function (a, f) {
+-        return a[0] - f[0] || f[1] - a[1];
+-      });
+-      f = [];
+-      j = [NaN, NaN];
+-      for (c = 0; c < b.length; ++c)
+-        (i = b[c]),
+-          i[0] <= j[1] + 1 ? (j[1] = Math.max(j[1], i[1])) : f.push((j = i));
+-      b = ["["];
+-      o && b.push("^");
+-      b.push.apply(b, a);
+-      for (c = 0; c < f.length; ++c)
+-        (i = f[c]),
+-          b.push(e(i[0])),
+-          i[1] > i[0] && (i[1] + 1 > i[0] && b.push("-"), b.push(e(i[1])));
+-      b.push("]");
+-      return b.join("");
+-    }
+-
+-    function y(a) {
+-      for (
+-        var f = a.source.match(
+-            /\[(?:[^\\\]]|\\[\S\s])*]|\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\\d+|\\[^\dux]|\(\?[!:=]|[()^]|[^()[\\^]+/g
+-          ),
+-          b = f.length,
+-          d = [],
+-          c = 0,
+-          i = 0;
+-        c < b;
+-        ++c
+-      ) {
+-        var j = f[c];
+-        j === "("
+-          ? ++i
+-          : "\\" === j.charAt(0) &&
+-            (j = +j.substring(1)) &&
+-            j <= i &&
+-            (d[j] = -1);
+-      }
+-      for (c = 1; c < d.length; ++c) -1 === d[c] && (d[c] = ++t);
+-      for (i = c = 0; c < b; ++c)
+-        (j = f[c]),
+-          j === "("
+-            ? (++i, d[i] === void 0 && (f[c] = "(?:"))
+-            : "\\" === j.charAt(0) &&
+-              (j = +j.substring(1)) &&
+-              j <= i &&
+-              (f[c] = "\\" + d[i]);
+-      for (i = c = 0; c < b; ++c)
+-        "^" === f[c] && "^" !== f[c + 1] && (f[c] = "");
+-      if (a.ignoreCase && s)
+-        for (c = 0; c < b; ++c)
+-          (j = f[c]),
+-            (a = j.charAt(0)),
+-            j.length >= 2 && a === "["
+-              ? (f[c] = h(j))
+-              : a !== "\\" &&
+-                (f[c] = j.replace(/[A-Za-z]/g, function (a) {
+-                  a = a.charCodeAt(0);
+-                  return "[" + String.fromCharCode(a & -33, a | 32) + "]";
+-                }));
+-      return f.join("");
+-    }
+-    for (var t = 0, s = !1, l = !1, p = 0, d = a.length; p < d; ++p) {
+-      var g = a[p];
+-      if (g.ignoreCase) l = !0;
+-      else if (
+-        /[a-z]/i.test(
+-          g.source.replace(/\\u[\da-f]{4}|\\x[\da-f]{2}|\\[^UXux]/gi, "")
+-        )
+-      ) {
+-        s = !0;
+-        l = !1;
+-        break;
+-      }
+-    }
+-    for (
+-      var r = {
+-          b: 8,
+-          t: 9,
+-          n: 10,
+-          v: 11,
+-          f: 12,
+-          r: 13,
+-        },
+-        n = [],
+-        p = 0,
+-        d = a.length;
+-      p < d;
+-      ++p
+-    ) {
+-      g = a[p];
+-      if (g.global || g.multiline) throw Error("" + g);
+-      n.push("(?:" + y(g) + ")");
+-    }
+-    return RegExp(n.join("|"), l ? "gi" : "g");
+-  }
+-
+-  function M(a) {
+-    function m(a) {
+-      switch (a.nodeType) {
+-        case 1:
+-          if (e.test(a.className)) break;
+-          for (var g = a.firstChild; g; g = g.nextSibling) m(g);
+-          g = a.nodeName;
+-          if ("BR" === g || "LI" === g)
+-            (h[s] = "\n"), (t[s << 1] = y++), (t[(s++ << 1) | 1] = a);
+-          break;
+-        case 3:
+-        case 4:
+-          (g = a.nodeValue),
+-            g.length &&
+-              ((g = p
+-                ? g.replace(/\r\n?/g, "\n")
+-                : g.replace(/[\t\n\r ]+/g, " ")),
+-              (h[s] = g),
+-              (t[s << 1] = y),
+-              (y += g.length),
+-              (t[(s++ << 1) | 1] = a));
+-      }
+-    }
+-    var e = /(?:^|\s)nocode(?:\s|$)/,
+-      h = [],
+-      y = 0,
+-      t = [],
+-      s = 0,
+-      l;
+-    a.currentStyle
+-      ? (l = a.currentStyle.whiteSpace)
+-      : window.getComputedStyle &&
+-        (l = document.defaultView
+-          .getComputedStyle(a, q)
+-          .getPropertyValue("white-space"));
+-    var p = l && "pre" === l.substring(0, 3);
+-    m(a);
+-    return {
+-      a: h.join("").replace(/\n$/, ""),
+-      c: t,
+-    };
+-  }
+-
+-  function B(a, m, e, h) {
+-    m &&
+-      ((a = {
+-        a: m,
+-        d: a,
+-      }),
+-      e(a),
+-      h.push.apply(h, a.e));
+-  }
+-
+-  function x(a, m) {
+-    function e(a) {
+-      for (
+-        var l = a.d,
+-          p = [l, "pln"],
+-          d = 0,
+-          g = a.a.match(y) || [],
+-          r = {},
+-          n = 0,
+-          z = g.length;
+-        n < z;
+-        ++n
+-      ) {
+-        var f = g[n],
+-          b = r[f],
+-          o = void 0,
+-          c;
+-        if (typeof b === "string") c = !1;
+-        else {
+-          var i = h[f.charAt(0)];
+-          if (i) (o = f.match(i[1])), (b = i[0]);
+-          else {
+-            for (c = 0; c < t; ++c)
+-              if (((i = m[c]), (o = f.match(i[1])))) {
+-                b = i[0];
+-                break;
+-              }
+-            o || (b = "pln");
+-          }
+-          if (
+-            (c = b.length >= 5 && "lang-" === b.substring(0, 5)) &&
+-            !(o && typeof o[1] === "string")
+-          )
+-            (c = !1), (b = "src");
+-          c || (r[f] = b);
+-        }
+-        i = d;
+-        d += f.length;
+-        if (c) {
+-          c = o[1];
+-          var j = f.indexOf(c),
+-            k = j + c.length;
+-          o[2] && ((k = f.length - o[2].length), (j = k - c.length));
+-          b = b.substring(5);
+-          B(l + i, f.substring(0, j), e, p);
+-          B(l + i + j, c, C(b, c), p);
+-          B(l + i + k, f.substring(k), e, p);
+-        } else p.push(l + i, b);
+-      }
+-      a.e = p;
+-    }
+-    var h = {},
+-      y;
+-    (function () {
+-      for (
+-        var e = a.concat(m), l = [], p = {}, d = 0, g = e.length;
+-        d < g;
+-        ++d
+-      ) {
+-        var r = e[d],
+-          n = r[3];
+-        if (n) for (var k = n.length; --k >= 0; ) h[n.charAt(k)] = r;
+-        r = r[1];
+-        n = "" + r;
+-        p.hasOwnProperty(n) || (l.push(r), (p[n] = q));
+-      }
+-      l.push(/[\S\s]/);
+-      y = L(l);
+-    })();
+-    var t = m.length;
+-    return e;
+-  }
+-
+-  function u(a) {
+-    var m = [],
+-      e = [];
+-    a.tripleQuotedStrings
+-      ? m.push([
+-          "str",
+-          /^(?:'''(?:[^'\\]|\\[\S\s]|''?(?=[^']))*(?:'''|$)|"""(?:[^"\\]|\\[\S\s]|""?(?=[^"]))*(?:"""|$)|'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$))/,
+-          q,
+-          "'\"",
+-        ])
+-      : a.multiLineStrings
+-      ? m.push([
+-          "str",
+-          /^(?:'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$)|`(?:[^\\`]|\\[\S\s])*(?:`|$))/,
+-          q,
+-          "'\"`",
+-        ])
+-      : m.push([
+-          "str",
+-          /^(?:'(?:[^\n\r'\\]|\\.)*(?:'|$)|"(?:[^\n\r"\\]|\\.)*(?:"|$))/,
+-          q,
+-          "\"'",
+-        ]);
+-    a.verbatimStrings && e.push(["str", /^@"(?:[^"]|"")*(?:"|$)/, q]);
+-    var h = a.hashComments;
+-    h &&
+-      (a.cStyleComments
+-        ? (h > 1
+-            ? m.push(["com", /^#(?:##(?:[^#]|#(?!##))*(?:###|$)|.*)/, q, "#"])
+-            : m.push([
+-                "com",
+-                /^#(?:(?:define|elif|else|endif|error|ifdef|include|ifndef|line|pragma|undef|warning)\b|[^\n\r]*)/,
+-                q,
+-                "#",
+-              ]),
+-          e.push([
+-            "str",
+-            /^<(?:(?:(?:\.\.\/)*|\/?)(?:[\w-]+(?:\/[\w-]+)+)?[\w-]+\.h|[a-z]\w*)>/,
+-            q,
+-          ]))
+-        : m.push(["com", /^#[^\n\r]*/, q, "#"]));
+-    a.cStyleComments &&
+-      (e.push(["com", /^\/\/[^\n\r]*/, q]),
+-      e.push(["com", /^\/\*[\S\s]*?(?:\*\/|$)/, q]));
+-    a.regexLiterals &&
+-      e.push([
+-        "lang-regex",
+-        /^(?:^^\.?|[!+-]|!=|!==|#|%|%=|&|&&|&&=|&=|\(|\*|\*=|\+=|,|-=|->|\/|\/=|:|::|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|[?@[^]|\^=|\^\^|\^\^=|{|\||\|=|\|\||\|\|=|~|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\s*(\/(?=[^*/])(?:[^/[\\]|\\[\S\s]|\[(?:[^\\\]]|\\[\S\s])*(?:]|$))+\/)/,
+-      ]);
+-    (h = a.types) && e.push(["typ", h]);
+-    a = ("" + a.keywords).replace(/^ | $/g, "");
+-    a.length &&
+-      e.push(["kwd", RegExp("^(?:" + a.replace(/[\s,]+/g, "|") + ")\\b"), q]);
+-    m.push(["pln", /^\s+/, q, " \r\n\t\xa0"]);
+-    e.push(
+-      ["lit", /^@[$_a-z][\w$@]*/i, q],
+-      ["typ", /^(?:[@_]?[A-Z]+[a-z][\w$@]*|\w+_t\b)/, q],
+-      ["pln", /^[$_a-z][\w$@]*/i, q],
+-      [
+-        "lit",
+-        /^(?:0x[\da-f]+|(?:\d(?:_\d+)*\d*(?:\.\d*)?|\.\d\+)(?:e[+-]?\d+)?)[a-z]*/i,
+-        q,
+-        "0123456789",
+-      ],
+-      ["pln", /^\\[\S\s]?/, q],
+-      ["pun", /^.[^\s\w"-$'./@\\`]*/, q]
+-    );
+-    return x(m, e);
+-  }
+-
+-  function D(a, m) {
+-    function e(a) {
+-      switch (a.nodeType) {
+-        case 1:
+-          if (k.test(a.className)) break;
+-          if ("BR" === a.nodeName)
+-            h(a), a.parentNode && a.parentNode.removeChild(a);
+-          else for (a = a.firstChild; a; a = a.nextSibling) e(a);
+-          break;
+-        case 3:
+-        case 4:
+-          if (p) {
+-            var b = a.nodeValue,
+-              d = b.match(t);
+-            if (d) {
+-              var c = b.substring(0, d.index);
+-              a.nodeValue = c;
+-              (b = b.substring(d.index + d[0].length)) &&
+-                a.parentNode.insertBefore(s.createTextNode(b), a.nextSibling);
+-              h(a);
+-              c || a.parentNode.removeChild(a);
+-            }
+-          }
+-      }
+-    }
+-
+-    function h(a) {
+-      function b(a, d) {
+-        var e = d ? a.cloneNode(!1) : a,
+-          f = a.parentNode;
+-        if (f) {
+-          var f = b(f, 1),
+-            g = a.nextSibling;
+-          f.appendChild(e);
+-          for (var h = g; h; h = g) (g = h.nextSibling), f.appendChild(h);
+-        }
+-        return e;
+-      }
+-      for (; !a.nextSibling; ) if (((a = a.parentNode), !a)) return;
+-      for (
+-        var a = b(a.nextSibling, 0), e;
+-        (e = a.parentNode) && e.nodeType === 1;
+-
+-      )
+-        a = e;
+-      d.push(a);
+-    }
+-    var k = /(?:^|\s)nocode(?:\s|$)/,
+-      t = /\r\n?|\n/,
+-      s = a.ownerDocument,
+-      l;
+-    a.currentStyle
+-      ? (l = a.currentStyle.whiteSpace)
+-      : window.getComputedStyle &&
+-        (l = s.defaultView
+-          .getComputedStyle(a, q)
+-          .getPropertyValue("white-space"));
+-    var p = l && "pre" === l.substring(0, 3);
+-    for (l = s.createElement("LI"); a.firstChild; ) l.appendChild(a.firstChild);
+-    for (var d = [l], g = 0; g < d.length; ++g) e(d[g]);
+-    m === (m | 0) && d[0].setAttribute("value", m);
+-    var r = s.createElement("OL");
+-    r.className = "linenums";
+-    for (var n = Math.max(0, (m - 1) | 0) || 0, g = 0, z = d.length; g < z; ++g)
+-      (l = d[g]),
+-        (l.className = "L" + ((g + n) % 10)),
+-        l.firstChild || l.appendChild(s.createTextNode("\xa0")),
+-        r.appendChild(l);
+-    a.appendChild(r);
+-  }
+-
+-  function k(a, m) {
+-    for (var e = m.length; --e >= 0; ) {
+-      var h = m[e];
+-      A.hasOwnProperty(h)
+-        ? window.console &&
+-          console.warn("cannot override language handler %s", h)
+-        : (A[h] = a);
+-    }
+-  }
+-
+-  function C(a, m) {
+-    if (!a || !A.hasOwnProperty(a))
+-      a = /^\s*</.test(m) ? "default-markup" : "default-code";
+-    return A[a];
+-  }
+-
+-  function E(a) {
+-    var m = a.g;
+-    try {
+-      var e = M(a.h),
+-        h = e.a;
+-      a.a = h;
+-      a.c = e.c;
+-      a.d = 0;
+-      C(m, h)(a);
+-      var k = /\bMSIE\b/.test(navigator.userAgent),
+-        m = /\n/g,
+-        t = a.a,
+-        s = t.length,
+-        e = 0,
+-        l = a.c,
+-        p = l.length,
+-        h = 0,
+-        d = a.e,
+-        g = d.length,
+-        a = 0;
+-      d[g] = s;
+-      var r, n;
+-      for (n = r = 0; n < g; )
+-        d[n] !== d[n + 2] ? ((d[r++] = d[n++]), (d[r++] = d[n++])) : (n += 2);
+-      g = r;
+-      for (n = r = 0; n < g; ) {
+-        for (
+-          var z = d[n], f = d[n + 1], b = n + 2;
+-          b + 2 <= g && d[b + 1] === f;
+-
+-        )
+-          b += 2;
+-        d[r++] = z;
+-        d[r++] = f;
+-        n = b;
+-      }
+-      for (d.length = r; h < p; ) {
+-        var o = l[h + 2] || s,
+-          c = d[a + 2] || s,
+-          b = Math.min(o, c),
+-          i = l[h + 1],
+-          j;
+-        if (i.nodeType !== 1 && (j = t.substring(e, b))) {
+-          k && (j = j.replace(m, "\r"));
+-          i.nodeValue = j;
+-          var u = i.ownerDocument,
+-            v = u.createElement("SPAN");
+-          v.className = d[a + 1];
+-          var x = i.parentNode;
+-          x.replaceChild(v, i);
+-          v.appendChild(i);
+-          e < o &&
+-            ((l[h + 1] = i = u.createTextNode(t.substring(b, o))),
+-            x.insertBefore(i, v.nextSibling));
+-        }
+-        e = b;
+-        e >= o && (h += 2);
+-        e >= c && (a += 2);
+-      }
+-    } catch (w) {
+-      "console" in window && console.log(w && w.stack ? w.stack : w);
+-    }
+-  }
+-  var v = ["break,continue,do,else,for,if,return,while"],
+-    w = [
+-      [
+-        v,
+-        "auto,case,char,const,default,double,enum,extern,float,goto,int,long,register,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile",
+-      ],
+-      "catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof",
+-    ],
+-    F = [
+-      w,
+-      "alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,dynamic_cast,explicit,export,friend,inline,late_check,mutable,namespace,nullptr,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where",
+-    ],
+-    G = [
+-      w,
+-      "abstract,boolean,byte,extends,final,finally,implements,import,instanceof,null,native,package,strictfp,super,synchronized,throws,transient",
+-    ],
+-    H = [
+-      G,
+-      "as,base,by,checked,decimal,delegate,descending,dynamic,event,fixed,foreach,from,group,implicit,in,interface,internal,into,is,lock,object,out,override,orderby,params,partial,readonly,ref,sbyte,sealed,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,var",
+-    ],
+-    w = [
+-      w,
+-      "debugger,eval,export,function,get,null,set,undefined,var,with,Infinity,NaN",
+-    ],
+-    I = [
+-      v,
+-      "and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None",
+-    ],
+-    J = [
+-      v,
+-      "alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END",
+-    ],
+-    v = [v, "case,done,elif,esac,eval,fi,function,in,local,set,then,until"],
+-    K =
+-      /^(DIR|FILE|vector|(de|priority_)?queue|list|stack|(const_)?iterator|(multi)?(set|map)|bitset|u?(int|float)\d*)/,
+-    N = /\S/,
+-    O = u({
+-      keywords: [
+-        F,
+-        H,
+-        w,
+-        "caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END" +
+-          I,
+-        J,
+-        v,
+-      ],
+-      hashComments: !0,
+-      cStyleComments: !0,
+-      multiLineStrings: !0,
+-      regexLiterals: !0,
+-    }),
+-    A = {};
+-  k(O, ["default-code"]);
+-  k(
+-    x(
+-      [],
+-      [
+-        ["pln", /^[^<?]+/],
+-        ["dec", /^<!\w[^>]*(?:>|$)/],
+-        ["com", /^<\!--[\S\s]*?(?:--\>|$)/],
+-        ["lang-", /^<\?([\S\s]+?)(?:\?>|$)/],
+-        ["lang-", /^<%([\S\s]+?)(?:%>|$)/],
+-        ["pun", /^(?:<[%?]|[%?]>)/],
+-        ["lang-", /^<xmp\b[^>]*>([\S\s]+?)<\/xmp\b[^>]*>/i],
+-        ["lang-js", /^<script\b[^>]*>([\S\s]*?)(<\/script\b[^>]*>)/i],
+-        ["lang-css", /^<style\b[^>]*>([\S\s]*?)(<\/style\b[^>]*>)/i],
+-        ["lang-in.tag", /^(<\/?[a-z][^<>]*>)/i],
+-      ]
+-    ),
+-    ["default-markup", "htm", "html", "mxml", "xhtml", "xml", "xsl"]
+-  );
+-  k(
+-    x(
+-      [
+-        ["pln", /^\s+/, q, " \t\r\n"],
+-        ["atv", /^(?:"[^"]*"?|'[^']*'?)/, q, "\"'"],
+-      ],
+-      [
+-        ["tag", /^^<\/?[a-z](?:[\w-.:]*\w)?|\/?>$/i],
+-        ["atn", /^(?!style[\s=]|on)[a-z](?:[\w:-]*\w)?/i],
+-        ["lang-uq.val", /^=\s*([^\s"'>]*(?:[^\s"'/>]|\/(?=\s)))/],
+-        ["pun", /^[/<->]+/],
+-        ["lang-js", /^on\w+\s*=\s*"([^"]+)"/i],
+-        ["lang-js", /^on\w+\s*=\s*'([^']+)'/i],
+-        ["lang-js", /^on\w+\s*=\s*([^\s"'>]+)/i],
+-        ["lang-css", /^style\s*=\s*"([^"]+)"/i],
+-        ["lang-css", /^style\s*=\s*'([^']+)'/i],
+-        ["lang-css", /^style\s*=\s*([^\s"'>]+)/i],
+-      ]
+-    ),
+-    ["in.tag"]
+-  );
+-  k(x([], [["atv", /^[\S\s]+/]]), ["uq.val"]);
+-  k(
+-    u({
+-      keywords: F,
+-      hashComments: !0,
+-      cStyleComments: !0,
+-      types: K,
+-    }),
+-    ["c", "cc", "cpp", "cxx", "cyc", "m"]
+-  );
+-  k(
+-    u({
+-      keywords: "null,true,false",
+-    }),
+-    ["json"]
+-  );
+-  k(
+-    u({
+-      keywords: H,
+-      hashComments: !0,
+-      cStyleComments: !0,
+-      verbatimStrings: !0,
+-      types: K,
+-    }),
+-    ["cs"]
+-  );
+-  k(
+-    u({
+-      keywords: G,
+-      cStyleComments: !0,
+-    }),
+-    ["java"]
+-  );
+-  k(
+-    u({
+-      keywords: v,
+-      hashComments: !0,
+-      multiLineStrings: !0,
+-    }),
+-    ["bsh", "csh", "sh"]
+-  );
+-  k(
+-    u({
+-      keywords: I,
+-      hashComments: !0,
+-      multiLineStrings: !0,
+-      tripleQuotedStrings: !0,
+-    }),
+-    ["cv", "py"]
+-  );
+-  k(
+-    u({
+-      keywords:
+-        "caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",
+-      hashComments: !0,
+-      multiLineStrings: !0,
+-      regexLiterals: !0,
+-    }),
+-    ["perl", "pl", "pm"]
+-  );
+-  k(
+-    u({
+-      keywords: J,
+-      hashComments: !0,
+-      multiLineStrings: !0,
+-      regexLiterals: !0,
+-    }),
+-    ["rb"]
+-  );
+-  k(
+-    u({
+-      keywords: w,
+-      cStyleComments: !0,
+-      regexLiterals: !0,
+-    }),
+-    ["js"]
+-  );
+-  k(
+-    u({
+-      keywords:
+-        "all,and,by,catch,class,else,extends,false,finally,for,if,in,is,isnt,loop,new,no,not,null,of,off,on,or,return,super,then,true,try,unless,until,when,while,yes",
+-      hashComments: 3,
+-      cStyleComments: !0,
+-      multilineStrings: !0,
+-      tripleQuotedStrings: !0,
+-      regexLiterals: !0,
+-    }),
+-    ["coffee"]
+-  );
+-  k(x([], [["str", /^[\S\s]+/]]), ["regex"]);
+-  window.prettyPrintOne = function (a, m, e) {
+-    var h = document.createElement("PRE");
+-    h.innerHTML = a;
+-    e && D(h, e);
+-    E({
+-      g: m,
+-      i: e,
+-      h: h,
+-    });
+-    return h.innerHTML;
+-  };
+-  window.prettyPrint = function (a) {
+-    function m() {
+-      for (
+-        var e = window.PR_SHOULD_USE_CONTINUATION ? l.now() + 250 : Infinity;
+-        p < h.length && l.now() < e;
+-        p++
+-      ) {
+-        var n = h[p],
+-          k = n.className;
+-        if (k.indexOf("prettyprint") >= 0) {
+-          var k = k.match(g),
+-            f,
+-            b;
+-          if ((b = !k)) {
+-            b = n;
+-            for (var o = void 0, c = b.firstChild; c; c = c.nextSibling)
+-              var i = c.nodeType,
+-                o =
+-                  i === 1
+-                    ? o
+-                      ? b
+-                      : c
+-                    : i === 3
+-                    ? N.test(c.nodeValue)
+-                      ? b
+-                      : o
+-                    : o;
+-            b = (f = o === b ? void 0 : o) && "CODE" === f.tagName;
+-          }
+-          b && (k = f.className.match(g));
+-          k && (k = k[1]);
+-          b = !1;
+-          for (o = n.parentNode; o; o = o.parentNode)
+-            if (
+-              (o.tagName === "pre" ||
+-                o.tagName === "code" ||
+-                o.tagName === "xmp") &&
+-              o.className &&
+-              o.className.indexOf("prettyprint") >= 0
+-            ) {
+-              b = !0;
+-              break;
+-            }
+-          b ||
+-            ((b = (b = n.className.match(/\blinenums\b(?::(\d+))?/))
+-              ? b[1] && b[1].length
+-                ? +b[1]
+-                : !0
+-              : !1) && D(n, b),
+-            (d = {
+-              g: k,
+-              h: n,
+-              i: b,
+-            }),
+-            E(d));
+-        }
+-      }
+-      p < h.length ? setTimeout(m, 250) : a && a();
+-    }
+-    for (
+-      var e = [
+-          document.getElementsByTagName("pre"),
+-          document.getElementsByTagName("code"),
+-          document.getElementsByTagName("xmp"),
+-        ],
+-        h = [],
+-        k = 0;
+-      k < e.length;
+-      ++k
+-    )
+-      for (var t = 0, s = e[k].length; t < s; ++t) h.push(e[k][t]);
+-    var e = q,
+-      l = Date;
+-    l.now ||
+-      (l = {
+-        now: function () {
+-          return +new Date();
+-        },
+-      });
+-    var p = 0,
+-      d,
+-      g = /\blang(?:uage)?-([\w.]+)(?!\S)/;
+-    m();
+-  };
+-  window.PR = {
+-    createSimpleLexer: x,
+-    registerLangHandler: k,
+-    sourceDecorator: u,
+-    PR_ATTRIB_NAME: "atn",
+-    PR_ATTRIB_VALUE: "atv",
+-    PR_COMMENT: "com",
+-    PR_DECLARATION: "dec",
+-    PR_KEYWORD: "kwd",
+-    PR_LITERAL: "lit",
+-    PR_NOCODE: "nocode",
+-    PR_PLAIN: "pln",
+-    PR_PUNCTUATION: "pun",
+-    PR_SOURCE: "src",
+-    PR_STRING: "str",
+-    PR_TAG: "tag",
+-    PR_TYPE: "typ",
+-  };
+-})();
++var q=null;window.PR_SHOULD_USE_CONTINUATION=!0;
++(function(){function L(a){function m(a){var f=a.charCodeAt(0);if(f!==92)return f;var b=a.charAt(1);return(f=r[b])?f:"0"<=b&&b<="7"?parseInt(a.substring(1),8):b==="u"||b==="x"?parseInt(a.substring(2),16):a.charCodeAt(1)}function e(a){if(a<32)return(a<16?"\\x0":"\\x")+a.toString(16);a=String.fromCharCode(a);if(a==="\\"||a==="-"||a==="["||a==="]")a="\\"+a;return a}function h(a){for(var f=a.substring(1,a.length-1).match(/\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\[0-3][0-7]{0,2}|\\[0-7]{1,2}|\\[\S\s]|[^\\]/g),a=
++[],b=[],o=f[0]==="^",c=o?1:0,i=f.length;c<i;++c){var j=f[c];if(/\\[bdsw]/i.test(j))a.push(j);else{var j=m(j),d;c+2<i&&"-"===f[c+1]?(d=m(f[c+2]),c+=2):d=j;b.push([j,d]);d<65||j>122||(d<65||j>90||b.push([Math.max(65,j)|32,Math.min(d,90)|32]),d<97||j>122||b.push([Math.max(97,j)&-33,Math.min(d,122)&-33]))}}b.sort(function(a,f){return a[0]-f[0]||f[1]-a[1]});f=[];j=[NaN,NaN];for(c=0;c<b.length;++c)i=b[c],i[0]<=j[1]+1?j[1]=Math.max(j[1],i[1]):f.push(j=i);b=["["];o&&b.push("^");b.push.apply(b,a);for(c=0;c<
++f.length;++c)i=f[c],b.push(e(i[0])),i[1]>i[0]&&(i[1]+1>i[0]&&b.push("-"),b.push(e(i[1])));b.push("]");return b.join("")}function y(a){for(var f=a.source.match(/\[(?:[^\\\]]|\\[\S\s])*]|\\u[\dA-Fa-f]{4}|\\x[\dA-Fa-f]{2}|\\\d+|\\[^\dux]|\(\?[!:=]|[()^]|[^()[\\^]+/g),b=f.length,d=[],c=0,i=0;c<b;++c){var j=f[c];j==="("?++i:"\\"===j.charAt(0)&&(j=+j.substring(1))&&j<=i&&(d[j]=-1)}for(c=1;c<d.length;++c)-1===d[c]&&(d[c]=++t);for(i=c=0;c<b;++c)j=f[c],j==="("?(++i,d[i]===void 0&&(f[c]="(?:")):"\\"===j.charAt(0)&&
++(j=+j.substring(1))&&j<=i&&(f[c]="\\"+d[i]);for(i=c=0;c<b;++c)"^"===f[c]&&"^"!==f[c+1]&&(f[c]="");if(a.ignoreCase&&s)for(c=0;c<b;++c)j=f[c],a=j.charAt(0),j.length>=2&&a==="["?f[c]=h(j):a!=="\\"&&(f[c]=j.replace(/[A-Za-z]/g,function(a){a=a.charCodeAt(0);return"["+String.fromCharCode(a&-33,a|32)+"]"}));return f.join("")}for(var t=0,s=!1,l=!1,p=0,d=a.length;p<d;++p){var g=a[p];if(g.ignoreCase)l=!0;else if(/[a-z]/i.test(g.source.replace(/\\u[\da-f]{4}|\\x[\da-f]{2}|\\[^UXux]/gi,""))){s=!0;l=!1;break}}for(var r=
++{b:8,t:9,n:10,v:11,f:12,r:13},n=[],p=0,d=a.length;p<d;++p){g=a[p];if(g.global||g.multiline)throw Error(""+g);n.push("(?:"+y(g)+")")}return RegExp(n.join("|"),l?"gi":"g")}function M(a){function m(a){switch(a.nodeType){case 1:if(e.test(a.className))break;for(var g=a.firstChild;g;g=g.nextSibling)m(g);g=a.nodeName;if("BR"===g||"LI"===g)h[s]="\n",t[s<<1]=y++,t[s++<<1|1]=a;break;case 3:case 4:g=a.nodeValue,g.length&&(g=p?g.replace(/\r\n?/g,"\n"):g.replace(/[\t\n\r ]+/g," "),h[s]=g,t[s<<1]=y,y+=g.length,
++t[s++<<1|1]=a)}}var e=/(?:^|\s)nocode(?:\s|$)/,h=[],y=0,t=[],s=0,l;a.currentStyle?l=a.currentStyle.whiteSpace:window.getComputedStyle&&(l=document.defaultView.getComputedStyle(a,q).getPropertyValue("white-space"));var p=l&&"pre"===l.substring(0,3);m(a);return{a:h.join("").replace(/\n$/,""),c:t}}function B(a,m,e,h){m&&(a={a:m,d:a},e(a),h.push.apply(h,a.e))}function x(a,m){function e(a){for(var l=a.d,p=[l,"pln"],d=0,g=a.a.match(y)||[],r={},n=0,z=g.length;n<z;++n){var f=g[n],b=r[f],o=void 0,c;if(typeof b===
++"string")c=!1;else{var i=h[f.charAt(0)];if(i)o=f.match(i[1]),b=i[0];else{for(c=0;c<t;++c)if(i=m[c],o=f.match(i[1])){b=i[0];break}o||(b="pln")}if((c=b.length>=5&&"lang-"===b.substring(0,5))&&!(o&&typeof o[1]==="string"))c=!1,b="src";c||(r[f]=b)}i=d;d+=f.length;if(c){c=o[1];var j=f.indexOf(c),k=j+c.length;o[2]&&(k=f.length-o[2].length,j=k-c.length);b=b.substring(5);B(l+i,f.substring(0,j),e,p);B(l+i+j,c,C(b,c),p);B(l+i+k,f.substring(k),e,p)}else p.push(l+i,b)}a.e=p}var h={},y;(function(){for(var e=a.concat(m),
++l=[],p={},d=0,g=e.length;d<g;++d){var r=e[d],n=r[3];if(n)for(var k=n.length;--k>=0;)h[n.charAt(k)]=r;r=r[1];n=""+r;p.hasOwnProperty(n)||(l.push(r),p[n]=q)}l.push(/[\S\s]/);y=L(l)})();var t=m.length;return e}function u(a){var m=[],e=[];a.tripleQuotedStrings?m.push(["str",/^(?:'''(?:[^'\\]|\\[\S\s]|''?(?=[^']))*(?:'''|$)|"""(?:[^"\\]|\\[\S\s]|""?(?=[^"]))*(?:"""|$)|'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$))/,q,"'\""]):a.multiLineStrings?m.push(["str",/^(?:'(?:[^'\\]|\\[\S\s])*(?:'|$)|"(?:[^"\\]|\\[\S\s])*(?:"|$)|`(?:[^\\`]|\\[\S\s])*(?:`|$))/,
++q,"'\"`"]):m.push(["str",/^(?:'(?:[^\n\r'\\]|\\.)*(?:'|$)|"(?:[^\n\r"\\]|\\.)*(?:"|$))/,q,"\"'"]);a.verbatimStrings&&e.push(["str",/^@"(?:[^"]|"")*(?:"|$)/,q]);var h=a.hashComments;h&&(a.cStyleComments?(h>1?m.push(["com",/^#(?:##(?:[^#]|#(?!##))*(?:###|$)|.*)/,q,"#"]):m.push(["com",/^#(?:(?:define|elif|else|endif|error|ifdef|include|ifndef|line|pragma|undef|warning)\b|[^\n\r]*)/,q,"#"]),e.push(["str",/^<(?:(?:(?:\.\.\/)*|\/?)(?:[\w-]+(?:\/[\w-]+)+)?[\w-]+\.h|[a-z]\w*)>/,q])):m.push(["com",/^#[^\n\r]*/,
++q,"#"]));a.cStyleComments&&(e.push(["com",/^\/\/[^\n\r]*/,q]),e.push(["com",/^\/\*[\S\s]*?(?:\*\/|$)/,q]));a.regexLiterals&&e.push(["lang-regex",/^(?:^^\.?|[!+-]|!=|!==|#|%|%=|&|&&|&&=|&=|\(|\*|\*=|\+=|,|-=|->|\/|\/=|:|::|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|[?@[^]|\^=|\^\^|\^\^=|{|\||\|=|\|\||\|\|=|~|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\s*(\/(?=[^*/])(?:[^/[\\]|\\[\S\s]|\[(?:[^\\\]]|\\[\S\s])*(?:]|$))+\/)/]);(h=a.types)&&e.push(["typ",h]);a=(""+a.keywords).replace(/^ | $/g,
++"");a.length&&e.push(["kwd",RegExp("^(?:"+a.replace(/[\s,]+/g,"|")+")\\b"),q]);m.push(["pln",/^\s+/,q," \r\n\t\xa0"]);e.push(["lit",/^@[$_a-z][\w$@]*/i,q],["typ",/^(?:[@_]?[A-Z]+[a-z][\w$@]*|\w+_t\b)/,q],["pln",/^[$_a-z][\w$@]*/i,q],["lit",/^(?:0x[\da-f]+|(?:\d(?:_\d+)*\d*(?:\.\d*)?|\.\d\+)(?:e[+-]?\d+)?)[a-z]*/i,q,"0123456789"],["pln",/^\\[\S\s]?/,q],["pun",/^.[^\s\w"-$'./@\\`]*/,q]);return x(m,e)}function D(a,m){function e(a){switch(a.nodeType){case 1:if(k.test(a.className))break;if("BR"===a.nodeName)h(a),
++a.parentNode&&a.parentNode.removeChild(a);else for(a=a.firstChild;a;a=a.nextSibling)e(a);break;case 3:case 4:if(p){var b=a.nodeValue,d=b.match(t);if(d){var c=b.substring(0,d.index);a.nodeValue=c;(b=b.substring(d.index+d[0].length))&&a.parentNode.insertBefore(s.createTextNode(b),a.nextSibling);h(a);c||a.parentNode.removeChild(a)}}}}function h(a){function b(a,d){var e=d?a.cloneNode(!1):a,f=a.parentNode;if(f){var f=b(f,1),g=a.nextSibling;f.appendChild(e);for(var h=g;h;h=g)g=h.nextSibling,f.appendChild(h)}return e}
++for(;!a.nextSibling;)if(a=a.parentNode,!a)return;for(var a=b(a.nextSibling,0),e;(e=a.parentNode)&&e.nodeType===1;)a=e;d.push(a)}var k=/(?:^|\s)nocode(?:\s|$)/,t=/\r\n?|\n/,s=a.ownerDocument,l;a.currentStyle?l=a.currentStyle.whiteSpace:window.getComputedStyle&&(l=s.defaultView.getComputedStyle(a,q).getPropertyValue("white-space"));var p=l&&"pre"===l.substring(0,3);for(l=s.createElement("LI");a.firstChild;)l.appendChild(a.firstChild);for(var d=[l],g=0;g<d.length;++g)e(d[g]);m===(m|0)&&d[0].setAttribute("value",
++m);var r=s.createElement("OL");r.className="linenums";for(var n=Math.max(0,m-1|0)||0,g=0,z=d.length;g<z;++g)l=d[g],l.className="L"+(g+n)%10,l.firstChild||l.appendChild(s.createTextNode("\xa0")),r.appendChild(l);a.appendChild(r)}function k(a,m){for(var e=m.length;--e>=0;){var h=m[e];A.hasOwnProperty(h)?window.console&&console.warn("cannot override language handler %s",h):A[h]=a}}function C(a,m){if(!a||!A.hasOwnProperty(a))a=/^\s*</.test(m)?"default-markup":"default-code";return A[a]}function E(a){var m=
++a.g;try{var e=M(a.h),h=e.a;a.a=h;a.c=e.c;a.d=0;C(m,h)(a);var k=/\bMSIE\b/.test(navigator.userAgent),m=/\n/g,t=a.a,s=t.length,e=0,l=a.c,p=l.length,h=0,d=a.e,g=d.length,a=0;d[g]=s;var r,n;for(n=r=0;n<g;)d[n]!==d[n+2]?(d[r++]=d[n++],d[r++]=d[n++]):n+=2;g=r;for(n=r=0;n<g;){for(var z=d[n],f=d[n+1],b=n+2;b+2<=g&&d[b+1]===f;)b+=2;d[r++]=z;d[r++]=f;n=b}for(d.length=r;h<p;){var o=l[h+2]||s,c=d[a+2]||s,b=Math.min(o,c),i=l[h+1],j;if(i.nodeType!==1&&(j=t.substring(e,b))){k&&(j=j.replace(m,"\r"));i.nodeValue=
++j;var u=i.ownerDocument,v=u.createElement("SPAN");v.className=d[a+1];var x=i.parentNode;x.replaceChild(v,i);v.appendChild(i);e<o&&(l[h+1]=i=u.createTextNode(t.substring(b,o)),x.insertBefore(i,v.nextSibling))}e=b;e>=o&&(h+=2);e>=c&&(a+=2)}}catch(w){"console"in window&&console.log(w&&w.stack?w.stack:w)}}var v=["break,continue,do,else,for,if,return,while"],w=[[v,"auto,case,char,const,default,double,enum,extern,float,goto,int,long,register,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile"],
++"catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof"],F=[w,"alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,dynamic_cast,explicit,export,friend,inline,late_check,mutable,namespace,nullptr,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where"],G=[w,"abstract,boolean,byte,extends,final,finally,implements,import,instanceof,null,native,package,strictfp,super,synchronized,throws,transient"],
++H=[G,"as,base,by,checked,decimal,delegate,descending,dynamic,event,fixed,foreach,from,group,implicit,in,interface,internal,into,is,lock,object,out,override,orderby,params,partial,readonly,ref,sbyte,sealed,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,var"],w=[w,"debugger,eval,export,function,get,null,set,undefined,var,with,Infinity,NaN"],I=[v,"and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None"],
++J=[v,"alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END"],v=[v,"case,done,elif,esac,eval,fi,function,in,local,set,then,until"],K=/^(DIR|FILE|vector|(de|priority_)?queue|list|stack|(const_)?iterator|(multi)?(set|map)|bitset|u?(int|float)\d*)/,N=/\S/,O=u({keywords:[F,H,w,"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END"+
++I,J,v],hashComments:!0,cStyleComments:!0,multiLineStrings:!0,regexLiterals:!0}),A={};k(O,["default-code"]);k(x([],[["pln",/^[^<?]+/],["dec",/^<!\w[^>]*(?:>|$)/],["com",/^<\!--[\S\s]*?(?:--\>|$)/],["lang-",/^<\?([\S\s]+?)(?:\?>|$)/],["lang-",/^<%([\S\s]+?)(?:%>|$)/],["pun",/^(?:<[%?]|[%?]>)/],["lang-",/^<xmp\b[^>]*>([\S\s]+?)<\/xmp\b[^>]*>/i],["lang-js",/^<script\b[^>]*>([\S\s]*?)(<\/script\b[^>]*>)/i],["lang-css",/^<style\b[^>]*>([\S\s]*?)(<\/style\b[^>]*>)/i],["lang-in.tag",/^(<\/?[a-z][^<>]*>)/i]]),
++["default-markup","htm","html","mxml","xhtml","xml","xsl"]);k(x([["pln",/^\s+/,q," \t\r\n"],["atv",/^(?:"[^"]*"?|'[^']*'?)/,q,"\"'"]],[["tag",/^^<\/?[a-z](?:[\w-.:]*\w)?|\/?>$/i],["atn",/^(?!style[\s=]|on)[a-z](?:[\w:-]*\w)?/i],["lang-uq.val",/^=\s*([^\s"'>]*(?:[^\s"'/>]|\/(?=\s)))/],["pun",/^[/<->]+/],["lang-js",/^on\w+\s*=\s*"([^"]+)"/i],["lang-js",/^on\w+\s*=\s*'([^']+)'/i],["lang-js",/^on\w+\s*=\s*([^\s"'>]+)/i],["lang-css",/^style\s*=\s*"([^"]+)"/i],["lang-css",/^style\s*=\s*'([^']+)'/i],["lang-css",
++/^style\s*=\s*([^\s"'>]+)/i]]),["in.tag"]);k(x([],[["atv",/^[\S\s]+/]]),["uq.val"]);k(u({keywords:F,hashComments:!0,cStyleComments:!0,types:K}),["c","cc","cpp","cxx","cyc","m"]);k(u({keywords:"null,true,false"}),["json"]);k(u({keywords:H,hashComments:!0,cStyleComments:!0,verbatimStrings:!0,types:K}),["cs"]);k(u({keywords:G,cStyleComments:!0}),["java"]);k(u({keywords:v,hashComments:!0,multiLineStrings:!0}),["bsh","csh","sh"]);k(u({keywords:I,hashComments:!0,multiLineStrings:!0,tripleQuotedStrings:!0}),
++["cv","py"]);k(u({keywords:"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",hashComments:!0,multiLineStrings:!0,regexLiterals:!0}),["perl","pl","pm"]);k(u({keywords:J,hashComments:!0,multiLineStrings:!0,regexLiterals:!0}),["rb"]);k(u({keywords:w,cStyleComments:!0,regexLiterals:!0}),["js"]);k(u({keywords:"all,and,by,catch,class,else,extends,false,finally,for,if,in,is,isnt,loop,new,no,not,null,of,off,on,or,return,super,then,true,try,unless,until,when,while,yes",
++hashComments:3,cStyleComments:!0,multilineStrings:!0,tripleQuotedStrings:!0,regexLiterals:!0}),["coffee"]);k(x([],[["str",/^[\S\s]+/]]),["regex"]);window.prettyPrintOne=function(a,m,e){var h=document.createElement("PRE");h.innerHTML=a;e&&D(h,e);E({g:m,i:e,h:h});return h.innerHTML};window.prettyPrint=function(a){function m(){for(var e=window.PR_SHOULD_USE_CONTINUATION?l.now()+250:Infinity;p<h.length&&l.now()<e;p++){var n=h[p],k=n.className;if(k.indexOf("prettyprint")>=0){var k=k.match(g),f,b;if(b=
++!k){b=n;for(var o=void 0,c=b.firstChild;c;c=c.nextSibling)var i=c.nodeType,o=i===1?o?b:c:i===3?N.test(c.nodeValue)?b:o:o;b=(f=o===b?void 0:o)&&"CODE"===f.tagName}b&&(k=f.className.match(g));k&&(k=k[1]);b=!1;for(o=n.parentNode;o;o=o.parentNode)if((o.tagName==="pre"||o.tagName==="code"||o.tagName==="xmp")&&o.className&&o.className.indexOf("prettyprint")>=0){b=!0;break}b||((b=(b=n.className.match(/\blinenums\b(?::(\d+))?/))?b[1]&&b[1].length?+b[1]:!0:!1)&&D(n,b),d={g:k,h:n,i:b},E(d))}}p<h.length?setTimeout(m,
++250):a&&a()}for(var e=[document.getElementsByTagName("pre"),document.getElementsByTagName("code"),document.getElementsByTagName("xmp")],h=[],k=0;k<e.length;++k)for(var t=0,s=e[k].length;t<s;++t)h.push(e[k][t]);var e=q,l=Date;l.now||(l={now:function(){return+new Date}});var p=0,d,g=/\blang(?:uage)?-([\w.]+)(?!\S)/;m()};window.PR={createSimpleLexer:x,registerLangHandler:k,sourceDecorator:u,PR_ATTRIB_NAME:"atn",PR_ATTRIB_VALUE:"atv",PR_COMMENT:"com",PR_DECLARATION:"dec",PR_KEYWORD:"kwd",PR_LITERAL:"lit",
++PR_NOCODE:"nocode",PR_PLAIN:"pln",PR_PUNCTUATION:"pun",PR_SOURCE:"src",PR_STRING:"str",PR_TAG:"tag",PR_TYPE:"typ"}})();
+diff --git a/src/clusternetwork.js b/src/clusternetwork.js
+index 4a4ebe2..4e8096b 100755
+--- a/src/clusternetwork.js
++++ b/src/clusternetwork.js
+@@ -15,6 +15,9 @@ import * as kGlobals from "./globals.js";
+ import * as network from "./network.js";
+ import * as HTX from "./hiv_tx_network.js";
+ import * as columnDefinitions from "./column_definitions.js";
++import "jQuery-QueryBuilder";
++import "jQuery-QueryBuilder/dist/css/query-builder.default.css";
++import "bootstrap-datepicker";
+ 
+ var hivtrace_cluster_network_graph = function (
+   json,
+@@ -73,7 +76,19 @@ var hivtrace_cluster_network_graph = function (
+   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
+   json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
+ 
+-  var self = new HTX.HIVTxNetwork(json, button_bar_ui);
++  /** Not primary networks are individual cluster/subcluster views.
++      They don't interfere with the primary network object, and UI elements
++  
++   */
++
++  const izPrimaryGraph = network.check_network_option(
++    options,
++    "secondary",
++    true,
++    false
++  );
++
++  var self = new HTX.HIVTxNetwork(json, button_bar_ui, null, !izPrimaryGraph);
+ 
+   self.process_multiple_sequences();
+ 
+@@ -186,18 +201,6 @@ var hivtrace_cluster_network_graph = function (
+     null
+   );
+ 
+-  /** Not primary networks are individual cluster/subcluster views.
+-      They don't interfere with the primary network object, and UI elements
+-  
+-   */
+-
+-  self.isPrimaryGraph = network.check_network_option(
+-    options,
+-    "secondary",
+-    true,
+-    false
+-  );
+-
+   self.parent_graph_object = network.check_network_option(
+     options,
+     "parent_graph",
+@@ -728,7 +731,7 @@ var hivtrace_cluster_network_graph = function (
+       }
+ 
+       cluster_options["today"] = self.today;
+-
++      cluster_options["auto_expand_single_cluster"] = true;
+       cluster_view = hivtrace_cluster_network_graph(
+         filtered_json,
+         "#" + random_content_id,
+@@ -763,7 +766,7 @@ var hivtrace_cluster_network_graph = function (
+         cluster_view.handle_attribute_opacity(self.colorizer["opacity_id"]);
+       }
+ 
+-      cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
++      //cluster_view.expand_cluster_handler(cluster_view.clusters[0], true);
+     } else {
+       return new_tab_content.attr("id");
+     }
+@@ -822,7 +825,9 @@ var hivtrace_cluster_network_graph = function (
+           .attr("tabindex", "-1")
+           .text((d) => "Add this node to the cluster of interest")
+           .on("click", (d) => {
+-            clustersOfInterest.get_editor().append_node(node.id, true);
++            clustersOfInterest
++              .get_editor()
++              .append_node(self.entity_id(node), true);
+           });
+       }
+ 
+@@ -871,11 +876,27 @@ var hivtrace_cluster_network_graph = function (
+       mapped_clusters = _.omit(mapped_clusters, self.exclude_cluster_ids);
+     }
+ 
+-    d_clusters.children = _.map(mapped_clusters, (value, key) => ({
++    let all_clusters = _.map(mapped_clusters, (value, key) => ({
+       cluster_id: key,
+       children: value,
+     }));
+ 
++    if (_.size(mapped_clusters) > max_points_to_render) {
++      let reduced_clusters = _.chain(all_clusters)
++        .pairs()
++        .sortBy((d) => (-d.children ? d.children.length : 0))
++        .value();
++      d_clusters.children = [];
++      for (let i = 0; i < max_points_to_render; i++) {
++        d_clusters.children.push({
++          cluster_id: reduced_clusters[i][0],
++          children: reduced_clusters[i][1],
++        });
++      }
++    } else {
++      d_clusters.children = all_clusters;
++    }
++
+     var treemap = packed
+       ? d3.layout
+           .pack()
+@@ -895,10 +916,7 @@ var hivtrace_cluster_network_graph = function (
+           .ratio(1);
+ 
+     var clusters = treemap.nodes(d_clusters);
+-    _.each(clusters, (c) => {
+-      //c.fixed = true;
+-    });
+-    return clusters;
++    return [clusters, all_clusters];
+   }
+ 
+   function prepare_data_to_graph() {
+@@ -1489,16 +1507,11 @@ var hivtrace_cluster_network_graph = function (
+   function default_layout(packed) {
+     // let's create an array of clusters from the json
+ 
+-    var init_layout = get_initial_xy(packed);
++    let [init_layout, cluster_set] = get_initial_xy(packed);
+ 
+     if (self.clusters.length === 0) {
+-      self.clusters = init_layout.filter((v, i, obj) => {
+-        if (!(typeof v.cluster_id === "undefined")) {
+-          return true;
+-        }
+-        return false;
+-      });
+-    } else {
++      self.clusters = cluster_set;
++    } /*else {
+       var coordinate_update = {};
+       _.each(self.clusters, (c) => {
+         coordinate_update[c.cluster_id] = c;
+@@ -1508,18 +1521,28 @@ var hivtrace_cluster_network_graph = function (
+           _.extendOwn(coordinate_update[c.cluster_id], c);
+         }
+       });
+-    }
++    }*/
+ 
+     //var sizes = network_layout.size();
+ 
+     var set_init_coords = packed
+       ? function (n) {
+-          n.x += n.r * 0.5;
+-          n.y += n.r * 0.5;
++          if ("x" in n) {
++            n.x += n.r * 0.5;
++            n.y += n.r * 0.5;
++          } else {
++            n.x = Math.random() * self.width;
++            n.y = Math.random() * self.height;
++          }
+         }
+       : function (n) {
+-          n.x += n.dx * 0.5;
+-          n.y += n.dy * 0.5;
++          if ("x" in n) {
++            n.x += n.dx * 0.5;
++            n.y += n.dy * 0.5;
++          } else {
++            n.x = Math.random() * self.width;
++            n.y = Math.random() * self.height;
++          }
+         };
+ 
+     _.each([self.nodes, self.clusters], (list) => {
+@@ -1876,7 +1899,6 @@ var hivtrace_cluster_network_graph = function (
+       } else {
+         cluster_nodes = self._extract_nodes_by_id(cluster_id);
+       }
+-
+       d3.select(
+         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
+       ).on("click", (d) => {
+@@ -2126,8 +2148,8 @@ var hivtrace_cluster_network_graph = function (
+                 sort: "value",
+               },
+               {
+-                value: "Nodes",
+-                help: "How many nodes are in this cluster of interest",
++                value: "Persons",
++                help: "How many persons are in this cluster of interest",
+                 sort: "value",
+               },
+               {
+@@ -2154,7 +2176,9 @@ var hivtrace_cluster_network_graph = function (
+               current_node_objects = {};
+               _.each(self.defined_priority_groups, (pg) => {
+                 if (current_selection.has(pg.name)) {
+-                  clusterOITotalNOdes += pg.nodes.length;
++                  clusterOITotalNOdes += self.unique_entity_list(
++                    pg.node_objects
++                  ).length;
+                   _.each(pg.nodes, (n) => {
+                     current_node_set.add(n.name);
+                     current_node_objects[n.name] = {
+@@ -2169,9 +2193,10 @@ var hivtrace_cluster_network_graph = function (
+                   current_selection.size +
+                   " clusterOI with " +
+                   clusterOITotalNOdes +
+-                  " nodes, creating a new clusterOI with " +
+-                  current_node_set.size +
+-                  " nodes. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
++                  " persons, creating a new clusterOI with " +
++                  self.unique_entity_list_from_ids([...current_node_set])
++                    .length +
++                  " persons. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
+               );
+               proceed_btn.attr("disabled", null);
+             } else {
+@@ -2190,7 +2215,11 @@ var hivtrace_cluster_network_graph = function (
+               );
+               clustersOfInterest
+                 .get_editor()
+-                .append_nodes([...current_node_set], current_node_objects);
++                .append_nodes(
++                  [...current_node_set],
++                  current_node_objects,
++                  true
++                );
+             }
+             $(modal.node()).modal("hide");
+           };
+@@ -2200,12 +2229,15 @@ var hivtrace_cluster_network_graph = function (
+           var rows = [];
+           _.each(self.defined_priority_groups, (pg) => {
+             const my_overlaps = new Set();
+-            _.each(pg.nodes, (n) => {
+-              _.each([...self.priority_node_overlap[n.name]], (ps) => {
+-                if (ps !== pg.name) {
+-                  my_overlaps.add(ps);
++            _.each(pg.node_objects, (n) => {
++              _.each(
++                [...self.priority_node_overlap[self.entity_id(n)]],
++                (ps) => {
++                  if (ps !== pg.name) {
++                    my_overlaps.add(ps);
++                  }
+                 }
+-              });
++              );
+             });
+ 
+             rows.push([
+@@ -2223,7 +2255,7 @@ var hivtrace_cluster_network_graph = function (
+                 },
+               },
+               { value: pg.name },
+-              { value: pg.nodes.length },
++              { value: self.unique_entity_list(pg.node_objects).length },
+               {
+                 value: [...my_overlaps],
+                 format: (d) => d.join("<br>"),
+@@ -2780,7 +2812,7 @@ var hivtrace_cluster_network_graph = function (
+       console.log(err);
+     }
+ 
+-    self._aux_populate_category_menus = function () {
++    self._aux_populate_category_menus = function (subset) {
+       if (button_bar_ui) {
+         // decide if the variable can be considered categorical by examining its range
+ 
+@@ -2790,22 +2822,28 @@ var hivtrace_cluster_network_graph = function (
+             graph_data[kGlobals.network.GraphAttrbuteID],
+             self._aux_populate_category_fields
+           ),
+-          (d) =>
++          (d, k) =>
+             /*if (d.discrete) {
+               console.log (d["value_range"].length);
+           }*/
+-            d.discrete &&
+-            "value_range" in d &&
+-            /*d["value_range"].length <= kGlobals.MaximumValuesInCategories &&*/
+-            !d["_hidden_"]
++            {
++              return (
++                d.discrete &&
++                "value_range" in d &&
++                /*d["value_range"].length <= kGlobals.MaximumValuesInCategories &&*/
++                !d["_hidden_"] &&
++                (!subset || subset.has(d["raw_attribute_key"]))
++              );
++            }
+         );
+ 
+         var valid_shapes = _.filter(
+           valid_cats,
+           (d) =>
+-            (d.discrete && d.dimension <= 7) ||
+-            (d["raw_attribute_key"] in self.networkShapeScheme &&
+-              !d["_hidden_"])
++            (!subset || subset.has(d["raw_attribute_key"])) &&
++            ((d.discrete && d.dimension <= 7) ||
++              (d["raw_attribute_key"] in self.networkShapeScheme &&
++                !d["_hidden_"]))
+         );
+ 
+         // sort values alphabetically for consistent coloring
+@@ -2814,29 +2852,31 @@ var hivtrace_cluster_network_graph = function (
+           _.each(list, self._aux_process_category_values);
+         });
+ 
+-        const colorStopsPath = [
++        /*const colorStopsPath = [
+           kGlobals.network.GraphAttrbuteID,
+           self.colorizer["category_id"],
+           "color_stops",
+-        ];
+-
+-        const color_stops = _.get(
+-          graph_data,
+-          colorStopsPath,
+-          kGlobals.network.ContinuousColorStops
+-        );
++        ];*/
+ 
+         var valid_scales = _.filter(
+           _.map(graph_data[kGlobals.network.GraphAttrbuteID], (d, k) => {
++            let color_stops = _.get(
++              self.json,
++              [kGlobals.network.GraphAttrbuteID, k, "color_stops"],
++              kGlobals.network.ContinuousColorStops
++            );
++
+             function determine_scaling(d, values, scales) {
+               var low_var = Infinity;
++              d["value_range"] = d3.extent(values);
+               _.each(scales, (scl, i) => {
+-                d["value_range"] = d3.extent(values);
+                 var bins = _.map(_.range(color_stops), () => 0);
+                 scl.range([0, color_stops - 1]).domain(d["value_range"]);
+-                _.each(values, (v) => {
+-                  bins[Math.floor(scl(v))]++;
+-                });
++
++                let N = values.length;
++                while (N--) {
++                  bins[~~scl(values[N])]++; // truncate the value
++                }
+ 
+                 var mean = values.length / color_stops;
+                 var vrnc = _.reduce(
+@@ -2854,24 +2894,41 @@ var hivtrace_cluster_network_graph = function (
+             d["raw_attribute_key"] = k;
+ 
+             if (d.type === "Number" || d.type === "Number-categories") {
+-              var values = _.filter(
++              var values = [];
++
++              let N = self.json.Nodes.length;
++              while (N--) {
++                const v = self.attribute_node_value_by_id(
++                  self.json.Nodes[N],
++                  k,
++                  d.type === "Number"
++                );
++                if (_.isNumber(v)) {
++                  values.push(v);
++                }
++              }
++              /*_.filter(
+                 _.map(graph_data.Nodes, (nd) =>
+                   self.attribute_node_value_by_id(nd, k, d.type === "Number")
+                 ),
+                 (v) => _.isNumber(v)
+-              );
++              );*/
+               // automatically determine the scale and see what spaces the values most evenly
+               const range = d3.extent(values);
++
+               const scales_to_consider = [d3.scale.linear()];
+-              if (range[0] > 0) {
+-                scales_to_consider.push(d3.scale.log());
+-              }
+-              if (range[0] >= 0) {
+-                scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
+-                scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
+-                scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
+-                scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
+-                scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
++
++              if (!d.is_integer) {
++                if (range[0] > 0) {
++                  scales_to_consider.push(d3.scale.log());
++                }
++                if (range[0] >= 0) {
++                  scales_to_consider.push(d3.scale.pow().exponent(1 / 3));
++                  scales_to_consider.push(d3.scale.pow().exponent(1 / 4));
++                  scales_to_consider.push(d3.scale.pow().exponent(1 / 2));
++                  scales_to_consider.push(d3.scale.pow().exponent(1 / 8));
++                  scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
++                }
+               }
+               determine_scaling(d, values, scales_to_consider);
+             } else if (d.type === "Date") {
+@@ -3291,6 +3348,19 @@ var hivtrace_cluster_network_graph = function (
+     });
+     //self.clusters
+ 
++    if (
++      network.check_network_option(
++        options,
++        "auto_expand_single_cluster",
++        false,
++        true
++      )
++    ) {
++      if (self.clusters.length == 1) {
++        self.clusters[0].collapsed = false;
++      }
++    }
++
+     self.update();
+   }
+ 
+@@ -3596,12 +3666,14 @@ var hivtrace_cluster_network_graph = function (
+     //var event = new CustomEvent('hiv-trace-viz-volatile-update', { detail: container });
+     //container.node().dispatchEvent (event);
+ 
++    const coe = clustersOfInterest.get_editor();
++
+     container
+       .selectAll("td, th")
+       .filter((d) => "volatile" in d)
+       .each(function (d, i) {
+         // TODO: QUESTION: Should this have priority_set_editor arg passed in as well?
+-        tables.format_a_cell(d, i, this);
++        tables.format_a_cell(d, i, this, coe);
+       });
+   };
+ 
+@@ -3610,6 +3682,7 @@ var hivtrace_cluster_network_graph = function (
+     if (self.subcluster_table) {
+       self.update_volatile_elements(self.subcluster_table);
+     }
++    //console.log ("redraw_tables", clustersOfInterest.get_editor(), nodesTab.getNodeTable());
+     self.update_volatile_elements(nodesTab.getNodeTable());
+     if (self.priority_set_table) {
+       self.update_volatile_elements(self.priority_set_table);
+@@ -3619,12 +3692,21 @@ var hivtrace_cluster_network_graph = function (
+   self.draw_extended_node_table = function (
+     node_list,
+     container,
+-    extra_columns
++    extra_columns,
++    options
+   ) {
+     container = container || nodesTab.getNodeTable();
++    options = options || {};
+ 
+     if (container) {
+       node_list = node_list || self.aggregate_indvidual_level_records();
++
++      const N = node_list.length;
++
++      if (node_list.length > max_nodes_to_show) {
++        node_list = node_list.slice(0, max_nodes_to_show);
++      }
++
+       var column_ids = self._extract_exportable_attributes(true);
+ 
+       self.displayed_node_subset = _.filter(
+@@ -3647,13 +3729,13 @@ var hivtrace_cluster_network_graph = function (
+         self.displayed_node_subset
+       );
+       node_data.splice(0, 1);
++
+       var table_headers = _.map(self.displayed_node_subset, (n, col_id) => ({
+         value: n.raw_attribute_key,
+         sort: "value",
+-        filter: true,
++        filter: options && options["no-filter"] ? false : true,
+         volatile: true,
+         help: "label" in n ? n.label : n.raw_attribute_key,
+-        //format: (d) => "label" in d ? d.label : d.raw_attribute_key,
+         callback: function (element, payload) {
+           var dropdown = d3
+             .select(element)
+@@ -3729,7 +3811,8 @@ var hivtrace_cluster_network_graph = function (
+               self.draw_extended_node_table(
+                 node_list,
+                 container,
+-                extra_columns
++                extra_columns,
++                options
+               );
+             });
+           });
+@@ -3811,11 +3894,12 @@ var hivtrace_cluster_network_graph = function (
+ 
+       self.draw_node_table(
+         null,
+-        null,
++        node_list,
+         [table_headers],
+         table_rows,
+         container,
+-        'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network entities'
++        'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network entities <span class="label label-warning" data-hivtrace-ui-role="table-count-warning"></span>',
++        N
+       );
+     }
+   };
+@@ -3961,13 +4045,16 @@ var hivtrace_cluster_network_graph = function (
+     headers,
+     rows,
+     container,
+-    table_caption
++    table_caption,
++    ND
+   ) {
+     container = container || nodesTab.getNodeTable();
+ 
+     if (container) {
+       node_list = node_list || self.nodes;
+ 
++      ND = ND || node_list.length;
++
+       if (!headers) {
+         headers = [
+           [
+@@ -4061,8 +4148,8 @@ var hivtrace_cluster_network_graph = function (
+         rows,
+         true,
+         table_caption,
+-        clustersOfInterest.get_editor()
+-        // rows
++        clustersOfInterest.get_editor(),
++        ND
+       );
+     }
+   };
+@@ -4753,6 +4840,56 @@ var hivtrace_cluster_network_graph = function (
+       offset += 18;
+     }
+ 
++    if (
++      self.legend_multiple_sequences &&
++      self.rendered_object_counts &&
++      self.rendered_object_counts["nodes"] > 0
++    ) {
++      self.legend_svg
++        .append("g")
++        .classed("hiv-trace-legend", true)
++        .attr("transform", "translate(3," + (offset + 5) + ")")
++        .append("circle")
++        .attr("cx", "6")
++        .attr("cy", "-4")
++        .attr("r", "6")
++        .classed("multi_sequence", true)
++        .style("fill", "none");
++      self.legend_svg
++        .append("g")
++        .classed("hiv-trace-legend", true)
++        .attr("transform", "translate(20," + (offset + 5) + ")")
++        .append("text")
++        .text("Represents >1 sequence");
++      offset += 24;
++    }
++
++    if (
++      self.rendered_object_counts &&
++      self.rendered_object_counts.has_hatching
++    ) {
++      self.legend_svg
++        .append("g")
++        .classed("hiv-trace-legend", true)
++        .attr("transform", "translate(0," + offset + ")")
++        .append("circle")
++        .attr("cx", "8")
++        .attr("cy", "-4")
++        .attr("r", "8")
++        .classed("legend", true)
++        .style(
++          "fill",
++          "url(#" + self.generate_cross_hatch_pattern("#cab") + ")"
++        );
++      self.legend_svg
++        .append("g")
++        .classed("hiv-trace-legend", true)
++        .attr("transform", "translate(20," + offset + ")")
++        .append("text")
++        .text("Contains sequences in >1 cluster/subcluster");
++      offset += 24;
++    }
++
+     if (self.edge_legend) {
+       self.legend_svg
+         .append("g")
+@@ -5798,13 +5935,13 @@ var hivtrace_cluster_network_graph = function (
+           12
+         );
+ 
+-        try {
++        /*try {
+           if (self.isPrimaryGraph) {
+             self.priority_groups_compute_node_membership();
+           }
+         } catch (err) {
+           console.log(err);
+-        }
++        }*/
+       }
+ 
+       if (
+@@ -5915,10 +6052,281 @@ var hivtrace_cluster_network_graph = function (
+           }
+         );
+       }
++
+       if (self._is_CDC_) {
+-        self.draw_extended_node_table(self.aggregate_indvidual_level_records());
++        self.node_search_div = self.get_ui_element_selector_by_role(
++          "node_search_div",
++          true
++        );
++
++        if (self.node_search_div && self.isPrimaryGraph) {
++          const compute_type = (t, d) => {
++            if (t == "String") return "string";
++            if (t == "Number") return d.is_integer ? "integer" : "double";
++            if (t == "Date") return "date";
++            return "string";
++          };
++
++          self.node_search_attributes =
++            self._extract_exportable_attributes(false);
++
++          self.qb_filter_def = _.sortBy(
++            _.map(self.node_search_attributes, (d) => {
++              let def = {
++                id: d.raw_attribute_key,
++                label: d.label,
++                type: compute_type(d.type, d),
++              };
++
++              if (d.enum) {
++                def.values = _.clone(d.enum);
++                def.input = "select";
++              }
++
++              if (def.type == "date") {
++                def.plugin = "datepicker";
++                def.plugin_config = {
++                  format: "yyyy/mm/dd",
++                  todayBtn: "linked",
++                  todayHighlight: true,
++                  autoclose: true,
++                };
++                def.operators = [
++                  "equal",
++                  "not equal",
++                  "less",
++                  "less_or_equal",
++                  "greater",
++                  "greater_or_equal",
++                ];
++              } else {
++                if (def.type == "string") {
++                  def.operators = [
++                    "equal",
++                    "not equal",
++                    "contains",
++                    "begins_with",
++                    "ends_with",
++                    "is_empty",
++                    "is_not_empty",
++                  ];
++                } else if (def.type == "integer" || def.type == "double") {
++                  def.operators = [
++                    "equal",
++                    "not equal",
++                    "less",
++                    "less_or_equal",
++                    "greater",
++                    "greater_or_equal",
++                    "between",
++                  ];
++                }
++              }
++              return def;
++            }),
++            (d) => d.label
++          );
++
++          let query_buttons = d3
++            .select(self.node_search_div)
++            .selectAll(
++              '[data-hivtrace-ui-role="node-selector-search-buttonbar"]'
++            );
++
++          if (query_buttons.empty()) {
++            d3.select(self.node_search_div)
++              .append("div")
++              .classed("alert alert-info alert-dismissible", true)
++              .style("font-size", "150%")
++              .text(
++                "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
++              )
++              .append("button")
++              .classed("close", true)
++              .attr("data-dismiss", "alert")
++              .append("span")
++              .html("&times;");
++
++            /*
++                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
++    <span aria-hidden="true">&times;</span>
++  </button>
++                */
++
++            query_buttons = d3
++              .select(self.node_search_div)
++              .append("div")
++              .classed("btn-group btn-group-sm", true)
++              .attr("data-hivtrace-ui-role", "node-selector-search-buttonbar");
++            self.node_query_button_reset = query_buttons
++              .append("button")
++              .text("Reset")
++              .classed("btn btn-warning", true);
++            self.node_query_button_search = query_buttons
++              .append("button")
++              .text("Search")
++              .classed("btn btn-primary", true);
++          }
++
++          let qb = $(self.node_search_div).queryBuilder({
++            plugins: {
++              "filter-description": null,
++              "bt-tooltip-errors": null,
++              "not-group": null,
++            },
++            filters: self.qb_filter_def,
++          });
++
++          d3.select($(self.node_search_div).get(0))
++            .selectAll(".group-conditions")
++            .selectAll("label")
++            .classed("btn-primary", false)
++            .classed("btn-default", true);
++
++          $(self.node_search_div).on(
++            "afterInit.queryBuilder afterSetRules.queryBuilder afterAddGroup.queryBuilder",
++            function (e, level) {
++              d3.select($(self.node_search_div).get(0))
++                .selectAll(".group-conditions")
++                .selectAll("label")
++                .classed("btn-primary", false)
++                .classed("btn-default", true);
++            }
++          );
++
++          self.process_search_field = (value, condition) => {
++            switch (condition.type) {
++              case "string": {
++                if (!value) value = "";
++                value = value.toLowerCase();
++                switch (condition.operator) {
++                  case "equal":
++                    return value == condition.value;
++                  case "not equal":
++                    return value != condition.value;
++                  case "contains":
++                    return value.indexOf(condition.value) >= 0;
++                  case "begins_with":
++                    return value.indexOf(condition.value) == 0;
++                  case "ends_with":
++                    return (
++                      value.indexOf(condition.value) ==
++                      Math.max(0, value.length - condition.value.length)
++                    );
++                  case "is_not_empty":
++                    return value.length > 0;
++                  case "is_empty":
++                    return value.length == 0;
++                }
++                break;
++              }
++              case "date":
++              case "integer":
++              case "double": {
++                if (!value) return false;
++                switch (condition.operator) {
++                  case "equal":
++                    return value == condition.value;
++                  case "not equal":
++                    return value != condition.value;
++                  case "less":
++                    return value < condition.value;
++                  case "less_or_equal":
++                    return value <= condition.value;
++                  case "greater":
++                    return value > condition.value;
++                  case "greater_or_equal":
++                    return value >= condition.value;
++                  case "between":
++                    return (
++                      value >= condition.value[0] && value <= condition.value[1]
++                    );
++                }
++                break;
++              }
++            }
++            return false;
++          };
++
++          self.process_search = (data, rules) => {
++            let rule_results;
++            if (rules.rules) {
++              rule_results = _.map(rules.rules, (r) => {
++                return self.process_search(data, r);
++              });
++            } else {
++              return self.process_search_field(
++                self.attribute_node_value_by_id(
++                  data,
++                  rules.id,
++                  rules.type == "number"
++                ),
++                rules
++              );
++            }
++
++            if (rules.condition == "AND") {
++              rule_results = _.every(rule_results, (d) => d);
++            } else if (rules.condition == "OR") {
++              rule_results = _.some(rule_results, (d) => d);
++            } else {
++              rule_results = false;
++            }
++
++            return rules.not ? !rule_results : rule_results;
++          };
++
++          self.rule_lc = (rules) => {
++            if (rules.rules) {
++              _.each(rules.rules, (r) => {
++                self.rule_lc(r);
++              });
++            } else {
++              if (rules.value) {
++                if (rules.type == "string") {
++                  rules.value = rules.value.toLowerCase();
++                } else if (rules.type == "date") {
++                  rules.value = timeDateUtil.DateViewNodeSearch.parse(
++                    rules.value
++                  );
++                }
++              }
++            }
++          };
++
++          if (!self.aggregate_entity_data) {
++            self.aggregate_entity_data =
++              self.aggregate_indvidual_level_records();
++          }
++
++          self.node_query_button_reset.on("click", (d) => {
++            $(self.node_search_div).queryBuilder("reset");
++            self.draw_extended_node_table([], null, null, {
++              "no-filter": true,
++            });
++          });
++
++          self.node_query_button_search.on("click", (d) => {
++            var result = $(self.node_search_div).queryBuilder("getRules");
++            if (!$.isEmptyObject(result)) {
++              self.rule_lc(result);
++              self.draw_extended_node_table(
++                _.filter(self.aggregate_entity_data, (d) =>
++                  self.process_search(d, result)
++                ),
++                null,
++                null,
++                { "no-filter": true }
++              );
++            }
++          });
++        }
++
++        self.draw_extended_node_table([], null, null, { "no-filter": true });
+       } else {
+-        self.draw_node_table(self.extra_node_table_columns);
++        self.draw_node_table(self.extra_node_table_columns, null, null, {
++          "no-filter": true,
++        });
+       }
+     } else {
+       rendered_nodes = self.network_svg.selectAll(".node");
+@@ -5927,8 +6335,17 @@ var hivtrace_cluster_network_graph = function (
+       update_network_string(rendered_nodes.size(), link.size());
+     }
+ 
++    self.rendered_object_counts = {
++      nodes: rendered_nodes.size(),
++      edges: link.size(),
++      clusters: rendered_clusters.size(),
++      has_hatching: false,
++    };
++
+     rendered_nodes.each(function (d) {
+       draw_a_node(this, d);
++      self.rendered_object_counts.has_hatching =
++        self.rendered_object_counts.has_hatching || node_multiple_membership(d);
+     });
+ 
+     rendered_clusters.each(function (d) {
+@@ -6089,9 +6506,13 @@ var hivtrace_cluster_network_graph = function (
+     return 4 * r * r;
+   }
+ 
++  function node_multiple_membership(n) {
++    return n["multiple_membership"];
++  }
++
+   function node_color(d) {
+     var hms = (d, c) => {
+-      if (d["multiple_membership"]) {
++      if (node_multiple_membership(d)) {
+         return "url(#" + self.generate_cross_hatch_pattern(c) + ")";
+       }
+       return c;
+@@ -6546,11 +6967,19 @@ var hivtrace_cluster_network_graph = function (
+ 
+     if (d["type"] === "String") {
+       d.discrete = true;
+-      d["value_range"] = _.keys(
++      d["value_range"] = new Set();
++
++      graph_data.Nodes.forEach((nd) => {
++        d["value_range"].add(self.attribute_node_value_by_id(nd, k));
++      });
++
++      /*_.keys(
+         _.countBy(graph_data.Nodes, (nd) =>
+           self.attribute_node_value_by_id(nd, k)
+         )
+-      );
++      );*/
++
++      d["value_range"] = [...d["value_range"]];
+       d["dimension"] = d["value_range"].length;
+     }
+     return d;
+@@ -7767,7 +8196,8 @@ var hivtrace_cluster_network_graph = function (
+ 
+   var l_scale = 5000, // link scale
+     graph_data = self.json, // the raw JSON network object
+-    max_points_to_render = 2048,
++    max_points_to_render = 1536,
++    max_nodes_to_show = 4096,
+     singletons = 0,
+     open_cluster_queue = [],
+     currently_displayed_objects,
+diff --git a/src/clustersOfInterest.js b/src/clustersOfInterest.js
+index a261df5..94cd64d 100644
+--- a/src/clustersOfInterest.js
++++ b/src/clustersOfInterest.js
+@@ -542,6 +542,13 @@ function open_editor(
+         $(grp_name_button.node()).trigger("input");
+       }
+ 
++      panel_object.selectable_entities = self.has_multiple_sequences
++        ? _.map(self.primary_key_list, (n, k) => ({ id: k }))
++        : self.json["Nodes"];
++
++      //console.log (self.primary_key_list, selectable_entities);
++      //debugger;
++
+       var auto_object = autocomplete(
+         misc.get_ui_element_selector_by_role("priority-panel-nodeids"),
+         { hint: false },
+@@ -555,12 +562,14 @@ function open_editor(
+               const pattern = new RegExp(escapeRegExp(query), "i");
+               for (
+                 var i = 0;
+-                hits.length < 10 && i < self.json["Nodes"].length;
++                hits.length < 10 && i < panel_object.selectable_entities.length;
+                 i++
+               ) {
+-                if (pattern.test(self.json["Nodes"][i].id)) {
+-                  if (panel_object.can_add(self.json["Nodes"][i].id)) {
+-                    hits.push(self.json["Nodes"][i].id);
++                if (pattern.test(panel_object.selectable_entities[i].id)) {
++                  if (
++                    panel_object.can_add(panel_object.selectable_entities[i].id)
++                  ) {
++                    hits.push(panel_object.selectable_entities[i].id);
+                   }
+                 }
+               }
+@@ -578,7 +587,7 @@ function open_editor(
+       panel_object.validate_input = function (expression, skip_ui) {
+         expression = expression || auto_object.autocomplete.getVal();
+         const validator = _.filter(
+-          self.json["Nodes"],
++          panel_object.selectable_entities,
+           (n) => n.id === expression
+         );
+         if (validator.length === 1 && panel_object.can_add(validator[0].id)) {
+@@ -599,7 +608,27 @@ function open_editor(
+         if (!("_priority_set_kind" in node)) {
+           node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
+         }
+-        panel_object.network_nodes.push(node);
++
++        const seqs_to_add = [];
++
++        if (self.has_multiple_sequences) {
++          if (node.id in self.primary_key_list) {
++            seqs_to_add.push(...self.primary_key_list[node.id]);
++          } else {
++            seqs_to_add.push(node);
++          }
++        } else {
++          seqs_to_add.push(node);
++        }
++        _.each(seqs_to_add, (node) => {
++          if (!("_priority_set_date" in node)) {
++            node["_priority_set_date"] = createdDate;
++          }
++          if (!("_priority_set_kind" in node)) {
++            node["_priority_set_kind"] = kGlobals.CDCCOINodeKindDefault;
++          }
++        });
++        panel_object.network_nodes.push(...seqs_to_add);
+       };
+ 
+       panel_object.can_add_nodes = function () {
+@@ -618,6 +647,7 @@ function open_editor(
+         }
+ 
+         var node_to_add = panel_object.validate_input(id, skip_ui);
++
+         if (node_to_add) {
+           panel_object._append_node(node_to_add);
+           panel_object.table_handler(panel_object);
+@@ -625,7 +655,11 @@ function open_editor(
+         }
+       };
+ 
+-      panel_object.append_nodes = function (nodes_to_add, existing_attributes) {
++      panel_object.append_nodes = function (
++        nodes_to_add,
++        existing_attributes,
++        mspp_raw
++      ) {
+         if (!panel_object.can_add_nodes()) {
+           return;
+         }
+@@ -637,6 +671,7 @@ function open_editor(
+ 
+         let need_update = false;
+         let valid_ids = {};
++
+         _.each(self.json["Nodes"], (n) => {
+           if (!existing_ids[n.id]) {
+             if (existing_attributes) {
+@@ -647,11 +682,19 @@ function open_editor(
+           }
+         });
+ 
++        if (!mspp_raw) {
++          nodes_to_add = _.flatten(
++            _.map(nodes_to_add, (d) => self.fetch_sequences_for_pid(d))
++          );
++        }
++
+         _.each(nodes_to_add, (n) => {
+           if (!(n in existing_ids) && n in valid_ids) {
+             panel_object._append_node(valid_ids[n]);
+             existing_ids[n] = 1;
+             need_update = true;
++          } else {
++            console.log("***", n);
+           }
+         });
+ 
+@@ -943,7 +986,6 @@ function open_editor(
+           existing_set.nodes
+         );
+       }
+-
+       panel_object.table_handler(this);
+     },
+     dragit: {
+@@ -1714,6 +1756,7 @@ function priority_set_view(self, priority_set, options) {
+ 
+   let viewEnum = [];
+   let dateID = {};
++
+   _.each(pgDates, (d, i) => {
+     if (d) {
+       if (pgDates.length > maxColors) {
+diff --git a/src/globals.js b/src/globals.js
+index 8812171..6414b69 100644
+--- a/src/globals.js
++++ b/src/globals.js
+@@ -530,6 +530,11 @@ const SubclusterSeparator = ".";
+     the character used to define subclusters, e.g. the '.' in 2.13
+ */
+ 
++const CoIAddLimit = 128;
++/**
++    maximum number of nodes that can be added to a CoI from a table at once.
++*/
++
+ module.exports = {
+   Categorical,
+   CategoricalBase,
+@@ -559,4 +564,5 @@ module.exports = {
+   SequentialColor,
+   ShapeOrdering,
+   SubclusterSeparator,
++  CoIAddLimit,
+ };
+diff --git a/src/hiv_tx_network.js b/src/hiv_tx_network.js
+index 11399d4..3105502 100755
+--- a/src/hiv_tx_network.js
++++ b/src/hiv_tx_network.js
+@@ -21,7 +21,7 @@ var _ = require("underscore"),
+  */
+ 
+ class HIVTxNetwork {
+-  constructor(json, button_bar_ui, primary_key_function) {
++  constructor(json, button_bar_ui, primary_key_function, secondaryGraph) {
+     this.json = json;
+     this.button_bar_ui = button_bar_ui;
+     this.warning_string = "";
+@@ -30,6 +30,7 @@ class HIVTxNetwork {
+     this.priority_set_table_writeable = null;
+     this.cluster_attributes = [];
+     this.minimum_cluster_size = 0;
++    this.isPrimaryGraph = !secondaryGraph;
+     /** SLKP 20241029 
+         this function is used to identify which nodes are duplicates
+         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
+@@ -37,8 +38,13 @@ class HIVTxNetwork {
+     **/
+     this.primary_key = _.isFunction(primary_key_function)
+       ? primary_key_function
+-      : (node) => node.id.split("|")[0];
+-
++      : (node) => {
++          const i = node.id.indexOf("|");
++          if (i >= 0) {
++            return node.id.substr(0, i);
++          }
++          return node.id;
++        };
+     this.tabulate_multiple_sequences();
+ 
+     /** initialize UI/UX elements */
+@@ -144,6 +150,12 @@ class HIVTxNetwork {
+       } else {
+         this.primary_key_list[p_key].push(n);
+         this.has_multiple_sequences = true;
++        this.legend_multiple_sequences = true;
++      }
++      if (!this.legend_multiple_sequences) {
++        if (n[kGlobals.network.AliasedSequencesID]) {
++          this.legend_multiple_sequences = true;
++        }
+       }
+     });
+ 
+@@ -365,7 +377,7 @@ class HIVTxNetwork {
+     
+   */
+   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
+-    if (this.has_multiple_sequences) {
++    if (this.has_multiple_sequences && this.isPrimaryGraph) {
+       reduce_distance_within = reduce_distance_within || 0.000001;
+       reduce_distance_between = reduce_distance_between || 0.015;
+ 
+@@ -663,9 +675,15 @@ class HIVTxNetwork {
+   generate_cross_hatch_pattern(color) {
+     let id = "id" + this.dom_prefix + "_diagonalHatch_" + color.substr(1, 10);
+     if (this.network_svg.select("#" + id).empty()) {
+-      this.network_svg
+-        .append("defs")
+-        .append("pattern")
++      function getComplementaryColor(backgroundColor) {
++        const color = d3.rgb(backgroundColor);
++        const luminance = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
++        return luminance > 128 ? "#000000" : "#ffffff";
++      }
++
++      let defs = this.network_svg.append("defs");
++
++      /*defs.append("pattern")
+         .attr("id", id)
+         .attr("patternUnits", "userSpaceOnUse")
+         .attr("width", "2")
+@@ -675,6 +693,29 @@ class HIVTxNetwork {
+         .attr("d", "M -1,2 l 6,0")
+         .attr("stroke", color)
+         .attr("stroke-width", "3"); //this is actual shape for arrowhead
++        */
++
++      let pattern = defs
++        .append("pattern")
++        .attr("id", id)
++        .attr("patternUnits", "userSpaceOnUse")
++        .attr("width", "6")
++        .attr("height", "6")
++        .attr("patternTransform", "rotate(45)");
++
++      pattern
++        .append("rect")
++        .attr("width", "3")
++        .attr("height", "6")
++        .attr("fill", color)
++        .attr("transform", "translate(0,0)");
++
++      pattern
++        .append("rect")
++        .attr("width", "3")
++        .attr("height", "6")
++        .attr("fill", getComplementaryColor(color))
++        .attr("transform", "translate(3,0)");
+     }
+     return id;
+   }
+@@ -849,7 +890,7 @@ class HIVTxNetwork {
+   
+  */
+ 
+-  attribute_node_value_by_id(d, id, number) {
++  attribute_node_value_by_id(d, id, number, is_date) {
+     try {
+       if (kGlobals.network.NodeAttributeID in d && id) {
+         if (id in d[kGlobals.network.NodeAttributeID]) {
+@@ -867,6 +908,8 @@ class HIVTxNetwork {
+             } else if (number) {
+               v = Number(v);
+               return _.isNaN(v) ? kGlobals.missing.label : v;
++            } else if (date) {
++              return v.getTime();
+             }
+           }
+           return v;
+@@ -953,9 +996,11 @@ class HIVTxNetwork {
+         @return the set of added nodes (by numeric ID)
+         @nodeID2idx : if provided, maps the name of the node to its index
+                       in the `nodes` array; avoids repeated traversal if provided
++        @edgesByNode : if provided, maps the INDEX of the node to the list of edges in the entire network
++
+   */
+ 
+-  auto_expand_pg_handler = function (pg, nodeID2idx) {
++  auto_expand_pg_handler = function (pg, nodeID2idx, edgesByNode) {
+     if (!nodeID2idx) {
+       nodeID2idx = {};
+       _.each(this.json.Nodes, (n, i) => {
+@@ -975,9 +1020,26 @@ class HIVTxNetwork {
+         kGlobals.CDCCOITrackingOptionsDateFilter[pg.tracking]
+       );
+ 
++      let edge_set;
++
++      if (edgesByNode) {
++        const existing_nodes = _.map(
++          _.filter([...core_node_set], (d) => d in this.json.Nodes),
++          (d) => edgesByNode[d]
++        );
++
++        edge_set = [
++          ...existing_nodes.reduce((acc, set) => {
++            return new Set([...acc, ...set]);
++          }, new Set()),
++        ];
++      } else {
++        edge_set = this.json.Edges;
++      }
++
+       const expansion_test = misc.hivtrace_cluster_depthwise_traversal(
+         this.json.Nodes,
+-        this.json.Edges,
++        edge_set,
+         (e) => {
+           let pass = filter(e);
+           if (pass) {
+@@ -1155,6 +1217,7 @@ class HIVTxNetwork {
+           **/
+ 
+           let entities = this.aggregate_indvidual_level_records(g.node_objects);
++
+           cluster_detect_size = this.unique_entity_list_from_ids(
+             _.map(
+               _.filter(g.nodes, (node) => node.added <= g.created),
+@@ -1185,6 +1248,9 @@ class HIVTxNetwork {
+                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+                   entity_to_pg_records[eid][0].added
+                 ),
++                sample_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
++                  this.attribute_node_value_by_id(gn, "sample_dt")
++                ),
+                 new_linked_case: this.priority_groups_is_new_node(
+                   entity_to_pg_records[eid][0]
+                 )
+@@ -1370,10 +1436,16 @@ class HIVTxNetwork {
+       this.map_ids_to_objects();
+ 
+       const nodeID2idx = {};
++      const edgesByNode = {};
+ 
+       _.each(this.json.Nodes, (n, i) => {
+-        this.node_id_to_object[n.id] = n;
+         nodeID2idx[n.id] = i;
++        edgesByNode[i] = new Set();
++      });
++
++      _.each(this.json.Edges, (e) => {
++        edgesByNode[e.source].add(e);
++        edgesByNode[e.target].add(e);
+       });
+ 
+       let traversal_cache = null;
+@@ -1434,9 +1506,11 @@ class HIVTxNetwork {
+                     for (let i = 1; i < entities.length; i++) {
+                       pg.node_objects.push(entities[i]);
+                       let node_entry = _.clone(node);
+-                      node_entry.added = this.get_reference_date();
++                      node_entry.name = entities[i].id;
++                      node_entry.added = node.added;
+                       inject_mspp_nodes.push(node_entry);
+                     }
++                    return;
+                   }
+                 }
+               }
+@@ -1610,13 +1684,15 @@ class HIVTxNetwork {
+             }
+           );
+ 
+-          /** handle CoI growth */
+-
+           if (
+             auto_extend &&
+             pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
+           ) {
+-            const added_nodes = this.auto_expand_pg_handler(pg, nodeID2idx);
++            const added_nodes = this.auto_expand_pg_handler(
++              pg,
++              nodeID2idx,
++              edgesByNode
++            );
+ 
+             if (added_nodes.size) {
+               _.each([...added_nodes], (nid) => {
+@@ -1749,17 +1825,26 @@ class HIVTxNetwork {
+   priority_groups_compute_node_membership() {
+     const pg_nodesets = [];
+ 
++    let node2set = {};
++
+     _.each(this.defined_priority_groups, (g) => {
+       pg_nodesets.push([
+         g.name,
+         g.createdBy === kGlobals.CDCCOICreatedBySystem,
+-        new Set(_.map(g.nodes, (n) => n.name)),
+       ]);
++
++      _.each(g.nodes, (n) => {
++        if (n.name in node2set) {
++          node2set[n.name].push(pg_nodesets.length - 1);
++        } else {
++          node2set[n.name] = [pg_nodesets.length - 1];
++        }
++      });
+     });
+ 
+     const pg_enum = [
+       "Yes (dx≤12 months)",
+-      "Yes (12<dx≤ 36 months)",
++      "Yes (12<dx≤36 months)",
+       "Yes (dx>36 months)",
+       "No",
+     ];
+@@ -1789,7 +1874,10 @@ class HIVTxNetwork {
+             ]);
+         },
+         map: function (node) {
+-          const npcoi = _.some(pg_nodesets, (d) => d[1] && d[2].has(node.id));
++          const npcoi =
++            node.id in node2set
++              ? _.some(node2set[node.id], (d) => pg_nodesets[d][1])
++              : false;
+           if (npcoi) {
+             const cutoffs = [
+               timeDateUtil.n_months_ago(ref_date, 12),
+@@ -1828,9 +1916,9 @@ class HIVTxNetwork {
+         type: "String",
+         volatile: true,
+         map: function (node) {
+-          const memberships = _.filter(pg_nodesets, (d) => d[2].has(node.id));
++          const memberships = node2set[node.id] || [];
+           if (memberships.length === 1) {
+-            return memberships[0][0];
++            return pg_nodesets[memberships[0]][0];
+           } else if (memberships.length > 1) {
+             return "Multiple";
+           }
+@@ -1851,11 +1939,16 @@ class HIVTxNetwork {
+       },
+     };
+ 
++    let subset = new Set();
++
+     for (const [key, def] of Object.entries(attrib_defs)) {
++      subset.add(key);
+       this.populate_predefined_attribute(def, key);
+     }
+ 
++    //console.time ("SUBS");
+     this._aux_populate_category_menus();
++    //console.timeEnd ("SUBS");
+   }
+ 
+   /** Add an attribute value to the node object
+@@ -2111,10 +2204,6 @@ class HIVTxNetwork {
+         _.has(this.json[kGlobals.network.GraphAttrbuteID], d)
+       )
+     ) {
+-      var extension = {};
+-      extension[key] = computed;
+-
+-      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
+       this.inject_attribute_description(key, computed);
+       _.each(this.json.Nodes, (node) => {
+         HIVTxNetwork.inject_attribute_node_value_by_id(
+@@ -2129,15 +2218,50 @@ class HIVTxNetwork {
+         this.uniqValues[key] = computed.enum;
+       } else {
+         var uniq_value_set = new Set();
+-        _.each(this.json.Nodes, (n) =>
+-          uniq_value_set.add(
+-            this.attribute_node_value_by_id(n, key, computed.Type === "Number")
+-          )
+-        );
++
++        if (computed.type === "Date") {
++          _.each(this.json.Nodes, (n) => {
++            try {
++              uniq_value_set.add(
++                this.attribute_node_value_by_id(n, key).getTime()
++              );
++            } catch {}
++          });
++        } else {
++          _.each(this.json.Nodes, (n) =>
++            uniq_value_set.add(
++              this.attribute_node_value_by_id(
++                n,
++                key,
++                computed.type === "Number"
++              )
++            )
++          );
++        }
++
+         this.uniqValues[key] = [...uniq_value_set];
++        if (computed.type === "Number" || computed.type == "Date") {
++          var color_stops =
++            computed["color_stops"] || kGlobals.network.ContinuousColorStops;
++
++          if (color_stops > this.uniqValues[key].length) {
++            computed["color_stops"] = this.uniqValues[key].length;
++          }
++
++          if (computed.type === "Number") {
++            computed.is_integer = _.every(this.uniqValues[key], (d) =>
++              Number.isInteger(d)
++            );
++          }
++        }
+       }
+       this.uniqs[key] = this.uniqValues[key].length;
+ 
++      var extension = {};
++      extension[key] = computed;
++
++      _.extend(this.json[kGlobals.network.GraphAttrbuteID], extension);
++
+       if (computed["overwrites"]) {
+         if (
+           _.has(
+@@ -2190,13 +2314,13 @@ class HIVTxNetwork {
+ 
+     const subcluster_enum = [
+       "No, dx>36 months", // 0
+-      "No, but dx≤12 months",
+-      "Yes (dx≤12 months)",
+-      "Yes (12<dx≤ 36 months)",
++      "No, but dx�12 months",
++      "Yes (dx�12 months)",
++      "Yes (12<dx� 36 months)",
+       "Future node", // 4
+       "Not a member of subcluster", // 5
+       "Not in a subcluster",
+-      "No, but 12<dx≤ 36 months",
++      "No, but 12<dx� 36 months",
+     ];
+ 
+     return {
+@@ -2401,7 +2525,7 @@ class HIVTxNetwork {
+       depends: [timeDateUtil._networkCDCDateField],
+       label: label,
+       type: "Number",
+-      label_format: d3.format(".2f"),
++      label_format: relative ? d3.format(".2f") : d3.format(".0f"),
+       map: (node) => {
+         try {
+           var value = this.parse_dates(
+@@ -2520,7 +2644,7 @@ class HIVTxNetwork {
+       depends: ["age_dx"],
+       overwrites: "age_dx",
+       label: "Age at Diagnosis",
+-      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "≥60"],
++      enum: ["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60"],
+       type: "String",
+       color_scale: function () {
+         return d3.scale
+@@ -2532,7 +2656,7 @@ class HIVTxNetwork {
+             "30-39",
+             "40-49",
+             "50-59",
+-            "≥60",
++            "�60",
+             kGlobals.missing.label,
+           ])
+           .range([
+@@ -2549,13 +2673,13 @@ class HIVTxNetwork {
+       map: (node) => {
+         var vl_value = this.attribute_node_value_by_id(node, "age_dx");
+         if (vl_value === ">=60") {
+-          return "≥60";
++          return "�60";
+         }
+         if (vl_value === "\ufffd60") {
+-          return "≥60";
++          return "�60";
+         }
+         if (Number(vl_value) >= 60) {
+-          return "≥60";
++          return "�60";
+         }
+         return vl_value;
+       },
+@@ -2763,7 +2887,20 @@ class HIVTxNetwork {
+               if (_.size(unique_values) == 1) {
+                 return [k, values[0][kGlobals.network.NodeAttributeID][k]];
+               } else {
+-                return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
++                if (proto.type == "Date") {
++                  try {
++                    return [
++                      k,
++                      new Date(
++                        Date.parse(d3.min(_.map(unique_values, (d3, k3) => k3)))
++                      ),
++                    ];
++                  } catch {
++                    return [k, null];
++                  }
++                } else {
++                  return [k, _.map(unique_values, (d3, k3) => k3).join(";")];
++                }
+               }
+             })
+           );
+diff --git a/src/misc.js b/src/misc.js
+index 1c8d619..3d78053 100644
+--- a/src/misc.js
++++ b/src/misc.js
+@@ -12,6 +12,42 @@ _.each(_.range(3, 20), (d) => {
+   ]);
+ });
+ 
++var hivtrace_generate_svg_ellipse = function () {
++  var self = this;
++
++  self.ellipse = function () {
++    var path =
++      "M " +
++      self.radius +
++      " 0 A " +
++      self.radius * 1 +
++      " " +
++      self.radius * 0.75 +
++      " 0 1 0 " +
++      self.radius +
++      " 0.00001";
++    return path;
++  };
++
++  self.ellipse.type = function () {
++    return self.ellipse;
++  };
++
++  self.ellipse.size = function (attr) {
++    if (_.isNumber(attr)) {
++      self.size = attr;
++      self.radius = Math.sqrt((1.25 * attr) / Math.PI);
++      return self.ellipse;
++    }
++
++    return self.size;
++  };
++
++  self.ellipse.size(64);
++
++  return self.ellipse;
++};
++
+ /**
+  * Creates and returns an SVG polygon generator.
+  *
+@@ -670,16 +706,32 @@ function hivtrace_cluster_depthwise_traversal(
+ 
+   seed_nodes = seed_nodes || nodes;
+ 
++  /*
++  var len = arr.length;
++while (len--) {
++    // blah blah
++}
++  */
++
+   if (given_adjacency) {
+-    _.each(nodes, (n) => {
+-      n.visited = false;
+-    });
++    var N = nodes.length;
++    while (N--) {
++      nodes[N].visited = false;
++    }
++    // _.each(nodes, (n) => {
++    //  n.visited = false;
++    //});
+     adjacency = given_adjacency;
+   } else {
+-    _.each(nodes, (n) => {
+-      n.visited = false;
+-      adjacency[n.id] = [];
+-    });
++    var N = nodes.length;
++    while (N--) {
++      nodes[N].visited = false;
++      adjacency[nodes[N].id] = [];
++    }
++    //_.each(nodes, (n) => {
++    //  n.visited = false;
++    //  adjacency[n.id] = [];
++    //});
+ 
+     if (edge_filter) {
+       edges = _.filter(edges, edge_filter);
+@@ -719,6 +771,20 @@ function hivtrace_cluster_depthwise_traversal(
+     }
+     node.visited = true;
+ 
++    var N = adjacency[node.id] ? adjacency[node.id].length : 0;
++    while (N--) {
++      let neighbor = adjacency[node.id][N];
++      if (!neighbor[0].visited) {
++        by_node[neighbor[0].id] = by_node[node.id];
++        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
++        if (save_edges) {
++          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
++        }
++        traverse(neighbor[0]);
++      }
++    }
++
++    /*
+     _.each(adjacency[node.id], (neighbor) => {
+       if (!neighbor[0].visited) {
+         by_node[neighbor[0].id] = by_node[node.id];
+@@ -729,6 +795,7 @@ function hivtrace_cluster_depthwise_traversal(
+         traverse(neighbor[0]);
+       }
+     });
++    */
+   };
+ 
+   _.each(seed_nodes, (n) => {
+diff --git a/src/network.js b/src/network.js
+index 52df318..19069bb 100644
+--- a/src/network.js
++++ b/src/network.js
+@@ -224,7 +224,7 @@ function handle_cluster_click(self, cluster, release) {
+         .on("click", (d) => {
+           clustersOfInterest
+             .get_editor()
+-            .append_nodes(_.map(cluster.children, (c) => c.id));
++            .append_nodes(_.map(cluster.children, (c) => self.entity_id(c)));
+         });
+     }
+ 
+diff --git a/src/tables.js b/src/tables.js
+index 3b584ec..df005aa 100644
+--- a/src/tables.js
++++ b/src/tables.js
+@@ -3,6 +3,7 @@ const _ = require("underscore");
+ const misc = require("./misc.js");
+ const timeDateUtil = require("./timeDateUtil.js");
+ const nodesTab = require("./nodesTab.js");
++const kGlobals = require("./globals.js");
+ 
+ const _networkNodeIDField = "hivtrace_node_id";
+ const _networkNewNodeMarker = "[+]";
+@@ -31,7 +32,8 @@ function add_a_sortable_table(
+   content,
+   overwrite,
+   caption,
+-  priority_set_editor
++  priority_set_editor,
++  N
+ ) {
+   if (!container || !container.node()) {
+     return;
+@@ -77,6 +79,7 @@ function add_a_sortable_table(
+   }
+ 
+   // head AFTER rows, so we can handle pre-sorting
++
+   if (thead.empty() || overwrite) {
+     thead.remove();
+     thead = container.insert("thead", ":first-child");
+@@ -92,7 +95,14 @@ function add_a_sortable_table(
+       .call((selection) =>
+         selection.each(function (d, i) {
+           set_table_elements(d, this);
+-          format_a_cell(d, i, this, priority_set_editor);
++          format_a_cell(
++            d,
++            i,
++            this,
++            (N && N > content.length) || content.length > kGlobals.CoIAddLimit
++              ? null
++              : priority_set_editor
++          );
+         })
+       );
+   }
+@@ -107,6 +117,12 @@ function add_a_sortable_table(
+     table_caption
+       .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+       .text(content.length);
++    if (N && N > content.length) {
++      table_caption
++        .select(misc.get_ui_element_selector_by_role("table-count-warning"))
++        .style("color", "black")
++        .text("Truncated due to the large number of rows (" + N + ")");
++    }
+   }
+ 
+   container.style("display", null);
+@@ -203,113 +219,115 @@ function format_a_cell(data, index, item, priority_set_editor) {
+       }
+     }
+ 
+-    var clicker = handle_sort.append("a").property("href", "#");
++    if (data["filter"]) {
++      var clicker = handle_sort.append("a").property("href", "#");
++
++      clicker
++        .append("i")
++        .classed("fa fa-search", true)
++        .style("margin-left", "0.2em");
++
++      var search_form_generator = function () {
++        return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
++                            <div class="form-group"> 
++                                <div class="input-group">
++                                <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
++                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
++                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
++                                <div class="input-group-addon">
++                                    <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
++            index +
++            '"  aria-expanded="false" aria-controls="collapseExample"></i>
++                                </div> 
++                            </div>
++                            </div>
++                        </form>
++                        <div class="collapse" id="filter-help-column' +
++            index +
++            '">
++                          <div class="well">
++                            Type in text to select columns which 
++                            <em>contain the term</em>. <br />
++                            For example, typing in <code>MSM</code> will select rows
++                            that have "MSM" as a part of the column value.
++                            <p />
++                            Type in space separated terms (<code>MSM IDU</code>) to
++                            search for <b>either</b> term. <p/>
++                            Type in terms in quotes (<code>"male"</code>) to search
++                            for this <b>exact</b> term. <p/>
++                            If columns have date information you can use
++                            <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>
++                            Use <code>&lt;value</code> or <code>&gt;value</code>
++                            to search numerical columns<p/>
++                          </div>
++                        </div>
++                        `;
++      };
+ 
+-    clicker
+-      .append("i")
+-      .classed("fa fa-search", true)
+-      .style("margin-left", "0.2em");
++      $(clicker.node())
++        .popover({
++          html: true,
++          sanitize: false,
++          content: search_form_generator,
++          placement: "bottom",
++        })
++        .on("shown.bs.popover", function (e) {
++          var search_icon = d3.select(this);
++
++          const update_term = function (v) {
++            data.filter_term = v;
++            search_icon
++              .selectAll("i")
++              .classed("fa-search", !v.length)
++              .classed("fa-search-plus", v.length);
++          };
+ 
+-    var search_form_generator = function () {
+-      return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
+-                        <div class="form-group"> 
+-                            <div class="input-group">
+-                            <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="Filter On" style = "min-width: 100px">
+-                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
+-                            <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+-                            <div class="input-group-addon">
+-                                <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
+-        index +
+-        '"  aria-expanded="false" aria-controls="collapseExample"></i>
+-                            </div> 
+-                        </div>
+-                        </div>
+-                    </form>
+-                    <div class="collapse" id="filter-help-column' +
+-        index +
+-        '">
+-                      <div class="well">
+-                        Type in text to select columns which 
+-                        <em>contain the term</em>. <br />
+-                        For example, typing in <code>MSM</code> will select rows
+-                        that have "MSM" as a part of the column value.
+-                        <p />
+-                        Type in space separated terms (<code>MSM IDU</code>) to
+-                        search for <b>either</b> term. <p/>
+-                        Type in terms in quotes (<code>"male"</code>) to search
+-                        for this <b>exact</b> term. <p/>
+-                        If columns have date information you can use
+-                        <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/>
+-                        Use <code>&lt;value</code> or <code>&gt;value</code>
+-                        to search numerical columns<p/>
+-                      </div>
+-                    </div>
+-                    `;
+-    };
+-
+-    $(clicker.node())
+-      .popover({
+-        html: true,
+-        sanitize: false,
+-        content: search_form_generator,
+-        placement: "bottom",
+-      })
+-      .on("shown.bs.popover", function (e) {
+-        var search_icon = d3.select(this);
+-
+-        const update_term = function (v) {
+-          data.filter_term = v;
+-          search_icon
+-            .selectAll("i")
+-            .classed("fa-search", !v.length)
+-            .classed("fa-search-plus", v.length);
+-        };
++          var popover_div = d3.select(
++            "#" + d3.select(this).attr("aria-describedby")
++          );
+ 
+-        var popover_div = d3.select(
+-          "#" + d3.select(this).attr("aria-describedby")
+-        );
+-
+-        var search_click = popover_div.selectAll(
+-          misc.get_ui_element_selector_by_role("table-filter-apply")
+-        );
+-        var reset_click = popover_div.selectAll(
+-          misc.get_ui_element_selector_by_role("table-filter-reset")
+-        );
+-        var search_box = popover_div.selectAll(
+-          misc.get_ui_element_selector_by_role("table-filter-term")
+-        );
+-
+-        search_box.property("value", data.filter_term);
+-
+-        $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
+-          "keydown",
+-          function (event) {
+-            if (event.key == "Enter") {
+-              update_term(search_box.property("value"));
+-              filter_table(clicker.node());
+-              event.preventDefault();
+-            }
+-          }
+-        );
++          var search_click = popover_div.selectAll(
++            misc.get_ui_element_selector_by_role("table-filter-apply")
++          );
++          var reset_click = popover_div.selectAll(
++            misc.get_ui_element_selector_by_role("table-filter-reset")
++          );
++          var search_box = popover_div.selectAll(
++            misc.get_ui_element_selector_by_role("table-filter-term")
++          );
+ 
+-        /*
+-        search_box.on ("keydown", (d,e)=> {
+-            console.log (d3);
+-            console.log (d,e);
+-        });
+-        */
++          search_box.property("value", data.filter_term);
+ 
+-        search_click.on("click", (e) => {
+-          update_term(search_box.property("value"));
+-          filter_table(clicker.node());
+-        });
++          $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
++            "keydown",
++            function (event) {
++              if (event.key == "Enter") {
++                update_term(search_box.property("value"));
++                filter_table(clicker.node());
++                event.preventDefault();
++              }
++            }
++          );
+ 
+-        reset_click.on("click", (d) => {
+-          search_box.property("value", "");
+-          update_term("");
+-          filter_table(clicker.node());
++          /*
++            search_box.on ("keydown", (d,e)=> {
++                console.log (d3);
++                console.log (d,e);
++            });
++            */
++
++          search_click.on("click", (e) => {
++            update_term(search_box.property("value"));
++            filter_table(clicker.node());
++          });
++
++          reset_click.on("click", (d) => {
++            search_box.property("value", "");
++            update_term("");
++            filter_table(clicker.node());
++          });
+         });
+-      });
++    }
+   }
+ 
+   if (handle_sort && "sort" in data) {
+diff --git a/src/timeDateUtil.js b/src/timeDateUtil.js
+index 040edd2..b4a961d 100644
+--- a/src/timeDateUtil.js
++++ b/src/timeDateUtil.js
+@@ -22,6 +22,9 @@ const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
+ const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
+ /** Used in many places where alpha-numerically sorted dates are desired*/
+ 
++const DateViewNodeSearch = d3.time.format("%Y/%m/%d");
++/** Used in many places where alpha-numerically sorted dates are desired*/
++
+ const DateUpperBoundYear = new Date().getFullYear();
+ /** Maximum year value (no future dates)*/
+ 
+@@ -90,7 +93,8 @@ function n_months_ago(reference_date, months) {
+     past_date.setFullYear(past_date.getFullYear() - diff_year);
+     past_date.setMonth(past_months - left_over);
+   }
+-
++  past_date.setDate(past_date.getDate() + 1); // exclusive
++  past_date.setUTCHours(0, 0, 0);
+   return past_date;
+ }
+ 
+@@ -108,6 +112,7 @@ module.exports = {
+   DateViewFormatMMDDYYY,
+   DateViewFormatShort,
+   DateViewFormatSlider,
++  DateViewNodeSearch,
+   n_months_ago,
+   init,
+ };
+diff --git a/ui-tests/tables.spec.js b/ui-tests/tables.spec.js
+index 2fac513..db690c6 100644
+--- a/ui-tests/tables.spec.js
++++ b/ui-tests/tables.spec.js
+@@ -97,6 +97,12 @@ test("node table sorting and filtering works", async ({ page }) => {
+   await expect(page.locator("#nodes-tab")).toBeVisible();
+   await page.locator("#nodes-tab").click();
+ 
++  await page.locator(".rule-filter-container").locator("select").selectOption({
++    label: "Diagnosis Year",
++  });
++  await page.locator(".rule-value-container").locator("input").fill("2022");
++  await page.locator("[data-hivtrace-ui-role='node-selector-search-buttonbar']").click();
++
+   await page.locator("#hivtrace_node_column_hiv_aids_dx_dt_3").click();
+   await page
+     .locator("[aria-labelledby='hivtrace_node_column_hiv_aids_dx_dt_3']")

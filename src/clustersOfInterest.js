@@ -350,7 +350,7 @@ function open_editor(
 
       let modifiedDate =
         validation_mode === "validate" &&
-          created_by === kGlobals.CDCCOICreatedBySystem
+        created_by === kGlobals.CDCCOICreatedBySystem
           ? self.today
           : timeDateUtil.getCurrentDate();
 
@@ -438,10 +438,10 @@ function open_editor(
                 if (
                   confirm(
                     'This cluster of interest does not include all the nodes in the current network that are eligible for membership by growth criterion  "' +
-                    tracking +
-                    '". These ' +
-                    self.unique_entity_list(added_node_objects).length +
-                    " additional nodes will be automatically added to this cluster of interest when you save it. If you don’t want to add these nodes to the cluster of interest please select 'Cancel' and change the growth criterion."
+                      tracking +
+                      '". These ' +
+                      self.unique_entity_list(added_node_objects).length +
+                      " additional nodes will be automatically added to this cluster of interest when you save it. If you don’t want to add these nodes to the cluster of interest please select 'Cancel' and change the growth criterion."
                   )
                 ) {
                   _.each(added_node_objects, (n) => {
@@ -476,8 +476,8 @@ function open_editor(
             if (validation_mode === "validate") {
               if (self.priority_set_table_writeable) {
                 let tab_pill = misc.get_ui_element_selector_by_role(
-                  "priority_set_counts"
-                ),
+                    "priority_set_counts"
+                  ),
                   tab_pill_select = d3.select(tab_pill),
                   remaining_sets = Number(tab_pill_select.text());
                 tab_pill_select.text(remaining_sets - 1);
@@ -719,8 +719,6 @@ function open_editor(
             panel_object._append_node(valid_ids[n.id]);
             existing_ids[n.id] = 1;
             need_update = true;
-          } else {
-            console.log("***", n);
           }
         });
 
@@ -789,9 +787,9 @@ function open_editor(
 
         panel.setHeaderTitle(
           "clusterOI editor (" +
-          entities.length +
-          " persons)" +
-          (validation_mode ? " [automatically created review] " : "")
+            entities.length +
+            " persons)" +
+            (validation_mode ? " [automatically created review] " : "")
         );
 
         save_set_button.attr(
@@ -1067,50 +1065,83 @@ function open_editor(
 function handle_inline_confirm(this_button, generator, text, action, disabled) {
   this_button = $(this_button.node());
   if (this_button.data("popover_shown") !== "shown") {
-    const popover = this_button
-      .popover({
-        sanitize: false,
-        placement: "right",
-        container: "body",
-        html: true,
-        content: generator,
-        trigger: "manual",
-      })
-      .on("shown.bs.popover", function (e) {
-        var clicked_object = d3.select(this);
-        var popover_div = d3.select(
-          "#" + clicked_object.attr("aria-describedby")
-        );
-        var textarea_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-form")
-        );
-        var button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-save")
-        );
-        textarea_element.text(text);
-        if (disabled) textarea_element.attr("disabled", true);
-        button_element.on("click", (d) => {
-          action($(textarea_element.node()).val());
-          d3.event.preventDefault();
-          this_button.click();
+    try {
+      const popover = this_button
+        .popover({
+          sanitize: false,
+          placement: "right",
+          container: "body",
+          html: true,
+          content: generator,
+          trigger: "manual",
+        })
+        .on("shown.bs.popover", function (e) {
+          var clicked_object = d3.select(this);
+          var popover_div = d3.select(
+            "#" + clicked_object.attr("aria-describedby")
+          );
+          var textarea_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-form")
+          );
+          var button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-save")
+          );
+          textarea_element.text(text);
+          if (disabled) textarea_element.attr("disabled", true);
+          button_element.on("click", (d) => {
+            action($(textarea_element.node()).val());
+            d3.event.preventDefault();
+            this_button.click();
+          });
+          button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-dismiss")
+          );
+          button_element.on("click", (d) => {
+            d3.event.preventDefault();
+            this_button.click();
+          });
         });
-        button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-dismiss")
-        );
-        button_element.on("click", (d) => {
-          d3.event.preventDefault();
-          this_button.click();
-        });
-      });
 
-    popover.popover("show");
-    this_button.data("popover_shown", "shown");
-    this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
-      $(this).data("popover_shown", "hidden");
-    });
+      popover.popover("show");
+      this_button.data("popover_shown", "shown");
+
+      // Fix popover visibility (Bootstrap fade transition workaround)
+      setTimeout(() => {
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          var popoverEl = $("#" + popoverId);
+          popoverEl.removeClass("fade").addClass("show in");
+          popoverEl.css({
+            "z-index": "99999",
+            opacity: "1",
+            display: "block",
+          });
+        }
+      }, 50);
+
+      this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
+        $(this).data("popover_shown", "hidden");
+      });
+    } catch (e) {
+      console.error("Error creating/showing popover:", e);
+    }
   } else {
     this_button.data("popover_shown", "hidden");
-    this_button.popover("destroy");
+    // Bootstrap 3 uses "destroy", Bootstrap 4/5 uses "dispose"
+    try {
+      this_button.popover("destroy");
+    } catch (e) {
+      try {
+        this_button.popover("dispose");
+      } catch (e2) {
+        // If neither works, try to hide and remove manually
+        this_button.popover("hide");
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          $("#" + popoverId).remove();
+        }
+      }
+    }
   }
 }
 
@@ -1138,7 +1169,8 @@ function _action_drop_down(self, pg) {
                 timestamp: pg.modified || pg.created,
                 priority_set: pg,
                 "priority-edge-length": threshold,
-                title: pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
+                title:
+                  pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
               });
               window.reinitalizeDropdown && window.reinitalizeDropdown();
             },
@@ -1180,7 +1212,11 @@ function _action_drop_down(self, pg) {
         action: function (button, value) {
           let ref_set = self.priority_groups_find_by_name(pg.name);
           let copied_node_objects = _.clone(ref_set.node_objects);
-          priority_set_inject_node_attibutes(self, copied_node_objects, pg.nodes);
+          priority_set_inject_node_attibutes(
+            self,
+            copied_node_objects,
+            pg.nodes
+          );
           open_editor(
             self,
             copied_node_objects,
@@ -1204,10 +1240,66 @@ function _action_drop_down(self, pg) {
     }
     dropdown.push({
       label: "View nodes in this cluster of interest",
-      data: {
-        toggle: "modal",
-        target: misc.get_ui_element_selector_by_role("cluster_list"),
-        priority_set: pg.name,
+      action: function (button, value) {
+        const modalSelector = misc.get_ui_element_selector_by_role(
+          "cluster_list",
+          true
+        );
+        const $modal = $(modalSelector);
+
+        // Store priority set name for the modal handler to use
+        $modal.data("priority_set_trigger", pg.name);
+
+        // Manually trigger the show.bs.modal event and show the modal
+        // This is a workaround for Bootstrap modal not working
+        $modal.trigger("show.bs.modal");
+
+        // Manually add Bootstrap 3 modal classes and styles
+        $modal
+          .addClass("in")
+          .css("display", "block")
+          .attr("aria-hidden", "false");
+
+        // Add backdrop
+        if (!$(".modal-backdrop").length) {
+          $("body").append('<div class="modal-backdrop fade in"></div>');
+          $("body").addClass("modal-open");
+        }
+
+        // Helper function to close modal
+        const closeModal = function () {
+          $modal
+            .removeClass("in")
+            .css("display", "none")
+            .attr("aria-hidden", "true");
+          $(".modal-backdrop").remove();
+          $("body").removeClass("modal-open");
+          $modal.trigger("hidden.bs.modal");
+        };
+
+        // Bind close handlers (unbind first to prevent duplicates)
+        $modal
+          .find('[data-dismiss="modal"]')
+          .off("click.mjcmodal")
+          .on("click.mjcmodal", closeModal);
+
+        // Also close on backdrop click
+        $modal.off("click.mjcmodal").on("click.mjcmodal", function (e) {
+          if ($(e.target).is($modal)) {
+            closeModal();
+          }
+        });
+
+        // Close on escape key
+        $(document)
+          .off("keydown.mjcmodal")
+          .on("keydown.mjcmodal", function (e) {
+            if (e.keyCode === 27) {
+              // Escape
+              closeModal();
+              $(document).off("keydown.mjcmodal");
+            }
+          });
       },
     });
   }
@@ -1247,15 +1339,29 @@ function _action_drop_down(self, pg) {
       label: "Create site ClusterOI from this MJ ClusterOI",
       action: function (button, value) {
         const site_pg_name = "SITE_COPY_" + pg.name;
-        if (confirm("Creating new cluster of interest '" + site_pg_name + "' for this MJ ClusterOI. Proceed?")) {
-          let existing_pg = self.overlap_defined_priority_groups.find((pg) => pg.name === site_pg_name);
+        if (
+          confirm(
+            "Creating new cluster of interest '" +
+              site_pg_name +
+              "' for this MJ ClusterOI. Proceed?"
+          )
+        ) {
+          let existing_pg = self.overlap_defined_priority_groups.find(
+            (pg) => pg.name === site_pg_name
+          );
           if (existing_pg) {
-            alert("A cluster of interest with the name '" + site_pg_name + "' already exists in the jurisdiction's ClusterOI. Please rename that clusterOI before creating a new one with the same name.");
+            alert(
+              "A cluster of interest with the name '" +
+                site_pg_name +
+                "' already exists in the jurisdiction's ClusterOI. Please rename that clusterOI before creating a new one with the same name."
+            );
             return;
           }
           let ref_set = self.priority_groups_find_by_name(pg.name);
           if (ref_set) {
-            let copied_node_objects = _.clone(ref_set.node_objects).filter(n => !n.id.startsWith("REDACTED_")).map(n => n.id);
+            let copied_node_objects = _.clone(ref_set.node_objects)
+              .filter((n) => !n.id.startsWith("REDACTED_"))
+              .map((n) => n.id);
             self.priority_groups_add_from_mjc(
               site_pg_name,
               copied_node_objects,
@@ -1266,12 +1372,22 @@ function _action_drop_down(self, pg) {
           }
         }
       },
-    })
+    });
     dropdown.push({
-      label: pg.archived ? "Unarchive this MJ cluster of interest" : "Archive this MJ cluster of interest",
+      label: pg.archived
+        ? "Unarchive this MJ cluster of interest"
+        : "Archive this MJ cluster of interest",
       action: function (button, value) {
         let ref_set = self.priority_groups_find_by_name(pg.name);
-        if (confirm("Are you sure you want to " + (pg.archived ? "unarchive" : "archive") + " MJ cluster of interest '" + pg.name + "'?")) {
+        if (
+          confirm(
+            "Are you sure you want to " +
+              (pg.archived ? "unarchive" : "archive") +
+              " MJ cluster of interest '" +
+              pg.name +
+              "'?"
+          )
+        ) {
           self.priority_groups_archive_mjc_set(ref_set.name, !pg.archived);
           window.reinitalizeDropdown && window.reinitalizeDropdown();
         }
@@ -1301,17 +1417,24 @@ function _action_drop_down(self, pg) {
 }
 
 /**
- * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views). 
+ * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
  * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
  * For the case of ClusterOI, we assume that self.defined_priority_groups is regular ClusterOI and self.overlap_defined_priority_groups is MJ ClusterOI (if any).
  * @param {Object} self - The main network visualization object.
  * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
  * @param {Array} priority_groups - An array of objects representing the priority sets (optional).
  * @param {boolean} archive_table - A flag indicating whether the table is for archived clusters of interest (optional).
-*/
+ */
 
-function draw_priority_set_table(self, container, priority_groups, archive_table = false) {
-  container = container || (archive_table ? self.priority_set_archive_table : self.priority_set_table);
+function draw_priority_set_table(
+  self,
+  container,
+  priority_groups,
+  archive_table = false
+) {
+  container =
+    container ||
+    (archive_table ? self.priority_set_archive_table : self.priority_set_table);
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
     if (archive_table) {
@@ -1322,10 +1445,20 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
     self.priority_groups_compute_node_membership();
     if (self.isMJCNetwork) {
       // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
-      self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap", "overlap");
+      self.priority_groups_compute_overlap_mjc(
+        priority_groups,
+        self.overlap_defined_priority_groups,
+        "priority_node_overlap",
+        "overlap"
+      );
     } else {
       // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
-      self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap_mjc", "overlap_mjc");
+      self.priority_groups_compute_overlap_mjc(
+        priority_groups,
+        self.overlap_defined_priority_groups,
+        "priority_node_overlap_mjc",
+        "overlap_mjc"
+      );
       self.priority_groups_compute_overlap(priority_groups);
     }
     var headers = [
@@ -1375,7 +1508,10 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             }
             return 0;
           },
-          help: "Number of nodes in the " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI",
+          help:
+            "Number of nodes in the " +
+            (self.isMJCNetwork ? "MJ " : "") +
+            "clusterOI",
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
@@ -1419,7 +1555,9 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           hidden: self.isMJCNetwork,
         },
         {
-          value: self.isMJCNetwork ? "My ClusterOI Overlap Count" : "MJ ClusterOI Overlap Count",
+          value: self.isMJCNetwork
+            ? "My ClusterOI Overlap Count"
+            : "MJ ClusterOI Overlap Count",
           width: 140,
           sort: function (c) {
             c = c.value;
@@ -1428,11 +1566,11 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             }
             return 0;
           },
-          help: self.isMJCNetwork ?
-            "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?" :
-            "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
-            hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
-        }
+          help: self.isMJCNetwork
+            ? "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?"
+            : "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+          hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
+        },
         /*,
           {
             value: "Cluster",
@@ -1444,7 +1582,9 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
 
     if (self._is_CDC_auto_mode) {
       headers[0].splice(3, 0, {
-        value: `${self.isMJCNetwork ? "MJ " : ""}clusterOI identification method`,
+        value: `${
+          self.isMJCNetwork ? "MJ " : ""
+        }clusterOI identification method`,
         width: 100,
         sort: function (c) {
           return c.value;
@@ -1468,6 +1608,10 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
 
     var rows = [];
     _.each(priority_groups, (pg) => {
+      // Ensure overlap object exists with default values
+      if (!pg.overlap) {
+        pg.overlap = { sets: 0, nodes: 0, duplicate: [], superset: [] };
+      }
       var this_row = [
         {
           // created by icon
@@ -1481,16 +1625,16 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
 
             return pg.createdBy === kGlobals.CDCCOICreatedBySystem
               ? '<i class="fa fa-2x fa-desktop" title="' +
-              kGlobals.CDCCOICreatedBySystem +
-              '" data-text-export=' +
-              kGlobals.CDCCOICreatedBySystem +
-              "></i>"
+                  kGlobals.CDCCOICreatedBySystem +
+                  '" data-text-export=' +
+                  kGlobals.CDCCOICreatedBySystem +
+                  "></i>"
               : '<i class="fa fa-2x fa-user" title="' +
-              kGlobals.CDCCOICreatedManually +
-              '" data-text-export=' +
-              kGlobals.CDCCOICreatedManually +
-              "></i>";
-          }
+                  kGlobals.CDCCOICreatedManually +
+                  '" data-text-export=' +
+                  kGlobals.CDCCOICreatedManually +
+                  "></i>";
+          },
         },
         {
           // name
@@ -1507,18 +1651,18 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             "<div style = 'white-space: nowrap; overflow: hidden; text-overflow : ellipsis;'>" +
             (pg.autocreated || pg.autoexpanded
               ? (pg.autoexpanded
-                ? '<span class="label label-default">Grew</span>'
-                : '<span class="label label-danger">New</span>') +
-              "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" +
-              value +
-              "'>" +
-              value +
-              "</span>"
+                  ? '<span class="label label-default">Grew</span>'
+                  : '<span class="label label-danger">New</span>') +
+                "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" +
+                value +
+                "'>" +
+                value +
+                "</span>"
               : '<span data-text-export = "' +
-              value +
-              '">' +
-              value +
-              "</span>") +
+                value +
+                '">' +
+                value +
+                "</span>") +
             "</div>",
           html: true,
           actions: [],
@@ -1529,7 +1673,9 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           width: 180,
           value: [pg.modified, pg.created],
           format: function (value) {
-            let vs = _.map(value, (v) => v === "REDACTED" ? v : timeDateUtil.DateViewFormat(v));
+            let vs = _.map(value, (v) =>
+              v === "REDACTED" ? v : timeDateUtil.DateViewFormat(v)
+            );
 
             if (vs[0] !== vs[1]) {
               return vs[0] + " / " + vs[1];
@@ -1553,8 +1699,11 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
         },
         {
           // size / new nodes
+          // For MJC networks, use pg.nodes.length since node_objects only contains local nodes
           value: [
-            self.unique_entity_list(pg.node_objects).length,
+            self.isMJCNetwork
+              ? pg.nodes.length
+              : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
               .mapObject((v) =>
@@ -1574,7 +1723,11 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           ],
           width: 100,
           format: function (v) {
-            if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentSizeEnabled === false
+            ) {
               return "REDACTED";
             }
             //console.log (pg);
@@ -1583,8 +1736,8 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
                 v[0] +
                 (v[1]
                   ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' +
-                  v[1] +
-                  " new</span>"
+                    v[1] +
+                    " new</span>"
                   : "")
               );
             }
@@ -1596,7 +1749,9 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
         {
           // size / new nodes in my jurisdiction (for MJ ClusterOI, filtered to just nodes from jurisdiction)
           value: [
-            self.unique_entity_list(pg.node_objects).filter((n) => !n.includes("REDACTED")).length,
+            self
+              .unique_entity_list(pg.node_objects)
+              .filter((n) => !n.includes("REDACTED")).length,
             _.chain(pg.nodes)
               .filter((n) => !n.name.includes("REDACTED"))
               .groupBy((n) => self.entity_id_from_string(n.name))
@@ -1609,7 +1764,11 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           ],
           width: 100,
           format: function (v) {
-            if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentSizeEnabled === false
+            ) {
               return "REDACTED";
             }
             if (v) {
@@ -1617,8 +1776,8 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
                 v[0] +
                 (v[1]
                   ? ' <span title="Number of nodes from my jurisdiction added by the system since the last network update" class="label label-default">' +
-                  v[1] +
-                  " new</span>"
+                    v[1] +
+                    " new</span>"
                   : "")
               );
             }
@@ -1631,7 +1790,11 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
           // meets priority definition
           width: 60,
           format: function (v) {
-            if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentPriorityEnabled === false
+            ) {
               return "<span title='REDACTED'>RED.</span>";
             }
             return v ? "Yes" : "No";
@@ -1643,7 +1806,12 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
         {
           width: 100,
           // TODO: actually redact the data on the backend
-          value: (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false) ? "REDACTED" : pg.cluster_dx_recent12_mo,
+          value:
+            self.isMJCNetwork &&
+            !self.fullMJCNetwork &&
+            self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false
+              ? "REDACTED"
+              : pg.cluster_dx_recent12_mo,
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
@@ -1660,22 +1828,22 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
                 String(v[0]) +
                 (v[1]
                   ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                  v[1] +
-                  " persons</span>"
+                    v[1] +
+                    " persons</span>"
                   : "") +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
-                  v[2].join(", ") +
-                  '" class="label label-danger pull-right">' +
-                  v[2].length +
-                  " duplicate clusterOI</span>"
+                    v[2].join(", ") +
+                    '" class="label label-danger pull-right">' +
+                    v[2].length +
+                    " duplicate clusterOI</span>"
                   : "") +
                 (v[3].length
                   ? ' <span title="clusterOIs which contain this clusterOI: ' +
-                  v[3].join(", ") +
-                  '" class="label label-warning pull-right">Fully contained in ' +
-                  v[3].length +
-                  " clusterOI</span>"
+                    v[3].join(", ") +
+                    '" class="label label-warning pull-right">Fully contained in ' +
+                    v[3].length +
+                    " clusterOI</span>"
                   : "")
               );
             }
@@ -1686,29 +1854,32 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             pg.overlap.sets === 0
               ? []
               : [
-                {
-                  icon: "fa-eye",
-                  dropdown: [
-                    {
-                      label: "List overlaps",
-                      data: {
-                        toggle: "modal",
-                        target:
-                          misc.get_ui_element_selector_by_role(
-                            "overlap_list"
-                          ),
-                        priority_set: pg.name,
+                  {
+                    icon: "fa-eye",
+                    dropdown: [
+                      {
+                        label: "List overlaps",
+                        data: {
+                          toggle: "modal",
+                          target:
+                            misc.get_ui_element_selector_by_role(
+                              "overlap_list"
+                            ),
+                          priority_set: pg.name,
+                        },
                       },
-                    },
-                  ],
-                },
-              ],
+                    ],
+                  },
+                ],
           hidden: self.isMJCNetwork,
         },
       ];
 
       // MJC Overlap column
-      if (self.isMJCNetwork || (!self.isMJCNetwork && self.overlap_defined_priority_groups)) {
+      if (
+        self.isMJCNetwork ||
+        (!self.isMJCNetwork && self.overlap_defined_priority_groups)
+      ) {
         const overlap = self.isMJCNetwork ? pg.overlap : pg.overlap_mjc;
         this_row.push({
           width: 140,
@@ -1724,22 +1895,34 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
                 String(v[0]) +
                 (v[1]
                   ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                  v[1] +
-                  " persons</span>"
+                    v[1] +
+                    " persons</span>"
                   : "") +
                 (v[2].length
-                  ? ' <span title="' + (!self.isMJCNetwork ? 'MJ ' : '') + 'clusterOIs which are exact duplicates of this ' + (self.isMJCNetwork ? 'MJ ' : '') + 'clusterOI: ' +
-                  v[2].join(", ") +
-                  '" class="label label-danger pull-right">' +
-                  v[2].length +
-                  " duplicate "+ (!self.isMJCNetwork ? 'MJ ' : '') + "clusterOI</span>"
+                  ? ' <span title="' +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOIs which are exact duplicates of this " +
+                    (self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI: " +
+                    v[2].join(", ") +
+                    '" class="label label-danger pull-right">' +
+                    v[2].length +
+                    " duplicate " +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI</span>"
                   : "") +
                 (v[3].length
-                  ? ' <span title="' + (!self.isMJCNetwork ? 'MJ ' : '') + 'clusterOIs which contain this ' + (self.isMJCNetwork ? 'MJ ' : '') + 'clusterOI: ' +
-                  v[3].join(", ") +
-                  '" class="label label-warning pull-right">Fully contained in ' +
-                  v[3].length +
-                  " "+ (!self.isMJCNetwork ? 'MJ ' : '') + "clusterOI</span>"
+                  ? ' <span title="' +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOIs which contain this " +
+                    (self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI: " +
+                    v[3].join(", ") +
+                    '" class="label label-warning pull-right">Fully contained in ' +
+                    v[3].length +
+                    " " +
+                    (!self.isMJCNetwork ? "MJ " : "") +
+                    "clusterOI</span>"
                   : "")
               );
             }
@@ -1750,24 +1933,24 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             overlap.sets === 0
               ? []
               : [
-                {
-                  icon: "fa-eye",
-                  dropdown: [
-                    {
-                      label: "List overlaps",
-                      data: {
-                        toggle: "modal",
-                        target:
-                          misc.get_ui_element_selector_by_role(
-                            "overlap_list"
-                          ),
-                        priority_set: pg.name,
-                        use_mjc_overlap_list: !self.isMJCNetwork, // for MJ ClusterOI table, show the ClusterOI overlap list; for regular ClusterOI table, show the MJ ClusterOI overlap list
+                  {
+                    icon: "fa-eye",
+                    dropdown: [
+                      {
+                        label: "List overlaps",
+                        data: {
+                          toggle: "modal",
+                          target:
+                            misc.get_ui_element_selector_by_role(
+                              "overlap_list"
+                            ),
+                          priority_set: pg.name,
+                          use_mjc_overlap_list: !self.isMJCNetwork, // for MJ ClusterOI table, show the ClusterOI overlap list; for regular ClusterOI table, show the MJ ClusterOI overlap list
+                        },
                       },
-                    },
-                  ],
-                },
-              ],
+                    ],
+                  },
+                ],
         });
       }
 
@@ -1828,7 +2011,7 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
             icon: "fa-info-circle",
             classed: { "view-edit-cluster": true },
             help: "View/edit this cluster of interest",
-            dropdown: _action_drop_down(self, pg)
+            dropdown: _action_drop_down(self, pg),
           },
           {
             icon: "fa-edit",
@@ -1868,7 +2051,7 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
       }
       this_row[1].actions = _.flatten(this_row[1].actions);
       //console.log (this_row[0]);
-      if (pg.not_in_network.length) {
+      if (pg.not_in_network && pg.not_in_network.length) {
         this_row[2]["actions"] = [
           {
             text: String(pg.not_in_network.length) + " removed",
@@ -1909,8 +2092,14 @@ function draw_priority_set_table(self, container, priority_groups, archive_table
       rows,
       true,
       has_required_actions +
-      `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${archive_table ? 'archived ' : ''}${self.isMJCNetwork ? 'MJ ' : ''}clusters of interest.
-          ${self.isMJCNetwork ? '' : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'}
+        `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${
+          archive_table ? "archived " : ""
+        }${self.isMJCNetwork ? "MJ " : ""}clusters of interest.
+          ${
+            self.isMJCNetwork
+              ? ""
+              : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'
+          }
           <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV">Export to CSV</button>`,
       get_editor()
     );
@@ -2038,13 +2227,13 @@ function priority_set_view(self, priority_set, options) {
   viewEnum.push("Diagnosed and in network before " + refDate);
   viewEnum.push(
     "Diagnosed or in network on or after " +
-    refDate +
-    " [directly linked to cluster of interest]"
+      refDate +
+      " [directly linked to cluster of interest]"
   );
   viewEnum.push(
     "Diagnosed or in network on or after " +
-    refDate +
-    " [indirectly linked to cluster of interest]"
+      refDate +
+      " [indirectly linked to cluster of interest]"
   );
   let viewEnumMissing = [...viewEnum, kGlobals.missing.label];
 
@@ -2182,8 +2371,8 @@ function priority_groups_add_set(
     ) {
       alert(
         "Cluster of interest '" +
-        nodeset.name +
-        "' has spaces either at the beginning or end of the name. Secure HIV-TRACE does not allow names that start or end with spaces."
+          nodeset.name +
+          "' has spaces either at the beginning or end of the name. Secure HIV-TRACE does not allow names that start or end with spaces."
       );
       return true;
     }
@@ -2195,15 +2384,15 @@ function priority_groups_add_set(
         if (same_nodes && d.tracking === nodeset.tracking) {
           alert(
             "Cluster of interest '" +
-            d.name +
-            "' has the same set of nodes and the same growth criterion as this new cluster of interest. Secure HIV-TRACE does not allow creating exact duplicates of clusters of interest."
+              d.name +
+              "' has the same set of nodes and the same growth criterion as this new cluster of interest. Secure HIV-TRACE does not allow creating exact duplicates of clusters of interest."
           );
           return true;
         } else if (same_nodes) {
           let keep_duplicate = confirm(
             "Warning! Cluster of interest '" +
-            d.name +
-            "' has the same set of nodes as this cluster of interest, but a different growth criterion'. Click 'OK' to create, or 'Cancel' to abort."
+              d.name +
+              "' has the same set of nodes as this cluster of interest, but a different growth criterion'. Click 'OK' to create, or 'Cancel' to abort."
           );
           let is_duplicate = !keep_duplicate;
           return is_duplicate;

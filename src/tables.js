@@ -400,36 +400,44 @@ function format_a_cell(data, index, item, priority_set_editor) {
               }
 
               dropdown_list = dropdown_list.selectAll("li").data(items);
-              dropdown_list.enter().append("li");
-              dropdown_list.each(function (data, i) {
-                var handle_change = d3
-                  .select(this)
-                  .append("a")
-                  .attr("href", "#")
-                  .text((data) => get_item_text(data));
-                if (_.has(data, "data") && data["data"]) {
-                  //let element = $(this_button.node());
-                  _.each(data.data, (v, k) => {
-                    handle_change.attr("data-" + k, v);
-                  });
-                }
-                handle_change.on("click", (d) => {
-                  if (_.has(d, "action") && d["action"]) {
-                    d["action"](this_button, d["label"]);
-                  } else if (b.action) {
-                    b.action(this_button, get_item_text(d));
+              dropdown_list
+                .enter()
+                .append("li")
+                .each(function (data, i) {
+                  var handle_change = d3
+                    .select(this)
+                    .append("a")
+                    .attr("href", "#")
+                    .text((data) => get_item_text(data));
+                  if (_.has(data, "data") && data["data"]) {
+                    //let element = $(this_button.node());
+                    _.each(data.data, (v, k) => {
+                      handle_change.attr("data-" + k, v);
+                    });
                   }
+                  handle_change.on("click", (d) => {
+                    // Only prevent default/propagation if there's a custom action handler
+                    if ((_.has(d, "action") && d["action"]) || b.action) {
+                      d3.event.preventDefault();
+                      d3.event.stopPropagation();
+                      if (_.has(d, "action") && d["action"]) {
+                        d["action"](this_button, d["label"]);
+                      } else if (b.action) {
+                        b.action(this_button, get_item_text(d));
+                      }
+                    }
+                  });
                 });
-              });
             } else {
               this_button = button_group
                 .append("button")
                 .classed("btn btn-default btn-xs", true);
-              if (b.action)
+              if (b.action) {
                 this_button.on("click", (e) => {
                   d3.event.preventDefault();
                   b.action(this_button, current_value);
                 });
+              }
             }
             if (b.icon) {
               this_button.append("i").classed("fa " + b.icon, true);
