@@ -183,6 +183,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~250 lines.
 - **Status**: Completed (2026-03-04)
 
+#### Step 23: Extract Priority Set Merge UI and Consolidate UI Helpers
+- **Goal**: Move priority set merge modal logic to `src/networkControls.js` and consolidate redundant UI helper definitions in `clusternetwork.js`.
+- **Result**: 
+    - Created `setup_priority_set_merge_controls` in `src/networkControls.js`.
+    - Promoted `_extract_attributes_for_nodes`, `_extract_exportable_attributes`, `_extract_mjc_attributes`, `_extract_nodes_by_id`, `_cluster_list_view_render`, and `_setup_cluster_list_view` to top-level `self.` definitions in `clusternetwork.js`.
+    - Removed redundant definitions from `initial_json_load`.
+    - Reduced `clusternetwork.js` by ~150 lines.
+- **Status**: Completed (2026-03-04)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

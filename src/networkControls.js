@@ -447,3 +447,220 @@ export function setup_network_controls(
       }, 250)
     );
 }
+
+export function setup_priority_set_merge_controls(
+  self,
+  tables,
+  clustersOfInterest
+) {
+  $(self.get_ui_element_selector_by_role("priority_set_merge", true)).on(
+    "show.bs.modal",
+    (event) => {
+      var modal = d3.select(
+        self.get_ui_element_selector_by_role("priority_set_merge", true)
+      );
+
+      const desc = modal.selectAll(".modal-desc");
+
+      const proceed_btn = d3.select(
+        self.get_ui_element_selector_by_role(
+          "priority_set_merge_table_proceed",
+          true
+        )
+      );
+
+      if (
+        self.defined_priority_groups &&
+        self.defined_priority_groups.length > 1
+      ) {
+        desc.text("Select two or more clusters of interest to merge");
+
+        var headers = [
+          [
+            {
+              value: "Select",
+            },
+            {
+              value: "Cluster of interest",
+              help: "Cluster of interest Name",
+              sort: "value",
+            },
+            {
+              value: "Persons",
+              help: "How many persons are in this cluster of interest",
+              sort: "value",
+            },
+            {
+              value: "Overlaps",
+              help: "Overlaps with",
+              sort: "value",
+            },
+          ],
+        ];
+
+        const current_selection = new Set();
+        let current_node_set = null;
+        let current_node_objects = null;
+
+        const handle_selection = (name, selected) => {
+          if (selected) {
+            current_selection.add(name);
+          } else {
+            current_selection.delete(name);
+          }
+          if (current_selection.size > 1) {
+            let clusterOITotalNOdes = 0;
+            current_node_set = new Set();
+            current_node_objects = {};
+            _.each(self.defined_priority_groups, (pg) => {
+              if (current_selection.has(pg.name)) {
+                clusterOITotalNOdes += self.unique_entity_list(
+                  pg.node_objects
+                ).length;
+                _.each(pg.nodes, (n) => {
+                  current_node_set.add(n.name);
+                  current_node_objects[n.name] = {
+                    _priority_set_date: n.added,
+                    _priority_set_kind: n.kind,
+                  };
+                });
+              }
+            });
+            desc.html(
+              "Merge " +
+                current_selection.size +
+                " clusterOI with " +
+                clusterOITotalNOdes +
+                " persons, creating a new clusterOI with " +
+                self.unique_entity_list_from_ids([...current_node_set])
+                  .length +
+                " persons. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
+            );
+            proceed_btn.attr("disabled", null);
+          } else {
+            desc.text("Select two or more clusters of interest to merge");
+            proceed_btn.attr("disabled", "disabled");
+          }
+        };
+
+        const handle_merge = () => {
+          if (current_node_set) {
+            clustersOfInterest.open_editor(
+              self,
+              [],
+              "",
+              "Merged from " + [...current_selection].join(" and ")
+            );
+            clustersOfInterest
+              .get_editor()
+              .append_nodes([...current_node_set], current_node_objects, true);
+          }
+          $(modal.node()).modal("hide");
+        };
+
+        proceed_btn.attr("disabled", "disabled").on("click", handle_merge);
+
+        var rows = [];
+        _.each(self.defined_priority_groups, (pg) => {
+          const my_overlaps = new Set();
+          _.each(pg.node_objects, (n) => {
+            _.each([...self.priority_node_overlap[self.entity_id(n)]], (ps) => {
+              if (ps !== pg.name) {
+                my_overlaps.add(ps);
+              }
+            });
+          });
+
+          rows.push([
+            {
+              value: pg,
+              callback: function (element, payload) {
+                var this_cell = d3.select(element);
+                this_cell
+                  .append("input")
+                  .attr("type", "checkbox")
+                  .style("margin-left", "1em")
+                  .on("click", function (e) {
+                    handle_selection(payload.name, $(this).prop("checked"));
+                  });
+              },
+            },
+            { value: pg.name },
+            { value: self.unique_entity_list(pg.node_objects).length },
+            {
+              value: [...my_overlaps],
+              format: (d) => d.join("<br>"),
+              html: true,
+            },
+          ]);
+        });
+
+        tables.add_a_sortable_table(
+          modal.select(
+            self.get_ui_element_selector_by_role("priority_set_merge_table", true)
+          ),
+          headers,
+          rows,
+          true,
+          null,
+          clustersOfInterest.get_editor()
+        );
+      }
+    }
+  );
+}
+
+export function setup_priority_set_controls(
+  self,
+  i18n,
+  helpers,
+  timeDateUtil,
+  tables,
+  misc,
+  clustersOfInterest
+) {
+  var priority_ui_container = d3.select(
+    self.get_ui_element_selector_by_role("priority_operations_container")
+  );
+
+  priority_ui_container.selectAll("li").remove();
+
+  var priority_commands = [
+    [
+      "Clear all clusters of interest",
+      function () {
+        if (confirm("Are you sure you want to clear all clusters of interest?")) {
+          self.defined_priority_groups = [];
+          self.priority_groups_compute_overlap();
+          self.draw_priority_set_table();
+          self.update();
+        }
+      },
+      true,
+    ],
+    [
+      "Merge clusters of interest",
+      function () {
+        $(self.get_ui_element_selector_by_role("priority_set_merge", true)).modal(
+          "show"
+        );
+      },
+      true,
+    ],
+  ];
+
+  priority_commands.forEach(function (item, index) {
+    if (item[2]) {
+      this.append("li")
+        .append("a")
+        .text(item[0])
+        .attr("href", "#")
+        .on("click", function (e) {
+          item[1](this);
+          d3.event.preventDefault();
+        });
+    }
+  }, priority_ui_container);
+
+  setup_priority_set_merge_controls(self, tables, clustersOfInterest);
+}

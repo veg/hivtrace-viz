@@ -386,6 +386,109 @@ var hivtrace_cluster_network_graph = function (
   }
 
   /**
+   * @function _extract_attributes_for_nodes
+   * @description Extracts specified attributes for a list of nodes.
+   * @param {Array<Object>} nodes - An array of node objects.
+   * @param {Array<Object>} column_names - An array of column name objects, each with a `raw_attribute_key`.
+   * @returns {Array<Array<string>>} A 2D array where the first row is headers and subsequent rows are node attribute values.
+   */
+  self._extract_attributes_for_nodes = function (nodes, column_names) {
+    return NetworkUIHelpers.extract_attributes_for_nodes(
+      nodes,
+      column_names,
+      self,
+      tables,
+      HTX
+    );
+  };
+
+  /**
+   * @function _extract_exportable_attributes
+   * @description Extracts attributes that are suitable for export.
+   * @param {boolean} extended - If true, includes extended attributes like Node ID and Cluster.
+   * @returns {Array<Object>} An array of attribute objects.
+   */
+  self._extract_exportable_attributes = function (extended) {
+    return NetworkUIHelpers.extract_exportable_attributes(
+      extended,
+      self,
+      kGlobals,
+      tables,
+      i18n
+    );
+  };
+
+  /**
+   * @function _extract_mjc_attributes
+   * @description Extracts MJC attributes for a priority group.
+   * @param {string} priority_group_name - The name of the priority group.
+   * @returns {Array} An array of extracted MJC attributes.
+   */
+  self._extract_mjc_attributes = function (priority_group_name) {
+    return NetworkUIHelpers.extract_mjc_attributes(
+      priority_group_name,
+      self,
+      kGlobals,
+      timeDateUtil
+    );
+  };
+
+  /**
+   * @function _extract_nodes_by_id
+   * @description Extracts nodes belonging to a specific cluster or subcluster ID.
+   * @param {string} id - The ID of the cluster or subcluster.
+   * @returns {Array<Object>} An array of node objects.
+   */
+  self._extract_nodes_by_id = function (id) {
+    return NetworkUIHelpers.extract_nodes_by_id(id, self);
+  };
+
+  /**
+   * @function _cluster_list_view_render
+   * @description Renders a list view of cluster nodes, optionally grouped by attribute.
+   * @param {string} cluster_id - The ID of the cluster to render.
+   * @param {boolean} group_by_attribute - If true, groups nodes by attribute; otherwise, lists individual nodes.
+   * @param {Object} the_list - The D3 selection of the list element to render into.
+   * @param {string} priority_group - The name of the priority group (if applicable).
+   * @returns {void}
+   */
+  self._cluster_list_view_render = function (
+    cluster_id,
+    group_by_attribute,
+    the_list,
+    priority_group
+  ) {
+    return NetworkUIHelpers.cluster_list_view_render(
+      cluster_id,
+      group_by_attribute,
+      the_list,
+      priority_group,
+      self,
+      kGlobals,
+      timeDateUtil,
+      helpers,
+      i18n
+    );
+  };
+
+  /**
+   * @function _setup_cluster_list_view
+   * @description Sets up the cluster list view, including event listeners for toggling and modal display.
+   * @returns {void}
+   */
+  self._setup_cluster_list_view = function () {
+    return NetworkUIHelpers.setup_cluster_list_view(
+      self,
+      kGlobals,
+      timeDateUtil,
+      helpers,
+      i18n,
+      tables,
+      clustersOfInterest
+    );
+  };
+
+  /**
    * @function _refresh_subcluster_view
    * @description Refreshes the subcluster view based on a given date.
    * @param {Date} set_date - The date to use for refreshing the view.
@@ -749,267 +852,10 @@ var hivtrace_cluster_network_graph = function (
     /* add buttons and handlers */
     /* clusters first */
 
-    /**
-     * @function _extract_attributes_for_nodes
-     * @description Extracts specified attributes for a list of nodes.
-     * @param {Array<Object>} nodes - An array of node objects.
-     * @param {Array<Object>} column_names - An array of column name objects, each with a `raw_attribute_key`.
-     * @returns {Array<Array<string>>} A 2D array where the first row is headers and subsequent rows are node attribute values.
-     */
-    self._extract_attributes_for_nodes = function (nodes, column_names) {
-      return NetworkUIHelpers.extract_attributes_for_nodes(
-        nodes,
-        column_names,
-        self,
-        tables,
-        HTX
-      );
-    };
-
-    /**
-     * @function _extract_exportable_attributes
-     * @description Extracts attributes that are suitable for export.
-     * @param {boolean} extended - If true, includes extended attributes like Node ID and Cluster.
-     * @returns {Array<Object>} An array of attribute objects.
-     */
-    self._extract_exportable_attributes = function (extended) {
-      return NetworkUIHelpers.extract_exportable_attributes(
-        extended,
-        self,
-        kGlobals,
-        tables,
-        i18n
-      );
-    };
-
-    self._extract_mjc_attributes = function (priority_group_name) {
-      return NetworkUIHelpers.extract_mjc_attributes(
-        priority_group_name,
-        self,
-        kGlobals,
-        timeDateUtil
-      );
-    };
-
-    /**
-     * @function _extract_nodes_by_id
-     * @description Extracts nodes belonging to a specific cluster or subcluster ID.
-     * @param {string} id - The ID of the cluster or subcluster.
-     * @returns {Array<Object>} An array of node objects.
-     */
-    self._extract_nodes_by_id = function (id) {
-      return NetworkUIHelpers.extract_nodes_by_id(id, self);
-    };
-
-    /**
-     * @function _cluster_list_view_render
-     * @description Renders a list view of cluster nodes, optionally grouped by attribute.
-     * @param {string} cluster_id - The ID of the cluster to render.
-     * @param {boolean} group_by_attribute - If true, groups nodes by attribute; otherwise, lists individual nodes.
-     * @param {Object} the_list - The D3 selection of the list element to render into.
-     * @param {string} priority_group - The name of the priority group (if applicable).
-     * @returns {void}
-     */
-    self._cluster_list_view_render = function (
-      cluster_id,
-      group_by_attribute,
-      the_list,
-      priority_group
-    ) {
-      return NetworkUIHelpers.cluster_list_view_render(
-        cluster_id,
-        group_by_attribute,
-        the_list,
-        priority_group,
-        self,
-        kGlobals,
-        timeDateUtil,
-        helpers,
-        i18n
-      );
-    };
-
-    /**
-     * @function _setup_cluster_list_view
-     * @description Sets up the cluster list view, including event listeners for toggling and modal display.
-     * @returns {void}
-     */
-    self._setup_cluster_list_view = function () {
-      return NetworkUIHelpers.setup_cluster_list_view(
-        self,
-        kGlobals,
-        timeDateUtil,
-        helpers,
-        i18n,
-        tables,
-        clustersOfInterest
-      );
-    };
-
-    $(self.get_ui_element_selector_by_role("priority_set_merge", true)).on(
-      "show.bs.modal",
-      (event) => {
-        var modal = d3.select(
-          self.get_ui_element_selector_by_role("priority_set_merge", true)
-        );
-
-        const desc = modal.selectAll(".modal-desc");
-
-        const proceed_btn = d3.select(
-          self.get_ui_element_selector_by_role(
-            "priority_set_merge_table_proceed",
-            true
-          )
-        );
-
-        if (
-          self.defined_priority_groups &&
-          self.defined_priority_groups.length > 1
-        ) {
-          desc.text("Select two or more clusters of interest to merge");
-
-          var headers = [
-            [
-              {
-                value: "Select",
-              },
-              {
-                value: "Cluster of interest",
-                help: "Cluster of interest Name",
-                sort: "value",
-              },
-              {
-                value: "Persons",
-                help: "How many persons are in this cluster of interest",
-                sort: "value",
-              },
-              {
-                value: "Overlaps",
-                help: "Overlaps with",
-                sort: "value",
-              },
-            ],
-          ];
-
-          const current_selection = new Set();
-          let current_node_set = null;
-          let current_node_objects = null;
-
-          const handle_selection = (name, selected) => {
-            if (selected) {
-              current_selection.add(name);
-            } else {
-              current_selection.delete(name);
-            }
-            if (current_selection.size > 1) {
-              let clusterOITotalNOdes = 0;
-              current_node_set = new Set();
-              current_node_objects = {};
-              _.each(self.defined_priority_groups, (pg) => {
-                if (current_selection.has(pg.name)) {
-                  clusterOITotalNOdes += self.unique_entity_list(
-                    pg.node_objects
-                  ).length;
-                  _.each(pg.nodes, (n) => {
-                    current_node_set.add(n.name);
-                    current_node_objects[n.name] = {
-                      _priority_set_date: n.added,
-                      _priority_set_kind: n.kind,
-                    };
-                  });
-                }
-              });
-              desc.html(
-                "Merge " +
-                  current_selection.size +
-                  " clusterOI with " +
-                  clusterOITotalNOdes +
-                  " persons, creating a new clusterOI with " +
-                  self.unique_entity_list_from_ids([...current_node_set])
-                    .length +
-                  " persons. <br><small>Note that the clusters of interest being merged will <b>not</b> be automatically deleted</small>"
-              );
-              proceed_btn.attr("disabled", null);
-            } else {
-              desc.text("Select two or more clusters of interest to merge");
-              proceed_btn.attr("disabled", "disabled");
-            }
-          };
-
-          const handle_merge = () => {
-            if (current_node_set) {
-              clustersOfInterest.open_editor(
-                self,
-                [],
-                "",
-                "Merged from " + [...current_selection].join(" and ")
-              );
-              clustersOfInterest
-                .get_editor()
-                .append_nodes(
-                  [...current_node_set],
-                  current_node_objects,
-                  true
-                );
-            }
-            $(modal.node()).modal("hide");
-          };
-
-          proceed_btn.attr("disabled", "disabled").on("click", handle_merge);
-
-          var rows = [];
-          _.each(self.defined_priority_groups, (pg) => {
-            const my_overlaps = new Set();
-            _.each(pg.node_objects, (n) => {
-              _.each(
-                [...self.priority_node_overlap[self.entity_id(n)]],
-                (ps) => {
-                  if (ps !== pg.name) {
-                    my_overlaps.add(ps);
-                  }
-                }
-              );
-            });
-
-            rows.push([
-              {
-                value: pg,
-                callback: function (element, payload) {
-                  var this_cell = d3.select(element);
-                  this_cell
-                    .append("input")
-                    .attr("type", "checkbox")
-                    .style("margin-left", "1em")
-                    .on("click", function (e) {
-                      handle_selection(payload.name, $(this).prop("checked"));
-                    });
-                },
-              },
-              { value: pg.name },
-              { value: self.unique_entity_list(pg.node_objects).length },
-              {
-                value: [...my_overlaps],
-                format: (d) => d.join("<br>"),
-                html: true,
-              },
-            ]);
-          });
-
-          tables.add_a_sortable_table(
-            modal.select(
-              self.get_ui_element_selector_by_role(
-                "priority_set_merge_table",
-                true
-              )
-            ),
-            headers,
-            rows,
-            true,
-            null,
-            clustersOfInterest.get_editor()
-          );
-        }
-      }
+    NetworkControls.setup_priority_set_merge_controls(
+      self,
+      tables,
+      clustersOfInterest
     );
 
     // Setup cluster list view for both regular networks (with button bar) and MJC networks
