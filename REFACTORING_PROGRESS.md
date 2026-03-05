@@ -192,6 +192,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~150 lines.
 - **Status**: Completed (2026-03-04)
 
+#### Step 24: Extract UI Statistics and Degree Computation
+- **Goal**: Move `render_binned_table`, `render_chord_diagram`, `attribute_pairwise_distribution`, `extract_network_time_series`, `stratify`, and `compute_node_degrees` to specialized modules.
+- **Result**: 
+    - Created `src/networkStatisticsUI.js` for table and chord diagram rendering.
+    - Moved `compute_node_degrees` to `src/misc.js`.
+    - Updated `clusternetwork.js` to use wrappers for these functions.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-03-04)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
