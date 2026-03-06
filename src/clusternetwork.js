@@ -3115,6 +3115,8 @@ var hivtrace_cluster_network_graph = function (
           "Part of a clusterOI meeting national priority",
         ];
 
+        self._mjc_active_filters = new Set();
+
         self._compute_mjc_node_set = function (filter_index) {
           const ref_date = self.get_reference_date();
           const pg_groups = self.overlap_defined_priority_groups;
@@ -3177,8 +3179,21 @@ var hivtrace_cluster_network_graph = function (
           return null; // No filter (index 0) or unrecognized
         };
 
-        self.apply_mjc_node_filter = function (filter_index) {
-          const node_set = self._compute_mjc_node_set(filter_index);
+        self.apply_mjc_node_filter = function () {
+          var node_set = null;
+
+          if (self._mjc_active_filters.size > 0) {
+            // Intersect all active filter sets
+            self._mjc_active_filters.forEach((filter_index) => {
+              const filter_set = self._compute_mjc_node_set(filter_index);
+              if (filter_set === null) return;
+              if (node_set === null) {
+                node_set = filter_set;
+              } else {
+                node_set = new Set([...node_set].filter((id) => filter_set.has(id)));
+              }
+            });
+          }
 
           self.nodes.forEach((n) => {
             n.mjc_hidden = node_set !== null && !node_set.has(n.id);
@@ -3200,19 +3215,52 @@ var hivtrace_cluster_network_graph = function (
           mjc_filter_container.selectAll("li").remove();
 
           self._mjc_filter_options.forEach((label, index) => {
+            var is_no_filter = index === 0;
             mjc_filter_container
               .append("li")
               .append("a")
               .attr("href", "#")
-              .style("font-weight", index === 0 ? "bold" : null)
+              .style("font-weight", is_no_filter ? "bold" : null)
               .text(label)
               .on("click", function () {
                 d3.event.preventDefault();
-                mjc_filter_container.selectAll("a").style("font-weight", null);
-                d3.select(this).style("font-weight", "bold");
+
+                if (is_no_filter) {
+                  // "No filter" clears all active filters
+                  self._mjc_active_filters.clear();
+                  mjc_filter_container.selectAll("a").style("font-weight", null);
+                  d3.select(this).style("font-weight", "bold");
+                } else {
+                  // Toggle this filter on/off
+                  if (self._mjc_active_filters.has(index)) {
+                    self._mjc_active_filters.delete(index);
+                    d3.select(this).style("font-weight", null);
+                  } else {
+                    self._mjc_active_filters.add(index);
+                    d3.select(this).style("font-weight", "bold");
+                  }
+
+                  // Un-bold "No filter" when any filter is active; re-bold it when none are
+                  var no_filter_item = mjc_filter_container.select("a");
+                  no_filter_item.style("font-weight",
+                    self._mjc_active_filters.size === 0 ? "bold" : null
+                  );
+                }
+
+                // Update the dropdown label
+                var count = self._mjc_active_filters.size;
+                var label_text;
+                if (count === 0) {
+                  label_text = "No filter";
+                } else if (count === 1) {
+                  label_text = self._mjc_filter_options[self._mjc_active_filters.values().next().value];
+                } else {
+                  label_text = count + " filters active";
+                }
                 d3.select(self.get_ui_element_selector_by_role("mjc_node_filter_label"))
-                  .html("Show: " + label + ' <span class="caret"></span>');
-                self.apply_mjc_node_filter(index);
+                  .html("Show: " + label_text + ' <span class="caret"></span>');
+
+                self.apply_mjc_node_filter();
               });
           });
 
