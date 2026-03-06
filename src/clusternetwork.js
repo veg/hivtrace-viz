@@ -821,6 +821,10 @@ var hivtrace_cluster_network_graph = function (
 
       cluster_options["today"] = self.today;
       cluster_options["auto_expand_single_cluster"] = true;
+      if (self.fullMJCNetwork) {
+        cluster_options["full-mjc-network"] = true;
+        cluster_options["is-mjc-network"] = true;
+      }
       cluster_view = hivtrace_cluster_network_graph(
         filtered_json,
         "#" + random_content_id,
@@ -3101,6 +3105,123 @@ var hivtrace_cluster_network_graph = function (
           }, 250)
         );
 
+      if (self.fullMJCNetwork) {
+        self._mjc_filter_options = [
+          "No filter",
+          "Diagnosed within last 36 months",
+          "Diagnosed within last 12 months",
+          "Part of a system clusterOI",
+          "Part of a clusterOI (system or manual)",
+          "Part of a clusterOI meeting national priority",
+        ];
+
+        self._compute_mjc_node_set = function (filter_index) {
+          const ref_date = self.get_reference_date();
+          const pg_groups = self.overlap_defined_priority_groups;
+
+          // Diagnosed within last 36 months
+          if (filter_index === 1) {
+            const cutoff = timeDateUtil.n_months_ago(ref_date, 36);
+            return new Set(
+              _.map(
+                _.filter(self.nodes, (n) =>
+                  self.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false)
+                ),
+                (n) => n.id
+              )
+            );
+          }
+
+          // Diagnosed within last 12 months
+          if (filter_index === 2) {
+            const cutoff = timeDateUtil.n_months_ago(ref_date, 12);
+            return new Set(
+              _.map(
+                _.filter(self.nodes, (n) =>
+                  self.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false)
+                ),
+                (n) => n.id
+              )
+            );
+          }
+
+          // Part of a system clusterOI
+          if (filter_index === 3 && pg_groups) {
+            const node_set = new Set();
+            _.each(
+              _.filter(pg_groups, (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem),
+              (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
+            );
+            return node_set;
+          }
+
+          // Part of a clusterOI (system or manual)
+          if (filter_index === 4 && pg_groups) {
+            const node_set = new Set();
+            _.each(pg_groups, (pg) => {
+              _.each(pg.nodes, (n) => node_set.add(n.name));
+            });
+            return node_set;
+          }
+
+          // Part of a clusterOI meeting national priority
+          if (filter_index === 5 && pg_groups) {
+            const node_set = new Set();
+            _.each(
+              _.filter(pg_groups, (pg) => pg.meets_priority_def),
+              (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
+            );
+            return node_set;
+          }
+
+          return null; // No filter (index 0) or unrecognized
+        };
+
+        self.apply_mjc_node_filter = function (filter_index) {
+          const node_set = self._compute_mjc_node_set(filter_index);
+
+          self.nodes.forEach((n) => {
+            n.mjc_hidden = node_set !== null && !node_set.has(n.id);
+          });
+
+          self.clusters.forEach((c) => {
+            const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
+            c.mjc_hidden = node_set !== null && cluster_nodes.length > 0 &&
+              cluster_nodes.every((n) => n.mjc_hidden);
+          });
+
+          self.update(true);
+        };
+
+        self._setup_mjc_filter_ui = function () {
+          const mjc_filter_container = d3.select(
+            self.get_ui_element_selector_by_role("mjc_node_filter")
+          );
+          mjc_filter_container.selectAll("li").remove();
+
+          self._mjc_filter_options.forEach((label, index) => {
+            mjc_filter_container
+              .append("li")
+              .append("a")
+              .attr("href", "#")
+              .style("font-weight", index === 0 ? "bold" : null)
+              .text(label)
+              .on("click", function () {
+                d3.event.preventDefault();
+                mjc_filter_container.selectAll("a").style("font-weight", null);
+                d3.select(this).style("font-weight", "bold");
+                d3.select(self.get_ui_element_selector_by_role("mjc_node_filter_label"))
+                  .html("Show: " + label + ' <span class="caret"></span>');
+                self.apply_mjc_node_filter(index);
+              });
+          });
+
+          d3.select(
+            self.get_ui_element_selector_by_role("mjc_node_filter_enclosure")
+          ).style("display", null);
+        };
+      }
+
       $(self.get_ui_element_selector_by_role("set_min_cluster_size"))
         .off("change")
         .on(
@@ -3655,6 +3776,10 @@ var hivtrace_cluster_network_graph = function (
               });
           }
         );
+
+        if (self._setup_mjc_filter_ui) {
+          self._setup_mjc_filter_ui();
+        }
       }
     };
 
@@ -5017,7 +5142,7 @@ var hivtrace_cluster_network_graph = function (
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
         .style("opacity", (d) => node_opacity(d))
         .style("display", (d) => {
-          if (d.is_hidden) return "none";
+          if (d.is_hidden || d.mjc_hidden) return "none";
           return null;
         })
         .call(
@@ -5121,7 +5246,7 @@ var hivtrace_cluster_network_graph = function (
       })
       .style("stroke-linejoin", (d, i) => (draw_from.length > 1 ? "round" : ""))
       .style("display", (d) => {
-        if (the_cluster.is_hidden) return "none";
+        if (the_cluster.is_hidden || the_cluster.mjc_hidden) return "none";
         return null;
       });
   }
@@ -6999,7 +7124,8 @@ var hivtrace_cluster_network_graph = function (
 
     link
       .style("display", (d) => {
-        if (d.target.is_hidden || d.source.is_hidden || d.is_hidden) {
+        if (d.target.is_hidden || d.source.is_hidden || d.is_hidden ||
+            d.target.mjc_hidden || d.source.mjc_hidden) {
           return "none";
         }
         return null;
@@ -7077,7 +7203,7 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   function tick() {
-    if (self.isMJCNetwork) {
+    if (self.isMJCNetwork && !self.fullMJCNetwork) {
       return;
     }
 
@@ -8690,7 +8816,7 @@ var hivtrace_cluster_network_graph = function (
   /*------------ D3 globals and SVG elements ---------------*/
 
   var network_layout = null;
-  if (!self.isMJCNetwork) {
+  if (!self.isMJCNetwork || self.fullMJCNetwork) {
     network_layout = d3.layout
       .force()
       .on("tick", tick)
