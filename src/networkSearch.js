@@ -309,3 +309,125 @@ export function define_node_search_table(self, context) {
     self.draw_extended_node_table([], null, null, { "no-filter": true });
   }
 }
+
+/**
+ * @function filter
+ * @description Filters the network based on a set of conditions, including regular expressions, distance, and date.
+ * @param {Object} self - The network object.
+ * @param {Array<Object>} conditions - An array of conditions to filter by.
+ * @param {boolean} skip_update - If true, skips updating the network visualization after filtering.
+ * @param {Object} timeDateUtil - The time/date utility module.
+ * @param {Object} kGlobals - Global constants.
+ * @returns {void}
+ */
+export function filter(self, conditions, skip_update, timeDateUtil, kGlobals) {
+  var anything_changed = false;
+
+  conditions = _.map(["re", "distance", "date"], (cnd) =>
+    _.map(
+      _.filter(conditions, (v) => v.type === cnd),
+      (v) => (cnd === "distance" ? v : v.value)
+    )
+  );
+
+  if (conditions[1].length) {
+    self.nodes.forEach((n) => {
+      n.length_filter = false;
+    });
+
+    _.each(self.edges, (e) => {
+      var did_match = _.some(conditions[1], (d) =>
+        d.greater_than ? e.length >= d.value : e.length < d.value
+      );
+
+      if (did_match) {
+        self.nodes[e.source].length_filter = true;
+        self.nodes[e.target].length_filter = true;
+      }
+      e.length_filter = did_match;
+    });
+  } else {
+    self.nodes.forEach((n) => {
+      n.length_filter = false;
+    });
+    self.edges.forEach((e) => {
+      e.length_filter = false;
+    });
+  }
+
+  if (conditions[2].length) {
+    self.nodes.forEach((n) => {
+      var node_T = self.attribute_node_value_by_id(
+        n,
+        timeDateUtil.getClusterTimeScale()
+      );
+      n.date_filter = _.some(
+        conditions[2],
+        (d) => node_T >= d[0] && node_T <= d[1]
+      );
+    });
+  } else {
+    self.nodes.forEach((n) => {
+      n.date_filter = false;
+    });
+  }
+
+  self.clusters.forEach((c) => {
+    c.match_filter = 0;
+  });
+
+  self.edges.forEach((e) => {
+    if (e.length_filter) {
+      anything_changed = true;
+    }
+  });
+
+  self.nodes.forEach((n) => {
+    var did_match = _.some(
+      conditions[0],
+      (regexp) =>
+        regexp.test(n.id) ||
+        _.some(n[kGlobals.network.NodeAttributeID], (attr) =>
+          regexp.test(attr)
+        )
+    );
+
+    did_match = did_match || n.length_filter || n.date_filter;
+
+    if (did_match !== n.match_filter) {
+      n.match_filter = did_match;
+      anything_changed = true;
+    }
+
+    if (n.match_filter && n.parent) {
+      n.parent.match_filter += 1;
+    }
+  });
+
+  if (anything_changed && self.handle_inline_charts) {
+    self.handle_inline_charts((n) => n.match_filter);
+  }
+
+  if (anything_changed && !skip_update) {
+    if (self.hide_unselected) {
+      self.filter_visibility();
+    }
+
+    self.update(true);
+  }
+}
+
+/**
+ * @function filter_visibility
+ * @description Filters the visibility of nodes and clusters based on whether they match the current filter.
+ * @param {Object} self - The network object.
+ * @returns {void}
+ */
+export function filter_visibility(self) {
+  self.clusters.forEach((c) => {
+    c.is_hidden = self.hide_unselected && !c.match_filter;
+  });
+  self.nodes.forEach((n) => {
+    n.is_hidden = self.hide_unselected && !n.match_filter;
+  });
+}

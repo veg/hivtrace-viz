@@ -146,7 +146,7 @@ export function setup_network_controls(
             ? "Hide problematic clusters"
             : "Show problematic clusters"
         );
-        self.toggle_hxb2();
+        toggle_hxb2(self);
       },
       self.has_hxb2_links,
       "hivtrace-hide-problematic-clusters",
@@ -161,7 +161,7 @@ export function setup_network_controls(
             .insert("i", ":first-child")
             .classed("fa fa-check-square", true);
         }
-        self.toggle_highlight_unsupported_edges();
+        toggle_highlight_unsupported_edges(self);
       },
       true,
       "hivtrace-highlight-unsuppored_edges",
@@ -180,7 +180,7 @@ export function setup_network_controls(
             .insert("i", ":first-child")
             .classed("fa fa-check-square", true);
         }
-        self.toggle_diff();
+        toggle_diff(self);
       },
       true,
       "hivtrace-show-network-diff",
@@ -199,7 +199,7 @@ export function setup_network_controls(
             .insert("i", ":first-child")
             .classed("fa fa-check-square", true);
         }
-        self.toggle_time_filter();
+        toggle_time_filter(self, timeDateUtil);
       },
       true,
       "hivtrace-show-using-time-filter",
@@ -663,4 +663,65 @@ export function setup_priority_set_controls(
   }, priority_ui_container);
 
   setup_priority_set_merge_controls(self, tables, clustersOfInterest);
+}
+
+/**
+ * @function toggle_hxb2
+ * @description Toggles the visibility of problematic (HXB2-linked) clusters.
+ * @param {Object} self - The network object.
+ * @returns {void}
+ */
+export function toggle_hxb2(self) {
+  self.hide_hxb2 = !self.hide_hxb2;
+  self.update();
+}
+
+/**
+ * @function toggle_diff
+ * @description Toggles the visibility of changes since the last network update.
+ * @param {Object} self - The network object.
+ * @returns {void}
+ */
+export function toggle_diff(self) {
+  self.showing_diff = !self.showing_diff;
+  if (self.showing_diff) {
+    self.cluster_filtering_functions["new"] = self.filter_if_added;
+  } else {
+    delete self.cluster_filtering_functions["new"];
+  }
+  self.update();
+}
+
+/**
+ * @function toggle_highlight_unsupported_edges
+ * @description Toggles the highlighting of unsupported edges.
+ * @param {Object} self - The network object.
+ * @returns {void}
+ */
+export function toggle_highlight_unsupported_edges(self) {
+  self.highlight_unsuppored_edges = !self.highlight_unsuppored_edges;
+  self.update();
+}
+
+/**
+ * @function toggle_time_filter
+ * @description Toggles the time filter for displaying recent clusters.
+ * @param {Object} self - The network object.
+ * @param {Object} timeDateUtil - The time/date utility module.
+ * @returns {void}
+ */
+export function toggle_time_filter(self, timeDateUtil) {
+  if (self.using_time_filter) {
+    self.using_time_filter = null;
+  } else {
+    self.using_time_filter = timeDateUtil.getCurrentDate();
+    self.using_time_filter.setFullYear(self.using_time_filter.getFullYear() - 1);
+  }
+
+  if (self.using_time_filter) {
+    self.cluster_filtering_functions["recent"] = self.filter_time_period;
+  } else {
+    delete self.cluster_filtering_functions["recent"];
+  }
+  self.update();
 }

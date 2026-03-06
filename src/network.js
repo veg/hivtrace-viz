@@ -169,5 +169,10 @@ module.exports = {
   normalize_node_attributes: (json) =>
     networkUtils.normalize_node_attributes(json, kGlobals),
   unpack_compact_json: networkUtils.unpack_compact_json,
+  attribute_node_value_by_id: (node, id, number, self) =>
+    networkUtils.attribute_node_value_by_id(node, id, number, self, kGlobals),
+  is_empty: (self) => networkUtils.is_empty(self),
+  has_network_attribute: (self, key) =>
+    networkUtils.has_network_attribute(self, key, kGlobals),
   handle_cluster_click,
 };

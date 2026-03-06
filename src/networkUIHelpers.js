@@ -435,3 +435,72 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
     }
   );
 }
+
+/**
+ * @function get_node_country
+ * @description Retrieves the country code for a given node.
+ * @param {Object} self - The network object.
+ * @param {Object} node - The node object.
+ * @param {Object} kGlobals - Global constants.
+ * @returns {string} The country code (Alpha2) of the node.
+ */
+export function get_node_country(self, node, kGlobals) {
+  var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
+  if (countryCodeAlpha2 === kGlobals.missing.label) {
+    countryCodeAlpha2 = self.attribute_node_value_by_id(node, "Country");
+  }
+  return countryCodeAlpha2;
+}
+
+/**
+ * @function update_network_string
+ * @description Updates the network status string with current network statistics.
+ * @param {Object} self - The network object.
+ * @param {string} network_status_string - The selector for the status string element.
+ * @param {number} node_count - Number of shown nodes.
+ * @param {number} edge_count - Number of shown edges.
+ * @returns {void}
+ */
+export function update_network_string(
+  self,
+  network_status_string,
+  node_count,
+  edge_count
+) {
+  if (network_status_string) {
+    const clusters_shown = _.filter(self.clusters, (c) => !c.collapsed).length;
+
+    const clusters_selected = _.filter(
+      self.clusters,
+      (c) => !c.is_hidden && c.match_filter !== undefined && c.match_filter > 0
+    ).length;
+
+    const nodes_selected = _.filter(
+      self.nodes,
+      (n) => n.match_filter && !n.is_hidden
+    ).length;
+
+    const networkString =
+      "<span class = 'badge'>" +
+      self.clusters.length +
+      "</span> clusters <span class = 'label label-primary'>" +
+      clusters_shown +
+      " expanded / " +
+      clusters_selected +
+      " match </span> <span class = 'badge'> " +
+      self.nodes.length +
+      "</span> nodes <span class = 'label label-primary'>" +
+      node_count +
+      " shown / " +
+      nodes_selected +
+      " match </span> <span class = 'badge'> " +
+      self.edges.length +
+      "</span> " +
+      (self._is_CDC_ ? "links" : "edges") +
+      " <span class = 'label label-primary'>" +
+      edge_count +
+      " shown</span>";
+
+    d3.select(network_status_string).html(networkString);
+  }
+}

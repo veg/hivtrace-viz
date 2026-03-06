@@ -109,9 +109,67 @@ function check_network_option(options, key, if_absent, if_present) {
   return if_absent;
 }
 
+/**
+ * attribute_node_value_by_id
+ *
+ * Extracts the value of a given attribute for a node.
+ */
+function attribute_node_value_by_id(d, id, number, self, kGlobals) {
+  try {
+    if (kGlobals.network.NodeAttributeID in d && id) {
+      if (id in d[kGlobals.network.NodeAttributeID]) {
+        let v;
+
+        if (self.json[kGlobals.network.GraphAttrbuteID][id].volatile) {
+          v = self.json[kGlobals.network.GraphAttrbuteID][id].map(d, self);
+        } else {
+          v = d[kGlobals.network.NodeAttributeID][id];
+        }
+
+        if (_.isString(v)) {
+          if (v.length === 0) {
+            return kGlobals.missing.label;
+          } else if (number) {
+            v = Number(v);
+            return _.isNaN(v) ? kGlobals.missing.label : v;
+          }
+        }
+        return v;
+      }
+    }
+  } catch (e) {
+    console.log("attribute_node_value_by_id", e, d, id, number);
+  }
+  return kGlobals.missing.label;
+}
+
+/**
+ * is_empty
+ *
+ * Checks if the network is empty.
+ */
+function is_empty(self) {
+  return self.cluster_sizes.length === 0;
+}
+
+/**
+ * has_network_attribute
+ *
+ * Checks if a network attribute exists.
+ */
+function has_network_attribute(self, key, kGlobals) {
+  if (kGlobals.network.GraphAttrbuteID in self.json) {
+    return key in self.json[kGlobals.network.GraphAttrbuteID];
+  }
+  return false;
+}
+
 module.exports = {
   unpack_compact_json: unpack_compact_json,
   normalize_node_attributes: normalize_node_attributes,
   ensure_node_attributes_exist: ensure_node_attributes_exist,
   check_network_option: check_network_option,
+  attribute_node_value_by_id: attribute_node_value_by_id,
+  is_empty: is_empty,
+  has_network_attribute: has_network_attribute,
 };
