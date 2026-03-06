@@ -179,3 +179,33 @@ export function compute_graph_stats(self, misc, element) {
   self.compute_global_clustering_coefficients();
   d3.select(element).remove();
 }
+
+/**
+ * @function attribute_cluster_distribution
+ * @description Extracts the values of a given attribute for all nodes in a cluster.
+ * @param {Object} self - The network object.
+ * @param {Object} the_cluster - The cluster object.
+ * @param {string} attribute_id - The ID of the attribute.
+ * @returns {Array|null} An array of attribute values, or null if the attribute is not found.
+ */
+export function attribute_cluster_distribution(self, the_cluster, attribute_id) {
+  if (attribute_id && the_cluster) {
+    return the_cluster.children.map((d) =>
+      self.attribute_node_value_by_id(d, attribute_id)
+    );
+  }
+  return null;
+}
+
+/**
+ * @function compute_cluster_degrees
+ * @description Computes the degree distribution for a cluster.
+ * @param {Object} d - The cluster object.
+ * @param {Object} helpers - The helpers module.
+ * @returns {void}
+ */
+export function compute_cluster_degrees(d, helpers) {
+  var degrees = d.children.map((c) => c.degree);
+  degrees.sort(d3.ascending);
+  d.degrees = helpers.describe_vector(degrees);
+}

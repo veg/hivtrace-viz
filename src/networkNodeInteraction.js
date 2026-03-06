@@ -248,3 +248,46 @@ export function collapse_cluster_handler(self, d, do_update) {
     self.update(false, 0.4);
   }
 }
+
+/**
+ * @function expand_cluster_handler
+ * @description Handles the expansion of a cluster, taking into account the maximum number of points to render.
+ * @param {Object} self - The network object.
+ * @param {Object} d - The cluster object to expand.
+ * @param {boolean} do_update - If true, updates the network visualization after expanding.
+ * @param {boolean} move_out - If true, moves the cluster out of the way after expanding.
+ * @returns {string} An empty string.
+ */
+export function expand_cluster_handler(self, d, do_update, move_out) {
+  if (d.collapsed) {
+    var new_nodes = self.cluster_sizes[d.cluster_id - 1] - 1;
+
+    if (new_nodes > self.max_points_to_render) {
+      self.warning_string = "This cluster is too large to be displayed";
+    } else {
+      var leftover =
+        new_nodes + self.currently_displayed_objects - self.max_points_to_render;
+      if (leftover > 0) {
+        var k = 0;
+        for (; k < self.open_cluster_queue.length && leftover > 0; k++) {
+          var cluster =
+            self.clusters[self.cluster_mapping[self.open_cluster_queue[k]]];
+          leftover -= cluster.children.length - 1;
+          self.collapse_cluster(cluster, true);
+        }
+        if (k || self.open_cluster_queue.length) {
+          self.open_cluster_queue.splice(0, k);
+        }
+      }
+
+      if (leftover <= 0) {
+        self.expand_cluster(d, !move_out);
+      }
+    }
+
+    if (do_update) {
+      self.update(false, 0.6);
+    }
+  }
+  return "";
+}
