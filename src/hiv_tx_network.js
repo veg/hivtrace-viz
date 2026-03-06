@@ -3244,6 +3244,34 @@ class HIVTxNetwork {
   }
 
   /**
+   * Define an attribute generator for month/year at diagnosis
+   * 
+   * @param {*} label : use this label
+   * @returns attribute definition dict
+   */
+  define_attribute_dx_month_year(label) {
+    return {
+      depends: [timeDateUtil._networkCDCMonthYearField],
+      label: label,
+      type: "String",
+      map: (node) => {
+        try {
+          return this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCMonthYearField,
+            false,
+            false,
+            true
+          );
+        }
+        catch {
+          return kGlobals.missing.label;
+        }
+      }
+    };
+  }
+  
+  /**
    * Define an attribute generator for boolean value of dx in last year
    * @param {*} label : use this label
    * @returns attribute definition dict
