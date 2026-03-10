@@ -351,3 +351,7 @@ circle.injected_object {
   font-family: sans-serif;
   font-size: 10px;
 }
+
+#network_tag {
+  position: relative;
+}

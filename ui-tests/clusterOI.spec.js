@@ -41,8 +41,7 @@ const openEditor = async (page) => {
   await page.locator("#priority-set-tab").click();
 
   // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await expect(page.locator(".jsPanel")).toHaveCount(0);
 
   await expect(page.locator("#trace-priority-sets")).toBeVisible();
   await expect(
@@ -50,8 +49,7 @@ const openEditor = async (page) => {
   ).toBeVisible();
   await page.getByText("Create A Cluster of Interest", { exact: true }).click();
 
-  jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1);
 };
 
 const createCluster = async (page, nodes, editorOpen = false) => {
@@ -115,8 +113,7 @@ const saveClusterOI = async (page, name, expectDialog = false) => {
   await expect(page.locator(".has-error")).toHaveCount(0);
 
   // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await expect(page.locator(".jsPanel")).toHaveCount(0);
 
   await page.locator("#priority-set-tab").click();
 
@@ -192,8 +189,7 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
     })
     .click();
 
-  const jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1);
 
   await createCluster(page, ["01_AEMK272426TH2015"], true);
 

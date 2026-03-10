@@ -31,15 +31,9 @@ export function open_editor(
     priority_set_inject_node_attibutes,
     draw_priority_set_table,
     get_editor,
-    set_priority_set_editor
+    set_priority_set_editor,
   } = context;
 
-  /*
-      validation_mode could be
-        - null (create new set)
-        - "validate" (validate an automatically generated dataset)
-        - "revise" (revise a dataset)
-  */
   if (get_editor() || !self.is_primary_graph) return;
   // only open one editor at a time
   // only primary network supports editor view

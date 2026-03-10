@@ -1,5 +1,6 @@
 const _ = require("underscore");
 const $ = require("jquery");
+const d3 = require("d3");
 const timeDateUtil = require("./timeDateUtil.js");
 const kGlobals = require("./globals.js");
 const misc = require("./misc.js");
@@ -38,6 +39,22 @@ class HIVTxNetwork extends HTXModel {
     this.nodeFilterObject = null;
     this.defined_priority_groups = [];
     this.using_time_filter = null;
+
+    this.dispatch = d3.dispatch(
+      "node_click",
+      "node_pop_on",
+      "node_pop_off",
+      "edge_pop_on",
+      "edge_pop_off",
+      "cluster_click",
+      "cluster_expand",
+      "cluster_collapse",
+      "cluster_pop_on",
+      "cluster_pop_off",
+      "attribute_change",
+      "layout_start",
+      "layout_end"
+    );
 
     this.filter_by_size = this.filter_by_size.bind(this);
     this.filter_singletons = this.filter_singletons.bind(this);
@@ -205,18 +222,23 @@ class HIVTxNetwork extends HTXModel {
     this.node_label_drag = d3.behavior
       .drag()
       .on("drag", function (d) {
-        d.label_x += d3.event.dx;
-        d.label_y += d3.event.dy;
-        d3.select(this).attr(
-          "transform",
-          `translate(${d.label_x + d.rendered_size * 1.25},${d.label_y + d.rendered_size * 0.5})`
-        );
+        if (d3.event) {
+          d3.event.sourceEvent.stopPropagation();
+          d.label_x += d3.event.dx;
+          d.label_y += d3.event.dy;
+          d3.select(this).attr(
+            "transform",
+            `translate(${d.label_x + d.rendered_size * 1.25},${d.label_y + d.rendered_size * 0.5})`
+          );
+        }
       })
       .on("dragstart", () => {
-        d3.event.sourceEvent.stopPropagation();
+        if (d3.event && d3.event.sourceEvent)
+          d3.event.sourceEvent.stopPropagation();
       })
       .on("dragend", () => {
-        d3.event.sourceEvent.stopPropagation();
+        if (d3.event && d3.event.sourceEvent)
+          d3.event.sourceEvent.stopPropagation();
       });
 
     /** default node colorizer */

@@ -58,6 +58,11 @@ import { annotate_priority_clusters } from "./networkPriority";
 import * as NetworkElementDrawing from "./networkElementDrawing";
 import * as NetworkAttributeMenus from "./networkAttributeMenus";
 import * as NetworkAttributeHandlers from "./networkAttributeHandlers";
+import {
+  initializeNetworkEngine,
+  handleNetworkOptions,
+} from "./networkEngine";
+import { registerNetworkEvents } from "./networkEvents";
 
 // Import the refactored social network loader function
 import { load_nodes_edges as loadSocialNetworkData } from "./socialNetworkLoader";
@@ -114,16 +119,13 @@ var hivtrace_cluster_network_graph = function (
         collapse_cluster: "Collapse cluster",
       },
     };
-    return (
-      english_fallbacks[d] ||
-      new Proxy(
-        {},
-        {
-          get: (target, prop) => {
-            return prop;
-          },
-        }
-      )
+    return new Proxy(
+      english_fallbacks[d] || {},
+      {
+        get: (target, prop) => {
+          return prop in target ? target[prop] : prop;
+        },
+      }
     );
   };
 
@@ -217,6 +219,8 @@ var hivtrace_cluster_network_graph = function (
     clustersOfInterest.init(self);
     nodesTab.init(d3.select(nodes_table));
   }
+
+  registerNetworkEvents(self, clustersOfInterest, i18n);
 
   /** this array contains fields that will be appended to node pop-overs in the network tab
       they will precede all the fields that are shown based on selected labeling */
@@ -347,22 +351,6 @@ var hivtrace_cluster_network_graph = function (
 
   // ensure all checkboxes are unchecked at initialization
   $('input[type="checkbox"]').prop("checked", false);
-
-  /**
-   * @function handle_node_click
-   * @description Handles the click event on a node, displaying a context menu.
-   * @param {Object} node - The clicked node object.
-   * @returns {void}
-   */
-  self.handle_node_click = function (node) {
-    return NetworkNodeInteraction.handle_node_click.call(
-      this,
-      node,
-      self,
-      clustersOfInterest,
-      i18n
-    );
-  };
 
   /**
    * @function get_initial_xy
@@ -1703,8 +1691,12 @@ var hivtrace_cluster_network_graph = function (
         );
 
       link
-        .on("mouseover", self.edge_pop_on)
-        .on("mouseout", self.edge_pop_off)
+        .on("mouseover", function (d) {
+          self.dispatch.edge_pop_on(d, this);
+        })
+        .on("mouseout", function (d) {
+          self.dispatch.edge_pop_off(this);
+        })
         .filter((d) => d.directed)
         .attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
 
@@ -1730,11 +1722,20 @@ var hivtrace_cluster_network_graph = function (
         .enter()
         .append("g")
         .attr("class", "cluster-group")
-        .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
-        .on("click", (d) => network.handle_cluster_click(self, d))
-        .on("mouseover", self.cluster_pop_on)
-        .on("mouseout", self.cluster_pop_off)
-        .call(self.network_layout.drag().on("dragstart", self.cluster_pop_off));
+        .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")");
+
+      rendered_clusters
+        .on("mouseover", function (d) {
+          self.dispatch.cluster_pop_on(d, this);
+        })
+        .on("mouseout", function (d) {
+          self.dispatch.cluster_pop_off(this);
+        })
+        .call(
+          self.network_layout.drag().on("dragstart", function (d) {
+            self.dispatch.cluster_pop_off(this);
+          })
+        );
 
       self.draw_cluster_table(
         self.extra_cluster_table_columns,
@@ -2041,30 +2042,6 @@ var hivtrace_cluster_network_graph = function (
     return Tooltips.edge_info_string(n, kGlobals);
   }
 
-  self.node_pop_on = function (d) {
-    return NetworkNodeInteraction.node_pop_on(
-      self,
-      d,
-      this,
-      kGlobals,
-      misc,
-      timeDateUtil,
-      Tooltips
-    );
-  };
-
-  self.node_pop_off = function (d) {
-    return NetworkNodeInteraction.node_pop_off(this, Tooltips);
-  };
-
-  self.edge_pop_on = function (e) {
-    return NetworkNodeInteraction.edge_pop_on(self, e, this, kGlobals, Tooltips);
-  };
-
-  self.edge_pop_off = function (d) {
-    return NetworkNodeInteraction.edge_pop_off(this, Tooltips);
-  };
-
   /*------------ Cluster Methods ---------------*/
 
   /**
@@ -2221,38 +2198,6 @@ var hivtrace_cluster_network_graph = function (
     return Tooltips.cluster_info_string(self, id, kGlobals, misc);
   }
 
-  self.cluster_pop_on = function (d) {
-    return NetworkNodeInteraction.cluster_pop_on(
-      self,
-      d,
-      this,
-      kGlobals,
-      misc,
-      Tooltips
-    );
-  };
-
-  self.cluster_pop_off = function (d) {
-    return NetworkNodeInteraction.cluster_pop_off(this, Tooltips);
-  };
-
-  /**
-   * @function expand_cluster_handler
-   * @description Handles the expansion of a cluster, taking into account the maximum number of points to render.
-   * @param {Object} d - The cluster object to expand.
-   * @param {boolean} do_update - If true, updates the network visualization after expanding.
-   * @param {boolean} move_out - If true, moves the cluster out of the way after expanding.
-   * @returns {string} An empty string.
-   */
-  self.expand_cluster_handler = function (d, do_update, move_out) {
-    return NetworkNodeInteraction.expand_cluster_handler(
-      self,
-      d,
-      do_update,
-      move_out
-    );
-  };
-
   /**
    * @function show_sequences_in_cluster
    * @description Shows the sequences that make up a cluster.
@@ -2286,28 +2231,6 @@ var hivtrace_cluster_network_graph = function (
    */
   self.compute_cluster_degrees = function (d) {
     return NetworkStats.compute_cluster_degrees(d, helpers);
-  };
-
-  /**
-   * @function handle_node_label
-   * @description Toggles the visibility of a node's label.
-   * @param {HTMLElement} container - The container element for the node.
-   * @param {Object} node - The node object.
-   * @returns {void}
-   */
-  self.handle_node_label = function (container, node) {
-    return NetworkNodeInteraction.handle_node_label(self, container, node);
-  };
-
-  /**
-   * @function collapse_cluster_handler
-   * @description Handles the collapse of a cluster.
-   * @param {Object} d - The cluster object to collapse.
-   * @param {boolean} do_update - If true, updates the network visualization after collapsing.
-   * @returns {void}
-   */
-  self.collapse_cluster_handler = function (d, do_update) {
-    return NetworkNodeInteraction.collapse_cluster_handler(self, d, do_update);
   };
 
   /**
@@ -2519,129 +2442,11 @@ var hivtrace_cluster_network_graph = function (
   self.open_cluster_queue = [];
   self.currently_displayed_objects = 0;
 
-  /*------------ D3 globals and SVG elements ---------------*/
-
-  self.network_layout = null;
-  if (!self.isMJCNetwork) {
-    self.network_layout = d3.layout
-      .force()
-      .charge((d) => {
-        if (d.cluster_id) {
-          return self.charge_correction * (-15 - 5 * d.children.length ** 0.4);
-        }
-        return self.charge_correction * (-10 - 5 * Math.sqrt(d.degree));
-      })
-      .linkDistance(
-        (d) => self.link_scale(d.length) * self.l_scale * 0.2 //Math.max(d.length, 0.005) * l_scale * 10;
-      )
-      .linkStrength((d) => {
-        if (d.support !== undefined) {
-          return 0.75 - 0.5 * d.support;
-        }
-        return 1;
-      })
-      .chargeDistance(self.l_scale * 0.1)
-      .gravity(self.gravity_scale(self.json.Nodes.length))
-      .friction(0.25);
-  } else {
-    self.network_layout = d3.layout.force();
-  }
-  d3.select(self.container).selectAll("svg").remove();
-
-  if (self.is_primary_graph) {
-    d3.select(self.container)
-      .selectAll(".my_progress")
-      .style("display", "none");
-    nodesTab.getNodeTable().selectAll("*").remove();
-    self.cluster_table.selectAll("*").remove();
-  }
-
-  self.network_svg = d3
-    .select(self.container)
-    .append("svg:svg")
-    //.style ("border", "solid black 1px")
-    .attr("id", self.dom_prefix + "-network-svg")
-    .attr("width", self.width + self.margin.left + self.margin.right)
-    .attr("height", self.height + self.margin.top + self.margin.bottom);
-
-  self.network_cluster_dynamics = null;
-
-  //.append("g")
-  // .attr("transform", "translate(" + self.margin.left + "," + self.margin.top + ")");
-
-  var legend_drag = d3.behavior
-    .drag()
-    .on("dragstart", () => {
-      d3.event.sourceEvent.stopPropagation();
-    })
-    .on("drag", function (d) {
-      d3.select(this).attr(
-        "transform",
-        "translate(" + [d3.event.x, d3.event.y] + ")"
-      );
-    });
-  self.legend_svg = self.network_svg
-    .append("g")
-    .attr("transform", "translate(5,5)")
-    .call(legend_drag);
-
-  self.network_svg
-    .append("defs")
-    .append("marker")
-    .attr("id", self.dom_prefix + "_arrowhead")
-    .attr("refX", 18)
-    .attr("refY", 6)
-    .attr("markerWidth", 20)
-    .attr("markerHeight", 16)
-    .attr("orient", "auto")
-    .attr("stroke", "#666666")
-    .attr("markerUnits", "userSpaceOnUse")
-    .attr("fill", "#AAAAAA")
-    .append("path")
-    .attr("d", "M 0,0 L 2,6 L 0,12 L14,6 Z"); //this is actual shape for arrowhead
-
-  self.change_window_size();
+  initializeNetworkEngine(self, nodesTab);
 
   initial_json_load();
 
-  if (options) {
-    if (_.isNumber(options["charge"])) {
-      self.charge_correction = options["charge"];
-    }
-
-    if ("colorizer" in options) {
-      self.colorizer = options["colorizer"];
-    }
-
-    if ("node_shaper" in options) {
-      self.node_shaper = options["node_shaper"];
-    }
-
-    if ("callbacks" in options) {
-      options["callbacks"](self);
-    }
-
-    if (_.isArray(options["expand"])) {
-      self.expand_some_clusters(
-        _.filter(
-          self.clusters,
-          (c) => options["expand"].indexOf(c.cluster_id) >= 0
-        )
-      );
-    }
-
-    if (options["priority-sets-url"]) {
-      const is_writeable = options["is-writeable"];
-      //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI,
-      // while self.own_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the MJCloadOwnPrioritySets callback)
-      self.load_priority_sets(options["priority-sets-url"], is_writeable);
-      self.MJCloadOwnPrioritySets(options);
-    }
-
-    if (self.showing_diff) {
-      self.handle_attribute_categorical("_newly_added");
-    }
-  }
+  handleNetworkOptions(self, options);
 
   if (self.is_primary_graph) {
     self.annotate_multiple_clusters_on_nodes();

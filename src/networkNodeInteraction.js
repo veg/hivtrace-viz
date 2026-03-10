@@ -1,5 +1,9 @@
 import _ from "underscore";
 import * as d3 from "d3";
+import * as Tooltips from "./networkTooltips";
+import * as kGlobals from "./globals.js";
+import * as misc from "./misc.js";
+import * as timeDateUtil from "./timeDateUtil.js";
 
 /**
  * @function handle_node_click
@@ -11,7 +15,7 @@ import * as d3 from "d3";
  * @returns {void}
  */
 export function handle_node_click(node, self, clustersOfInterest, i18n) {
-  if (d3.event.defaultPrevented) return;
+  if (d3.event && d3.event.defaultPrevented) return;
   var container = d3.select(self.container);
   var id = "d3_context_menu_id";
   var menu_object = container.select("#" + id);
@@ -35,7 +39,7 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .text(i18n("clusters_main")["collapse_cluster"])
       .on("click", (d) => {
         node.fixed = 0;
-        self.collapse_cluster_handler(node, true);
+        self.dispatch.cluster_collapse(node);
         menu_object.style("display", "none");
       });
 
@@ -46,7 +50,8 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .text((d) => (node.show_label ? "Hide text label" : "Show text label"))
       .on("click", (d) => {
         node.fixed = 0;
-        self.handle_node_label(container, node);
+        node.show_label = !node.show_label;
+        self.update(true);
         menu_object.style("display", "none");
       });
 
@@ -57,15 +62,19 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
         .attr("tabindex", "-1")
         .text((d) => "Add this node to the cluster of interest")
         .on("click", (d) => {
-          clustersOfInterest.get_editor().append_node(self.entity_id(node), true);
+          clustersOfInterest
+            .get_editor()
+            .append_node(self.entity_id(node), true);
         });
     }
 
-    menu_object
-      .style("position", "absolute")
-      .style("left", String(d3.event.offsetX) + "px")
-      .style("top", String(d3.event.offsetY) + "px")
-      .style("display", "block");
+    if (d3.event) {
+      menu_object
+        .style("position", "absolute")
+        .style("left", String(d3.event.offsetX) + "px")
+        .style("top", String(d3.event.offsetY) + "px")
+        .style("display", "block");
+    }
   } else {
     menu_object.style("display", "none");
   }
@@ -75,7 +84,7 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
     function (d) {
       handle_node_click.call(this, null, self, clustersOfInterest, i18n);
     },
-    true
+    false
   );
 }
 
@@ -149,13 +158,9 @@ export function get_initial_xy(packed, self) {
  * @param {Object} self - The network object.
  * @param {Object} d - The node data.
  * @param {HTMLElement} element - The node element.
- * @param {Object} kGlobals - Global constants.
- * @param {Object} misc - Misc utilities.
- * @param {Object} timeDateUtil - Time/date utilities.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function node_pop_on(self, d, element, kGlobals, misc, timeDateUtil, Tooltips) {
+export function node_pop_on(self, d, element) {
   Tooltips.node_pop_on(self, d, element, kGlobals, misc, timeDateUtil);
 }
 
@@ -163,10 +168,9 @@ export function node_pop_on(self, d, element, kGlobals, misc, timeDateUtil, Tool
  * @function node_pop_off
  * @description Hides the node tooltip.
  * @param {HTMLElement} element - The node element.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function node_pop_off(element, Tooltips) {
+export function node_pop_off(element) {
   Tooltips.node_pop_off(element);
 }
 
@@ -176,11 +180,9 @@ export function node_pop_off(element, Tooltips) {
  * @param {Object} self - The network object.
  * @param {Object} e - The edge data.
  * @param {HTMLElement} element - The edge element.
- * @param {Object} kGlobals - Global constants.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function edge_pop_on(self, e, element, kGlobals, Tooltips) {
+export function edge_pop_on(self, e, element) {
   Tooltips.edge_pop_on(self, e, element, kGlobals);
 }
 
@@ -188,10 +190,9 @@ export function edge_pop_on(self, e, element, kGlobals, Tooltips) {
  * @function edge_pop_off
  * @description Hides the edge tooltip.
  * @param {HTMLElement} element - The edge element.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function edge_pop_off(element, Tooltips) {
+export function edge_pop_off(element) {
   Tooltips.edge_pop_off(element);
 }
 
@@ -201,12 +202,9 @@ export function edge_pop_off(element, Tooltips) {
  * @param {Object} self - The network object.
  * @param {Object} d - The cluster data.
  * @param {HTMLElement} element - The cluster element.
- * @param {Object} kGlobals - Global constants.
- * @param {Object} misc - Misc utilities.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function cluster_pop_on(self, d, element, kGlobals, misc, Tooltips) {
+export function cluster_pop_on(self, d, element) {
   Tooltips.cluster_pop_on(self, d, element, kGlobals, misc);
 }
 
@@ -214,80 +212,8 @@ export function cluster_pop_on(self, d, element, kGlobals, misc, Tooltips) {
  * @function cluster_pop_off
  * @description Hides the cluster tooltip.
  * @param {HTMLElement} element - The cluster element.
- * @param {Object} Tooltips - The tooltips module.
  * @returns {void}
  */
-export function cluster_pop_off(element, Tooltips) {
+export function cluster_pop_off(element) {
   Tooltips.cluster_pop_off(element);
-}
-
-/**
- * @function handle_node_label
- * @description Toggles the display of a node label and updates the network.
- * @param {Object} self - The network object.
- * @param {HTMLElement} container - The container element.
- * @param {Object} node - The node object.
- * @returns {void}
- */
-export function handle_node_label(self, container, node) {
-  node.show_label = !node.show_label;
-  self.update(true);
-}
-
-/**
- * @function collapse_cluster_handler
- * @description Handles the collapse of a cluster and updates the network.
- * @param {Object} self - The network object.
- * @param {Object} d - The cluster object to collapse.
- * @param {boolean} do_update - If true, updates the network visualization.
- * @returns {void}
- */
-export function collapse_cluster_handler(self, d, do_update) {
-  self.collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
-  if (do_update) {
-    self.update(false, 0.4);
-  }
-}
-
-/**
- * @function expand_cluster_handler
- * @description Handles the expansion of a cluster, taking into account the maximum number of points to render.
- * @param {Object} self - The network object.
- * @param {Object} d - The cluster object to expand.
- * @param {boolean} do_update - If true, updates the network visualization after expanding.
- * @param {boolean} move_out - If true, moves the cluster out of the way after expanding.
- * @returns {string} An empty string.
- */
-export function expand_cluster_handler(self, d, do_update, move_out) {
-  if (d.collapsed) {
-    var new_nodes = self.cluster_sizes[d.cluster_id - 1] - 1;
-
-    if (new_nodes > self.max_points_to_render) {
-      self.warning_string = "This cluster is too large to be displayed";
-    } else {
-      var leftover =
-        new_nodes + self.currently_displayed_objects - self.max_points_to_render;
-      if (leftover > 0) {
-        var k = 0;
-        for (; k < self.open_cluster_queue.length && leftover > 0; k++) {
-          var cluster =
-            self.clusters[self.cluster_mapping[self.open_cluster_queue[k]]];
-          leftover -= cluster.children.length - 1;
-          self.collapse_cluster(cluster, true);
-        }
-        if (k || self.open_cluster_queue.length) {
-          self.open_cluster_queue.splice(0, k);
-        }
-      }
-
-      if (leftover <= 0) {
-        self.expand_cluster(d, !move_out);
-      }
-    }
-
-    if (do_update) {
-      self.update(false, 0.6);
-    }
-  }
-  return "";
 }

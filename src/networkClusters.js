@@ -94,7 +94,7 @@ export function expand_some_clusters(self, subset) {
   subset = subset || self.clusters;
   subset.forEach((x) => {
     if (!x.is_hidden) {
-      self.expand_cluster_handler(x, false);
+      self.dispatch["cluster:expand"](x);
     }
   });
   self.update();

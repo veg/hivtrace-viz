@@ -75,17 +75,25 @@ export function draw_a_node(self, container, node, kGlobals, misc) {
         return null;
       })
       .call(
-        self.network_layout.drag().on("dragstart", (d) => {
-          d3.event.sourceEvent.stopPropagation();
-          self.node_pop_off();
+        self.network_layout.drag().on("dragstart", function (d) {
+          if (d3.event && d3.event.sourceEvent)
+            d3.event.sourceEvent.stopPropagation();
+          self.dispatch.node_pop_off(this);
         })
       )
       .on("dragend", (d) => {
-        d3.event.sourceEvent.stopPropagation();
+        if (d3.event && d3.event.sourceEvent)
+          d3.event.sourceEvent.stopPropagation();
       })
-      .on("click", self.handle_node_click)
-      .on("mouseover", self.node_pop_on)
-      .on("mouseout", self.node_pop_off);
+      .on("click", function (d) {
+        self.dispatch.node_click(d);
+      })
+      .on("mouseover", function (d) {
+        self.dispatch.node_pop_on(d, this);
+      })
+      .on("mouseout", function (d) {
+        self.dispatch.node_pop_off(this);
+      });
   }
 }
 
@@ -107,7 +115,11 @@ export function draw_a_cluster(self, container, the_cluster) {
   if (the_cluster.match_filter) {
     draw_from = draw_from.concat([
       ["selected", the_cluster.match_filter, 1],
-      ["not selected", the_cluster.children.length - the_cluster.match_filter, 1],
+      [
+        "not selected",
+        the_cluster.children.length - the_cluster.match_filter,
+        1,
+      ],
     ]);
   }
 
@@ -171,5 +183,17 @@ export function draw_a_cluster(self, container, the_cluster) {
     .style("display", (d) => {
       if (the_cluster.is_hidden) return "none";
       return null;
+    })
+    .on("click", function (d) {
+      if (d3.event) {
+        d3.event.stopPropagation();
+      }
+      self.dispatch.cluster_click(the_cluster);
+    })
+    .on("mouseover", function (d) {
+      self.dispatch.cluster_pop_on(the_cluster, this);
+    })
+    .on("mouseout", function (d) {
+      self.dispatch.cluster_pop_off(this);
     });
 }

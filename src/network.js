@@ -34,6 +34,10 @@ function center_cluster_handler(self, d) {
 */
 
 function handle_cluster_click(self, cluster, release) {
+  if (d3.event && d3.event.defaultPrevented) return;
+  if (d3.event) {
+    d3.event.stopPropagation();
+  }
   var container = d3.select(self.container);
   var id = "d3_context_menu_id";
   var menu_object = container.select("#" + id);
@@ -57,8 +61,11 @@ function handle_cluster_click(self, cluster, release) {
       .attr("tabindex", "-1")
       .text("Expand cluster")
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = 0;
-        self.expand_cluster_handler(cluster, true);
+        self.dispatch.cluster_expand(cluster);
         menu_object.style("display", "none");
       });
 
@@ -68,6 +75,9 @@ function handle_cluster_click(self, cluster, release) {
       .attr("tabindex", "-1")
       .text("Center on screen")
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = 0;
         center_cluster_handler(self, cluster);
         menu_object.style("display", "none");
@@ -82,6 +92,9 @@ function handle_cluster_click(self, cluster, release) {
         return "Hold cluster at current position";
       })
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = !cluster.fixed;
         menu_object.style("display", "none");
       });
@@ -93,6 +106,9 @@ function handle_cluster_click(self, cluster, release) {
         .attr("tabindex", "-1")
         .text((d) => "Show this cluster in separate tab")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           self.open_exclusive_tab_view(
             cluster.cluster_id,
             null,
@@ -110,6 +126,9 @@ function handle_cluster_click(self, cluster, release) {
         .attr("tabindex", "-1")
         .text((d) => "Add this cluster to the cluster of interest")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           clustersOfInterest
             .get_editor()
             .append_nodes(_.map(cluster.children, (c) => self.entity_id(c)));
@@ -129,6 +148,9 @@ function handle_cluster_click(self, cluster, release) {
         .attr("tabindex", "-1")
         .text("Show on map")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           //console.log(cluster)
           self.open_exclusive_tab_view(
             cluster.cluster_id,
@@ -141,11 +163,14 @@ function handle_cluster_click(self, cluster, release) {
 
     //cluster.fixed = 1;
 
-    menu_object
-      .style("position", "absolute")
-      .style("left", String(d3.event.offsetX) + "px")
-      .style("top", String(d3.event.offsetY) + "px")
-      .style("display", "block");
+    if (d3.event) {
+      const mouse_coords = d3.mouse(container.node());
+      menu_object
+        .style("position", "absolute")
+        .style("left", mouse_coords[0] + 5 + "px")
+        .style("top", mouse_coords[1] + 5 + "px")
+        .style("display", "block");
+    }
   } else {
     if (release) {
       release.fixed = 0;
@@ -158,7 +183,7 @@ function handle_cluster_click(self, cluster, release) {
     (d) => {
       handle_cluster_click(self, null, already_fixed ? null : cluster);
     },
-    true
+    false
   );
 }
 
