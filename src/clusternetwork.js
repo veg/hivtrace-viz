@@ -117,6 +117,33 @@ var hivtrace_cluster_network_graph = function (
       },
       clusters_main: {
         collapse_cluster: "Collapse cluster",
+        export_colors: "Export color scheme",
+        expand_all: "Expand all clusters",
+        collapse_all: "Collapse all clusters",
+        expand_filtered: "Expand filtered clusters",
+        collapse_filtered: "Collapse filtered clusters",
+        fix_all_objects_in_place: "Fix all objects in place",
+        allow_all_objects_to_float: "Allow all objects to float",
+        reset_layout: "Reset layout",
+      },
+      network_tab: {
+        show_labels_for_all: "Show labels for all nodes",
+        hide_labels_for_all: "Hide labels for all nodes",
+        expand_spacing: "Expand spacing",
+        compress_spacing: "Compress spacing",
+        enlarge_window: "Enlarge window",
+        shrink_window: "Shrink window",
+        export_image: "Export image",
+        save_image: "Save image",
+        only_recent_clusters: "Only show recent clusters",
+        highlight_unsupported_edges: "Highlight unsupported edges",
+        toggle_epicurve: "Toggle epi curve",
+      },
+      statistics: {
+        genetic_distances_among_linked_nodes: "Genetic distances",
+        links_per_node: "Links per node",
+        mean: "Mean",
+        median: "Median",
       },
     };
     return new Proxy(

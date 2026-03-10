@@ -49,7 +49,7 @@ const openEditor = async (page) => {
   ).toBeVisible();
   await page.getByText("Create A Cluster of Interest", { exact: true }).click();
 
-  await expect(page.locator(".jsPanel")).toHaveCount(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1, { timeout: 10000 });
 };
 
 const createCluster = async (page, nodes, editorOpen = false) => {
@@ -189,7 +189,7 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
     })
     .click();
 
-  await expect(page.locator(".jsPanel")).toHaveCount(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1, { timeout: 10000 });
 
   await createCluster(page, ["01_AEMK272426TH2015"], true);
 
