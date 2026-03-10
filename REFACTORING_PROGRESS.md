@@ -217,7 +217,7 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Created `src/networkEvents.js` to centralize event registration.
     - Updated `NetworkElementDrawing` and `clusternetwork.js` to emit events instead of calling instance methods.
     - Implemented robust `d3.event` checks and `stopPropagation` across all interaction handlers to ensure menu stability and prevent immediate disappearing.
-    - Fixed `i18n` fallback logic and populated `english_fallbacks` dictionary in `clusternetwork.js` to ensure user-facing labels are displayed instead of internal keys.
+    - Fixed `i18n` fallback logic by merging global `__` translations with `english_fallbacks` and using a `Proxy` to ensure user-facing labels are displayed instead of internal keys, even in environments with external translation libraries.
     - Migrated interaction modules to direct module imports (e.g., `kGlobals`, `misc`) instead of relying on the network instance.
     - Ensured that cluster events are re-bound on every graph update.
     - Removed multiple wrapper functions from `clusternetwork.js`.

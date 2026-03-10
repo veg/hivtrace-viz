@@ -97,9 +97,6 @@ var hivtrace_cluster_network_graph = function (
   options
 ) {
   const i18n = (d) => {
-    if (typeof __ !== "undefined") {
-      return __(d);
-    }
     const english_fallbacks = {
       general: {
         cluster: "Cluster",
@@ -108,7 +105,8 @@ var hivtrace_cluster_network_graph = function (
       clusters_tab: {
         size: "Size",
         number_of_genotypes_in_past_2_months: "Genotypes past 2 mo",
-        scaled_number_of_genotypes_in_past_2_months: "Genotypes past 2 mo (scaled)",
+        scaled_number_of_genotypes_in_past_2_months:
+          "Genotypes past 2 mo (scaled)",
         listing_nodes: "Listing nodes",
         expand: "Expand",
         collapse: "Collapse",
@@ -146,14 +144,21 @@ var hivtrace_cluster_network_graph = function (
         median: "Median",
       },
     };
-    return new Proxy(
-      english_fallbacks[d] || {},
-      {
-        get: (target, prop) => {
-          return prop in target ? target[prop] : prop;
-        },
+
+    const target_dict = english_fallbacks[d] || {};
+    if (typeof __ !== "undefined") {
+      const translated = __(d);
+      if (translated && typeof translated === "object") {
+        _.extend(target_dict, translated);
       }
-    );
+    }
+
+    const res = new Proxy(target_dict, {
+      get: (target, prop) => {
+        return prop in target ? target[prop] : prop;
+      },
+    });
+    return res;
   };
 
   // unpack compact JSON if needed
