@@ -939,13 +939,12 @@
 
       function HandleAppError(err_string) {
         $("#main-tab").tab("show");
-        d3.select("#app-error").text(err_string).style("display", null);
-        d3.select(parent_container).selectAll("li").classed("disabled", true);
-        d3.select(parent_container)
-          .selectAll("li")
-          .selectAll("a")
+        $("#app-error").text(err_string).show();
+        $(parent_container).find("li").addClass("disabled");
+        $(parent_container)
+          .find("li a")
           .each(function (d) {
-            d3.select(d3.select(this).attr("href")).style("display", "none");
+            $($(this).attr("href")).hide();
           });
       }
 
@@ -981,7 +980,7 @@
               "This network contains no clusters and cannot be displayed"
             );
           } else {
-            d3.select("#app-error").style("display", "none");
+            $("#app-error").hide();
             hivtrace.histogramDistances(graph, histogram_tag, histogram_label);
             hivtrace.graphSummary(user_graph, graph_summary_tag);
 
@@ -994,14 +993,13 @@
               "#attributes-tab",
               "#priority-set-tab",
             ].forEach(function (tab) {
-              d3.select(tab).classed("disabled", false);
+              $(tab).removeClass("disabled");
             });
 
-            d3.select(parent_container)
-              .selectAll("li")
-              .selectAll("a")
+            $(parent_container)
+              .find("li a")
               .each(function (d) {
-                d3.select(d3.select(this).attr("href")).style("display", null);
+                $($(this).attr("href")).show();
               });
 
             hivtrace.misc.export_table_to_text(
@@ -1032,14 +1030,14 @@
             $("#clusters-tab a[data-toggle='tab']").on(
               "shown.bs.tab",
               function (e) {
-                user_graph.update_volatile_elements(d3.select(cluster_table));
+                user_graph.update_volatile_elements($(cluster_table));
               }
             );
 
             $("#nodes-tab a[data-toggle='tab']").on(
               "shown.bs.tab",
               function (e) {
-                user_graph.update_volatile_elements(d3.select(node_table));
+                user_graph.update_volatile_elements($(node_table));
               }
             );
 
@@ -1053,7 +1051,7 @@
                 lanl_csvexport_label = "#lanl-csvexport",
                 lanl_button_bar_prefix = "lanl_network_ui_bar";
 
-              d3.select("#lanl-trace-results").classed("disabled", false);
+              $("#lanl-trace-results").removeClass("disabled");
 
               var lanl_graph = data.lanl_trace_results;
               var lanl_graph_rendered = new hivtrace.clusterNetwork(
@@ -1082,17 +1080,21 @@
         //Initialize clusternetworkgraph with json url
         url = urlParams.get("network");
 
-        d3.json(url, function (error, results) {
-          if (error) {
-            HandleAppError("Failed loading file " + error.responseURL);
-          } else {
+        fetch(url)
+          .then((response) => {
+            if (!response.ok) throw Error("Failed loading file " + url);
+            return response.json();
+          })
+          .then((results) => {
             if ("trace_results" in results) {
               init(results["trace_results"]);
             } else {
               init(results);
             }
-          }
-        });
+          })
+          .catch((error) => {
+            HandleAppError(error.message);
+          });
       };
 
       function in_progress() {
@@ -1244,8 +1246,8 @@
             );
             $("#csv_loader_modal").modal("hide");
           } catch (e) {
-            d3.select("#csv_import_status")
-              .style("display", null)
+            $("#csv_import_status")
+              .show()
               .attr("class", "alert alert-danger")
               .text(e);
             $("#csv_proceed_button").prop("disabled", true);
@@ -1259,7 +1261,7 @@
         ].forEach(function (d) {
           $(d[0]).on("change", function (e) {
             $("#csv_proceed_button").prop("disabled");
-            d3.select(d[1]).style("display", "block");
+            $(d[1]).show();
             var files = e.target.files; // FileList object
 
             if (files.length === 1) {
@@ -1269,15 +1271,15 @@
               reader.onload = (function (theFile) {
                 return function (e) {
                   _loaded_network_data[d[2]] = d3.csv.parse(e.target.result);
-                  d3.select("#csv_import_status")
-                    .style("display", null)
+                  $("#csv_import_status")
+                    .show()
                     .attr("class", "alert alert-info")
                     .text(
                       "Loaded " +
                         _loaded_network_data[d[2]].length +
                         " CSV records "
                     );
-                  d3.select(d[1]).style("display", "none");
+                  $(d[1]).hide();
                   if (
                     _loaded_network_data["nodes"].length ||
                     _loaded_network_data["edges"].length
@@ -1292,14 +1294,14 @@
         });
 
         $("#csv_loader_modal").on("show.bs.modal", function (e) {
-          d3.select("#csv_import_status").style("display", "none");
+          $("#csv_import_status").hide();
           $("#csv_enclosing_form").get(0).reset();
           $("#csv_proceed_button").prop("disabled", true);
         });
 
         // *** HANDLERS ***
         $("#json_file").on("change", function (e) {
-          d3.selectAll(".my_progress").style("display", "block");
+          $(".my_progress").show();
 
           var files = e.target.files; // FileList object
 
