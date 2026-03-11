@@ -235,6 +235,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Verified identical behavior with the full Playwright test suite.
 - **Status**: Completed (2026-03-10)
 
+#### Step 28: Refactor Graph Summary Table to Remove D3 Dependency
+- **Goal**: Replace D3-based table generation and formatting in `src/hivtraceClusterGraphSummary.js` with jQuery.
+- **Result**: 
+    - Removed `d3` dependency from the module.
+    - Replaced `d3.select` and `.data().enter()` patterns with jQuery and `_.each` loops.
+    - Switched from local `d3.format` instances to standardized formatters in `kGlobals`.
+    - Verified identical output in the "Statistics" tab.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
