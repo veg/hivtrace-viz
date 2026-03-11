@@ -136,6 +136,10 @@ var hivtrace_cluster_network_graph = function (
         only_recent_clusters: "Only show recent clusters",
         highlight_unsupported_edges: "Highlight unsupported edges",
         toggle_epicurve: "Toggle epi curve",
+        text_in_attributes: "Text in attributes",
+      },
+      attributes_tab: {
+        show_as: "Show as",
       },
       statistics: {
         genetic_distances_among_linked_nodes: "Genetic distances",
@@ -146,19 +150,17 @@ var hivtrace_cluster_network_graph = function (
     };
 
     const target_dict = english_fallbacks[d] || {};
-    if (typeof __ !== "undefined") {
-      const translated = __(d);
-      if (translated && typeof translated === "object") {
-        _.extend(target_dict, translated);
-      }
-    }
-
-    const res = new Proxy(target_dict, {
+    return new Proxy(target_dict, {
       get: (target, prop) => {
-        return prop in target ? target[prop] : prop;
+        if (typeof __ !== "undefined") {
+          const translated = __(d);
+          if (translated && translated[prop] && translated[prop] !== prop) {
+            return translated[prop];
+          }
+        }
+        return target[prop] || prop;
       },
     });
-    return res;
   };
 
   // unpack compact JSON if needed
