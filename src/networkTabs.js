@@ -180,7 +180,7 @@ export function open_exclusive_tab_view_aux(
   $("#" + tab_container).append(new_tab_header);
 
   var new_tab_content = $("<div></div>")
-    .addClass("tab-pane")
+    .addClass("tab-pane hivtrace-graph-container")
     .attr("id", random_content_id)
     .data("cluster", option_extras.cluster_id);
 

@@ -38,6 +38,9 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .attr("tabindex", "-1")
       .text(i18n("clusters_main")["collapse_cluster"])
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         node.fixed = 0;
         self.dispatch.cluster_collapse(node);
         menu_object.style("display", "none");
@@ -49,6 +52,9 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .attr("tabindex", "-1")
       .text((d) => (node.show_label ? "Hide text label" : "Show text label"))
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         node.fixed = 0;
         node.show_label = !node.show_label;
         self.update(true);
@@ -62,6 +68,9 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
         .attr("tabindex", "-1")
         .text((d) => "Add this node to the cluster of interest")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           clustersOfInterest
             .get_editor()
             .append_node(self.entity_id(node), true);
@@ -69,10 +78,11 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
     }
 
     if (d3.event) {
+      const mouse_coords = d3.mouse(container.node());
       menu_object
         .style("position", "absolute")
-        .style("left", String(d3.event.offsetX) + "px")
-        .style("top", String(d3.event.offsetY) + "px")
+        .style("left", mouse_coords[0] + 5 + "px")
+        .style("top", mouse_coords[1] + 5 + "px")
         .style("display", "block");
     }
   } else {

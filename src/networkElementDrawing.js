@@ -86,6 +86,9 @@ export function draw_a_node(self, container, node, kGlobals, misc) {
           d3.event.sourceEvent.stopPropagation();
       })
       .on("click", function (d) {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         self.dispatch.node_click(d);
       })
       .on("mouseover", function (d) {

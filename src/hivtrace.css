@@ -352,6 +352,7 @@ circle.injected_object {
   font-size: 10px;
 }
 
-#network_tag {
+#network_tag,
+.hivtrace-graph-container {
   position: relative;
 }
