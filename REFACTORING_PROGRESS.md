@@ -224,6 +224,17 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~150 lines.
 - **Status**: Completed (2026-03-10)
 
+#### Step 27: Refactor Table Rendering to Remove D3 Dependency
+- **Goal**: Replace D3-based DOM manipulation and data binding in `src/tables.js` with jQuery and standard JavaScript.
+- **Result**: 
+    - Rewrote `add_a_sortable_table`, `format_a_cell`, and `filter_table` using jQuery and native DOM APIs.
+    - Preserved D3 compatibility by manually setting the `__data__` property on table rows and cells.
+    - Implemented custom `ascending` and `descending` sort helpers to replace `d3.ascending/descending`.
+    - Added `.node()` polyfill to jQuery objects passed to legacy D3-based callbacks to maintain backward compatibility.
+    - Retained the D3 dependency only for the final `.sort()` operation on detached DOM elements to ensure identical behavior with existing complex sort accessors.
+    - Verified identical behavior with the full Playwright test suite.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

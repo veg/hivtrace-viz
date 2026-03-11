@@ -10,23 +10,16 @@ const _networkNodeIDField = "hivtrace_node_id";
 const _networkNewNodeMarker = "[+]";
 
 /**
- * Adds a sortable table to a D3 selection container.
-
- * @param {d3.selection} container - The D3 selection representing the container element for the table.
- * @param {string[]} headers - An array of strings representing the table headers.
- * @param {Object[]} content - An array of objects representing the table content. Each object should have properties that map to table cells.
- * @param {boolean} [overwrite] - An optional flag indicating whether to overwrite any existing table content (default: false).
- * @param {string} [caption] - An optional caption for the table.
- * @param {Function} [priority_set_editor] - An optional function used to customize cell formatting based on priority sets.
- *   The function should accept four arguments:
- *   - `d`: The data object for the current cell.
- *   - `i`: The index of the current cell within its row.
- *   - `cell`: The D3 selection of the current cell element (a `<td>` element).
- *   - `priority_set_editor`: The `priority_set_editor` function passed to `add_a_sortable_table`.
- *
+ * Adds a sortable table to a container.
+ * @param {HTMLElement|jQuery|Object} container - The container element for the table.
+ * @param {string[][]} headers - Array of row arrays representing table headers.
+ * @param {Object[][]} content - Array of row arrays representing table content.
+ * @param {boolean} [overwrite] - If true, overwrites existing table content.
+ * @param {string} [caption] - Table caption.
+ * @param {Object} [priority_set_editor] - Optional priority set editor.
+ * @param {number} [N] - Total number of rows (if truncated).
  * @returns {void}
  */
-
 function add_a_sortable_table(
   container,
   headers,
@@ -36,203 +29,203 @@ function add_a_sortable_table(
   priority_set_editor,
   N
 ) {
-  if (!container || !container.node()) {
+  let element = container;
+  if (container && typeof container.node === "function") {
+    element = container.node();
+  }
+  const $container = $(element);
+  if (!$container.length) {
     return;
   }
 
-  container.style("display", "none");
-
-  let thead = container.selectAll("thead");
-  let tbody = container.selectAll("tbody");
-
   const set_table_elements = (d, cell) => {
+    const $cell = $(cell);
     if (d.hidden) {
-      d3.select(cell).style("display", "none");
+      $cell.hide();
     }
     if (d.width || d.text_wrap) {
-      const cell_selection = d3.select(cell);
-      if (d.width) cell_selection.style("width", `${d.width}px`);
+      if (d.width) $cell.css("width", `${d.width}px`);
       if (d.text_wrap) {
-        cell_selection
-          .style("overflow", "hidden")
-          .style("white-space", "nowrap")
-          .style("text-overflow", "ellipsis");
+        $cell.css({
+          overflow: "hidden",
+          "white-space": "nowrap",
+          "text-overflow": "ellipsis",
+        });
       }
     }
   };
 
-  if (tbody.empty() || overwrite) {
-    tbody.remove();
-    tbody = d3.select(document.createElement("tbody"));
-    tbody
-      .selectAll("tr")
-      .data(content)
-      .enter()
-      .append("tr")
-      .selectAll("td")
-      .data((d) => d)
-      .enter()
-      .append("td")
-      .call((selection) =>
-        selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(d, i, this, priority_set_editor);
-        })
-      );
-    container.node().appendChild(tbody.node());
+  let $thead = $container.find("thead");
+  let $tbody = $container.find("tbody");
+
+  if ($tbody.length === 0 || $tbody.children().length === 0 || overwrite) {
+    $tbody.remove();
+    $tbody = $("<tbody></tbody>");
+    content.forEach((row_data) => {
+      const row = document.createElement("tr");
+      row.__data__ = row_data;
+      $tbody[0].appendChild(row);
+      row_data.forEach((cell_data, i) => {
+        const cell = document.createElement("td");
+        cell.__data__ = cell_data;
+        row.appendChild(cell);
+        set_table_elements(cell_data, cell);
+        format_a_cell(cell_data, i, cell, priority_set_editor);
+      });
+    });
+    $container.append($tbody);
   }
 
-  // head AFTER rows, so we can handle pre-sorting
+  if ($thead.length === 0 || $thead.children().length === 0 || overwrite) {
+    $thead.remove();
+    $thead = $("<thead></thead>");
+    const $caption = $container.find("caption");
+    if ($caption.length) {
+      $thead.insertAfter($caption);
+    } else {
+      $thead.prependTo($container);
+    }
 
-  if (thead.empty() || overwrite) {
-    thead.remove();
-    thead = container.insert("thead", ":first-child");
-    thead
-      .selectAll("tr")
-      .data(headers)
-      .enter()
-      .append("tr")
-      .selectAll("th")
-      .data((d) => d)
-      .enter()
-      .append("th")
-      .call((selection) =>
-        selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(
-            d,
-            i,
-            this,
-            (N && N > content.length) || content.length > kGlobals.CoIAddLimit
-              ? null
-              : priority_set_editor
-          );
-        })
-      );
+    headers.forEach((row_data) => {
+      const row = document.createElement("tr");
+      row.__data__ = row_data;
+      $thead[0].appendChild(row);
+      row_data.forEach((cell_data, i) => {
+        const cell = document.createElement("th");
+        cell.__data__ = cell_data;
+        row.appendChild(cell);
+        set_table_elements(cell_data, cell);
+        format_a_cell(
+          cell_data,
+          i,
+          cell,
+          (N && N > content.length) || content.length > kGlobals.CoIAddLimit
+            ? null
+            : priority_set_editor
+        );
+      });
+    });
   }
 
   if (caption) {
-    const table_caption = container.selectAll("caption").data([caption]);
-    table_caption.enter().insert("caption", ":first-child");
-    table_caption.html((d) => d);
-    table_caption
-      .select(misc.get_ui_element_selector_by_role("table-count-total"))
+    let $table_caption = $container.find("caption");
+    if ($table_caption.length === 0) {
+      $table_caption = $("<caption></caption>").prependTo($container);
+    }
+    $table_caption.html(caption);
+    $table_caption
+      .find(misc.get_ui_element_selector_by_role("table-count-total"))
       .text(content.length);
-    table_caption
-      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+    $table_caption
+      .find(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(content.length);
     if (N && N > content.length) {
-      table_caption
-        .select(misc.get_ui_element_selector_by_role("table-count-warning"))
-        .style("color", "black")
+      $table_caption
+        .find(misc.get_ui_element_selector_by_role("table-count-warning"))
+        .css("color", "black")
         .text(`Truncated due to the large number of rows (${N})`);
     }
   }
-
-  container.style("display", null);
 }
 
-/**
- * Retrieves the value of a cell in a table data object.
-
- * @param {Object} data - The data object representing the table cell. It should have a `value` property.
-
- * @returns {*} The value of the cell, or the result of calling `data.value()` if it's a function.
- */
-
 function table_get_cell_value(data) {
+  if (!data) return "";
   return _.isFunction(data.value) ? data.value() : data.value;
 }
 
 /**
- * Formats a cell in a table based on provided data.
-
- * @param {Object} data - The data object representing the table cell. 
- *   It should have properties like:
- *     - `value`: The cell value.
- *     - `format` (optional): A function used to format the value.
- *     - `html` (optional): A flag indicating whether the value should be set as HTML.
- *     - `callback` (optional): A function used to customize cell content and behavior.
- *     - `filter` (optional): A flag indicating whether to enable filtering for the column.
- *     - `column_id` (optional): The index of the column (used for filtering).
- *     - `sort` (optional): A flag indicating whether to enable sorting for the column.
- *     - `presort` (optional): A string ("asc" or "desc") for initial sort direction.
- *     - `actions` (optional): An array of button configurations for cell actions.
- *     - `help` (optional): A string describing the cell content (used as a tooltip).
- * @param {number} index - The index of the cell within its row.
- * @param {d3.selection} item - The D3 selection of the table cell element (a `<td>` element).
- * @param {Function} [priority_set_editor] - An optional function used for priority set functionality (internal).
-
+ * Formats a cell in a table.
+ * @param {Object} data - Cell data object.
+ * @param {number} index - Column index.
+ * @param {HTMLElement} item - Table cell element.
+ * @param {Object} [priority_set_editor] - Priority set editor.
  * @returns {void}
-*/
-
+ */
 function format_a_cell(data, index, item, priority_set_editor) {
-  const this_sel = d3.select(item);
+  const $this = $(item);
+  $this.node = function () {
+    return this[0];
+  };
   const current_value = table_get_cell_value(data);
-  let handle_sort = this_sel;
+  let $handle_sort = $this;
 
-  handle_sort.selectAll("*").remove();
+  $this.empty();
 
-  if ("callback" in data) {
-    this_sel.text("");
-    handle_sort = data.callback(item, current_value) || this_sel;
-  } else {
+  if (data && "callback" in data) {
+    const callback_result = data.callback(item, current_value);
+    if (callback_result) {
+      $handle_sort = $(
+        callback_result.node ? callback_result.node() : callback_result
+      );
+      if (!$handle_sort.node) {
+        $handle_sort.node = function () {
+          return this[0];
+        };
+      }
+    }
+  } else if (data) {
     var repr = "format" in data ? data.format(current_value) : current_value;
-    if ("html" in data && data.html) this_sel.html(repr);
-    else this_sel.text(repr);
+    if ("html" in data && data.html) $this.html(repr);
+    else $this.text(repr);
   }
 
-  if ("filter" in data) {
+  if (data && "filter" in data) {
     data.filter_term = "";
     data.column_id = index;
 
     if (data.value === _networkNodeIDField) {
-      // this is an ugly hardcode.
       if (priority_set_editor) {
-        var add_to_ps = handle_sort.append("a").property("href", "#");
-        add_to_ps
-          .append("i")
-          .classed("fa fa-plus-square fa-lg", true)
-          .style("margin-left", "0.2em")
-          .attr(
-            "title",
-            "Add currently visible nodes to the Cluster of Interest"
-          );
-
-        add_to_ps.on("click", (d) => {
-          let node_ids = [];
-          nodesTab
-            .getNodeTable()
-            .selectAll("tr")
-            .each(function (d, i) {
-              let this_row = d3.select(this);
-              if (this_row.style("display") !== "none") {
-                this_row.selectAll("td").each((d, j) => {
+        const $add_to_ps = $("<a></a>")
+          .attr("href", "#")
+          .appendTo($handle_sort);
+        $add_to_ps
+          .append(
+            $("<i></i>")
+              .addClass("fa fa-plus-square fa-lg")
+              .css("margin-left", "0.2em")
+          )
+          .attr("title", "Add currently visible nodes to the Cluster of Interest")
+          .on("click", (e) => {
+            e.preventDefault();
+            let node_ids = [];
+            const node_table_raw = nodesTab.getNodeTable();
+            const $node_table = $(
+              node_table_raw.node ? node_table_raw.node() : node_table_raw
+            );
+            $node_table.find("tr").each(function () {
+              const $row = $(this);
+              if ($row.css("display") !== "none") {
+                $row.find("td").each(function (j) {
                   if (j === data.column_id) {
-                    let marker_index = d.value.indexOf(_networkNewNodeMarker);
-                    if (marker_index > 0) {
-                      node_ids.push(d.value.substring(0, marker_index));
-                    } else {
-                      node_ids.push(d.value);
+                    const cell_data = this.__data__;
+                    if (cell_data) {
+                      const val = table_get_cell_value(cell_data);
+                      let marker_index = val.indexOf(_networkNewNodeMarker);
+                      if (marker_index > 0) {
+                        node_ids.push(val.substring(0, marker_index));
+                      } else {
+                        node_ids.push(val);
+                      }
                     }
                   }
                 });
               }
             });
-          priority_set_editor.append_nodes(node_ids);
-        });
+            priority_set_editor.append_nodes(node_ids);
+          });
       }
     }
 
     if (data["filter"]) {
-      var clicker = handle_sort.append("a").property("href", "#");
+      const $clicker = $("<a></a>")
+        .attr("href", "#")
+        .appendTo($handle_sort);
 
-      clicker
-        .append("i")
-        .classed("fa fa-search", true)
-        .style("margin-left", "0.2em");
+      $clicker.append(
+        $("<i></i>").addClass("fa fa-search").css("margin-left", "0.2em")
+      );
 
-      var search_form_generator = function () {
+      const search_form_generator = function () {
         return `<form class="form-inline" data-hivtrace-ui-role = "table-filter-form"> 
                             <div class="form-group"> 
                                 <div class="input-group">
@@ -240,16 +233,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
                                 <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
                                 <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
                                 <div class="input-group-addon">
-                                    <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
-            index +
-            '"  aria-expanded="false" aria-controls="collapseExample"></i>
+                                    <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column${index}"  aria-expanded="false" aria-controls="collapseExample"></i>
                                 </div> 
                             </div>
                             </div>
                         </form>
-                        <div class="collapse" id="filter-help-column' +
-            index +
-            '">
+                        <div class="collapse" id="filter-help-column${index}">
                           <div class="well">
                             Type in text to select columns which 
                             <em>contain the term</em>. <br />
@@ -269,225 +258,208 @@ function format_a_cell(data, index, item, priority_set_editor) {
                         `;
       };
 
-      $(clicker.node())
+      $clicker
         .popover({
           html: true,
           sanitize: false,
           content: search_form_generator,
           placement: "bottom",
         })
-        .on("shown.bs.popover", function (e) {
-          var search_icon = d3.select(this);
+        .on("shown.bs.popover", function () {
+          const $search_icon = $(this);
 
           const update_term = function (v) {
             data.filter_term = v;
-            search_icon
-              .selectAll("i")
-              .classed("fa-search", !v.length)
-              .classed("fa-search-plus", v.length);
+            $search_icon
+              .find("i")
+              .toggleClass("fa-search", !v.length)
+              .toggleClass("fa-search-plus", !!v.length);
           };
 
-          var popover_div = d3.select(
-            "#" + d3.select(this).attr("aria-describedby")
-          );
-
-          var search_click = popover_div.selectAll(
+          const $popover_div = $("#" + $search_icon.attr("aria-describedby"));
+          const $search_click = $popover_div.find(
             misc.get_ui_element_selector_by_role("table-filter-apply")
           );
-          var reset_click = popover_div.selectAll(
+          const $reset_click = $popover_div.find(
             misc.get_ui_element_selector_by_role("table-filter-reset")
           );
-          var search_box = popover_div.selectAll(
+          const $search_box = $popover_div.find(
             misc.get_ui_element_selector_by_role("table-filter-term")
           );
 
-          search_box.property("value", data.filter_term);
+          $search_box.val(data.filter_term);
 
-          $(misc.get_ui_element_selector_by_role("table-filter-term")).on(
-            "keydown",
-            function (event) {
-              if (event.key == "Enter") {
-                update_term(search_box.property("value"));
-                filter_table(clicker.node());
-                event.preventDefault();
-              }
+          $search_box.on("keydown", function (event) {
+            if (event.key == "Enter") {
+              update_term($search_box.val());
+              filter_table($clicker[0], event);
+              event.preventDefault();
             }
-          );
-
-          /*
-            search_box.on ("keydown", (d,e)=> {
-                console.log (d3);
-                console.log (d,e);
-            });
-            */
-
-          search_click.on("click", (e) => {
-            update_term(search_box.property("value"));
-            filter_table(clicker.node());
           });
 
-          reset_click.on("click", (d) => {
-            search_box.property("value", "");
+          $search_click.on("click", (e) => {
+            e.preventDefault();
+            update_term($search_box.val());
+            filter_table($clicker[0], e);
+          });
+
+          $reset_click.on("click", (e) => {
+            e.preventDefault();
+            $search_box.val("");
             update_term("");
-            filter_table(clicker.node());
+            filter_table($clicker[0], e);
           });
         });
     }
   }
 
-  if (handle_sort && "sort" in data) {
-    clicker = handle_sort
-      .append("a")
-      .property("href", "#")
-      .on("click", function (d) {
-        sort_table_by_column(this, d);
+  if ($handle_sort && data && "sort" in data) {
+    const $clicker = $("<a></a>")
+      .attr("href", "#")
+      .appendTo($handle_sort)
+      .on("click", function (e) {
+        e.preventDefault();
+        sort_table_by_column(this, data);
       })
       .attr("data-sorted", "unsorted")
-      .attr("data-column-id", index);
-    clicker
-      .append("i")
-      .classed("fa fa-sort", true)
-      .style("margin-left", "0.2em");
+      .data("sorted", "unsorted")
+      .attr("data-column-id", index)
+      .data("column-id", index);
+
+    $clicker.append(
+      $("<i></i>").addClass("fa fa-sort").css("margin-left", "0.2em")
+    );
 
     if ("presort" in data) {
       if (data["presort"] === "desc") {
-        clicker.attr("data-sorted", "asc");
+        $clicker.attr("data-sorted", "asc").data("sorted", "asc");
       }
-      sort_table_by_column(clicker.node(), data);
+      sort_table_by_column($clicker[0], data);
     }
   }
 
-  if ("actions" in data) {
+  if (data && "actions" in data) {
     let by_group = data.actions;
 
     if (!(_.isArray(data.actions) && _.isArray(data.actions[0]))) {
       by_group = [data.actions];
     }
 
-    _.each(by_group, (bgrp) => {
-      let button_group = handle_sort
-        .append("div")
-        .classed("btn-group btn-group-xs", true)
-        .attr("style", "padding-left:0.5em");
-      _.each(
-        _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,
-        (b) => {
+    by_group.forEach((bgrp) => {
+      const $button_group = $("<div></div>")
+        .addClass("btn-group btn-group-xs")
+        .css("padding-left", "0.5em")
+        .appendTo($handle_sort);
+      $button_group.node = function () {
+        return this[0];
+      };
+
+      const buttons = _.isFunction(bgrp) ? bgrp($button_group, current_value) : bgrp;
+
+      if (buttons && _.isArray(buttons)) {
+        buttons.forEach((b) => {
           if (_.isFunction(b)) {
-            b = b(button_group, current_value);
+            b = b($button_group, current_value);
           }
           if (b) {
-            let this_button = null;
+            let $this_button = null;
             if (_.isArray(b.dropdown)) {
-              let button_group_dropdown = button_group
-                .append("div")
-                .classed("btn-group btn-group-xs", true);
+              const $button_group_dropdown = $("<div></div>")
+                .addClass("btn-group btn-group-xs")
+                .appendTo($button_group);
 
-              this_button = button_group_dropdown
-                .append("button")
-                .classed("btn btn-default btn-xs dropdown-toggle", true)
-                .attr("data-toggle", "dropdown");
+              $this_button = $("<button></button>")
+                .addClass("btn btn-default btn-xs dropdown-toggle")
+                .attr("data-toggle", "dropdown")
+                .appendTo($button_group_dropdown);
+              $this_button.node = function () {
+                return this[0];
+              };
 
-              var dropdown_list = button_group_dropdown
-                .append("ul")
-                .classed("dropdown-menu", true);
-              //.attr("aria-labelledby", menu_id);
+              const $dropdown_list = $("<ul></ul>")
+                .addClass("dropdown-menu")
+                .appendTo($button_group_dropdown);
 
               let items = b.dropdown;
 
               function get_item_text(item) {
-                if (_.has(item, "label")) {
+                if (item && _.has(item, "label")) {
                   return item["label"];
                 }
                 return item;
               }
 
-              dropdown_list = dropdown_list.selectAll("li").data(items);
-              dropdown_list
-                .enter()
-                .append("li")
-                .each(function (data, i) {
-                  var handle_change = d3
-                    .select(this)
-                    .append("a")
-                    .attr("href", "#")
-                    .text((data) => get_item_text(data));
-                  if (_.has(data, "data") && data["data"]) {
-                    //let element = $(this_button.node());
-                    _.each(data.data, (v, k) => {
-                      handle_change.attr("data-" + k, v);
-                    });
-                  }
-                  handle_change.on("click", (d) => {
-                    // Only prevent default/propagation if there's a custom action handler
-                    if ((_.has(d, "action") && d["action"]) || b.action) {
-                      d3.event.preventDefault();
-                      d3.event.stopPropagation();
-                      if (_.has(d, "action") && d["action"]) {
-                        d["action"](this_button, d["label"]);
-                      } else if (b.action) {
-                        b.action(this_button, get_item_text(d));
-                      }
-                    }
+              items.forEach((item_data, i) => {
+                const $li = $("<li></li>").appendTo($dropdown_list);
+                const $handle_change = $("<a></a>")
+                  .attr("href", "#")
+                  .text(get_item_text(item_data))
+                  .appendTo($li);
+
+                if (item_data && _.has(item_data, "data") && item_data["data"]) {
+                  _.each(item_data.data, (v, k) => {
+                    $handle_change.attr("data-" + k, v);
                   });
+                }
+
+                $handle_change.on("click", (e) => {
+                  if (item_data && ((_.has(item_data, "action") && item_data["action"]) || b.action)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (_.has(item_data, "action") && item_data["action"]) {
+                      item_data["action"]($this_button, item_data["label"]);
+                    } else if (b.action) {
+                      b.action($this_button, get_item_text(item_data));
+                    }
+                  }
                 });
+              });
             } else {
-              this_button = button_group
-                .append("button")
-                .classed("btn btn-default btn-xs", true);
+              $this_button = $("<button></button>")
+                .addClass("btn btn-default btn-xs")
+                .appendTo($button_group);
+              $this_button.node = function () {
+                return this[0];
+              };
               if (b.action) {
-                this_button.on("click", (e) => {
-                  d3.event.preventDefault();
-                  b.action(this_button, current_value);
+                $this_button.on("click", (e) => {
+                  e.preventDefault();
+                  b.action($this_button, current_value);
                 });
               }
             }
+
             if (b.icon) {
-              this_button.append("i").classed("fa " + b.icon, true);
+              $this_button.append($("<i></i>").addClass("fa " + b.icon));
             } else {
-              this_button.text(b.text).style("font-size", "12px");
+              $this_button.text(b.text).css("font-size", "12px");
             }
 
             if (b.data) {
-              //let element = $(this_button.node());
               _.each(b.data, (v, k) => {
-                this_button.attr("data-" + k, v);
+                $this_button.attr("data-" + k, v);
               });
             }
 
             if (b.classed) {
               _.each(b.classed, (v, k) => {
-                this_button.classed(k, v);
+                $this_button.toggleClass(k, !!v);
               });
             }
 
             if (b.help) {
-              this_button.attr("title", b.help);
+              $this_button.attr("title", b.help);
             }
           }
-        }
-      );
+        });
+      }
     });
   }
 
-  if ("help" in data) {
-    this_sel.attr("title", data.help);
+  if (data && "help" in data) {
+    $this.attr("title", data.help);
   }
 }
-
-/**
- * Filters a table based on specified conditions applied to a column.
-
- * @param {*} datum - The data object representing a row in the table.
- * @param {Object[]} conditions - An array of condition objects, each with the following properties:
- *   - `type`: The type of condition ("re" for regular expression, "date" for date range, "distance" for numerical comparison).
- *   - `value`: The value or range for the condition:
- *     - For "re": A regular expression object.
- *     - For "date": An array of two Date objects representing the start and end dates.
- *     - For "distance": A number representing the threshold value.
- *   - `greater_than` (optional): A boolean indicating whether to use greater-than comparison for "distance" conditions.
-
- * @returns {boolean} True if the row matches at least one condition, false otherwise.
-*/
 
 function filter_table_by_column_handler(datum, conditions) {
   if (conditions.length) {
@@ -498,96 +470,80 @@ function filter_table_by_column_handler(datum, conditions) {
         return datum >= c.value[0] && datum <= c.value[1];
       } else if (c.type === "distance") {
         if (c.greater_than) return datum > c.value;
-
         return datum <= c.value;
       }
       return false;
     });
   }
-
   return true;
 }
 
 /**
- * Filters a D3 table based on user-defined filters in column headers.
-
- * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing a table header cell that triggered the filter 
-
+ * Filters a table based on user-defined filters.
+ * @param {HTMLElement} element - The element that triggered the filter.
+ * @param {Event} [event] - The event object.
  * @returns {void}
-*/
-
-function filter_table(element) {
-  if (d3.event) {
-    d3.event.preventDefault();
+ */
+function filter_table(element, event) {
+  if (event) {
+    event.preventDefault();
   }
 
-  const table_element = $(element).closest("table");
-
-  if (table_element.length) {
-    // construct compound filters over all columns
-
+  const $table = $(element).closest("table");
+  if ($table.length) {
     const filter_array = [];
     const filter_handlers = [];
 
-    d3.select(table_element[0])
-      .selectAll("thead th")
-      .each((d, i) => {
-        if (d.filter) {
-          if (_.isString(d.filter_term) && d.filter_term.length) {
-            filter_array[d.column_id] = filter_parse(d.filter_term);
-            filter_handlers[d.column_id] = _.isFunction(d.filter)
-              ? d.filter
-              : filter_table_by_column_handler;
-          } else {
-            filter_array[d.column_id] = null;
-            filter_handlers[d.column_id] = null;
-          }
+    $table.find("thead th").each(function () {
+      const d = this.__data__;
+      if (d && d.filter) {
+        if (_.isString(d.filter_term) && d.filter_term.length) {
+          filter_array[d.column_id] = filter_parse(d.filter_term);
+          filter_handlers[d.column_id] = _.isFunction(d.filter)
+            ? d.filter
+            : filter_table_by_column_handler;
+        } else {
+          filter_array[d.column_id] = null;
+          filter_handlers[d.column_id] = null;
         }
-      });
+      }
+    });
 
     let shown_rows = 0;
+    $table.find("tbody tr").each(function () {
+      const $row = $(this);
+      let hide_me = false;
 
-    d3.select(table_element[0])
-      .select("tbody")
-      .selectAll("tr")
-      .each(function (d, r) {
-        const this_row = d3.select(this);
-        let hide_me = false;
-
-        this_row.selectAll("td").each((d, i) => {
-          if (!hide_me) {
-            if (filter_array[i]) {
-              if (
-                !filter_handlers[i](table_get_cell_value(d), filter_array[i])
-              ) {
-                hide_me = true;
-              }
+      $row.find("td").each(function (i) {
+        if (!hide_me) {
+          if (filter_array[i]) {
+            const cell_data = this.__data__;
+            if (
+              !filter_handlers[i](
+                table_get_cell_value(cell_data),
+                filter_array[i]
+              )
+            ) {
+              hide_me = true;
             }
           }
-        });
-
-        if (hide_me) {
-          this_row.style("display", "none");
-        } else {
-          shown_rows += 1;
-          this_row.style("display", null);
         }
       });
-    d3.select(table_element[0])
-      .select("caption")
-      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+
+      if (hide_me) {
+        $row.hide();
+      } else {
+        shown_rows += 1;
+        $row.show();
+      }
+    });
+
+    $table
+      .find("caption")
+      .find(misc.get_ui_element_selector_by_role("table-count-shown"))
       .text(shown_rows);
   }
 }
-
-/**
- * Parses a filter string into an array of filter objects.
-
- * @param {string} filter_value - The filter string to be parsed.
-
- * @returns {Object[]} An array of filter objects, each with a `type` property and a corresponding `value` property.
- *   The `type` can be "re" for regular expression, "date" for date range, or "distance" for numerical comparison.
- */
 
 function filter_parse(filter_value) {
   let search_terms = [];
@@ -663,58 +619,54 @@ function filter_parse(filter_value) {
 }
 
 /**
- * Sorts a D3 table based on the clicked column header.
-
- * @param {d3.selection|HTMLElement} element - HTML element representing the clicked column header.
- * @param {*} datum (optional) - The data object associated with the table (used internally).
-
+ * Sorts a table based on the clicked column header.
+ * @param {HTMLElement} element - The column header element.
+ * @param {Object} datum - The data object for the header.
  * @returns {void}
  */
-
 function sort_table_by_column(element, datum) {
-  if (d3.event) {
-    d3.event.preventDefault();
-  }
-  const table_element = $(element).closest("table");
-  if (table_element.length) {
-    const sort_on = parseInt($(element).data("column-id"));
+  const $element = $(element);
+  const $table = $element.closest("table");
+  if ($table.length) {
+    const sort_on = parseInt($element.attr("data-column-id") || $element.data("column-id"));
     const sort_key = datum.sort;
 
     const sorted_function = sort_table_toggle_icon(element);
 
     let sort_accessor;
-
     if (sort_key) {
       if (_.isFunction(sort_key)) {
-        sort_accessor = function (x) {
-          return sort_key(x);
-        };
+        sort_accessor = (x) => sort_key(x);
       } else {
-        sort_accessor = function (x) {
+        sort_accessor = (x) => {
+          if (!x) return "";
           const val = x[sort_key];
-          if (_.isFunction(val)) return val();
-          return val;
+          return _.isFunction(val) ? val() : val;
         };
       }
     } else {
-      sort_accessor = function (x) {
-        return x;
-      };
+      sort_accessor = (x) => x;
     }
 
-    d3.select(table_element[0])
-      .select("tbody")
-      .selectAll("tr")
-      .sort((a, b) =>
-        sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]))
+    const $tbody = $table.find("tbody");
+    const $rows = $tbody.find("tr").detach().get();
+
+    $rows.sort((a, b) => {
+      const data_a = a.__data__;
+      const data_b = b.__data__;
+      if (!data_a || !data_b) return 0;
+      return sorted_function(
+        sort_accessor(data_a[sort_on]),
+        sort_accessor(data_b[sort_on])
       );
+    });
 
-    // select all other elements from thead and toggle their icons
+    $tbody.append($rows);
 
-    $(table_element)
+    $table
       .find("thead [data-column-id]")
       .filter(function () {
-        return parseInt($(this).data("column-id")) !== sort_on;
+        return parseInt($(this).attr("data-column-id") || $(this).data("column-id")) !== sort_on;
       })
       .each(function () {
         sort_table_toggle_icon(this, "unsorted");
@@ -723,28 +675,25 @@ function sort_table_by_column(element, datum) {
 }
 
 /**
- * Toggles the sort icon on a column header and returns a sorting function.
-
- * @param {d3.selection|HTMLElement} element - The D3 selection or HTML element representing the column header.
- * @param {string} [value] (optional) - The desired sort direction ("asc", "desc", or "unsorted").
-
+ * Toggles the sort icon and returns a sorting function.
+ * @param {HTMLElement} element - The header element.
+ * @param {string} [value] - Sort direction ("asc", "desc", "unsorted").
  * @returns {Function|void}
- *   - If `value` is provided, returns nothing.
- *   - If `value` is not provided, returns a sorting function (`d3.ascending` or `d3.descending`) based on the current sort state.
-*/
-
+ */
 function sort_table_toggle_icon(element, value) {
-  //console.log (value);
+  const $element = $(element);
   if (value) {
-    $(element).data("sorted", value);
-    d3.select(element)
-      .selectAll("i")
-      .classed("fa-sort-amount-desc", value === "desc")
-      .classed("fa-sort-amount-asc", value === "asc")
-      .classed("fa-sort", value === "unsorted");
+    $element.data("sorted", value);
+    $element.attr("data-sorted", value);
+    $element
+      .find("i")
+      .toggleClass("fa-sort-amount-desc", value === "desc")
+      .toggleClass("fa-sort-amount-asc", value === "asc")
+      .toggleClass("fa-sort", value === "unsorted");
   } else {
-    var sorted_state = $(element).data("sorted");
-    sort_table_toggle_icon(element, sorted_state === "asc" ? "desc" : "asc");
+    const sorted_state = $element.data("sorted");
+    const new_state = sorted_state === "asc" ? "desc" : "asc";
+    sort_table_toggle_icon(element, new_state);
     return sorted_state === "asc" ? d3.descending : d3.ascending;
   }
 }
