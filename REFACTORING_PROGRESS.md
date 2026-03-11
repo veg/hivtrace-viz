@@ -244,6 +244,15 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Verified identical output in the "Statistics" tab.
 - **Status**: Completed (2026-03-10)
 
+#### Step 29: Clean up UI Logic in Network Attribute Handlers
+- **Goal**: Replace D3 UI manipulations in `src/networkAttributeHandlers.js` with jQuery and modernize event handling.
+- **Result**: 
+    - Replaced `d3.select` with jQuery for UI element updates (labels, buttons, dropdowns).
+    - Modernized function signatures to accept optional `event` objects, reducing reliance on global `d3.event`.
+    - Maintained D3 only for data-driven scales and SVG radial gradients.
+    - Verified correctly functioning color, shape, and opacity selectors.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

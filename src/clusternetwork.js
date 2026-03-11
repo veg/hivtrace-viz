@@ -1473,14 +1473,16 @@ var hivtrace_cluster_network_graph = function (
    * @function handle_shape_categorical
    * @description Handles the selection of a categorical attribute to be used for node shapes.
    * @param {string} cat_id - The ID of the categorical attribute.
+   * @param {Event} [event] - The event object.
    * @returns {void}
    */
-  self.handle_shape_categorical = function (cat_id) {
+  self.handle_shape_categorical = function (cat_id, event) {
     return NetworkAttributeHandlers.handle_shape_categorical(
       cat_id,
       self,
       i18n,
-      kGlobals
+      kGlobals,
+      event
     );
   };
 
@@ -1526,14 +1528,16 @@ var hivtrace_cluster_network_graph = function (
    * @function handle_attribute_opacity
    * @description Handles the selection of a continuous attribute to be used for node opacity.
    * @param {string} cat_id - The ID of the continuous attribute.
+   * @param {Event} [event] - The event object.
    * @returns {void}
    */
-  self.handle_attribute_opacity = function (cat_id) {
+  self.handle_attribute_opacity = function (cat_id, event) {
     return NetworkAttributeHandlers.handle_attribute_opacity(
       cat_id,
       self,
       i18n,
-      kGlobals
+      kGlobals,
+      event
     );
   };
 
@@ -1541,15 +1545,17 @@ var hivtrace_cluster_network_graph = function (
    * @function handle_attribute_continuous
    * @description Handles the selection of a continuous attribute to be used for node color.
    * @param {string} cat_id - The ID of the continuous attribute.
+   * @param {Event} [event] - The event object.
    * @returns {void}
    */
-  self.handle_attribute_continuous = function (cat_id) {
+  self.handle_attribute_continuous = function (cat_id, event) {
     return NetworkAttributeHandlers.handle_attribute_continuous(
       cat_id,
       self,
       i18n,
       kGlobals,
-      scatterPlot
+      scatterPlot,
+      event
     );
   };
 
@@ -1567,28 +1573,23 @@ var hivtrace_cluster_network_graph = function (
       self.define_node_search_table = function () {
         NetworkSearch.define_node_search_table(self, search_context);
       };
-    /**
-   * @function handle_attribute_categorical
-   * @description Handles the selection of a categorical attribute to be used for node color.
-   * @param {string} cat_id - The ID of the categorical attribute.
-   * @param {boolean} skip_update - If true, skips updating the network visualization after applying the new color scheme.
-   * @returns {void}
-   */
   /**
    * @function handle_attribute_categorical
    * @description Handles the selection of a categorical attribute to be used for node coloring.
    * @param {string} cat_id - The ID of the categorical attribute.
    * @param {boolean} skip_update - If true, skips updating the network visualization.
+   * @param {Event} [event] - The event object.
    * @returns {void}
    */
-  self.handle_attribute_categorical = function (cat_id, skip_update) {
+  self.handle_attribute_categorical = function (cat_id, skip_update, event) {
     return NetworkAttributeHandlers.handle_attribute_categorical(
       cat_id,
       skip_update,
       self,
       i18n,
       kGlobals,
-      HTX
+      HTX,
+      event
     );
   };
 
