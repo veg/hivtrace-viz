@@ -255,6 +255,22 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Verified correctly functioning color, shape, and opacity selectors.
 - **Status**: Completed (2026-03-10)
 
+#### Step 30: Standardize Math Utilities in Helpers
+- **Goal**: Replace non-graphical D3 math utilities in `src/helpers.js` with native JavaScript implementations.
+- **Result**: 
+    - Replaced `d3.min`, `d3.max`, `d3.mean`, `d3.median`, `d3.quantile`, and `d3.ascending` with native JS and custom helpers in `datamonkey_describe_vector`.
+    - Removed implicit dependency on global `d3` for basic statistical calculations.
+- **Status**: Completed (2026-03-10)
+
+#### Step 31: Modernize Data Fetching in NetworkAPI
+- **Goal**: Replace `d3.json` and `d3.text` with the native `fetch` API in `src/core/NetworkAPI.js`.
+- **Result**: 
+    - Removed `d3` dependency from the core API module.
+    - Updated `fetch_priority_sets`, `priority_groups_update_node_sets`, and `priority_groups_edit_set_description` to use `fetch`.
+    - Switched UI updates in `load_priority_sets` from D3 to jQuery.
+    - Improved standalone compatibility of the core data fetching logic.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.

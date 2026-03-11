@@ -1,5 +1,5 @@
 const _ = require("underscore");
-const d3 = require("d3");
+const $ = require("jquery");
 
 /**
  * Handles remote sync and API interactions for network data.
@@ -18,18 +18,26 @@ function priority_groups_update_node_sets(self, name, operation) {
     };
 
     if (self.priority_set_table_write && self.priority_set_table_writeable) {
-      d3.text(self.priority_set_table_write)
-        .header("Content-Type", "application/json")
-        .post(JSON.stringify(to_post), (error, data) => {
-          if (error) {
-            console.log("received fatal error:", error);
-          }
-        });
+      fetch(self.priority_set_table_write, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(to_post),
+      }).catch((error) => {
+        console.log("received fatal error:", error);
+      });
     }
   }
 }
 
-function priority_groups_edit_set_description(self, clustersOfInterest, name, description, update_table) {
+function priority_groups_edit_set_description(
+  self,
+  clustersOfInterest,
+  name,
+  description,
+  update_table
+) {
   let pg_to_update = self.priority_groups_find_by_name(name);
   if (pg_to_update) {
     pg_to_update.description = description;
@@ -39,17 +47,15 @@ function priority_groups_edit_set_description(self, clustersOfInterest, name, de
       const url = `/mjc/results/${
         self.mjcUUID
       }/clusteroi/${encodeURIComponent(name)}/description`;
-      d3.text(url)
-        .header("Content-Type", "application/json")
-        .send(
-          "PUT",
-          JSON.stringify({ description: description }),
-          (error, data) => {
-            if (error) {
-              console.error("Error saving MJC ClusterOI description:", error);
-            }
-          }
-        );
+      fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ description: description }),
+      }).catch((error) => {
+        console.error("Error saving MJC ClusterOI description:", error);
+      });
     } else {
       self.priority_groups_update_node_sets(name, "update");
     }
@@ -60,7 +66,12 @@ function priority_groups_edit_set_description(self, clustersOfInterest, name, de
   }
 }
 
-function priority_groups_remove_set(self, clustersOfInterest, name, update_table) {
+function priority_groups_remove_set(
+  self,
+  clustersOfInterest,
+  name,
+  update_table
+) {
   if (self.defined_priority_groups) {
     const idx = _.findIndex(
       self.defined_priority_groups,
@@ -78,18 +89,28 @@ function priority_groups_remove_set(self, clustersOfInterest, name, update_table
 }
 
 function fetch_priority_sets(url, callback) {
-  d3.json(url, (error, results) => {
-    if (error) {
-      throw Error(
-        `Failed loading cluster of interest file ${error.responseURL}`
-      );
-    } else {
-      callback(results);
-    }
-  });
+  fetch(url)
+    .then((response) => {
+      if (!response.ok) {
+        throw Error(`Failed loading cluster of interest file ${url}`);
+      }
+      return response.json();
+    })
+    .then((results) => callback(results))
+    .catch((error) => {
+      console.error(error);
+    });
 }
 
-function load_priority_sets(self, clustersOfInterest, kGlobals, timeDateUtil, misc, url, is_writeable) {
+function load_priority_sets(
+  self,
+  clustersOfInterest,
+  kGlobals,
+  timeDateUtil,
+  misc,
+  url,
+  is_writeable
+) {
   fetch_priority_sets(url, (results) => {
     const stats = self.priority_groups_process_data(
       results,
@@ -125,11 +146,11 @@ function load_priority_sets(self, clustersOfInterest, kGlobals, timeDateUtil, mi
       self.warning_string += `<p class="alert alert-danger"class="alert alert-danger">READ-ONLY mode for Clusters of Interest is enabled because ${rationale}. None of the changes to clustersOI made during this session will be recorded.</p>`;
       self.display_warning(self.warning_string, true);
       if (tab_pill) {
-        d3.select(tab_pill).text("Read-only");
+        $(tab_pill).text("Read-only");
       }
     } else if (tab_pill && stats.pending > 0) {
-      d3.select(tab_pill).text(stats.pending);
-      d3.select("#banner_coi_counts").text(stats.pending);
+      $(tab_pill).text(stats.pending);
+      $("#banner_coi_counts").text(stats.pending);
     }
 
     _.each(self.defined_priority_groups, (pg) => {
