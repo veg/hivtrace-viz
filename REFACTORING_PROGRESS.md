@@ -274,7 +274,7 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
 #### Step 32: Modernize Data Fetching in Application Entry Points
 - **Goal**: Replace non-graphical D3 utility usage in HTML entry points with `fetch` and jQuery.
 - **Result**: 
-    - Updated `index.html` to use `fetch` for loading network JSON and mapping data.
+    - Updated `index.html` and `html/network.html` to use `fetch` for loading network JSON and mapping data.
     - Replaced D3-based DOM manipulations (errors, tab states, progress bars) with jQuery.
     - Retained `d3.csv.parse` for complex CSV parsing while modernizing the fetching process.
 - **Status**: Completed (2026-03-10)
