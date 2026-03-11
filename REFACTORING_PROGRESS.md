@@ -271,6 +271,14 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Improved standalone compatibility of the core data fetching logic.
 - **Status**: Completed (2026-03-10)
 
+#### Step 32: Modernize Data Fetching in Application Entry Points
+- **Goal**: Replace non-graphical D3 utility usage in HTML entry points with `fetch` and jQuery.
+- **Result**: 
+    - Updated `index.html` to use `fetch` for loading network JSON and mapping data.
+    - Replaced D3-based DOM manipulations (errors, tab states, progress bars) with jQuery.
+    - Retained `d3.csv.parse` for complex CSV parsing while modernizing the fetching process.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
