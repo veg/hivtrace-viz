@@ -19,6 +19,8 @@ class HTXModel {
       } else {
         this.today = new Date();
       }
+    } else {
+      this.today = new Date(this.today);
     }
 
     this.CDC_data = _.extend(
