@@ -179,16 +179,30 @@ function datamonkey_save_image(type, container) {
 function datamonkey_describe_vector(vector, as_list) {
   let d;
 
-  if (vector.length) {
-    const sorted = [...vector].sort(d3.ascending);
+  if (vector && vector.length) {
+    const sorted = [...vector].sort((a, b) => a - b);
+    const n = sorted.length;
+
+    const get_quantile = (p) => {
+      const i = (n - 1) * p;
+      const i0 = Math.floor(i);
+      const v0 = sorted[i0];
+      if (i0 + 1 < n) {
+        const v1 = sorted[i0 + 1];
+        return v0 + (v1 - v0) * (i - i0);
+      }
+      return v0;
+    };
+
+    const sum = sorted.reduce((a, b) => a + b, 0);
 
     d = {
-      min: d3.min(sorted),
-      max: d3.max(sorted),
-      median: d3.median(sorted),
-      Q1: d3.quantile(sorted, 0.25),
-      Q3: d3.quantile(sorted, 0.75),
-      mean: d3.mean(sorted),
+      min: sorted[0],
+      max: sorted[n - 1],
+      median: get_quantile(0.5),
+      Q1: get_quantile(0.25),
+      Q3: get_quantile(0.75),
+      mean: sum / n,
     };
   } else {
     d = {
