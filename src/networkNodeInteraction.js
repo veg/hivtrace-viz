@@ -17,7 +17,7 @@ import * as timeDateUtil from "./timeDateUtil.js";
 export function handle_node_click(node, self, clustersOfInterest, i18n) {
   if (d3.event && d3.event.defaultPrevented) return;
   var container = d3.select(self.container);
-  var id = "d3_context_menu_id";
+  var id = self.dom_prefix + "-context-menu";
   var menu_object = container.select("#" + id);
 
   if (menu_object.empty()) {

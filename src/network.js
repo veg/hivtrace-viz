@@ -39,7 +39,7 @@ function handle_cluster_click(self, cluster, release) {
     d3.event.stopPropagation();
   }
   var container = d3.select(self.container);
-  var id = "d3_context_menu_id";
+  var id = self.dom_prefix + "-context-menu";
   var menu_object = container.select("#" + id);
 
   if (menu_object.empty()) {
