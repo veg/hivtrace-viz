@@ -29,15 +29,18 @@ export function handle_attribute_categorical(
   $(self.get_ui_element_selector_by_role("attributes_invert")).hide();
 
   self.network_svg.selectAll("radialGradient").remove();
+  
 
   [
     ["attributes", false],
-    ["attributes_cat", true],
+    ["attributes_cat", false],
   ].forEach((lbl) => {
-    const $menu = $(self.get_ui_element_selector_by_role(lbl[0], lbl[1]));
+    const selector = self.get_ui_element_selector_by_role(lbl[0], lbl[1]);
+    if (!selector) return;
+    const $menu = $(selector);
     $menu.find("li a").each(function () {
       const $this = $(this);
-      const d = this.__data__;
+      const d = d3.select(this).datum();
       if (d && d[1] === cat_id) {
         set_attr = d[0];
         $this.css("font-weight", "bold");
@@ -47,7 +50,7 @@ export function handle_attribute_categorical(
     });
 
     $(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
-      "Color: " + set_attr + ' <span class="caret"></span>'
+      "Color: " + set_attr
     );
   });
 
@@ -217,12 +220,14 @@ export function handle_attribute_continuous(
 
   [
     ["attributes", false],
-    ["attributes_cat", true],
+    ["attributes_cat", false],
   ].forEach((lbl) => {
-    const $menu = $(self.get_ui_element_selector_by_role(lbl[0], lbl[1]));
+    const selector = self.get_ui_element_selector_by_role(lbl[0], lbl[1]);
+    if (!selector) return;
+    const $menu = $(selector);
     $menu.find("li a").each(function () {
       const $this = $(this);
-      const d = this.__data__;
+      const d = d3.select(this).datum();
       if (d && d[1] === cat_id) {
         set_attr = d[0];
         $this.css("font-weight", "bold");
@@ -232,7 +237,7 @@ export function handle_attribute_continuous(
     });
 
     $(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
-      "Color: " + set_attr + ' <span class="caret"></span>'
+      "Color: " + set_attr
     );
   });
 
@@ -399,7 +404,7 @@ export function handle_shape_categorical(cat_id, self, i18n, kGlobals, event) {
     const $menu = $(self.get_ui_element_selector_by_role(lbl));
     $menu.find("li a").each(function () {
       const $this = $(this);
-      const d = this.__data__;
+      const d = d3.select(this).datum();
       if (d && d[1] === cat_id) {
         set_attr = d[0];
         $this.css("font-weight", "bold");
@@ -463,7 +468,7 @@ export function handle_attribute_opacity(cat_id, self, i18n, kGlobals, event) {
     const $menu = $(self.get_ui_element_selector_by_role(lbl));
     $menu.find("li a").each(function () {
       const $this = $(this);
-      const d = this.__data__;
+      const d = d3.select(this).datum();
       if (d && d[1] === cat_id) {
         set_attr = d[0];
         $this.css("font-weight", "bold");

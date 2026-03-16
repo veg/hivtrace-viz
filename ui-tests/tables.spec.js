@@ -20,6 +20,7 @@ test("cluster table loads and works", async ({ page }) => {
   await page.goto("http://127.0.0.1:8080/");
 
   await expect(page.locator("#clusters-tab")).toBeVisible();
+  await expect(page.locator("#clusters-tab")).not.toHaveClass(/disabled/);
   await page.locator("#clusters-tab").click();
 
   await expect(page.locator("#trace-clusters")).toBeVisible();
@@ -61,6 +62,7 @@ test("subclusters table loads and works", async ({ page }) => {
   );
 
   await expect(page.locator("#subclusters-tab")).toBeVisible();
+  await expect(page.locator("#subclusters-tab")).not.toHaveClass(/disabled/);
   await page.locator("#subclusters-tab").click();
 
   await expect(page.locator("#trace-subclusters")).toBeVisible();
@@ -77,6 +79,7 @@ test("subclusters table loads and works", async ({ page }) => {
 test("node table loads and works", async ({ page }) => {
   await page.goto("http://localhost:8080/");
   await expect(page.locator("#nodes-tab")).toBeVisible();
+  await expect(page.locator("#nodes-tab")).not.toHaveClass(/disabled/);
   await page.locator("#nodes-tab").click();
 
   await expect(page.locator("#trace-nodes")).toBeVisible();
@@ -85,6 +88,6 @@ test("node table loads and works", async ({ page }) => {
 
   await page.getByText("view cluster").first().click();
   await expect(page.getByText("Cluster 1")).toBeVisible();
-  await expect(await page.locator("#hivtrace-export-image").count()).toBe(2);
-  await expect(page.locator("#hivtrace-export-image").last()).toBeVisible();
+  await expect(await page.locator('[id$="hivtrace-export-image"]').count()).toBe(2);
+  await expect(page.locator('[id$="hivtrace-export-image"]').last()).toBeVisible();
 });

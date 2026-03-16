@@ -12,17 +12,18 @@ import * as network from "./network";
  * @returns {void}
  */
 export function registerNetworkEvents(self, clustersOfInterest, i18n) {
-  self.dispatch.on("node_click", (node) => {
+  self.dispatch.on("node_click", (node, event) => {
     NetworkNodeInteraction.handle_node_click(
       node,
       self,
       clustersOfInterest,
-      i18n
+      i18n,
+      event
     );
   });
 
-  self.dispatch.on("cluster_click", (cluster) => {
-    network.handle_cluster_click(self, cluster);
+  self.dispatch.on("cluster_click", (cluster, event) => {
+    network.handle_cluster_click(self, cluster, null, event);
   });
 
   self.dispatch.on("node_pop_on", (node, element) => {

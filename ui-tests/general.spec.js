@@ -28,6 +28,7 @@ test('network statistics loaded', async ({ page }) => {
 	await page.goto('http://127.0.0.1:8080/');
 
 	await expect(page.locator("#graph-tab")).toBeVisible();
+	await expect(page.locator("#graph-tab")).not.toHaveClass(/disabled/);
 	await page.locator("#graph-tab").click();
 	await expect(page.locator("#trace-graph")).toBeVisible();
 	await expect(page.getByText("Sequences used to make links")).toBeVisible();

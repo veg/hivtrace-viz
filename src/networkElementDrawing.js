@@ -89,7 +89,7 @@ export function draw_a_node(self, container, node, kGlobals, misc) {
         if (d3.event) {
           d3.event.stopPropagation();
         }
-        self.dispatch.node_click(d);
+        self.dispatch.node_click(d, d3.event);
       })
       .on("mouseover", function (d) {
         self.dispatch.node_pop_on(d, this);
@@ -191,7 +191,7 @@ export function draw_a_cluster(self, container, the_cluster) {
       if (d3.event) {
         d3.event.stopPropagation();
       }
-      self.dispatch.cluster_click(the_cluster);
+      self.dispatch.cluster_click(the_cluster, d3.event);
     })
     .on("mouseover", function (d) {
       self.dispatch.cluster_pop_on(the_cluster, this);

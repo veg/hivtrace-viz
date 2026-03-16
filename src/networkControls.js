@@ -15,6 +15,8 @@ export function setup_network_controls(
     self.get_ui_element_selector_by_role("cluster_operations_container")
   );
 
+  if (cluster_ui_container.empty()) return;
+
   cluster_ui_container.selectAll("li").remove();
 
   var fix_handler = function (do_fix) {
@@ -155,11 +157,11 @@ export function setup_network_controls(
       i18n("network_tab")["highlight_unsupported_edges"],
       function (item) {
         if (self.highlight_unsuppored_edges) {
-          d3.select(item).selectAll(".fa-check-square").remove();
+          d3.select(item).selectAll(".fa-square-check").remove();
         } else {
           d3.select(item)
             .insert("i", ":first-child")
-            .classed("fa fa-check-square", true);
+            .attr("class", "fa-solid fa-square-check");
         }
         toggle_highlight_unsupported_edges(self);
       },
@@ -174,11 +176,11 @@ export function setup_network_controls(
       "Show only changes since last network update",
       function (item) {
         if (self.showing_diff) {
-          d3.select(item).selectAll(".fa-check-square").remove();
+          d3.select(item).selectAll(".fa-square-check").remove();
         } else {
           d3.select(item)
             .insert("i", ":first-child")
-            .classed("fa fa-check-square", true);
+            .attr("class", "fa-solid fa-square-check");
         }
         toggle_diff(self);
       },
@@ -193,11 +195,11 @@ export function setup_network_controls(
       i18n("network_tab")["only_recent_clusters"],
       function (item) {
         if (self.using_time_filter) {
-          d3.select(item).selectAll(".fa-check-square").remove();
+          d3.select(item).selectAll(".fa-square-check").remove();
         } else {
           d3.select(item)
             .insert("i", ":first-child")
-            .classed("fa fa-check-square", true);
+            .attr("class", "fa-solid fa-square-check");
         }
         toggle_time_filter(self, timeDateUtil);
       },
@@ -248,13 +250,16 @@ export function setup_network_controls(
       var handler_callback = item[1];
       var line_item = this.append("li")
         .append("a")
+        .classed("dropdown-item", true)
         .text(item[0])
         .attr("href", "#")
         //.attr("id", item[3])
         .on("click", function (e) {
           handler_callback(this);
-          //d3.event.stopPropagation();
-          //d3.event.preventDefault();
+          if (d3.event) {
+            d3.event.preventDefault();
+            d3.event.stopPropagation();
+          }
         });
 
       if (item.length > 4) {
@@ -263,7 +268,7 @@ export function setup_network_controls(
         if (item[4]) {
           line_item
             .insert("i", ":first-child")
-            .classed("fa fa-check-square", true);
+            .attr("class", "fa-solid fa-square-check");
         }
         line_item.insert("span").text(item[0]);
       }
@@ -278,63 +283,63 @@ export function setup_network_controls(
     button_group.selectAll("button").remove();
     button_group
       .append("button")
-      .classed("btn btn-default btn-sm", true)
+      .classed("btn btn-outline-secondary btn-sm", true)
       .attr("title", i18n("network_tab")["expand_spacing"])
       .on("click", (d) => {
         self.change_spacing(5 / 4);
       })
       .append("i")
-      .classed("fa fa-plus", true);
+      .attr("class", "fa-solid fa-plus");
     button_group
       .append("button")
-      .classed("btn btn-default btn-sm", true)
+      .classed("btn btn-outline-secondary btn-sm", true)
       .attr("title", i18n("network_tab")["compress_spacing"])
       .on("click", (d) => {
         self.change_spacing(4 / 5);
       })
       .append("i")
-      .classed("fa fa-minus", true);
+      .attr("class", "fa-solid fa-minus");
     button_group
       .append("button")
-      .classed("btn btn-default btn-sm", true)
+      .classed("btn btn-outline-secondary btn-sm", true)
       .attr("title", i18n("network_tab")["enlarge_window"])
       .on("click", (d) => {
         self.change_window_size(100, true);
       })
       .append("i")
-      .classed("fa fa-expand", true);
+      .attr("class", "fa-solid fa-expand");
     button_group
       .append("button")
-      .classed("btn btn-default btn-sm", true)
+      .classed("btn btn-outline-secondary btn-sm", true)
       .attr("title", i18n("network_tab")["shrink_window"])
       .on("click", (d) => {
         self.change_window_size(-100, true);
       })
       .append("i")
-      .classed("fa fa-compress", true);
+      .attr("class", "fa-solid fa-compress");
 
     if (!self._is_CDC_) {
       button_group
         .append("button")
-        .classed("btn btn-default btn-sm", true)
+        .classed("btn btn-outline-secondary btn-sm", true)
         .attr("title", "Compute graph statistics")
         .attr("id", "hivtrace-compute-graph-statistics")
         .on("click", function (d) {
           _.bind(self.compute_graph_stats, this)();
         })
         .append("i")
-        .classed("fa fa-calculator", true);
+        .attr("class", "fa-solid fa-calculator");
     } else {
       button_group
         .append("button")
-        .classed("btn btn-default btn-sm", true)
+        .classed("btn btn-outline-secondary btn-sm", true)
         .attr("title", i18n("network_tab")["toggle_epicurve"])
         .attr("id", "hivtrace-toggle-epi-curve")
         .on("click", (d) => {
           self.check_for_time_series();
         })
         .append("i")
-        .classed("fa fa-line-chart", true);
+        .attr("class", "fa-solid fa-chart-line");
     }
 
     var export_image = d3.select(
@@ -345,8 +350,8 @@ export function setup_network_controls(
       export_image.selectAll("div").remove();
 
       const buttonGroupDropdown = export_image
-        .insert("div", ":first-child")
-        .classed("input-group-btn dropdown-img", true);
+        .append("div")
+        .classed("dropdown", true);
 
       const dropdownList = buttonGroupDropdown
         .append("ul")
@@ -355,8 +360,8 @@ export function setup_network_controls(
 
       dropdownList
         .append("li")
-        .classed("dropdown-item export-img-item", true)
         .append("a")
+        .classed("dropdown-item", true)
         .attr("href", "#")
         .text("SVG")
         .on("click", (d) => {
@@ -365,8 +370,8 @@ export function setup_network_controls(
 
       dropdownList
         .append("li")
-        .classed("dropdown-item export-img-item", true)
         .append("a")
+        .classed("dropdown-item", true)
         .attr("href", "#")
         .text("PNG")
         .on("click", (d) => {
@@ -375,15 +380,12 @@ export function setup_network_controls(
 
       const imgBtn = buttonGroupDropdown
         .append("button")
-        .attr("id", "dropdownImg")
-        .attr("data-toggle", "dropdown")
-        .classed("btn btn-default btn-sm dropdown-toggle", true)
+        .attr("data-bs-toggle", "dropdown")
+        .classed("btn btn-outline-secondary btn-sm dropdown-toggle float-end", true)
         .attr("title", i18n("network_tab")["save_image"])
         .attr("id", "hivtrace-export-image");
 
-      imgBtn.append("i").classed("fa fa-image", true);
-
-      imgBtn.append("span").classed("caret", true);
+      imgBtn.append("i").attr("class", "fa-solid fa-image");
     }
   }
 
@@ -433,6 +435,7 @@ export function setup_network_controls(
       }, 250)
     );
 
+  // pairwise_table_pecentage is in the Attributes tab, not nested in the bar
   $(self.get_ui_element_selector_by_role("pairwise_table_pecentage", true))
     .off("change")
     .on(
@@ -555,7 +558,7 @@ export function setup_priority_set_merge_controls(
               .get_editor()
               .append_nodes([...current_node_set], current_node_objects, true);
           }
-          $(modal.node()).modal("hide");
+          bootstrap.Modal.getOrCreateInstance(modal.node()).hide();
         };
 
         proceed_btn.attr("disabled", "disabled").on("click", handle_merge);
@@ -595,10 +598,13 @@ export function setup_priority_set_merge_controls(
           ]);
         });
 
+        const table_container = modal.select(
+          self.get_ui_element_selector_by_role("priority_set_merge_table", true)
+        );
+        $(table_container.node()).addClass("table table-striped table-sm table-hover caption-top table-smaller");
+
         tables.add_a_sortable_table(
-          modal.select(
-            self.get_ui_element_selector_by_role("priority_set_merge_table", true)
-          ),
+          table_container,
           headers,
           rows,
           true,
@@ -620,8 +626,10 @@ export function setup_priority_set_controls(
   clustersOfInterest
 ) {
   var priority_ui_container = d3.select(
-    self.get_ui_element_selector_by_role("priority_operations_container")
+    $(self.get_ui_element_selector_by_role("priority_operations_container")).get(0)
   );
+
+  if (priority_ui_container.empty()) return;
 
   priority_ui_container.selectAll("li").remove();
 
@@ -641,9 +649,11 @@ export function setup_priority_set_controls(
     [
       "Merge clusters of interest",
       function () {
-        $(self.get_ui_element_selector_by_role("priority_set_merge", true)).modal(
-          "show"
-        );
+        bootstrap.Modal.getOrCreateInstance(
+          $(
+            self.get_ui_element_selector_by_role("priority_set_merge", true)
+          ).get(0)
+        ).show();
       },
       true,
     ],
@@ -653,11 +663,12 @@ export function setup_priority_set_controls(
     if (item[2]) {
       this.append("li")
         .append("a")
+        .classed("dropdown-item", true)
         .text(item[0])
         .attr("href", "#")
         .on("click", function (e) {
           item[1](this);
-          d3.event.preventDefault();
+          if (d3.event) d3.event.preventDefault();
         });
     }
   }, priority_ui_container);

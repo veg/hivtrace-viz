@@ -1080,6 +1080,11 @@
   dependencies:
     playwright "1.45.1"
 
+"@popperjs/core@^2.11.8":
+  version "2.11.8"
+  resolved "https://registry.npmjs.org/@popperjs/core/-/core-2.11.8.tgz"
+  integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
+
 "@types/eslint-scope@^3.7.7":
   version "3.7.7"
   resolved "https://registry.npmjs.org/@types/eslint-scope/-/eslint-scope-3.7.7.tgz"
@@ -1876,10 +1881,15 @@ bootstrap-datepicker@^1.10.x:
   dependencies:
     jquery ">=3.4.0 <4.0.0"
 
-bootstrap@^3.4.1:
-  version "3.4.1"
-  resolved "https://registry.npmjs.org/bootstrap/-/bootstrap-3.4.1.tgz"
-  integrity sha512-yN5oZVmRCwe5aKwzRj6736nSmKDX7pLYwsXiCj/EYmo16hODaBiT4En5btW/jhBF/seV+XMx3aYwukYC3A49DA==
+bootstrap-icons@^1.11.3:
+  version "1.13.1"
+  resolved "https://registry.npmjs.org/bootstrap-icons/-/bootstrap-icons-1.13.1.tgz"
+  integrity sha512-ijombt4v6bv5CLeXvRWKy7CuM3TRTuPEuGaGKvTV5cz65rQSY8RQ2JcHt6b90cBBAC7s8fsf2EkQDldzCoXUjw==
+
+bootstrap@^5.3.0, bootstrap@^5.3.3:
+  version "5.3.3"
+  resolved "https://registry.npmjs.org/bootstrap/-/bootstrap-5.3.3.tgz"
+  integrity sha512-8HLCdWgyoMguSO9o+aH+iuZ+aht+mzW0u3HIMzVu7Srrpv7EBBxTnrFlSCskwdY1+EOFQSm7uMJhNQHkdPcmjg==
 
 brace-expansion@^1.0.0:
   version "1.1.6"
@@ -4315,12 +4325,14 @@ jquery-extendext@^1.0.0:
   dependencies:
     jquery ">=1.9.1"
 
-jQuery-QueryBuilder@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.npmjs.org/jQuery-QueryBuilder/-/jQuery-QueryBuilder-2.7.0.tgz"
-  integrity sha512-lwS/QXU+OQ2KYBw+py33Us6S0t5OpLeEE1ZBIVu1r5QxRjPOgDUoXCUeZCX2rPXpRc6Vb7QrOr0409cyf3dQCw==
+jQuery-QueryBuilder@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/jQuery-QueryBuilder/-/jQuery-QueryBuilder-3.0.0.tgz"
+  integrity sha512-ZzDMZVdO8UzQBVWrr2gtIx+N6zLmjpvYCOTH3osKbhPLKNlZynDktxb3JNFJrb9Fdr5/EPmBo80XvNF3OBBx3Q==
   dependencies:
-    bootstrap "^3.4.1"
+    "@popperjs/core" "^2.11.8"
+    bootstrap "^5.3.0"
+    bootstrap-icons "^1.11.3"
     jquery "^3.5.1"
     jquery-extendext "^1.0.0"
     moment "^2.29.1"

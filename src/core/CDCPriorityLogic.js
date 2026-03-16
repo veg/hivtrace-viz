@@ -497,7 +497,11 @@ function priority_groups_compute_node_membership(self, kGlobals, timeDateUtil) {
 
   self._aux_populate_category_menus();
   if (self._is_CDC_ && !self.isMJCNetwork) {
-    self.define_node_search_table();
+    try {
+      self.define_node_search_table();
+    } catch (e) {
+      console.error("Error initializing node search table:", e);
+    }
   }
 }
 

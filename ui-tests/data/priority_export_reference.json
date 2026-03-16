@@ -1,0 +1,2272 @@
+[
+  {
+    "name": "MT_202312_32.1",
+    "description": "Automatically created cluster of interest MT_202312_32.1",
+    "nodes": [
+      {
+        "name": "XV06V078834490-2|XV99T114209875-1~174~XV88V802276702-8~280~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV98L530454549-9|XV98K476885604-4~48~PR_RT~1026",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV94Y277665339-6|XV74K106325765-7~304~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV48Q339569974-5|XV25L795114022-7~184~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV92O388725516-9|XV45O052508054-2~283~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV77Z756905229-2|XV65Z321519815-5~188~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV33Y169274833-7|XV32J895223433-3~161~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV33Y169274833-7|XV13D984742133-5~190~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV19J613717676-6|XV76Z201806869-2~59~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV76S348069527-4|XV84I973211280-8~255~PR_RT~1212",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV76S348069527-4|XV45V124004928-3~481~PR_RT~1026",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV76S348069527-4|XV78B214643368-9~4~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV56G014237154-5|XV24L290869448-2~111~XV13X930024321-9~373~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV91A572577034-2|XV59L800512837-7~112~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV56G014237154-5|XV99A071407202-0~275~XV13X930024321-9~373~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV11N631378767-7|XV90J988537820-1~233~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64A494001143-2|XV35F774555465-1~328~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV05R743432319-7|XV40O003803030-6~143~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV08R464022901-0|XV70U627338592-8~155~XV24N425400089-6~78~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV48H247650734-4|XV46P972510597-8~107~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV06R987029358-2|XV60X144765094-7~79~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV22V705576375-5|XV08Z316188077-0~192~PR_RT_IN~2136",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV19H625570055-4|XV50P950622781-7~470~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV23O745934333-6|XV28U591307516-9~151~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64A494001143-2|XV00K363670884-3~299~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV76H663343397-5|XV68F028453935-2~428~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV45Q898166835-2|XV36V861988254-2~210~XV34Z911362184-9~305~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV38P931096455-0|XV35W509963440-8~72~XV12V419783705-1~206~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV00S172657938-8|XV98D378666064-5~358~XV92M375223690-6~141~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV28M012286799-0|XV46B088041416-8~429~PR_RT_IN~2040",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV28M012286799-0|XV30X116988955-2~54~PR_RT~987",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV26J016461012-1|XV73I850230853-6~376~PR_RT~1251",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68M000665445-1|XV40X489209052-1~151~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV27Z965616211-1|XV36Q206924655-3~356~XV97R604601030-5~3~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV27Z965616211-1|XV61D198022655-9~295~PR_RT_IN~1971",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68S698788332-4|XV21J222605450-2~114~XV77M341499676-7~370~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.071Z",
+        "size": 24,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 5,
+        "cluster_dx_recent36_mo": 24
+      },
+      {
+        "date": "2026-03-02T16:42:40.415Z",
+        "size": 29,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 11
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_50.4",
+    "description": "Automatically created cluster of interest MT_202312_50.4",
+    "nodes": [
+      {
+        "name": "XV14B743102623-7|XV68V688476608-5~329~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV96J183329205-3|XV79E573946348-3~236~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV96J183329205-3|XV32B184017352-0~242~XV52K195290078-3~201~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV92Y716422599-1|XV13R743743292-0~176~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV92G949522625-2|XV21X983573761-2~479~PR_RT~1494",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV80Y951804469-9|XV88M846561402-8~215~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV62D267495237-5|XV25I509637508-0~271~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV58N150259320-6|XV68L080216324-6~407~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV45H038831322-9|XV85O717355407-5~91~PR_RT_IN~2238",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV44A006680123-4|XV51C913416166-1~324~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV44A006680123-4|XV08D226952754-5~106~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV39O077961755-0|XV94L666350628-7~133~XV46C421638877-5~204~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV43C983480088-9|XV54J364632335-9~276~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV08R782894154-1|XV49C696521501-1~206~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV49B640391085-3|XV92U372967987-3~260~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV37U651689152-4|XV61Z280550177-4~382~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV38J337214447-1|XV27D810619055-6~65~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV32B113425425-8|XV57A791639101-1~242~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV32B113425425-8|XV77F647839381-7~124~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV91D791748885-4|XV74E616458114-9~401~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV91D791748885-4|XV67Z414160905-0~323~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV84P531533593-1|XV71H952930429-9~57~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV50R240672970-6|XV77B657781348-7~98~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV81K640660180-2|XV58I581049188-2~37~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV83B876996914-4|XV86L506196834-7~147~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV83B876996914-4|XV54F342781877-1~49~PR_RT_IN~2358",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV77I893592731-5|XV71H048012269-9~9~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.072Z",
+        "size": 16,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 16
+      },
+      {
+        "date": "2026-03-02T16:42:40.416Z",
+        "size": 22,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 12
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_171.1",
+    "description": "Automatically created cluster of interest MT_202312_171.1",
+    "nodes": [
+      {
+        "name": "XV64O830184119-7|XV83O790811369-6~493~XV55O463597581-5~106~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV83O790811369-6~493~XV53U648627265-5~426~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV83O790811369-6~493~XV30C833773803-8~344~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV83O790811369-6~493~XV11B598154679-5~276~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV83O790811369-6~493~XV03A924111369-8~54~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV70F553601440-0~295~XV55O463597581-5~106~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV70F553601440-0~295~XV53U648627265-5~426~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV70F553601440-0~295~XV30C833773803-8~344~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV70F553601440-0~295~XV11B598154679-5~276~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV70F553601440-0~295~XV03A924111369-8~54~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV50R246112491-0~254~XV55O463597581-5~106~PR_RT_IN~2115",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV50R246112491-0~254~XV53U648627265-5~426~PR_RT_IN~2115",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV50R246112491-0~254~XV30C833773803-8~344~PR_RT_IN~2115",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV50R246112491-0~254~XV11B598154679-5~276~PR_RT_IN~2115",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV50R246112491-0~254~XV03A924111369-8~54~PR_RT_IN~2115",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV47H308113351-9~302~XV55O463597581-5~106~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV47H308113351-9~302~XV53U648627265-5~426~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV47H308113351-9~302~XV30C833773803-8~344~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV47H308113351-9~302~XV11B598154679-5~276~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV47H308113351-9~302~XV03A924111369-8~54~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV44W916780254-8~484~XV55O463597581-5~106~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV44W916780254-8~484~XV53U648627265-5~426~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV44W916780254-8~484~XV30C833773803-8~344~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV44W916780254-8~484~XV11B598154679-5~276~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV44W916780254-8~484~XV03A924111369-8~54~PR_RT_IN~1890",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV42D731263639-1~152~XV55O463597581-5~106~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV42D731263639-1~152~XV53U648627265-5~426~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV42D731263639-1~152~XV30C833773803-8~344~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV42D731263639-1~152~XV11B598154679-5~276~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64O830184119-7|XV42D731263639-1~152~XV03A924111369-8~54~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV03B801744392-5|XV10P858121251-2~26~PR_RT_IN~2226",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV60L818183834-9|XV55L420044961-6~148~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV01L995023081-6|XV87D276698569-9~490~XV60U909711489-0~350~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV01L995023081-6|XV87D276698569-9~490~XV05T114848438-2~170~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV01L995023081-6|XV53A614615452-0~9~XV60U909711489-0~350~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV01L995023081-6|XV53A614615452-0~9~XV05T114848438-2~170~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV01L995023081-6|XV14Q629302105-7~353~PR_RT_IN~2226",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV03U215536894-0|XV76O868931088-4~251~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2023-12-30T13:16:59.774Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.072Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 5
+      },
+      {
+        "date": "2026-03-02T16:42:40.322Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 5
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_290.2",
+    "description": "Automatically created cluster of interest MT_202312_290.2",
+    "nodes": [
+      {
+        "name": "XV75I175116850-5|XV01F710501373-6~445~XV01F424099087-6~188~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV93D211554310-1|XV77W336817089-0~489~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV93D211554310-1|XV08V533619830-0~208~PR_RT~1026",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV93D211554310-1|XV08P905735833-1~148~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV60T414230849-4|XV30A697675733-2~450~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV60U555243726-6|XV85R164172197-6~331~XV03R466161993-9~137~PR_RT~1497",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.072Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      },
+      {
+        "date": "2026-03-02T16:42:40.416Z",
+        "size": 4,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 4
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_436.1",
+    "description": "Automatically created cluster of interest MT_202312_436.1",
+    "nodes": [
+      {
+        "name": "XV44U243290421-6|XV06M767131305-2~125~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV42Q347718998-8|XV22B407104331-4~218~XV47V742166579-4~294~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV97B241587911-7|XV88U042857390-3~435~XV29D279845829-1~339~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV71M274413910-8|XV53Y342917155-6~445~XV20Q008281126-6~339~PR_RT_IN~2106",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64K730347863-9|XV39D521669595-0~145~XV21D522261505-2~83~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV39X421265155-0|XV57K643800122-9~353~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV45N990248313-6|XV44S614321179-1~108~XV30D678644925-4~416~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV45N990248313-6|XV51Q129530253-4~123~XV30D678644925-4~416~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV34R778026181-8|XV99X445210987-7~402~XV29F492090771-6~404~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV39U794559446-4|XV89N673898206-6~184~XV94K354756743-1~177~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV39S729132422-5|XV98J719439747-4~97~XV36U522342204-0~399~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV34R778026181-8|XV48C848871438-9~137~XV37A026588432-2~475~XV29F492090771-6~404~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV06H850130722-3|XV35Z796928437-0~285~XV94M566127045-2~138~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV21I799201438-1|XV82K433691937-3~323~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV08A747136951-2|XV47Y079624874-4~41~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV19R490537511-7|XV82H279508632-3~208~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV19R490537511-7|XV88B674024896-1~15~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV16P874479858-7|XV16E302701734-4~83~XV73P645015221-3~156~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.073Z",
+        "size": 13,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 13
+      },
+      {
+        "date": "2026-03-02T16:42:40.417Z",
+        "size": 15,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 1,
+        "cluster_dx_recent36_mo": 5
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_484.1",
+    "description": "Automatically created cluster of interest MT_202312_484.1",
+    "nodes": [
+      {
+        "name": "XV03L335682098-4|XV95W543478789-5~234~PR_RT_IN~2358",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV71L326076731-9|XV05Q024292807-4~399~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV51J534986201-4|XV68R269024866-4~120~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV51J534986201-4|XV22W195228462-9~100~PR_RT~1026",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV71L326076731-9|XV25K760049597-2~369~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV51J534986201-4|XV13S936652450-3~130~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV04R872811125-6|XV82S022573278-8~115~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2023-12-30T13:16:59.774Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.073Z",
+        "size": 4,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 4
+      },
+      {
+        "date": "2026-03-02T16:42:40.328Z",
+        "size": 4,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_528.1",
+    "description": "Automatically created cluster of interest MT_202312_528.1",
+    "nodes": [
+      {
+        "name": "XV01K668345837-3|XV37D521801298-7~338~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV14Y291604918-8|XV30I104088188-4~371~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV75J915889770-9|XV53Y089981968-8~165~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV57Z284073520-2|XV17W860990372-6~319~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV63S590350136-1|XV12R762857569-9~246~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV63Q601855708-5|XV21E006308891-4~171~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.073Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 5
+      },
+      {
+        "date": "2026-03-02T16:42:40.417Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_1080.1",
+    "description": "Automatically created cluster of interest MT_202312_1080.1",
+    "nodes": [
+      {
+        "name": "XV46T569325938-8|XV57H961779850-2~314~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV53P348655176-4|XV83Y512472793-9~53~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV95I666828948-2|XV02T215684320-8~472~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV60A664647419-7|XV04F600645915-0~266~PR_RT_IN~1971",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV55U911416027-1|XV21U931340499-3~141~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2023-12-30T13:16:59.774Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.073Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 5,
+        "cluster_dx_recent36_mo": 5
+      },
+      {
+        "date": "2026-03-02T16:42:40.332Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 5
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_2158.1",
+    "description": "Automatically created cluster of interest MT_202312_2158.1",
+    "nodes": [
+      {
+        "name": "XV85P776069434-4|XV22H030695733-9~153~XV06D018464001-2~307~PR_RT_IN~2118",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68V945331673-7|XV74F056253905-3~335~PR_RT~1251",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV22W124262950-1|XV70U066725084-4~108~PR_RT~1254",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV22W124262950-1|XV02W253752108-7~168~PR_RT~1497",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2023-12-30T13:16:59.774Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.074Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      },
+      {
+        "date": "2026-03-02T16:42:40.334Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202312_3931.1",
+    "description": "Automatically created cluster of interest MT_202312_3931.1",
+    "nodes": [
+      {
+        "name": "XV32P062417628-2|XV70V134790405-5~332~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64E703905556-4|XV23B357433347-4~5~PR_RT_IN~2361",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35J055125762-0|XV05C041075986-2~378~PR_RT_IN~2358",
+        "added": "2023-12-30T13:16:59.774Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV32T423433757-2|XV66I408926105-3~497~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2023-12-30T13:16:59.774Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": true,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-02-26T18:25:23.074Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      },
+      {
+        "date": "2026-03-02T16:42:40.417Z",
+        "size": 4,
+        "new_nodes": 0,
+        "national_priority": false,
+        "cluster_dx_recent12_mo": 0,
+        "cluster_dx_recent36_mo": 4
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_6.9",
+    "description": "Automatically created cluster of interest MT_202509_6.9",
+    "nodes": [
+      {
+        "name": "XV35B900109112-7|XV74C206311291-9~49~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV99Q869786711-8|XV47L246208844-4~322~XV57Y773375571-8~264~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV73O748161650-4|XV17X622841591-1~316~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV45F829693749-1|XV38Y010297889-2~326~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35B900109112-7|XV58O033348834-0~276~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV27R257808006-5|XV96Z244108586-7~268~XV08J666515454-6~132~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV27R257808006-5|XV92R295799350-9~456~XV08J666515454-6~132~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV26C386287699-9|XV69I227617539-7~14~XV03A997896385-5~285~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV26C386287699-9|XV02B958138815-1~451~XV03A997896385-5~285~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.418Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 6,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_23.2",
+    "description": "Automatically created cluster of interest MT_202509_23.2",
+    "nodes": [
+      {
+        "name": "XV71G695065622-1|XV30D996778943-0~294~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV30C380350357-5|XV74J908345887-9~137~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV80O028887219-8|XV99J590700215-7~200~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV30C380350357-5|XV62N394818535-9~37~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV22A401778986-1|XV72W229703834-9~246~PR_RT~987",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV22A401778986-1|XV53A124834490-4~478~PR_RT_IN~2217",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV18Y789081987-6|XV58L069942477-0~327~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV03P082412530-8|XV96P036729910-8~166~XV94Z374843115-9~270~PR_RT_IN~2112",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV03P082412530-8|XV96V404623004-6~432~XV94Z374843115-9~270~PR_RT_IN~1884",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.418Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_27.4",
+    "description": "Automatically created cluster of interest MT_202509_27.4",
+    "nodes": [
+      {
+        "name": "XV46F796209831-8|XV74Q285853352-2~210~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV00Q026815484-0|XV76W637170380-1~342~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV70T506744882-4|XV78D017129324-0~81~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV70T506744882-4|XV69X692665205-1~436~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV54T512273542-1|XV81P662832288-7~117~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV54T512273542-1|XV06I954073474-9~258~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV00Q026815484-0|XV70W297542633-1~23~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.419Z",
+        "size": 4,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 4
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_93.1",
+    "description": "Automatically created cluster of interest MT_202509_93.1",
+    "nodes": [
+      {
+        "name": "XV80V287582748-3|XV44L581009321-4~183~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV98T751116985-5|XV31D301136311-9~494~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV77Y990178717-3|XV74W334225674-3~240~PR_RT~987",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV79I896766325-1|XV08Q248845195-7~350~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV79I896766325-1|XV67B802732790-0~207~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV77Y990178717-3|XV10I024808402-4~109~PR_RT_IN~2217",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV13R963674041-1|XV39T359150566-8~293~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV71Q385426472-0|XV72O191430492-0~21~XV96E075520215-1~294~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV13R963674041-1|XV30B036764949-5~63~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.419Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_104.4",
+    "description": "Automatically created cluster of interest MT_202509_104.4",
+    "nodes": [
+      {
+        "name": "XV08V957242389-9|XV80B183758493-8~366~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV98L396867691-4|XV53I981509189-8~157~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV98L396867691-4|XV34V926236218-0~382~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV58X297092365-1|XV18Y356172420-4~211~XV29T202619127-9~475~PR_RT_IN~1887",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV58X297092365-1|XV12D607985773-6~400~XV29T202619127-9~475~PR_RT_IN~2115",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.419Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_155.2",
+    "description": "Automatically created cluster of interest MT_202509_155.2",
+    "nodes": [
+      {
+        "name": "XV64V289737340-5|XV34G194611035-7~143~XV87P523243645-9~488~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68E670903703-2|XV46D843520210-9~470~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64V289737340-5|XV42V363768985-0~391~XV31L646278134-6~232~XV87P523243645-9~488~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV64V289737340-5|XV34V131354784-4~97~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV58P797672941-0|XV14T693221680-3~175~XV78B485850312-0~156~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV54B824054607-4|XV96W125048567-1~60~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV56L164886752-4|XV16J984456384-8~359~XV78X008125329-7~452~XV25K610047686-3~405~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV56L164886752-4|XV16J984456384-8~359~XV16L816929192-9~431~XV25K610047686-3~405~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.420Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 5
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_158.6",
+    "description": "Automatically created cluster of interest MT_202509_158.6",
+    "nodes": [
+      {
+        "name": "XV51A468848583-2|XV94Q211832286-8~465~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV91F780499928-7|XV86F824455347-3~77~PR_RT_IN~2358",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV91F780499928-7|XV49S090314799-4~365~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65K714741611-9|XV99V029155313-6~297~PR_RT_IN~2358",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65K714741611-9|XV12V526410796-2~285~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV76N871487006-2|XV47Y789190718-4~260~XV70H222265642-7~399~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65K714741611-9|XV97U851979224-9~179~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV57M561188306-6|XV92U638318937-2~64~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV57M561188306-6|XV00A513186159-5~1~XV90B230591731-3~234~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV69J544861928-3|XV38K616499373-5~344~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.420Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_375.1",
+    "description": "Automatically created cluster of interest MT_202509_375.1",
+    "nodes": [
+      {
+        "name": "XV22N329391764-7|XV33G970025542-5~122~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV72L295342034-8|XV48M646739735-5~289~PR_RT~1497",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV72L295342034-8|XV55V407062696-9~309~PR_RT~1497",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV49I200499769-5|XV74H437895987-4~310~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV49I200499769-5|XV30R684620985-8~85~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV89D795476007-2|XV46C194951237-9~215~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35R615676120-5|XV57B383190728-5~326~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35R615676120-5|XV50S559364831-8~436~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV13U349715678-3|XV97W522773094-4~121~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV06W452149342-7|XV80D480662259-5~463~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV17K375426903-7|XV61I235583984-2~370~PR_RT~1497",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.420Z",
+        "size": 8,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 8
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_579.1",
+    "description": "Automatically created cluster of interest MT_202509_579.1",
+    "nodes": [
+      {
+        "name": "XV78E672823044-9|XV50S396588701-5~168~XV71B941790134-0~407~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV78E672823044-9|XV01Q567369731-6~430~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV54B663148640-7|XV35Y059845102-9~413~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV54B663148640-7|XV70W666651555-6~222~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV51R458879716-1|XV54B467491205-6~339~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV51R458879716-1|XV80U163161829-8~500~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV20B388983655-2|XV04Z702302703-3~159~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV20B388983655-2|XV96R311519197-5~147~PR_RT~1251",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV43Z499178410-2|XV66N118610955-3~156~XV10D074966503-9~131~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV13I839696485-4|XV87R499584020-0~168~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.421Z",
+        "size": 6,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 6
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_705.1",
+    "description": "Automatically created cluster of interest MT_202509_705.1",
+    "nodes": [
+      {
+        "name": "XV30L500975689-1|XV85H987460218-7~483~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65X038440701-9|XV13Z672170933-0~202~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65X038440701-9|XV91H470624481-9~175~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV32E785194470-6|XV80Q777803769-8~311~XV90K755285001-2~494~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.421Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_904.1",
+    "description": "Automatically created cluster of interest MT_202509_904.1",
+    "nodes": [
+      {
+        "name": "XV48T037010967-1|XV62D043007661-0~404~PR_RT~1497",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68K055818621-7|XV73R773137427-5~117~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV68K055818621-7|XV57G200236287-5~80~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV27G186688706-3|XV88L070306446-1~460~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35M365075641-4|XV84W878088752-3~184~XV93O855449056-8~463~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV35M365075641-4|XV78B157103450-6~56~XV93O855449056-8~463~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV07K447287622-0|XV99L713534455-6~384~PR_RT_IN~2283",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV07K447287622-0|XV19N974315807-2~258~PR_RT~987",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.421Z",
+        "size": 5,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 5
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_1034.1",
+    "description": "Automatically created cluster of interest MT_202509_1034.1",
+    "nodes": [
+      {
+        "name": "XV42Q086310200-2|XV57B280621113-1~348~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV92N490266636-1|XV15O792751390-3~90~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV38F703578924-0|XV87B579611447-3~222~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV44P722540533-3|XV43Q511262642-3~285~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV38F703578924-0|XV56Q359335844-2~87~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV36E560462655-9|XV63L248493673-5~258~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV65M127283903-8|XV72C580447201-5~75~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV03S031813225-4|XV47F732362653-9~172~XV36R724618439-1~35~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV34R951952778-7|XV10W822943339-9~408~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV34R951952778-7|XV81E311446342-2~232~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.422Z",
+        "size": 8,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 4,
+        "cluster_dx_recent36_mo": 8
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_1280.1",
+    "description": "Automatically created cluster of interest MT_202509_1280.1",
+    "nodes": [
+      {
+        "name": "XV31G407874574-1|XV60Q300935942-0~174~XV23Z932303703-6~312~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV31G407874574-1|XV20H514987202-5~372~XV23Z932303703-6~312~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV09M230738580-1|XV78G373040376-8~313~XV37R209094919-9~372~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV09M230738580-1|XV43U099121734-4~82~XV37R209094919-9~372~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV44Z049056593-5|XV35G140278382-7~165~XV86H696649856-2~402~PR_RT_IN~1890",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV44Z049056593-5|XV36V961095324-2~308~XV86H696649856-2~402~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.422Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_3107.1",
+    "description": "Automatically created cluster of interest MT_202509_3107.1",
+    "nodes": [
+      {
+        "name": "XV15W804854142-2|XV94Y893847994-6~422~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV15Y207125160-7|XV44U211963191-8~479~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV14X297863137-8|XV08K748638124-7~13~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV14X297863137-8|XV44G564800066-4~318~PR_RT_IN~2361",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.422Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  },
+  {
+    "name": "MT_202509_3263.1",
+    "description": "Automatically created cluster of interest MT_202509_3263.1",
+    "nodes": [
+      {
+        "name": "XV86F242838666-0|XV33S259453265-6~427~XV35C074627857-8~254~PR_RT_IN~2118",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV48Q658392359-0|XV67Y484394462-8~331~PR_RT~1026",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV48Q658392359-0|XV75U518237161-6~30~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      },
+      {
+        "name": "XV25P083153691-7|XV85D172964768-4~390~PR_RT~1254",
+        "added": "2025-09-28T12:57:54.416Z",
+        "kind": "01 through analysis/notification",
+        "autoadded": true
+      }
+    ],
+    "modified": "2025-09-28T12:57:54.416Z",
+    "kind": "01 state/local molecular cluster analysis",
+    "created": "2025-09-28T12:57:54.416Z",
+    "createdBy": "System",
+    "tracking": "01. Add cases diagnosed in the past 3 years and linked at 0.5% to a member in this cluster of interest",
+    "autocreated": true,
+    "autoexpanded": false,
+    "pending": true,
+    "history": [
+      {
+        "date": "2026-03-02T16:42:40.422Z",
+        "size": 3,
+        "new_nodes": 0,
+        "national_priority": true,
+        "cluster_dx_recent12_mo": 3,
+        "cluster_dx_recent36_mo": 3
+      }
+    ]
+  }
+]

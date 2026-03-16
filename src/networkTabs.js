@@ -6,13 +6,26 @@ import * as misc from "./misc";
  * @param {string} tab_element - The ID of the tab element to close.
  * @param {string} tab_content - The ID of the tab content to remove.
  * @param {string} restore_to_tag - The ID of the tab to restore to.
+ * @param {Event} [event] - The click event object.
  */
 export function open_exclusive_tab_close(
   tab_element,
   tab_content,
-  restore_to_tag
+  restore_to_tag,
+  event
 ) {
-  $(restore_to_tag).tab("show");
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const restore_target =
+    typeof restore_to_tag === "string"
+      ? document.querySelector(restore_to_tag)
+      : restore_to_tag;
+
+  if (restore_target) {
+    bootstrap.Tab.getOrCreateInstance(restore_target).show();
+  }
   $("#" + tab_element).remove();
   $("#" + tab_content).remove();
 }
@@ -158,21 +171,23 @@ export function open_exclusive_tab_view_aux(
   var content_container = "top_level_tab_content";
   var go_here_when_closed = "#trace-default-tab";
 
-  var new_tab_header = $("<li></li>").attr("id", random_tab_id);
+  var new_tab_header = $("<li></li>").attr("id", random_tab_id).addClass("nav-item");
 
   var new_link = $("<a></a>")
     .attr("href", "#" + random_content_id)
-    .attr("data-toggle", "tab")
+    .attr("data-bs-toggle", "tab")
+    .addClass("nav-link d-flex align-items-center")
     .text(title);
   $(
-    '<button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
+    '<button type="button" class="btn-close ms-2" aria-label="Close"></button>'
   )
     .appendTo(new_link)
-    .on("click", () => {
+    .on("click", (e) => {
       open_exclusive_tab_close(
         random_tab_id,
         random_content_id,
-        go_here_when_closed
+        go_here_when_closed,
+        e
       );
     });
 
@@ -180,7 +195,7 @@ export function open_exclusive_tab_view_aux(
   $("#" + tab_container).append(new_tab_header);
 
   var new_tab_content = $("<div></div>")
-    .addClass("tab-pane hivtrace-graph-container")
+    .addClass("tab-pane fade hivtrace-graph-container")
     .attr("id", random_content_id)
     .data("cluster", option_extras.cluster_id);
 
@@ -192,16 +207,27 @@ export function open_exclusive_tab_view_aux(
 
   var new_button_bar;
   if (filtered_json) {
-    new_button_bar = $('[data-hivtrace="cluster-clone"]')
+    new_button_bar = $('[data-hivtrace="cluster-clone"]').first()
       .clone()
       .attr("data-hivtrace", null);
+    
+    // Systematic ID replacement in the clone
+    new_button_bar.find("[id]").each(function() {
+        var old_id = $(this).attr("id");
+        var new_id = old_id.replace("network_ui_bar", random_button_bar);
+        $(this).attr("id", new_id);
+        // Also update any labels that point to this ID
+        new_button_bar.find("label[for='" + old_id + "']").attr("for", new_id);
+        // Also update any data-bs-target that point to this ID
+        new_button_bar.find("[data-bs-target='#" + old_id + "']").attr("data-bs-target", "#" + new_id);
+    });
+
     new_button_bar
       .find("[data-hivtrace-button-bar='yes']")
-      .attr("id", random_button_bar)
       .addClass("cloned-cluster-tab")
       .attr("data-hivtrace-button-bar", null);
 
-    new_button_bar.appendTo(new_tab_content);
+    new_tab_content.append(new_button_bar);
   }
   new_tab_content.appendTo("#" + content_container);
 
@@ -211,7 +237,10 @@ export function open_exclusive_tab_view_aux(
     }
   });
 
-  $(new_link).tab("show");
+  const link_element = $(new_link).get(0);
+  if (link_element) {
+    bootstrap.Tab.getOrCreateInstance(link_element).show();
+  }
 
   var cluster_view;
 

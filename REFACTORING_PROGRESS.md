@@ -384,5 +384,45 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Synchronized `debug_rc_171.js` with the new data loading logic.
 - **Status**: Completed (2026-03-03)
 
+### Phase 3: Bootstrap 5 Migration and UI Refinement
+
+- **Goal**: Complete the transition to Bootstrap 5, modernize the UI, and improve cross-module interaction via standardized patterns.
+
+#### Step 1: Modernize Table Rendering and Interaction
+- **Goal**: Refactor `src/tables.js` to use jQuery for DOM manipulation while maintaining D3 data-binding patterns.
+- **Result**:
+    - Replaced direct `__data__` property access with `d3.select(...).datum()` for all table and menu elements.
+    - Fixed table sorting to correctly pass cell data to custom sort accessors.
+    - Improved action button rendering to support both single button objects and arrays.
+    - Verified compatibility with the full Playwright test suite.
+- **Status**: Completed (2026-03-16)
+
+#### Step 2: Refine Cluster of Interest (COI) Editor UI
+- **Goal**: Improve the layout and presentation of the COI editor jsPanel.
+- **Result**:
+    - Moved node search and "+" button to a dedicated `headerToolbar` in the jsPanel.
+    - Standardized element heights using Bootstrap 5 "small" classes (`btn-sm`, `form-control-sm`).
+    - Implemented `btn-table-xs` for delete and edit actions to minimize UI footprint.
+    - Fixed "white-on-white" text visibility issues in autocomplete dropdowns within dark headers.
+    - Added "Enter" key support for adding nodes by ID.
+- **Status**: Completed (2026-03-16)
+
+#### Step 3: Enhance Test Stability for Bootstrap 5
+- **Goal**: Resolve timing issues in Playwright tests caused by the asynchronous nature of the new initialization flow.
+- **Result**:
+    - Updated all UI tests to explicitly wait for navigation tabs to be enabled (removing the `disabled` class) before clicking.
+    - Switched to `press("Enter")` for node addition in tests to avoid element interception issues with autocomplete dropdowns.
+- **Status**: Completed (2026-03-16)
+
+#### Step 4: Fix COI Save Flow and Auto-Expansion Logic
+- **Goal**: Restore the broken automatic growth check and ensure robust event handling in the COI editor.
+- **Result**:
+    - Fixed `first_save` flag handling to correctly trigger expansion checks on the second "Save" click (after metadata entry).
+    - Updated `auto_expand_pg_handler` in `HTXModel.js` to correctly handle "Regardless of date" tracking modes by skipping date filters for those specific modes.
+    - Migrated COI editor event handlers (keydown, click) from D3 to jQuery to ensure reliable access to the event object and prevent `TypeError` during node selection.
+    - Standardized menu bar element heights by removing legacy CSS overrides and using Bootstrap 5 `btn-sm` classes.
+    - Added "Enter" key support for adding nodes by ID in the editor.
+- **Status**: Completed (2026-03-16)
+
 ---
 *Note: This document will be updated after each step.*

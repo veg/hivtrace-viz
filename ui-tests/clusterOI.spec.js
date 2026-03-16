@@ -38,6 +38,7 @@ const getAcceptDialogFunction = (message) => {
 const openEditor = async (page) => {
   // go to clusterOI tab
   await expect(page.locator("#priority-set-tab")).toBeVisible();
+  await expect(page.locator("#priority-set-tab")).not.toHaveClass(/disabled/);
   await page.locator("#priority-set-tab").click();
 
   // jspanel should not be visible
@@ -58,10 +59,9 @@ const createCluster = async (page, nodes, editorOpen = false) => {
   }
 
   for (const node of nodes) {
-    await page
-      .locator('[data-hivtrace-ui-role="priority-panel-nodeids"]')
-      .fill(node);
-    await page.locator("#priority-panel-add-node").click();
+    const input = page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]');
+    await input.fill(node);
+    await input.press("Enter");
   }
 
   let nodeTable = await page.locator("#priority-panel-node-table");
@@ -93,7 +93,7 @@ const previewClusterOI = async (page) => {
  */
 const saveClusterOI = async (page, name, expectDialog = false) => {
   await page.locator("#priority-panel-save").click();
-  await expect(page.locator(".has-error")).toBeVisible();
+  await expect(page.locator(".is-invalid")).toBeVisible();
 
   await page
     .locator('[data-hivtrace-ui-role="priority-panel-name"]')
@@ -115,6 +115,7 @@ const saveClusterOI = async (page, name, expectDialog = false) => {
   // jspanel should not be visible
   await expect(page.locator(".jsPanel")).toHaveCount(0);
 
+  await expect(page.locator("#priority-set-tab")).not.toHaveClass(/disabled/);
   await page.locator("#priority-set-tab").click();
 
   await expect(

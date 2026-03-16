@@ -23,17 +23,20 @@ export function toggle_tooltip(element, turn_on, title, tag, container) {
       $(this).remove();
     });
 
-    var this_box = $(element);
-
-    element.tooltip = this_box.tooltip({
+    element.tooltip = new bootstrap.Tooltip(element, {
       title: title + "<br>" + tag,
       html: true,
       container: container ? container : "body",
+      trigger: "manual",
     });
 
-    _.delay(_.bind(element.tooltip.tooltip, element.tooltip), 500, "show");
+    _.delay(() => {
+      if (element.tooltip) {
+        element.tooltip.show();
+      }
+    }, 500);
   } else if (!turn_on && element.tooltip) {
-    element.tooltip.tooltip("destroy");
+    element.tooltip.dispose();
     element.tooltip = undefined;
   }
 }

@@ -220,16 +220,16 @@ export function define_node_search_table(self, context) {
     if (query_buttons.empty()) {
       d3.select(self.node_search_div)
         .append("div")
-        .classed("alert alert-info alert-dismissible", true)
-        .style("font-size", "150%")
+        .classed("alert alert-info alert-dismissible fade show", true)
+        .style("font-size", "100%")
         .text(
           "Please define some search criteria to find and display information on persons in the network. By default, no persons are displayed."
         )
         .append("button")
-        .classed("close", true)
-        .attr("data-dismiss", "alert")
-        .append("span")
-        .html("&times;");
+        .classed("btn-close", true)
+        .attr("type", "button")
+        .attr("data-bs-dismiss", "alert")
+        .attr("aria-label", "Close");
 
       query_buttons = d3
         .select(self.node_search_div)
@@ -255,13 +255,18 @@ export function define_node_search_table(self, context) {
         "not-group": null,
       },
       filters: self.qb_filter_def,
+      allow_groups: true,
+      allow_empty: true,
+      conditions: ["AND", "OR"],
+      display_errors: true,
     });
 
     d3.select($(self.node_search_div).get(0))
       .selectAll(".group-conditions")
       .selectAll("label")
       .classed("btn-primary", false)
-      .classed("btn-default", true);
+      .classed("btn-outline-secondary", true)
+      .classed("btn-sm", true);
 
     $(self.node_search_div).on(
       "afterInit.queryBuilder afterSetRules.queryBuilder afterAddGroup.queryBuilder",
@@ -270,7 +275,8 @@ export function define_node_search_table(self, context) {
           .selectAll(".group-conditions")
           .selectAll("label")
           .classed("btn-primary", false)
-          .classed("btn-default", true);
+          .classed("btn-outline-secondary", true)
+          .classed("btn-sm", true);
       }
     );
 

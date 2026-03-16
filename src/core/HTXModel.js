@@ -683,26 +683,36 @@ class HTXModel {
           let pass = filter(e);
           if (pass) {
             if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
-              pass =
-                pass &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.source],
-                  false,
-                  timeDateUtil,
-                  kGlobals
-                ) &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.target],
-                  false,
-                  timeDateUtil,
-                  kGlobals
-                );
+              const date_filter_limit =
+                kGlobals.CDCCOITrackingOptionsDateFilter[pg.tracking];
+              const is_regardless_of_date =
+                date_filter_limit >=
+                kGlobals.CDCCOITrackingOptionsDateFilter[
+                  kGlobals.CDCCOITrackingOptions[1]
+                ];
+
+              if (!is_regardless_of_date) {
+                pass =
+                  pass &&
+                  this.filter_by_date(
+                    time_cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    this.json.Nodes[e.source],
+                    false,
+                    timeDateUtil,
+                    kGlobals
+                  ) &&
+                  this.filter_by_date(
+                    time_cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    this.json.Nodes[e.target],
+                    false,
+                    timeDateUtil,
+                    kGlobals
+                  );
+              }
             }
           }
           return pass;

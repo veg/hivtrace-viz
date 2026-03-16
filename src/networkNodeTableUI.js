@@ -37,8 +37,9 @@ export function node_table_draw_buttons(element, payload, self, nodesTab) {
   buttons.enter().append("button");
   buttons.exit().remove();
   buttons
-    .classed("btn btn-xs btn-node-property", true)
+    .classed("btn btn-table-xs btn-node-property float-end", true)
     .classed("btn-primary", true)
+    .style("margin-left", "0.25em")
     .text((d) => d[0])
     .attr("disabled", (d) => (d[1] && !_.isFunction(d[1]) ? "disabled" : null))
     .on("click", (d) => {
@@ -76,6 +77,11 @@ export function update_volatile_elements(
   clustersOfInterest,
   tables
 ) {
+  if (!container) return;
+  if (typeof container.selectAll !== "function") {
+    container = d3.select(container.node ? container.node() : container);
+  }
+
   const coe = !suppress_editor ? clustersOfInterest.get_editor() : null;
 
   container
@@ -230,6 +236,13 @@ export function draw_node_table(
       });
     }
 
+    let element = container;
+    if (container && typeof container.node === "function") {
+      element = container.node();
+    }
+    const $container = $(element);
+    $container.attr("class", "table table-striped table-sm table-hover caption-top table-smaller");
+
     tables.add_a_sortable_table(
       container,
       headers,
@@ -320,14 +333,10 @@ export function draw_extended_node_table(
         var menu_id = "hivtrace_node_column_" + payload + "_" + col_id;
         var dropdown_button = dropdown
           .append("button")
-          .classed({
-            btn: true,
-            "btn-default": true,
-            "btn-xs": true,
-            "dropdown-toggle": true,
-          })
+          .attr("class", "btn btn-outline-secondary btn-table-xs dropdown-toggle")
           .attr("type", "button")
-          .attr("data-toggle", "dropdown")
+          .attr("data-bs-toggle", "dropdown")
+          .attr("data-bs-popper-config", '{"strategy":"fixed"}')
           .attr("aria-haspopup", "true")
           .attr("aria-expanded", "false")
           .attr("id", menu_id);
@@ -356,36 +365,38 @@ export function draw_extended_node_table(
 
         dropdown_button.text(get_text_label(payload));
 
-        dropdown_button.append("i").classed({
-          fa: true,
-          "fa-caret-down": true,
-          "fa-lg": true,
-        });
+        //dropdown_button.append("i").attr("class", "fa-solid fa-caret-down ms-1");
+
         var dropdown_list = dropdown
           .append("ul")
           .classed("dropdown-menu", true)
           .attr("aria-labelledby", menu_id);
 
-        dropdown_list = dropdown_list
+        var menu_items = _.filter(
+          column_ids,
+          (alt) => alt.raw_attribute_key !== n.raw_attribute_key
+        );
+
+        dropdown_list
           .selectAll("li")
-          .data(
-            _.filter(
-              column_ids,
-              (alt) => alt.raw_attribute_key !== n.raw_attribute_key
-            )
-          );
-        dropdown_list.enter().append("li");
-        dropdown_list.each(function (data, i) {
-          var handle_change = d3
-            .select(this)
-            .append("a")
-            .attr("href", "#")
-            .text((data) => get_text_label(data.raw_attribute_key));
-          handle_change.on("click", (d) => {
+          .data(menu_items)
+          .enter()
+          .append("li")
+          .append("a")
+          .classed("dropdown-item", true)
+          .attr("href", "#")
+          .text((data) => get_text_label(data.raw_attribute_key))
+          .on("click", (d) => {
+            if (d3.event) d3.event.preventDefault();
             self.displayed_node_subset[col_id] = d;
-            self.draw_extended_node_table(node_list, container, extra_columns, options);
+            self.draw_extended_node_table(
+              node_list,
+              container,
+              extra_columns,
+              options
+            );
           });
-        });
+
         return dropdown;
       },
     }));
@@ -418,7 +429,9 @@ export function draw_extended_node_table(
           cell_definition = { value: cell, format: d3.format(".2f") };
         }
         if (!cell_definition) {
-          cell_definition = { value: cell };
+          cell_definition = {
+            value: cell,
+          };
         }
 
         return cell_definition;
@@ -443,7 +456,7 @@ export function draw_extended_node_table(
       [table_headers],
       table_rows,
       container,
-      'Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> network entities <span class="label label-warning" data-hivtrace-ui-role="table-count-warning"></span>',
+      'Showing <span class="badge bg-secondary" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge bg-secondary" data-hivtrace-ui-role="table-count-total">--</span> network entities <span class="badge bg-warning text-dark" data-hivtrace-ui-role="table-count-warning"></span>',
       N
     );
   }

@@ -11,7 +11,13 @@ function b64toBlob(b64, onsuccess, onerror) {
   const img = new Image();
   img.onerror = onerror;
   img.onload = function onload() {
-    const canvas = document.getElementById("hyphy-chart-canvas");
+    let canvas = document.getElementById("hyphy-chart-canvas");
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.id = "hyphy-chart-canvas";
+      canvas.style.display = "none";
+      document.body.appendChild(canvas);
+    }
     canvas.width = img.width;
     canvas.height = img.height;
 
@@ -143,9 +149,9 @@ function datamonkey_save_image(type, container) {
     .replace("</style>", `<![CDATA[${styles}]]></style>`);
   const doctype =
     '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">';
-  const to_download = [doctype + source];
+  const to_download = doctype + source;
   const image_string =
-    "data:image/svg+xml;base66," + encodeURIComponent(to_download);
+    "data:image/svg+xml;charset=utf-8," + encodeURIComponent(to_download);
 
   if (type === "png") {
     b64toBlob(
@@ -235,8 +241,10 @@ function datamonkey_export_handler(data, filename, mimeType) {
       encodeURIComponent(data)
   );
   pom.setAttribute("download", filename || "download.tsv");
+  pom.style.display = "none";
+  document.body.appendChild(pom);
   pom.click();
-  pom.remove();
+  document.body.removeChild(pom);
 }
 
 function datamonkey_table_to_text(table_id, sep = "\t") {

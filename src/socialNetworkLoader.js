@@ -381,16 +381,18 @@ export function load_nodes_edges(
         description: {
           value: annotation + " network",
           help: "View subclusters with " + annotation + " data",
+          classed: { "d-flex justify-content-end align-items-center": true },
         },
         generator: function (cluster) {
           // cluster here is a subcluster object from tx_network.clusters[...].subclusters
           return {
             value: cluster, // payload for the callback will be this subcluster object
+            classed: { "d-flex justify-content-end align-items-center": true },
             callback: function (element, payload) {
               var this_cell = d3.select(element);
               this_cell
                 .append("button")
-                .classed("btn btn-primary btn-xs pull-right", true)
+                .classed("btn btn-primary btn-table-xs float-end", true)
                 .style("margin-left", "1em")
                 .text("Complete " + annotation)
                 .on("click", (e_event) =>
@@ -410,7 +412,7 @@ export function load_nodes_edges(
 
               this_cell
                 .append("button")
-                .classed("btn btn-primary btn-xs pull-right", true)
+                .classed("btn btn-primary btn-table-xs float-end", true)
                 .text("Directly linked " + annotation)
                 .on("click", (e_event) =>
                   injected_column_subcluster_button_handler_internal(
@@ -487,7 +489,7 @@ export function load_nodes_edges(
 
                 this_cell
                   .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
+                  .classed("btn btn-primary btn-table-xs float-end", true)
                   .text("Directly linked " + annotation)
                   .style("margin-left", "1em")
                   .on("click", (e_event) => {
@@ -526,7 +528,7 @@ export function load_nodes_edges(
 
                 this_cell
                   .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
+                  .classed("btn btn-primary btn-table-xs float-end", true)
                   .text("Complete " + annotation)
                   .on("click", (e_event) =>
                     social_view_handler_internal(

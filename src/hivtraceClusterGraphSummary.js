@@ -23,6 +23,11 @@ function hivtraceClusterGraphSummary(network, tag, not_CDC) {
   var $tag = $(tag);
   if (!$tag.length) return;
 
+  $tag.addClass("table table-striped table-sm");
+  if ($tag.find("caption").length === 0) {
+    $tag.prepend("<caption>Network Statistics</caption>");
+  }
+
   var $tbody = $tag.find("tbody");
   if ($tbody.length === 0) {
     $tbody = $("<tbody></tbody>").appendTo($tag);

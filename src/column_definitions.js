@@ -120,7 +120,7 @@ function secure_hiv_trace_subcluster_columns(self) {
             return _.map(cluster.recent_nodes, (c) => {
               const nodeset = new Set(c);
               return {
-                icon: "fa-plus",
+                icon: "fa-solid fa-plus",
                 action: function (button, v) {
                   if (clustersOfInterest.get_editor()) {
                     clustersOfInterest
@@ -196,28 +196,29 @@ function secure_hiv_trace_subcluster_columns(self) {
           if (cluster.priority_score && cluster.priority_score.length > 0) {
             result = result.concat(
               _.map(cluster.priority_score, (c) => ({
-                icon: "fa-question",
+                icon: "fa-solid fa-question",
                 help:
                   "Do some of these " +
                   c.length +
                   " nodes belong to a cluster of interest?",
                 action: function (this_button, cv) {
                   const nodeset = new Set(c);
-                  this_button = $(this_button.node());
-                  if (this_button.data("popover_shown") !== "shown") {
-                    const popover = this_button
-                      .popover({
+                  const button_el = this_button.node();
+                  const $button = $(button_el);
+                  if ($button.data("popover_shown") !== "shown") {
+                    const popover = new bootstrap.Popover(button_el, {
                         sanitize: false,
                         placement: "right",
                         container: "body",
                         html: true,
                         content: HTX.HIVTxNetwork.lookup_form_generator,
                         trigger: "manual",
-                      })
-                      .on("shown.bs.popover", function (e) {
+                      });
+                    
+                    button_el.addEventListener("shown.bs.popover", function (e) {
                         var clicked_object = d3.select(this);
                         var popover_div = d3.select(
-                          "#" + clicked_object.attr("aria-describedby")
+                          "#" + $button.attr("aria-describedby")
                         );
                         var list_element = popover_div.selectAll(
                           self.get_ui_element_selector_by_role(
@@ -292,16 +293,18 @@ function secure_hiv_trace_subcluster_columns(self) {
                         list_element.html((d) => d);
                       });
 
-                    popover.popover("show");
-                    this_button.data("popover_shown", "shown");
-                    this_button
-                      .off("hidden.bs.popover")
-                      .on("hidden.bs.popover", function () {
+                    popover.show();
+                    $button.data("popover_shown", "shown");
+                    button_el.addEventListener("hidden.bs.popover", function () {
                         $(this).data("popover_shown", "hidden");
-                      });
+                        bootstrap.Popover.getInstance(this).dispose();
+                      }, { once: true });
                   } else {
-                    this_button.data("popover_shown", "hidden");
-                    this_button.popover("destroy");
+                    $button.data("popover_shown", "hidden");
+                    const popover = bootstrap.Popover.getInstance(button_el);
+                    if (popover) {
+                        popover.dispose();
+                    }
                   }
                 },
               }))
@@ -316,7 +319,7 @@ function secure_hiv_trace_subcluster_columns(self) {
               _.map(cluster.priority_score, (c) => {
                 const nodeset = new Set(c);
                 return {
-                  icon: "fa-plus",
+                  icon: "fa-solid fa-plus",
                   action: function (button, v) {
                     if (clustersOfInterest.get_editor()) {
                       clustersOfInterest

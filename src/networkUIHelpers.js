@@ -314,11 +314,8 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         cluster_id
       );
 
-      var modal = d3.select(
-        self.get_ui_element_selector_by_role("cluster_list", true)
-      );
-      modal
-        .selectAll(".modal-title")
+      var $modal = $(self.get_ui_element_selector_by_role("cluster_list", true));
+      $modal.find(".modal-title")
         .text(
           i18n("clusters_tab")["listing_nodes"] +
             (priority_list
@@ -345,7 +342,7 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         $(
           self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
         ).data(i18n("clusters_tab")["view"]) !== "id",
-        modal.select(
+        d3.select(
           self.get_ui_element_selector_by_role("cluster_list_payload", true)
         ),
         priority_list
@@ -422,10 +419,13 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         helpers.export_csv_button(rows_for_export, "overlap");
       });
 
+      const table_container = modal.select(
+        self.get_ui_element_selector_by_role("overlap_list_data_table", true)
+      );
+      $(table_container.node()).addClass("table table-striped table-sm table-hover caption-top table-smaller");
+
       tables.add_a_sortable_table(
-        modal.select(
-          self.get_ui_element_selector_by_role("overlap_list_data_table", true)
-        ),
+        table_container,
         headers,
         rows,
         true,
@@ -481,23 +481,23 @@ export function update_network_string(
     ).length;
 
     const networkString =
-      "<span class = 'badge'>" +
+      "<span class = 'badge bg-secondary'>" +
       self.clusters.length +
-      "</span> clusters <span class = 'label label-primary'>" +
+      "</span> clusters <span class = 'badge bg-primary'>" +
       clusters_shown +
       " expanded / " +
       clusters_selected +
-      " match </span> <span class = 'badge'> " +
+      " match </span> <span class = 'badge bg-secondary'> " +
       self.nodes.length +
-      "</span> nodes <span class = 'label label-primary'>" +
+      "</span> nodes <span class = 'badge bg-primary'>" +
       node_count +
       " shown / " +
       nodes_selected +
-      " match </span> <span class = 'badge'> " +
+      " match </span> <span class = 'badge bg-secondary'> " +
       self.edges.length +
       "</span> " +
       (self._is_CDC_ ? "links" : "edges") +
-      " <span class = 'label label-primary'>" +
+      " <span class = 'badge bg-primary'>" +
       edge_count +
       " shown</span>";
 

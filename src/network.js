@@ -33,10 +33,11 @@ function center_cluster_handler(self, d) {
     @param release [optional]: the cluster object to release the "fixed" flag from
 */
 
-function handle_cluster_click(self, cluster, release) {
-  if (d3.event && d3.event.defaultPrevented) return;
-  if (d3.event) {
-    d3.event.stopPropagation();
+function handle_cluster_click(self, cluster, release, event) {
+  const e = event || d3.event;
+  if (e && e.defaultPrevented) return;
+  if (e) {
+    e.stopPropagation();
   }
   var container = d3.select(self.container);
   var id = self.dom_prefix + "-context-menu";
@@ -59,6 +60,7 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
+      .attr("href", "#")
       .text("Expand cluster")
       .on("click", (d) => {
         if (d3.event) {
@@ -73,6 +75,7 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
+      .attr("href", "#")
       .text("Center on screen")
       .on("click", (d) => {
         if (d3.event) {
@@ -87,10 +90,12 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
-      .text((d) => {
-        if (cluster.fixed) return "Allow cluster to float";
-        return "Hold cluster at current position";
-      })
+      .attr("href", "#")
+      .text(
+        cluster.fixed
+          ? "Allow cluster to float"
+          : "Hold cluster at current position"
+      )
       .on("click", (d) => {
         if (d3.event) {
           d3.event.stopPropagation();
@@ -104,7 +109,8 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => "Show this cluster in separate tab")
+        .attr("href", "#")
+        .text("Show this cluster in separate tab")
         .on("click", (d) => {
           if (d3.event) {
             d3.event.stopPropagation();
@@ -124,7 +130,8 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => "Add this cluster to the cluster of interest")
+        .attr("href", "#")
+        .text("Add this cluster to the cluster of interest")
         .on("click", (d) => {
           if (d3.event) {
             d3.event.stopPropagation();
@@ -146,6 +153,7 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
+        .attr("href", "#")
         .text("Show on map")
         .on("click", (d) => {
           if (d3.event) {
@@ -161,9 +169,7 @@ function handle_cluster_click(self, cluster, release) {
         });
     }
 
-    //cluster.fixed = 1;
-
-    if (d3.event) {
+    if (d3.event || event) {
       const mouse_coords = d3.mouse(container.node());
       menu_object
         .style("position", "absolute")
@@ -181,9 +187,19 @@ function handle_cluster_click(self, cluster, release) {
   container.on(
     "click",
     (d) => {
-      handle_cluster_click(self, null, already_fixed ? null : cluster);
+      if (
+        d3.event.target === container.node() ||
+        d3.event.target.tagName === "svg"
+      ) {
+        handle_cluster_click(
+          self,
+          null,
+          already_fixed ? null : cluster,
+          d3.event
+        );
+      }
     },
-    false
+    true
   );
 }
 

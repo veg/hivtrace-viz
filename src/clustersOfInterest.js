@@ -43,7 +43,9 @@ function init(self) {
 
     if (merge_sets) {
       d3.selectAll(merge_sets).on("click", (e) => {
-        $(misc.get_ui_element_selector_by_role("priority_set_merge")).modal();
+        bootstrap.Modal.getOrCreateInstance(
+          $(misc.get_ui_element_selector_by_role("priority_set_merge")).get(0)
+        ).show();
       });
     }
   }
@@ -91,6 +93,10 @@ function open_editor(
   cluster_tracking,
   created_by
 ) {
+  const tab = document.querySelector("#priority-set-tab");
+  if (tab) {
+    bootstrap.Tab.getOrCreateInstance(tab).show();
+  }
   const context = {
     kGlobals,
     timeDateUtil,
@@ -296,17 +302,16 @@ function draw_priority_set_table(self, container, priority_groups) {
     }
 
     var edit_form_generator = function () {
-      return `<form class="form"> 
-                      <div class="form-group"> 
+      return `<form class="form">
+                      <div class="form-group mb-2">
                           <div class="input-group">
-                          <textarea class="form-control input-sm" data-hivtrace-ui-role = "priority-description-form" cols = "40" rows = "3"></textarea>
+                          <textarea class="form-control form-control-sm" data-hivtrace-ui-role = "priority-description-form" cols = "40" rows = "3"></textarea>
                           </div>
                       </div>
-                      <button data-hivtrace-ui-role = "priority-description-dismiss" class = "btn btn-sm btn-default">Dismiss</button>
-                      <button data-hivtrace-ui-role = "priority-description-save" class = "btn btn-sm btn-default">Save</button>
+                      <button data-hivtrace-ui-role = "priority-description-dismiss" class = "btn btn-table-xs btn-outline-secondary">Dismiss</button>
+                      <button data-hivtrace-ui-role = "priority-description-save" class = "btn btn-table-xs btn-primary">Save</button>
                   </form>`;
     };
-
     var rows = [];
     _.each(priority_groups, (pg) => {
       // Ensure overlap object exists with default values
@@ -348,8 +353,8 @@ function draw_priority_set_table(self, container, priority_groups) {
             "<div style = 'white-space: nowrap; overflow: hidden; text-overflow : ellipsis;'>" +
             (pg.autocreated || pg.autoexpanded
               ? (pg.autoexpanded
-                  ? '<span class="label label-default">Grew</span>'
-                  : '<span class="label label-danger">New</span>') +
+                  ? '<span class="badge bg-secondary">Grew</span>'
+                  : '<span class="badge bg-danger">New</span>') +
                 "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" +
                 value +
                 "'>" +
@@ -425,7 +430,7 @@ function draw_priority_set_table(self, container, priority_groups) {
               return (
                 v[0] +
                 (v[1]
-                  ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' +
+                  ? ' <span title="Number of nodes added by the system since the last network update" class="badge bg-secondary">' +
                     v[1] +
                     " new</span>"
                   : "")
@@ -475,21 +480,21 @@ function draw_priority_set_table(self, container, priority_groups) {
               return (
                 String(v[0]) +
                 (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
+                  ? ' <span title="Number of persons in the overlap" class="badge bg-secondary float-end">' +
                     v[1] +
                     " persons</span>"
                   : "") +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                     v[2].join(", ") +
-                    '" class="label label-danger pull-right">' +
+                    '" class="label label-danger float-end">' +
                     v[2].length +
                     " duplicate clusterOI</span>"
                   : "") +
                 (v[3].length
                   ? ' <span title="clusterOIs which contain this clusterOI: ' +
                     v[3].join(", ") +
-                    '" class="label label-warning pull-right">Fully contained in ' +
+                    '" class="label label-warning float-end">Fully contained in ' +
                     v[3].length +
                     " clusterOI</span>"
                   : "")
@@ -503,13 +508,13 @@ function draw_priority_set_table(self, container, priority_groups) {
               ? []
               : [
                   {
-                    icon: "fa-eye",
+                    icon: "fa-solid fa-eye",
                     dropdown: [
                       {
                         label: "List overlaps",
                         data: {
-                          toggle: "modal",
-                          target:
+                          "bs-toggle": "modal",
+                          "bs-target":
                             misc.get_ui_element_selector_by_role(
                               "overlap_list"
                             ),
@@ -542,7 +547,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         // pending user review
         this_row[1].actions = [
           {
-            icon: "fa-eye",
+            icon: "fa-solid fa-eye",
             help: "Review and adjust this cluster of interest",
             action: function (button, value) {
               let nodeset = self.priority_groups_find_by_name(value);
@@ -576,13 +581,13 @@ function draw_priority_set_table(self, container, priority_groups) {
           -1,
           0,
           {
-            icon: "fa-info-circle",
+            icon: "fa-solid fa-circle-info",
             classed: { "view-edit-cluster": true },
             help: "View/edit this cluster of interest",
             dropdown: _action_drop_down(self, pg),
           },
           {
-            icon: "fa-edit",
+            icon: "fa-solid fa-pen-to-square",
             classed: { "btn-info": true },
             help: "Edit description",
             action: function (this_button, cv) {
@@ -603,7 +608,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           (button_group, value) => {
             if (get_editor()) {
               return {
-                icon: "fa-plus",
+                icon: "fa-solid fa-plus",
                 help: "Add nodes in this cluster of interest to the new cluster of interest",
                 action: function (button, value) {
                   let nodeset = self.priority_groups_find_by_name(value);
@@ -654,22 +659,36 @@ function draw_priority_set_table(self, container, priority_groups) {
       has_required_actions = "";
     }*/
 
+    let element = container;
+    if (container && typeof container.node === "function") {
+      element = container.node();
+    }
+    const $container = $(element);
+    $container.empty();
+    $container.attr("id", "priority_set_table");
+    $container.attr(
+      "class",
+      "table table-striped table-sm table-hover caption-top table-smaller"
+    );
+    $container.show().css("visibility", "visible").css("opacity", 1);
+
     tables.add_a_sortable_table(
-      container,
+      element,
       headers,
       rows,
       true,
       has_required_actions +
-        `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${
+        `Showing <span class="badge bg-secondary" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge bg-secondary" data-hivtrace-ui-role="table-count-total">--</span> ${
           self.isMJCNetwork ? "MJ " : ""
         }clusters of interest.
-          ${
-            self.isMJCNetwork
-              ? ""
-              : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'
-          }
-          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV"><i class="fa fa-download"></i> Export Nodes to CSV</button>`,
-      get_editor()
+          <div class="float-end ms-2 d-inline-block">
+            <button class="btn btn-outline-secondary btn-table-xs" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>
+          </div>
+          <div class="float-end d-inline-block">
+            <button class="btn btn-primary btn-table-xs" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV"><i class="fa fa-download"></i> Export Nodes to CSV</button>
+          </div>`,
+      get_editor(),
+      rows.length
     );
 
     d3.select(
@@ -782,6 +801,10 @@ function priority_groups_add_set(
   self.priority_groups_update_node_sets(nodeset.name, op_code);
 
   if (update_table) {
+    const tab = document.querySelector("#priority-set-tab");
+    if (tab) {
+      bootstrap.Tab.getOrCreateInstance(tab).show();
+    }
     draw_priority_set_table(self);
   }
 

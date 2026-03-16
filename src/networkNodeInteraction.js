@@ -12,10 +12,16 @@ import * as timeDateUtil from "./timeDateUtil.js";
  * @param {Object} self - The network object.
  * @param {Object} clustersOfInterest - The COI module.
  * @param {Function} i18n - Translation function.
+ * @param {Event} [event] - The event object.
  * @returns {void}
  */
-export function handle_node_click(node, self, clustersOfInterest, i18n) {
-  if (d3.event && d3.event.defaultPrevented) return;
+export function handle_node_click(node, self, clustersOfInterest, i18n, event) {
+  const e = event || d3.event;
+  if (e && e.defaultPrevented) return;
+  if (e) {
+    e.stopPropagation();
+  }
+
   var container = d3.select(self.container);
   var id = self.dom_prefix + "-context-menu";
   var menu_object = container.select("#" + id);
@@ -36,6 +42,7 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
+      .attr("href", "#")
       .text(i18n("clusters_main")["collapse_cluster"])
       .on("click", (d) => {
         if (d3.event) {
@@ -50,7 +57,8 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
-      .text((d) => (node.show_label ? "Hide text label" : "Show text label"))
+      .attr("href", "#")
+      .text(node.show_label ? "Hide text label" : "Show text label")
       .on("click", (d) => {
         if (d3.event) {
           d3.event.stopPropagation();
@@ -66,7 +74,8 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => "Add this node to the cluster of interest")
+        .attr("href", "#")
+        .text("Add this node to the cluster of interest")
         .on("click", (d) => {
           if (d3.event) {
             d3.event.stopPropagation();
@@ -74,10 +83,11 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
           clustersOfInterest
             .get_editor()
             .append_node(self.entity_id(node), true);
+          menu_object.style("display", "none");
         });
     }
 
-    if (d3.event) {
+    if (d3.event || event) {
       const mouse_coords = d3.mouse(container.node());
       menu_object
         .style("position", "absolute")
@@ -92,9 +102,14 @@ export function handle_node_click(node, self, clustersOfInterest, i18n) {
   container.on(
     "click",
     function (d) {
-      handle_node_click.call(this, null, self, clustersOfInterest, i18n);
+      if (
+        d3.event.target === container.node() ||
+        d3.event.target.tagName === "svg"
+      ) {
+        handle_node_click(null, self, clustersOfInterest, i18n, d3.event);
+      }
     },
-    false
+    true
   );
 }
 

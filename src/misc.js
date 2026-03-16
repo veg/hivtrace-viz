@@ -143,18 +143,17 @@ function hiv_trace_export_table_to_text(
   csv,
   file_name_placeholder
 ) {
-  let the_button = d3.select(parent_id);
-  the_button.selectAll("[data-type='download-button']").remove();
+  const the_button = d3.select(parent_id);
+  if (the_button.empty()) return null;
 
-  the_button = the_button
-    .append("a")
-    .attr("target", "_blank")
-    .attr("data-type", "download-button")
+  the_button
     .on("click", function () {
-      d3.event.preventDefault();
-      const table_tag = d3.select(this).attr("data-table");
+      if (d3.event) d3.event.preventDefault();
+      const table_tag = d3.select(this).attr("data-table") || table_id;
       const table_text = helpers.table_to_text(table_tag, csv ? "," : "\t");
-      const fileName = (file_name_placeholder || table_tag.substring(1)) + (csv ? ".csv" : ".tsv");
+      const fileName =
+        (file_name_placeholder || table_tag.substring(1)) +
+        (csv ? ".csv" : ".tsv");
       helpers.export_handler(
         table_text,
         fileName,
@@ -163,7 +162,6 @@ function hiv_trace_export_table_to_text(
     })
     .attr("data-table", table_id);
 
-  the_button.append("i").classed("fa fa-download fa-2x", true);
   return the_button;
 }
 

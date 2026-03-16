@@ -48,23 +48,29 @@ export function open_editor(
     : created_by || kGlobals.CDCCOICreatedManually;
 
   let priority_set_editor = jsPanel.create({
-    theme: "bootstrap-primary",
+    theme: "primary",
     headerTitle: "Priority node set editor",
     headerControls: { size: "lg", maximize: "remove" },
+    headerToolbar:
+      '<div id="coi-header-toolbar" class="d-flex flex-nowrap align-items-center gap-2 px-2 py-1" style="width: 100%;"></div>',
+    panelSize: {
+      width: "80vw",
+      height: "35vh",
+    },
     position: {
-      my: "center",
-      at: "center",
+      my: "center-bottom",
+      at: "center-bottom",
       offsetX: 0,
-      offsetY: 0,
+      offsetY: -20,
     },
-    contentSize: {
-      width: function () {
-        return window.innerWidth * 0.8;
-      },
-      height: function () {
-        return window.innerHeight / 3;
-      },
+    dragit: {
+      containment: [70, 0, 0, 0], // Stay below navbar
     },
+    resizeit: {
+      minWidth: 400,
+      minHeight: 200,
+    },
+    zIndex: 10000,
     content: "",
     contentOverflow: "scroll",
     callback: function () {
@@ -93,34 +99,54 @@ export function open_editor(
       var panel_content = d3.select(panel_object.content);
       panel_content.selectAll("*").remove();
 
-      var form = panel_content
+      var header_toolbar = d3.select(panel_object).select("#coi-header-toolbar");
+      header_toolbar.selectAll("*").remove();
+
+      var form = header_toolbar
         .append("form")
         .attr("action", "javascript:void(0);")
-        .classed("form-inline", true);
+        .classed("d-flex flex-nowrap align-items-center gap-2 mb-0", true)
+        .style("width", "100%");
 
-      var form_grp = form.append("div").classed("form-group", true);
+      var add_node_grp = form
+        .append("div")
+        .classed("input-group input-group-sm flex-nowrap", true)
+        .style("width", "auto")
+        .style("flex-shrink", "0");
 
-      form_grp
+      var node_id_input = add_node_grp
         .append("input")
-        .classed("form-control input-sm", true)
+        .classed("form-control form-control-sm", true)
+        .style("width", "150px")
         .attr("placeholder", "Add node by ID")
         .attr("data-hivtrace-ui-role", "priority-panel-nodeids");
 
-      var submit_button = form
+      $(node_id_input.node()).on("keydown", (e) => {
+        if (e.key === "Enter" || e.keyCode === 13) {
+          panel_object.append_node();
+          e.preventDefault();
+        }
+      });
+
+      var submit_button = add_node_grp
         .append("button")
         .classed("btn btn-primary btn-sm", true)
         .attr("id", "priority-panel-add-node")
-        .attr("disabled", "disabled")
-        .on("click", (e) => {
-          panel_object.append_node();
-        });
+        .attr("disabled", "disabled");
 
-      submit_button.append("i").classed("fa fa-plus", true);
+      $(submit_button.node()).on("click", (e) => {
+        panel_object.append_node();
+      });
+
+      submit_button.append("i").classed("fa-solid fa-plus", true);
 
       form
-        .append("p")
-        .classed("alert alert-warning", true)
-        .style("display", "inline")
+        .append("div")
+        .classed("alert alert-warning py-1 px-2 mb-0 small", true)
+        .style("font-size", "0.7rem")
+        .style("line-height", "1.1")
+        .style("flex-grow", "1")
+        .style("white-space", "normal")
         .text(
           "At this time, only nodes that cluster in the network at the 1.5% or 0.5% genetic distance threshold level are available for selection."
         );
@@ -132,24 +158,24 @@ export function open_editor(
         .attr("action", "javascript:void(0);")
         .style("display", "none");
 
-      var grp_name = form_save.append("div");
-
-      if (panel_object.prior_name) {
-        grp_name.classed("form-group has-success", true);
-      } else {
-        grp_name.classed("form-group has-error", true);
-      }
+      var grp_name = form_save.append("div").classed("form-group mb-3", true);
 
       var grp_name_button = grp_name
         .append("input")
-        .classed("form-control input-sm", true)
+        .classed("form-control form-control-sm", true)
         .attr("placeholder", "Name this cluster of interest")
         .attr("data-hivtrace-ui-role", "priority-panel-name")
         .attr("maxlength", 100);
 
+      if (panel_object.prior_name) {
+        grp_name_button.classed("is-valid", true);
+      } else {
+        grp_name_button.classed("is-invalid", true);
+      }
+
       var grp_name_box_label = grp_name
         .append("p")
-        .classed("help-block", true)
+        .classed("form-text small", true)
         .text("Name this cluster of interest");
 
       var grp_kind = form_save.append("div").classed("form-group", true);
@@ -280,34 +306,16 @@ export function open_editor(
         /**
           handler for priority set save requests
       */
-        form_save.style("display", null);
 
         let res = true;
 
         // check if can save (name set etc)
         if (panel_object.network_nodes.length) {
-          const entity_attributes = _.mapObject(
-            self.unique_entity_object_list(panel_object.table_entities),
-            (d) => d[0]
-          );
-
-          _.each(panel_object.network_nodes, (n) => {
-            const ref_attr = entity_attributes[self.primary_key(n)];
-            if (ref_attr) {
-              _.each(
-                [
-                  "_priority_set_date",
-                  "_priority_set_kind",
-                  "_priority_set_autoadded",
-                ],
-                (attr) => {
-                  if (ref_attr[attr]) {
-                    n[attr] = ref_attr[attr];
-                  }
-                }
-              );
-            }
-          });
+          if (panel_object.first_save) {
+            form_save.style("display", null);
+            panel_object.first_save = false;
+            return true;
+          }
 
           let name, desc, kind, tracking;
 
@@ -319,17 +327,39 @@ export function open_editor(
               "priority-panel-tracking",
             ],
             (k) =>
-              $(d3.select(misc.get_ui_element_selector_by_role(k)).node()).val()
+              $(misc.get_ui_element_selector_by_role(k)).val()
           );
 
           if (
-            !panel_object.first_save &&
             priority_groups_check_name(
               self.defined_priority_groups,
               name,
               panel_object.prior_name
             )
           ) {
+            const entity_attributes = _.mapObject(
+              self.unique_entity_object_list(panel_object.table_entities),
+              (d) => d[0]
+            );
+
+            _.each(panel_object.network_nodes, (n) => {
+              const ref_attr = entity_attributes[self.primary_key(n)];
+              if (ref_attr) {
+                _.each(
+                  [
+                    "_priority_set_date",
+                    "_priority_set_kind",
+                    "_priority_set_autoadded",
+                  ],
+                  (attr) => {
+                    if (ref_attr[attr]) {
+                      n[attr] = ref_attr[attr];
+                    }
+                  }
+                );
+              }
+            });
+
             let set_description = {
               name: name,
               description: desc,
@@ -407,7 +437,6 @@ export function open_editor(
               }
             }
           }
-          panel_object.first_save = false;
         }
         let panel_to_focus = document.querySelector(
           misc.get_ui_element_selector_by_role("priority-panel-name")
@@ -416,37 +445,52 @@ export function open_editor(
         return res;
       }
 
-      var save_set_button = form
+      var action_grp = form
+        .append("div")
+        .classed("btn-group btn-group-sm ms-auto", true)
+        .style("flex-shrink", "0");
+
+      var save_set_button = action_grp
         .append("button")
-        .classed("btn btn-primary btn-sm pull-right", true)
+        .classed("btn btn-primary btn-sm", true)
         .text(validation_mode === "validate" ? "Review & Save" : "Save")
         .attr("disabled", "disabled")
         .attr("id", "priority-panel-save")
-        .on("click", (e) => {
+        .on("click", () => {
           save_priority_set();
         });
 
-      form
+      action_grp
         .append("button")
-        .classed("btn btn-info btn-sm pull-right", true)
+        .classed("btn btn-info btn-sm text-white", true)
         .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
-        .on("click", (e) => {
-          priority_set_view(self, panel_object, {
-            "priority-edge-length": 0.015,
-            timestamp: createdDate,
-          }, context);
+        .on("click", () => {
+          priority_set_view(
+            self,
+            panel_object,
+            {
+              "priority-edge-length": 0.015,
+              timestamp: createdDate,
+            },
+            context
+          );
         });
-      form
+      action_grp
         .append("button")
-        .classed("btn btn-info btn-sm pull-right", true)
+        .classed("btn btn-info btn-sm text-white", true)
         .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
-        .on("click", (e) => {
-          priority_set_view(self, panel_object, {
-            "priority-edge-length": self.subcluster_threshold,
-            timestamp: createdDate,
-          }, context);
+        .on("click", () => {
+          priority_set_view(
+            self,
+            panel_object,
+            {
+              "priority-edge-length": self.subcluster_threshold,
+              timestamp: createdDate,
+            },
+            context
+          );
         });
 
       $(grp_name_button.node()).on("input propertychange", function (e) {
@@ -458,27 +502,30 @@ export function open_editor(
             panel_object.prior_name
           )
         ) {
-          grp_name.classed({
-            "has-success": true,
-            "has-error": false,
-            "has-warning": false,
+          grp_name_button.classed({
+            "is-valid": true,
+            "is-invalid": false,
           });
-          grp_name_box_label.text("Name this cluster of interest");
+          grp_name_box_label
+            .text("Name this cluster of interest")
+            .classed("text-danger", false)
+            .classed("text-success", true);
           if (panel_object.network_nodes.length) {
             save_set_button.attr("disabled", null);
           }
         } else {
           let too_long = current_text.length >= 36;
-          grp_name.classed({
-            "has-success": false,
-            "has-error": true,
+          grp_name_button.classed({
+            "is-valid": false,
+            "is-invalid": true,
           });
           let error_message = too_long
             ? "MUST be shorter than 36 characters"
             : "MUST be unique";
-          grp_name_box_label.text(
-            "Name this cluster of interest " + error_message
-          );
+          grp_name_box_label
+            .text("Name this cluster of interest (" + error_message + ")")
+            .classed("text-danger", true)
+            .classed("text-success", false);
           save_set_button.attr("disabled", "disabled");
         }
       });
@@ -721,11 +768,11 @@ export function open_editor(
 
         var del_form_generator = function () {
           return `<form class="form">
-  <div class="form-group">
-    <div class="input-group"> <textarea class="form-control input-sm" data-hivtrace-ui-role="priority-description-form"
+  <div class="form-group mb-2">
+    <div class="input-group"> <textarea class="form-control form-control-sm" data-hivtrace-ui-role="priority-description-form"
         cols="40" rows="3"></textarea> </div>
-  </div> <button data-hivtrace-ui-role="priority-description-dismiss" class="btn btn-sm btn-default">Cancel</button>
-  <button data-hivtrace-ui-role="priority-description-save" class="btn btn-sm btn-default">Delete</button>
+  </div> <button data-hivtrace-ui-role="priority-description-dismiss" class="btn btn-table-xs btn-outline-secondary">Cancel</button>
+  <button data-hivtrace-ui-role="priority-description-save" class="btn btn-table-xs btn-danger">Delete</button>
 </form>`;
         };
 
@@ -831,6 +878,7 @@ export function open_editor(
               actions: [
                 {
                   icon: "fa-trash",
+                  classed: { "btn-table-xs": true },
                   action: function (b, v) {
                     // iterate through the table and remove shown nodes one at a time
                     // checking that the row is shown to allow for filtering and such
@@ -871,7 +919,7 @@ export function open_editor(
                   if (!is_node_deletable(payload, created_by)) {
                     this_cell
                       .append("button")
-                      .classed("btn btn-default btn-xs", true)
+                      .classed("btn btn-outline-secondary btn-table-xs float-end", true)
                       .style("margin-left", "1em")
                       .datum(payload)
                       .property("disabled", true)
@@ -880,7 +928,7 @@ export function open_editor(
                   } else {
                     this_cell
                       .append("button")
-                      .classed("btn btn-default btn-xs", true)
+                      .classed("btn btn-outline-secondary btn-table-xs float-end", true)
                       .style("margin-left", "1em")
                       .datum(payload)
                       .on("click", function () {
@@ -938,12 +986,6 @@ export function open_editor(
       }
       panel_object.table_handler(this);
     },
-    dragit: {
-      containment: [50, 50, 100, 50],
-    },
-    resizeit: {
-      containment: [50, 50, 100, 50],
-    },
     onbeforeclose: function () {
       if (!this.saved) {
         if (
@@ -992,81 +1034,57 @@ export function handle_inline_confirm(
   const button_sel = $(this_button.node());
   if (button_sel.data("popover_shown") !== "shown") {
     try {
-      const popover = button_sel
-        .popover({
-          sanitize: false,
-          placement: "right",
-          container: "body",
-          html: true,
-          content: generator,
-          trigger: "manual",
-        })
-        .on("shown.bs.popover", function (e) {
-          var clicked_object = d3.select(this);
-          var popover_div = d3.select(
-            "#" + clicked_object.attr("aria-describedby")
-          );
-          var textarea_element = popover_div.selectAll(
-            misc.get_ui_element_selector_by_role("priority-description-form")
-          );
-          var button_element = popover_div.selectAll(
-            misc.get_ui_element_selector_by_role("priority-description-save")
-          );
-          textarea_element.text(text);
-          if (disabled) textarea_element.attr("disabled", true);
-          button_element.on("click", (d) => {
-            action($(textarea_element.node()).val());
-            d3.event.preventDefault();
-            button_sel.click();
-          });
-          button_element = popover_div.selectAll(
-            misc.get_ui_element_selector_by_role("priority-description-dismiss")
-          );
-          button_element.on("click", (d) => {
-            d3.event.preventDefault();
-            button_sel.click();
-          });
-        });
+      const popover = new bootstrap.Popover(button_sel.get(0), {
+        sanitize: false,
+        placement: "right",
+        container: "body",
+        html: true,
+        content: generator,
+        trigger: "manual",
+      });
 
-      popover.popover("show");
+      button_sel.get(0).addEventListener("shown.bs.popover", function () {
+        var clicked_object = d3.select(this);
+        var popover_div = d3.select(
+          "#" + button_sel.attr("aria-describedby")
+        );
+        var textarea_element = popover_div.selectAll(
+          misc.get_ui_element_selector_by_role("priority-description-form")
+        );
+        var button_element = popover_div.selectAll(
+          misc.get_ui_element_selector_by_role("priority-description-save")
+        );
+        textarea_element.text(text);
+        if (disabled) textarea_element.attr("disabled", true);
+        button_element.on("click", (d) => {
+          action($(textarea_element.node()).val());
+          if (d3.event) d3.event.preventDefault();
+          button_sel.click();
+        });
+        button_element = popover_div.selectAll(
+          misc.get_ui_element_selector_by_role("priority-description-dismiss")
+        );
+        button_element.on("click", (d) => {
+          if (d3.event) d3.event.preventDefault();
+          button_sel.click();
+        });
+      });
+
+      popover.show();
       button_sel.data("popover_shown", "shown");
 
-      // Fix popover visibility (Bootstrap fade transition workaround)
-      setTimeout(() => {
-        var popoverId = button_sel.attr("aria-describedby");
-        if (popoverId) {
-          var popoverEl = $("#" + popoverId);
-          popoverEl.removeClass("fade").addClass("show in");
-          popoverEl.css({
-            "z-index": "99999",
-            opacity: "1",
-            display: "block",
-          });
-        }
-      }, 50);
-
-      button_sel.off("hidden.bs.popover").on("hidden.bs.popover", function () {
+      button_sel.get(0).addEventListener("hidden.bs.popover", function () {
         $(this).data("popover_shown", "hidden");
+        bootstrap.Popover.getInstance(this).dispose();
       });
     } catch (e) {
       console.error("Error creating/showing popover:", e);
     }
   } else {
     button_sel.data("popover_shown", "hidden");
-    // Bootstrap 3 uses "destroy", Bootstrap 4/5 uses "dispose"
-    try {
-      button_sel.popover("destroy");
-    } catch (e) {
-      try {
-        button_sel.popover("dispose");
-      } catch (e2) {
-        // If neither works, try to hide and remove manually
-        button_sel.popover("hide");
-        var popoverId = button_sel.attr("aria-describedby");
-        if (popoverId) {
-          $("#" + popoverId).remove();
-        }
-      }
+    const popover = bootstrap.Popover.getInstance(button_sel.get(0));
+    if (popover) {
+      popover.dispose();
     }
   }
 }
@@ -1398,56 +1416,7 @@ export function _action_drop_down(self, pg, context) {
         // Store priority set name for the modal handler to use
         $modal.data("priority_set_trigger", pg.name);
 
-        // Manually trigger the show.bs.modal event and show the modal
-        // This is a workaround for Bootstrap modal not working
-        $modal.trigger("show.bs.modal");
-
-        // Manually add Bootstrap 3 modal classes and styles
-        $modal
-          .addClass("in")
-          .css("display", "block")
-          .attr("aria-hidden", "false");
-
-        // Add backdrop
-        if (!$(".modal-backdrop").length) {
-          $("body").append('<div class="modal-backdrop fade in"></div>');
-          $("body").addClass("modal-open");
-        }
-
-        // Helper function to close modal
-        const closeModal = function () {
-          $modal
-            .removeClass("in")
-            .css("display", "none")
-            .attr("aria-hidden", "true");
-          $(".modal-backdrop").remove();
-          $("body").removeClass("modal-open");
-          $modal.trigger("hidden.bs.modal");
-        };
-
-        // Bind close handlers (unbind first to prevent duplicates)
-        $modal
-          .find('[data-dismiss="modal"]')
-          .off("click.mjcmodal")
-          .on("click.mjcmodal", closeModal);
-
-        // Also close on backdrop click
-        $modal.off("click.mjcmodal").on("click.mjcmodal", function (e) {
-          if ($(e.target).is($modal)) {
-            closeModal();
-          }
-        });
-
-        // Close on escape key
-        $(document)
-          .off("keydown.mjcmodal")
-          .on("keydown.mjcmodal", function (e) {
-            if (e.keyCode === 27) {
-              // Escape
-              closeModal();
-              $(document).off("keydown.mjcmodal");
-            }
-          });
+        bootstrap.Modal.getOrCreateInstance($modal.get(0)).show();
       },
     });
   }

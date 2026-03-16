@@ -288,7 +288,7 @@ class HIVTxNetwork extends HTXModel {
     }
     return (
       (not_nested ? "" : `#${this.button_bar_ui}`) +
-      misc.get_ui_element_selector_by_role(role)
+      misc.get_ui_element_selector_by_role(role, not_nested)
     );
   }
 

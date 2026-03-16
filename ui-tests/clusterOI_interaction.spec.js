@@ -6,14 +6,13 @@ test("review cluster interaction and network svg generation", async ({ page }) =
 
   // Wait for the priority set tab and click it
   await expect(page.locator("#priority-set-tab")).toBeVisible({ timeout: 30000 });
+  await expect(page.locator("#priority-set-tab")).not.toHaveClass(/disabled/, { timeout: 30000 });
   await page.locator("#priority-set-tab").click();
 
   // Wait for the priority set table to have data
   const priorityTable = page.locator("#priority_set_table");
   await expect(priorityTable.locator("tbody tr")).not.toHaveCount(0, { timeout: 30000 });
 
-  // 1. Click the button (title="Review and adjust this cluster of interest") 
-  // in the second column of the first row
   const firstRow = priorityTable.locator("tbody tr").first();
   const reviewButton = firstRow.locator("td").nth(1).locator("button[title='Review and adjust this cluster of interest']");
   await reviewButton.click();

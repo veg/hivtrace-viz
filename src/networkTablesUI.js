@@ -11,10 +11,10 @@ export function cluster_table_draw_id(element, payload, self, kGlobals, i18n) {
   if (_is_subcluster) {
     this_cell.append("span").text(cluster_id).style("padding-right", "0.5em");
     if (self.has_multiple_sequences) {
-      _.each(["fa-eye", "fa-user-circle"], (icn, i) => {
+      _.each(["fa-solid fa-eye", "fa-solid fa-user-circle"], (icn, i) => {
         this_cell
           .append("button")
-          .classed("btn btn-sm pull-right", true)
+          .classed("btn btn-sm float-end", true)
           .style("margin-right", "0.25em")
           .on("click", (e) => {
             self.view_subcluster(
@@ -25,7 +25,7 @@ export function cluster_table_draw_id(element, payload, self, kGlobals, i18n) {
             );
           })
           .append("i")
-          .classed("fa " + icn, true)
+          .attr("class", icn)
           .attr(
             "title",
             i == 1 ? i18n("clusters_tab")["view"] : "Sequence-level view"
@@ -34,22 +34,21 @@ export function cluster_table_draw_id(element, payload, self, kGlobals, i18n) {
     } else {
       this_cell
         .append("button")
-        .classed("btn btn-sm pull-right", true)
+        .classed("btn btn-sm float-end", true)
         .style("margin-right", "0.25em")
         .on("click", (e) => {
           self.view_subcluster(payload[2]);
         })
         .append("i")
-        .classed("fa fa-eye", true)
-        .attr("title", i18n("clusters_tab")["view"]);
-    }
+        .attr("class", "fa-solid fa-eye")
+        .attr("title", i18n("clusters_tab")["view"]);    }
   } else {
     this_cell.append("span").text(cluster_id).style("padding-right", "0.5em");
     if (self.has_multiple_sequences) {
       _.each(["fa-eye", "fa-user-circle"], (icn, i) => {
         this_cell
           .append("button")
-          .classed("btn btn-sm pull-right", true)
+          .classed("btn btn-sm float-end", true)
           .style("margin-right", "0.25em")
           .on("click", (e) => {
             self.open_exclusive_tab_view(
@@ -73,27 +72,25 @@ export function cluster_table_draw_id(element, payload, self, kGlobals, i18n) {
     } else {
       this_cell
         .append("button")
-        .classed("btn btn-sm pull-right", true)
+        .classed("btn btn-sm float-end", true)
         .style("margin-right", "0.25em")
         .on("click", (e) => {
           self.open_exclusive_tab_view(cluster_id);
         })
         .append("i")
-        .classed("fa fa-eye", true)
-        .attr("title", i18n("clusters_tab")["view"]);
-    }
+        .attr("class", "fa-solid fa-eye")
+        .attr("title", i18n("clusters_tab")["view"]);    }
   }
   this_cell
     .append("button")
-    .classed("btn btn-sm pull-right", true)
+    .classed("btn btn-outline-secondary btn-sm float-end", true)
     .style("margin-right", "0.25em")
-    .attr("data-toggle", "modal")
-    .attr("data-target", self.get_ui_element_selector_by_role("cluster_list", true))
+    .attr("data-bs-toggle", "modal")
+    .attr("data-bs-target", self.get_ui_element_selector_by_role("cluster_list", true))
     .attr("data-cluster", cluster_id)
     .append("i")
-    .classed("fa fa-list", true)
+    .attr("class", "fa-solid fa-list")
     .attr("title", i18n("clusters_tab")["list"]);
-
   return this_cell;
 }
 
@@ -141,15 +138,15 @@ export function cluster_table_draw_buttons(element, payload, self, i18n, HTX) {
       payload[0]
         ? i18n("clusters_tab")["expand"]
         : i18n("clusters_tab")["collapse"],
-      payload[0] ? "fa-expand" : "fa-compress",
+      payload[0] ? "fa-solid fa-expand" : "fa-solid fa-compress",
     ],
     0,
   ]);
   if (payload[1]) {
-    labels.push([["problematic", "fa-exclamation-circle"], 1]);
+    labels.push([["problematic", "fa-solid fa-circle-exclamation"], 1]);
   }
   if (payload[2]) {
-    labels.push([["match", "fa-check-square"], 1]);
+    labels.push([["match", "fa-solid fa-square-check"], 1]);
   }
 
   if (labels.length === 0) {
@@ -160,11 +157,11 @@ export function cluster_table_draw_buttons(element, payload, self, i18n, HTX) {
   buttons.enter().append("button");
   buttons.exit().remove();
   buttons
-    .classed("btn btn-xs", true)
+    .classed("btn btn-table-xs float-end", true)
     .classed("btn-default", (d) => d[1] !== 1 && d[1] !== 2)
     .classed("btn-danger", (d) => d[1] === 2)
     .classed("btn-success", (d) => d[1] === 3)
-    .style("margin-right", "0.25em")
+    .style("margin-left", "0.25em")
     .attr("disabled", (d) => (d[1] === 1 ? "disabled" : null))
     .on("click", (d) => {
       if (d[1] === 0) {
@@ -202,7 +199,8 @@ export function cluster_table_draw_buttons(element, payload, self, i18n, HTX) {
     var b = d3.select(this);
     b.selectAll("*").remove();
     if (_.isArray(d[0])) {
-      b.append("i").classed("fa " + d[0][1], true);
+      const icon_class = d[0][1].startsWith("fa-") ? "fa-solid " + d[0][1] : d[0][1];
+      b.append("i").attr("class", icon_class);
       if (d[0][0]) {
         b.attr("title", d[0][0]);
       }
@@ -464,13 +462,17 @@ export function draw_cluster_table(
       }
     });
 
+    const $container = $(element.node ? element.node() : element);
+    $container.addClass("table table-striped table-sm table-hover caption-top table-smaller");
+
     tables.add_a_sortable_table(
       element,
       headers,
       rows,
       true,
       options && options["caption"] ? options["caption"] : null,
-      clustersOfInterest.get_editor()
+      clustersOfInterest.get_editor(),
+      rows.length
     );
   }
 }
