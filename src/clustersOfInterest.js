@@ -1047,7 +1047,7 @@ function open_editor(
     onclosed: function () {
       priority_set_editor = null;
       self.redraw_tables();
-      window.reinitalizeDropdown && window.reinitalizeDropdown();
+      window.reinitializeDropdown && window.reinitializeDropdown();
     },
   });
 }
@@ -1172,7 +1172,7 @@ function _action_drop_down(self, pg) {
                 title:
                   pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
               });
-              window.reinitalizeDropdown && window.reinitalizeDropdown();
+              window.reinitializeDropdown && window.reinitializeDropdown();
             },
           },
         ];
@@ -1194,7 +1194,7 @@ function _action_drop_down(self, pg) {
                   " (sequence level)",
                 raw_mspp: true,
               });
-              window.reinitalizeDropdown && window.reinitalizeDropdown();
+              window.reinitializeDropdown && window.reinitializeDropdown();
             },
           });
         }
@@ -1389,7 +1389,7 @@ function _action_drop_down(self, pg) {
           )
         ) {
           self.priority_groups_archive_mjc_set(ref_set.name, !pg.archived);
-          window.reinitalizeDropdown && window.reinitalizeDropdown();
+          window.reinitializeDropdown && window.reinitializeDropdown();
         }
       },
     });
@@ -2126,6 +2126,8 @@ function draw_priority_set_table(
         "clusters_of_interest_table"
       );
     });
+
+    window.reinitializeDropdown && window.reinitializeDropdown();
   }
 }
 

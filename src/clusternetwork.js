@@ -2109,8 +2109,7 @@ var hivtrace_cluster_network_graph = function (
               node.patient_attributes.selected_mjc_date_identified = "REDACTED";
             } else if (
               !(
-                priority_group_name in
-                node.patient_attributes.mjc_date_identified
+                Object.hasOwn(node.patient_attributes.mjc_date_identified, priority_group_name)
               )
             ) {
               node.patient_attributes.selected_mjc_date_identified = "";
