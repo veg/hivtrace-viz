@@ -2750,6 +2750,7 @@ class HIVTxNetwork {
       body: JSON.stringify({
         name: pg.name,
         archived: pg.archived,
+        mjc_uuid: this.mjc_uuid,
       }),
     })
       .then((response) => {

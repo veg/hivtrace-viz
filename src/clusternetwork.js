@@ -8823,6 +8823,10 @@ var hivtrace_cluster_network_graph = function (
       self.mjc_archive_url = options["mjc-archive-url"];
     }
 
+    if (options["mjc-uuid"]) {
+      self.mjc_uuid = options["mjc-uuid"];
+    }
+
     if (self.showing_diff) {
       self.handle_attribute_categorical("_newly_added");
     }
