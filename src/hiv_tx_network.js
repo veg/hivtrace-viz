@@ -2543,7 +2543,7 @@ class HIVTxNetwork {
     this.fetch_priority_sets(url, (results) => {
       let latest_date = new Date();
       latest_date.setFullYear(1900);
-      this.defined_priority_groups = _.clone(results);
+      this.defined_priority_groups = this.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
       _.each(this.defined_priority_groups, (pg) => {
         _.each(pg.nodes, (n) => {
           try {
