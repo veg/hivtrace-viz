@@ -223,7 +223,7 @@ class HIVTxNetwork {
             _.mapObject(consensus_attributes, (d, k) => {
               let freq = _.countBy(d, (i) => i);
               if (_.size(freq) == 1) {
-                return _.keys(freq)[0];
+                return d[0];
               }
               return null;
             }),
