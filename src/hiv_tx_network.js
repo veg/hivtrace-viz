@@ -2576,7 +2576,7 @@ class HIVTxNetwork {
       );
       this.map_ids_to_objects();
 
-      if (this._is_CDC_auto_mode) {
+      if (this._is_CDC_auto_mode && !this.isMJCNetwork) {
         _.each(this.clusters, (cluster_data, cluster_id) => {
           _.each(cluster_data.subclusters, (subcluster_data) => {
             _.each(subcluster_data.priority_score, (priority_score, i) => {
