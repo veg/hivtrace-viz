@@ -422,7 +422,7 @@ class HIVTxNetwork {
 
   */
   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-    if (this.has_multiple_sequences && this.isPrimaryGraph) {
+    if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
       reduce_distance_within = reduce_distance_within || 0.000001;
       reduce_distance_between = reduce_distance_between || 0.015;
 
