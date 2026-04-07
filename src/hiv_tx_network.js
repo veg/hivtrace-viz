@@ -674,11 +674,11 @@ class HIVTxNetwork {
     let uid_index = _.object(_.map(reduced_nodes, (d, i) => [d[0], i]));
     let oui_index = {};
 
-    // Map every node ID in filtered_json to its entity index.
-    // This is more robust than relying on AliasedSequencesID which may not be set
-    // (e.g., for MJC networks where aggregate_indvidual_level_records doesn't merge).
-    _.each(filtered_json.Nodes, (node) => {
-      oui_index[node.id] = uid_index[this.primary_key(node)];
+    _.each(reduced_nodes, (d) => {
+      let aliased = d[1][kGlobals.network.AliasedSequencesID] || [d[1].id];
+      _.each(aliased, (nn) => {
+        oui_index[nn] = uid_index[d[0]];
+      });
     });
 
     let adjacency = misc.hivtrace_compute_adjacency(
@@ -3615,8 +3615,28 @@ class HIVTxNetwork {
 
   aggregate_indvidual_level_records(node_list) {
     if (this.isMJCNetwork) {
+      // Group by primary key and merge, setting AliasedSequencesID
+      // so that simplify_multisequence_cluster (and other callers) can
+      // map all sequence IDs back to their entity.
       // TODO: improve this to actually merge the node attributes
-      return _.uniq(node_list, (n) => n.id ?? n.name);
+      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
+      let new_list = [];
+      _.each(binned, (values, key) => {
+        if (values.length == 1) {
+          new_list.push(_.clone(values[0]));
+        } else {
+          let new_record = _.clone(values[0]);
+          new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
+            _.map(values, (d) =>
+              d[kGlobals.network.AliasedSequencesID]
+                ? d[kGlobals.network.AliasedSequencesID]
+                : d.id ?? d.name
+            )
+          );
+          new_list.push(new_record);
+        }
+      });
+      return new_list;
     }
     node_list = node_list || this.json.Nodes;
 
