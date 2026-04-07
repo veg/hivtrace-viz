@@ -80,7 +80,7 @@ var hivtrace_cluster_network_graph = function (
   network.ensure_node_attributes_exist(json);
 
   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
-  json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
+  json.Edges = _.filter(json.Edges || [], (e) => "source" in e && "target" in e);
 
   /** Not primary networks are individual cluster/subcluster views.
       They don't interfere with the primary network object, and UI elements
