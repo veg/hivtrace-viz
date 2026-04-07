@@ -3324,9 +3324,11 @@ var hivtrace_cluster_network_graph = function (
       return false;
     });
 
-    self.edges = graph_data.Edges.filter(
-      (v, i) => v.source in connected_links && v.target in connected_links
-    );
+    self.edges = graph_data.Edges
+      ? graph_data.Edges.filter(
+          (v, i) => v.source in connected_links && v.target in connected_links
+        )
+      : [];
 
     self.edges = self.edges.map((v, i) => {
       var cp_v = _.clone(v);
@@ -3338,13 +3340,15 @@ var hivtrace_cluster_network_graph = function (
 
     compute_node_degrees(self.nodes, self.edges);
 
-    default_layout(self.initial_packed);
-    self.clusters.forEach((d, i) => {
-      self.cluster_mapping[d.cluster_id] = i;
-      d.hxb2_linked = d.children.some((c) => c.hxb2_linked);
-      _compute_cluster_degrees(d);
-      d.distances = [];
-    });
+    if (!self.isMJCNetwork || self.fullMJCNetwork) {
+      default_layout(self.initial_packed);
+      self.clusters.forEach((d, i) => {
+        self.cluster_mapping[d.cluster_id] = i;
+        d.hxb2_linked = d.children.some((c) => c.hxb2_linked);
+        _compute_cluster_degrees(d);
+        d.distances = [];
+      });
+    }
 
     try {
       if (options && options["extra_menu"]) {
