@@ -6,8 +6,9 @@ test('subcluster table matches reference', async ({ page }) => {
   // Load the network with specific parameters to ensure subcluster table is populated
   await page.goto("http://127.0.0.1:8080/html/priority-sets-args.html?network=../test/COI/XAB.json&pg=../test/COI/empty.json&jr=alaska");
   
-  // Wait for the subcluster table to be visible
+  // Wait for the subclusters tab and click it
   await expect(page.locator("#subclusters-tab")).toBeVisible({ timeout: 30000 });
+  await expect(page.locator("#subclusters-tab")).not.toHaveClass(/disabled/, { timeout: 30000 });
   await page.locator("#subclusters-tab").click();
   
   // Wait for the table to have rows. 

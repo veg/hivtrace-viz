@@ -1,4 +1,4 @@
-var _ = require("underscore");
+const _ = require("underscore");
 
 /**
  * Represents the core HIV transmission network data model and analysis logic.
@@ -19,6 +19,8 @@ class HTXModel {
       } else {
         this.today = new Date();
       }
+    } else {
+      this.today = new Date(this.today);
     }
 
     this.CDC_data = _.extend(
@@ -229,54 +231,52 @@ class HTXModel {
       reduce_distance_within = reduce_distance_within || 0.000001;
       reduce_distance_between = reduce_distance_between || 0.015;
 
-      let clusters = misc.hivtrace_cluster_depthwise_traversal(
+      const clusters = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
         this.json.Edges
       );
 
-      let complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
+      const complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_within
       );
 
-      let adjacency = misc.hivtrace_compute_adjacency(
+      const adjacency = misc.hivtrace_compute_adjacency(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_between
       );
 
-      let adjacency05 = misc.hivtrace_compute_adjacency(
+      const adjacency05 = misc.hivtrace_compute_adjacency(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= 0.005
       );
-      let nodes_to_delete = new Set();
+      const nodes_to_delete = new Set();
 
-      _.each(clusters, (cluster, cluster_index) => {
-        let entity_list = this.unique_entity_list(cluster);
-        if (entity_list.length == 1) {
+      _.each(clusters, (cluster) => {
+        const entity_list = this.unique_entity_list(cluster);
+        if (entity_list.length === 1) {
           _.each(cluster, (ncn) => {
             nodes_to_delete.add(ncn.id);
           });
         }
       });
 
-      let null_size = nodes_to_delete.size;
-
-      _.each(complete_clusters, (cluster, cluster_index) => {
+      _.each(complete_clusters, (cluster) => {
         if (cluster.length > 1) {
           if (_.some(cluster, (n) => nodes_to_delete.has(n.id))) {
             return;
           }
 
-          let uel = this.unique_entity_object_list(cluster);
+          const uel = this.unique_entity_object_list(cluster);
 
-          _.each(uel, (dup_seqs, uid) => {
+          _.each(uel, (dup_seqs) => {
             if (dup_seqs.length > 1) {
-              let dup_ids = new Set(_.map(dup_seqs, (d) => d.id));
+              const dup_ids = new Set(_.map(dup_seqs, (d) => d.id));
 
-              let neighborhood = new Set(
+              const neighborhood = new Set(
                 _.map(
                   _.filter(
                     [...adjacency[dup_seqs[0].id]],
@@ -284,7 +284,7 @@ class HTXModel {
                   )
                 )
               );
-              let neighborhood05 = new Set(
+              const neighborhood05 = new Set(
                 _.map(
                   _.filter(
                     [...adjacency05[dup_seqs[0].id]],
@@ -295,7 +295,7 @@ class HTXModel {
               let reduce = true;
 
               for (let idx = 1; idx < dup_seqs.length; idx += 1) {
-                let other_nbhd = new Set(
+                const other_nbhd = new Set(
                   _.map(
                     _.filter(
                       [...adjacency[dup_seqs[idx].id]],
@@ -303,7 +303,7 @@ class HTXModel {
                     )
                   )
                 );
-                let other_nbhd05 = new Set(
+                const other_nbhd05 = new Set(
                   _.map(
                     _.filter(
                       [...adjacency05[dup_seqs[idx].id]],
@@ -337,12 +337,12 @@ class HTXModel {
       });
 
       if (nodes_to_delete.size) {
-        let new_node_list = [];
-        let new_edge_set = [];
-        let old_node_idx_to_new_node_idx = [];
+        const new_node_list = [];
+        const new_edge_set = [];
+        const old_node_idx_to_new_node_idx = [];
         let new_counter = 0;
 
-        _.each(this.json.Nodes, (n, i) => {
+        _.each(this.json.Nodes, (n) => {
           if (nodes_to_delete.has(n.id)) {
             old_node_idx_to_new_node_idx.push(-1);
           } else {
@@ -352,8 +352,8 @@ class HTXModel {
           }
         });
 
-        _.each(this.json.Edges, (e, i) => {
-          let new_source = old_node_idx_to_new_node_idx[e.source],
+        _.each(this.json.Edges, (e) => {
+          const new_source = old_node_idx_to_new_node_idx[e.source],
             new_target = old_node_idx_to_new_node_idx[e.target];
 
           if (new_source >= 0 && new_target >= 0) {
@@ -377,10 +377,10 @@ class HTXModel {
    */
   annotate_multiple_clusters_on_nodes() {
     if (this.has_multiple_sequences) {
-      let entities_in_multiple_clusters = {};
+      const entities_in_multiple_clusters = {};
       _.each(this.primary_key_list, (nodes, key) => {
         if (nodes.length >= 2) {
-          let cl = _.groupBy(nodes, (n) => n.cluster);
+          const cl = _.groupBy(nodes, (n) => n.cluster);
           if (_.size(cl) > 1) {
             entities_in_multiple_clusters[key] = _.keys(cl);
             _.each(nodes, (n) => {
@@ -391,16 +391,16 @@ class HTXModel {
               delete n["multiple clusters"];
             });
           }
-          cl = _.filter(
+          const sub_cl = _.filter(
             _.map(
               _.groupBy(nodes, (n) => n.subcluster_label),
               (d, k) => k
             ),
-            (d) => d != "undefined"
+            (d) => d !== "undefined"
           );
-          if (_.size(cl) > 1) {
+          if (_.size(sub_cl) > 1) {
             _.each(nodes, (n) => {
-              n["multiple subclusters"] = cl;
+              n["multiple subclusters"] = sub_cl;
             });
           } else {
             _.each(nodes, (n) => {
@@ -417,32 +417,32 @@ class HTXModel {
    * Reduces sequences representing the same entity into one node.
    */
   simplify_multisequence_cluster(filtered_json, kGlobals, misc) {
-    let reduced_nodes = _.pairs(
+    const reduced_nodes = _.pairs(
       _.mapObject(this.unique_entity_object_list(filtered_json.Nodes), (v) =>
         this.aggregate_indvidual_level_records(v)[0]
       )
     );
 
-    let uid_index = _.object(_.map(reduced_nodes, (d, i) => [d[0], i]));
-    let oui_index = {};
+    const uid_index = _.object(_.map(reduced_nodes, (d, i) => [d[0], i]));
+    const oui_index = {};
 
     _.each(reduced_nodes, (d) => {
-      let aliased = d[1][kGlobals.network.AliasedSequencesID] || [d[1].id];
+      const aliased = d[1][kGlobals.network.AliasedSequencesID] || [d[1].id];
       _.each(aliased, (nn) => {
         oui_index[nn] = uid_index[d[0]];
       });
     });
 
-    let reduced_adjacency = _.map(uid_index, (d) =>
-      _.map(uid_index, (d2) => 0)
+    const reduced_adjacency = _.map(uid_index, () =>
+      _.map(uid_index, () => 0)
     );
-    let reduced_lengths = _.map(uid_index, (d) => _.map(uid_index, (d2) => 0));
+    const reduced_lengths = _.map(uid_index, () => _.map(uid_index, () => 0));
 
     _.each(filtered_json.Edges, (e) => {
-      let reduced_src = oui_index[filtered_json.Nodes[e.source].id],
+      const reduced_src = oui_index[filtered_json.Nodes[e.source].id],
         reduced_tgt = oui_index[filtered_json.Nodes[e.target].id];
 
-      if (reduced_src != reduced_tgt) {
+      if (reduced_src !== reduced_tgt) {
         reduced_adjacency[reduced_src][reduced_tgt] += 1;
         reduced_adjacency[reduced_tgt][reduced_src] += 1;
         reduced_lengths[reduced_src][reduced_tgt] += e.length;
@@ -450,7 +450,7 @@ class HTXModel {
       }
     });
 
-    let reduced_edges = [];
+    const reduced_edges = [];
 
     _.each(reduced_adjacency, (row, i) => {
       for (let j = i + 1; j < row.length; j++) {
@@ -474,7 +474,7 @@ class HTXModel {
 
   static are_sets_equal(set1, set2) {
     if (set1.size !== set2.size) return false;
-    for (let item of set1) {
+    for (const item of set1) {
       if (!set2.has(item)) return false;
     }
     return true;
@@ -505,7 +505,7 @@ class HTXModel {
       ? kGlobals.network.AliasedSequencesID
       : "aliased_sequences";
 
-    _.each(this.json.Nodes, (n, i) => {
+    _.each(this.json.Nodes, (n) => {
       this.node_id_to_object[n.id] = n;
       if (n[AliasedSequencesID]) {
         _.each(n[AliasedSequencesID], (id) => {
@@ -519,9 +519,9 @@ class HTXModel {
     if (value instanceof Date) {
       return value;
     }
-    var parsed_value = null;
+    let parsed_value = null;
 
-    var passed = _.any(timeDateUtil.DateFormats, (f) => {
+    const passed = _.any(timeDateUtil.DateFormats, (f) => {
       parsed_value = f.parse(value);
       return parsed_value;
     });
@@ -552,7 +552,7 @@ class HTXModel {
     if (count_newly_added && HTXModel.is_new_node(node)) {
       return true;
     }
-    var node_dx = this.attribute_node_value_by_id(
+    let node_dx = this.attribute_node_value_by_id(
       node,
       date_field,
       false,
@@ -581,11 +581,7 @@ class HTXModel {
 
   generateClusterOfInterestID(subcluster_id, timeDateUtil) {
     const id =
-      this.CDC_data["jurisdiction_code"] +
-      "_" +
-      timeDateUtil.DateViewFormatClusterCreate(this.CDC_data["timestamp"]) +
-      "_" +
-      subcluster_id;
+      `${this.CDC_data["jurisdiction_code"]}_${timeDateUtil.DateViewFormatClusterCreate(this.CDC_data["timestamp"])}_${subcluster_id}`;
 
     let suffix = "";
     let k = 1;
@@ -593,7 +589,7 @@ class HTXModel {
       this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
       this.defined_priority_groups.find((d) => d.name === id + suffix);
     while (found !== undefined) {
-      suffix = "_" + k;
+      suffix = `_${k}`;
       k++;
       found =
         this.auto_create_priority_sets.find((d) => d.name === id + suffix) ||
@@ -641,14 +637,14 @@ class HTXModel {
       let edge_set;
 
       if (edgesByNode) {
-        let node_list = [...core_node_set];
-        let node_set = new Set(node_list);
+        const node_list = [...core_node_set];
+        const node_set = new Set(node_list);
 
         for (let i = 0; i < node_list.length; i++) {
-          let d = node_list[i];
+          const d = node_list[i];
           if (d in this.json.Nodes) {
             _.each([...edgesByNode[d]], (e) => {
-              let add_nodes = [];
+              const add_nodes = [];
 
               if (!node_set.has(e.source)) {
                 add_nodes.push(e.source);
@@ -665,17 +661,17 @@ class HTXModel {
           }
         }
 
-        edge_set = new Set();
+        const edge_set_temp = new Set();
         _.each(
           _.filter(node_list, (d) => d in this.json.Nodes),
           (d) => {
             for (const e of edgesByNode[d]) {
-              edge_set.add(e);
+              edge_set_temp.add(e);
             }
           }
         );
 
-        edge_set = [...edge_set];
+        edge_set = [...edge_set_temp];
       } else {
         edge_set = this.json.Edges;
       }
@@ -687,26 +683,36 @@ class HTXModel {
           let pass = filter(e);
           if (pass) {
             if (!(core_node_set.has(e.source) && core_node_set.has(e.target))) {
-              pass =
-                pass &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.source],
-                  false,
-                  timeDateUtil,
-                  kGlobals
-                ) &&
-                this.filter_by_date(
-                  time_cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  this.json.Nodes[e.target],
-                  false,
-                  timeDateUtil,
-                  kGlobals
-                );
+              const date_filter_limit =
+                kGlobals.CDCCOITrackingOptionsDateFilter[pg.tracking];
+              const is_regardless_of_date =
+                date_filter_limit >=
+                kGlobals.CDCCOITrackingOptionsDateFilter[
+                  kGlobals.CDCCOITrackingOptions[1]
+                ];
+
+              if (!is_regardless_of_date) {
+                pass =
+                  pass &&
+                  this.filter_by_date(
+                    time_cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    this.json.Nodes[e.source],
+                    false,
+                    timeDateUtil,
+                    kGlobals
+                  ) &&
+                  this.filter_by_date(
+                    time_cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    this.json.Nodes[e.target],
+                    false,
+                    timeDateUtil,
+                    kGlobals
+                  );
+              }
             }
           }
           return pass;
@@ -732,8 +738,8 @@ class HTXModel {
   priority_groups_compute_overlap(groups, kGlobals) {
     this.priority_node_overlap = {};
 
-    var entities_by_pg = {};
-    var size_by_pg = {};
+    const entities_by_pg = {};
+    const size_by_pg = {};
     _.each(groups, (pg) => {
       entities_by_pg[pg.name] = this.aggregate_indvidual_level_records(
         pg.node_objects,
@@ -775,8 +781,8 @@ class HTXModel {
       });
 
       _.each(by_set_count, (nodes, name) => {
-        if (nodes.length == size_by_pg[pg.name]) {
-          if (size_by_pg[name] == size_by_pg[pg.name]) {
+        if (nodes.length === size_by_pg[pg.name]) {
+          if (size_by_pg[name] === size_by_pg[pg.name]) {
             overlap.duplicates.push(name);
           } else {
             overlap.supersets.push(name);
@@ -801,10 +807,10 @@ class HTXModel {
     }
 
     // Build a map of entity lists & sizes for mjc_groups (we will iterate mjc_groups later)
-    var size_by_pg = {};
+    const size_by_pg = {};
 
     // Also keep sizes for own_groups for superset/duplicate checks
-    var size_by_own = {};
+    const size_by_own = {};
 
     // 1) Build priority_node_overlap from own_groups (entity => Set of own PG names)
     _.each(own_groups, (pg) => {
@@ -854,8 +860,8 @@ class HTXModel {
       // Determine supersets/duplicates: if an own_group contains ALL entities of this mjc_group (within our intersection),
       // then it's either a superset or a duplicate (same size).
       _.each(by_set_count, (nodes, own_name) => {
-        if (nodes.length == size_by_pg[pg.name]) {
-          if (size_by_own[own_name] == size_by_pg[pg.name]) {
+        if (nodes.length === size_by_pg[pg.name]) {
+          if (size_by_own[own_name] === size_by_pg[pg.name]) {
             overlap.duplicates.push(own_name);
           } else {
             overlap.supersets.push(own_name);
@@ -881,11 +887,11 @@ class HTXModel {
     node_list = node_list || this.json.Nodes;
 
     const aggregator = (values, key, record, store_key) => {
-      let unique_values = _.countBy(values, (dn) => dn[key]);
+      const unique_values = _.countBy(values, (dn) => dn[key]);
 
       delete unique_values["undefined"];
 
-      if (_.size(unique_values) == 1) {
+      if (_.size(unique_values) === 1) {
         record[store_key] = values[0][key];
       } else {
         if (_.size(unique_values) > 0) {
@@ -895,25 +901,25 @@ class HTXModel {
     };
 
     if (this.has_multiple_sequences) {
-      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
-      let new_list = [];
-      _.each(binned, (values, key) => {
-        if (values.length == 1) {
+      const binned = _.groupBy(node_list, (n) => this.primary_key(n));
+      const new_list = [];
+      _.each(binned, (values) => {
+        if (values.length === 1) {
           new_list.push(_.clone(values[0]));
         } else {
-          let new_record = _.clone(values[0]);
+          const new_record = _.clone(values[0]);
           new_record[kGlobals.network.NodeAttributeID] = _.object(
             _.map(new_record[kGlobals.network.NodeAttributeID], (d, k) => {
               const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
-              let unique_values = _.countBy(
+              const unique_values = _.countBy(
                 values,
                 (dn) => dn[kGlobals.network.NodeAttributeID][k]
               );
 
-              if (_.size(unique_values) == 1) {
+              if (_.size(unique_values) === 1) {
                 return [k, values[0][kGlobals.network.NodeAttributeID][k]];
               } else {
-                if (proto.type == "Date") {
+                if (proto.type === "Date") {
                   try {
                     return [
                       k,
@@ -1040,7 +1046,7 @@ class HTXModel {
                 added some sloppy code to handle MSPP
           **/
 
-          let entities = this.aggregate_indvidual_level_records(
+          const entities = this.aggregate_indvidual_level_records(
             g.node_objects,
             kGlobals
           );
@@ -1163,10 +1169,10 @@ class HTXModel {
     const today_string = timeDateUtil.DateFormats[0](this.get_reference_date());
     this.auto_create_priority_sets = [];
 
-    _.each(this.clusters, (cluster_data, cluster_id) => {
+    _.each(this.clusters, (cluster_data) => {
       _.each(cluster_data.subclusters, (subcluster_data) => {
         _.each(subcluster_data.priority_score, (priority_score, i) => {
-          let priority_entities = this.unique_entity_list(
+          const priority_entities = this.unique_entity_list(
             _.map(priority_score, (d) => ({ id: d }))
           );
           if (
@@ -1207,7 +1213,7 @@ class HTXModel {
             this.auto_create_priority_sets.push({
               name: autoname,
               description:
-                "Automatically created cluster of interest " + autoname,
+                `Automatically created cluster of interest ${autoname}`,
               nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
                 this.priority_group_node_record(n, this.get_reference_date())
               ),
@@ -1348,32 +1354,32 @@ class HTXModel {
 
           pg.nodes = unique_nodes;
 
-          let inject_mspp_nodes = [];
-          let discordant_node_record = [];
+          const inject_mspp_nodes = [];
+          const discordant_node_record = [];
 
           if (_.size(mspp_ms_nodes)) {
             let entity_tracker = null;
 
             if (
-              pg.createdBy == kGlobals.CDCCOICreatedBySystem ||
-              pg.tracking == kGlobals.CDCCOITrackingOptions[0] ||
-              pg.tracking == kGlobals.CDCCOITrackingOptions[1]
+              pg.createdBy === kGlobals.CDCCOICreatedBySystem ||
+              pg.tracking === kGlobals.CDCCOITrackingOptions[0] ||
+              pg.tracking === kGlobals.CDCCOITrackingOptions[1]
             ) {
               entity_tracker = existing_subclusters;
             } else {
               if (
-                pg.tracking == kGlobals.CDCCOITrackingOptions[2] ||
-                pg.tracking == kGlobals.CDCCOITrackingOptions[3]
+                pg.tracking === kGlobals.CDCCOITrackingOptions[2] ||
+                pg.tracking === kGlobals.CDCCOITrackingOptions[3]
               ) {
                 entity_tracker = existing_clusters;
               }
             }
 
-            if (!entity_tracker || entity_tracker.size == 0) {
-              entity_tracker = { has: (n) => true };
+            if (!entity_tracker || entity_tracker.size === 0) {
+              entity_tracker = { has: () => true };
             }
 
-            _.each(mspp_ms_nodes, (data, p_key) => {
+            _.each(mspp_ms_nodes, (data) => {
               const entities = data[0];
               const ref_node = data[1];
 
@@ -1381,7 +1387,7 @@ class HTXModel {
                 if (entity_tracker.has(e.subcluster_label)) {
                   if (!seen_ids.has(e.id)) {
                     pg.node_objects.push(e);
-                    let node_entry = _.clone(ref_node);
+                    const node_entry = _.clone(ref_node);
                     node_entry.name = e.id;
                     node_entry.added = ref_node.added;
                     inject_mspp_nodes.push(node_entry);
@@ -1399,7 +1405,7 @@ class HTXModel {
             " Migrated to multiple sequences per person cluster";
 
           if (inject_mspp_nodes.length || discordant_node_record.length) {
-            let notes_cleanup = pg.description.split(migration_tag);
+            const notes_cleanup = pg.description.split(migration_tag);
             pg.description = notes_cleanup[0] + migration_tag;
 
             _.each(
@@ -1409,24 +1415,15 @@ class HTXModel {
               ],
               (pair) => {
                 if (pair[0].length) {
-                  let desc = {};
+                  const desc = {};
                   _.each(pair[0], (n) => {
-                    let k = this.primary_key("id" in n ? n : { id: n.name });
+                    const k = this.primary_key("id" in n ? n : { id: n.name });
                     if (!(k in desc)) desc[k] = [];
                     desc[k].push(n);
                   });
 
                   pg.description +=
-                    "; " +
-                    pair[1] +
-                    _.map(desc, (k, n) => {
-                      return (
-                        n +
-                        " (" +
-                        _.map(k, (no) => no.id || no.name).join(", ") +
-                        ")"
-                      );
-                    }).join("; ");
+                    `; ${pair[1]}${_.map(desc, (k, n) => `${n} (${_.map(k, (no) => no.id || no.name).join(", ")})`).join("; ")}`;
                 }
               }
             );
@@ -1485,7 +1482,7 @@ class HTXModel {
             ];
           }
 
-          let saved_traversal_edges = [];
+          const saved_traversal_edges = [];
           const node_set15 = _.flatten(
             misc.hivtrace_cluster_depthwise_traversal(
               this.json["Nodes"],
@@ -1498,7 +1495,7 @@ class HTXModel {
             )
           );
 
-          let saved_traversal_edges_sub = [];
+          const saved_traversal_edges_sub = [];
           const node_set_subcluster = _.flatten(
             misc.hivtrace_cluster_depthwise_traversal(
               this.json["Nodes"],
@@ -1604,7 +1601,7 @@ class HTXModel {
             { name: "cluster_dx_recent36_mo", months: 36 },
           ];
 
-          for (let dx of dx_cutoffs) {
+          for (const dx of dx_cutoffs) {
             const cutoff = timeDateUtil.n_months_ago(
               this.get_reference_date(),
               dx.months
@@ -1685,7 +1682,7 @@ class HTXModel {
   compute_clusters() {
     this.nodes_by_cluster = _.groupBy(this.json.Nodes, "cluster");
     this.cluster_mapping = {};
-    this.clusters = _.map(this.nodes_by_cluster, (value, key, list) => {
+    this.clusters = _.map(this.nodes_by_cluster, (value, key) => {
       const index = _.size(this.cluster_mapping);
       this.cluster_mapping[key] = index;
       return {
@@ -1780,14 +1777,14 @@ class HTXModel {
 
       this.clusters[array_index].priority_score = 0;
 
-      let edges = [];
+      const edges = [];
       let null_subcluster_filter = (cc) => cc.length > 1;
 
       if (this.has_multiple_sequences) {
         null_subcluster_filter = (cc) => this.unique_entity_list(cc).length > 1;
       }
 
-      let subclusters = _.filter(
+      const subclusters = _.filter(
         misc.hivtrace_cluster_depthwise_traversal(
           cluster_nodes.Nodes,
           cluster_nodes.Edges,
@@ -1796,8 +1793,6 @@ class HTXModel {
         ),
         null_subcluster_filter
       );
-
-      edges = _.filter(edges, (es) => es.length > 1);
 
       const oldest_nodes_first = (n1, n2) => {
         const d1 = this.attribute_node_value_by_id(
@@ -1826,29 +1821,24 @@ class HTXModel {
       _.each(subclusters, (c) => c.sort(oldest_nodes_first));
       subclusters.sort((c1, c2) => oldest_nodes_first(c1[0], c2[0]));
 
-      subclusters = _.map(subclusters, (c, i) => {
+      this.clusters[array_index].subclusters = _.map(subclusters, (c, i) => {
         const subcluster_id = i + 1;
         const label =
-          this.clusters[array_index].cluster_id +
-          kGlobals.SubclusterSeparator +
-          subcluster_id;
+          `${this.clusters[array_index].cluster_id}${kGlobals.SubclusterSeparator}${subcluster_id}`;
 
         _.each(c, (n) => {
           n.subcluster_label = label;
           n.priority_flag = 0;
         });
 
-        const sc_obj = {
+        return {
           children: _.clone(c),
           parent_cluster: this.clusters[array_index],
           cluster_id: label,
         };
-        return sc_obj;
       });
 
-      this.clusters[array_index].subclusters = subclusters;
-
-      _.each(subclusters, (sub, sub_idx) => {
+      _.each(this.clusters[array_index].subclusters, (sub) => {
         const date_filter = (n) =>
           this.filter_by_date(
             cutoff_long,
@@ -1875,17 +1865,13 @@ class HTXModel {
               (e) => e.length <= this.subcluster_threshold
             )
           ),
-          (cc) => {
-            const entities = this.unique_entity_list(cc);
-            return entities.length >= 2;
-          }
+          (cc) => this.unique_entity_list(cc).length >= 2
         );
 
         sub.priority_score = [];
         sub.recent_nodes = [];
 
         _.each(components, (cc) => {
-          const entities = this.unique_entity_list(cc);
           const dx12 = _.filter(cc, (n) =>
             this.filter_by_date(
               cutoff_short,
@@ -1909,7 +1895,7 @@ class HTXModel {
         });
 
         if (sub.priority_score.length) {
-          _.each(sub.priority_score, (ps, i) => {
+          _.each(sub.priority_score, (ps) => {
             _.each(ps, (nid) => {
               const n = _.find(sub.children, (cn) => cn.id === nid);
               if (n) {
@@ -1940,7 +1926,7 @@ class HTXModel {
    * Groups all edges in `this.json.Edges` by the primary key of their source and target nodes.
    */
   group_edges_by_primary_key() {
-    let edges_by_primary_key = {};
+    const edges_by_primary_key = {};
 
     _.each(this.json.Edges, (edge) => {
       const source_pk = this.primary_key(this.json.Nodes[edge.source]);
@@ -1990,7 +1976,7 @@ class HTXModel {
     });
 
     if (this.has_multiple_sequences) {
-      _.each(this.primary_key_list, (seqs, primary_id) => {
+      _.each(this.primary_key_list, (seqs) => {
         if (seqs.length > 1) {
           let consensus_attributes = {};
 
@@ -2005,9 +1991,9 @@ class HTXModel {
           });
 
           consensus_attributes = _.omit(
-            _.mapObject(consensus_attributes, (d, k) => {
-              let freq = _.countBy(d, (i) => i);
-              if (_.size(freq) == 1) {
+            _.mapObject(consensus_attributes, (d) => {
+              const freq = _.countBy(d, (i) => i);
+              if (_.size(freq) === 1) {
                 return _.keys(freq)[0];
               }
               return null;
@@ -2023,10 +2009,6 @@ class HTXModel {
     }
   }
 
-  cluster_display_filter(cluster) {
-    return _.every(this.cluster_filtering_functions, (f) => f(cluster));
-  }
-
   unique_entity_list(node_list) {
     return _.map(
       _.groupBy(node_list, (n) => this.primary_key(n)),
@@ -2036,9 +2018,7 @@ class HTXModel {
 
   unique_entity_list_from_ids(node_list) {
     return this.unique_entity_list(
-      _.map(node_list, (d) => {
-        return { id: d };
-      })
+      _.map(node_list, (d) => ({ id: d }))
     );
   }
 
@@ -2095,8 +2075,8 @@ class HTXModel {
     include_extra_edges,
     edge_subset
   ) {
-    var cluster_json = {};
-    var map_to_id = {};
+    const cluster_json = {};
+    const map_to_id = {};
 
     cluster_json.Nodes = _.map(nodes, (c, i) => {
       map_to_id[c.id] = i;
@@ -2105,7 +2085,7 @@ class HTXModel {
         return c;
       }
 
-      var cc = _.clone(c);
+      const cc = _.clone(c);
       cc.cluster = 1;
       return cc;
     });
@@ -2132,7 +2112,7 @@ class HTXModel {
     }
 
     cluster_json.Edges = _.map(cluster_json.Edges, (e) => {
-      var ne = _.clone(e);
+      const ne = _.clone(e);
       ne.source = map_to_id[given_json.Nodes[e.source].id];
       ne.target = map_to_id[given_json.Nodes[e.target].id];
       return ne;

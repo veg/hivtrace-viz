@@ -165,6 +165,120 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Reduced `clusternetwork.js` by ~100 lines.
 - **Status**: Completed (2026-03-03)
 
+#### Step 21: Extract Network Scales and Constants
+- **Goal**: Move `l_scale`, `max_points_to_render`, `max_nodes_to_show`, `singletons`, `gravity_scale`, and `link_scale` to a specialized module.
+- **Result**: 
+    - Created `src/networkScales.js`.
+    - Attached scales and constants to the `self` instance.
+    - Simplified `get_initial_xy` and `draw_extended_node_table` by removing redundant arguments.
+    - Updated `clusternetwork.js` to use `self` properties for these values.
+- **Status**: Completed (2026-03-04)
+
+#### Step 22: Extract Priority Cluster Annotation
+- **Goal**: Move `annotate_priority_clusters` to a specialized module.
+- **Result**: 
+    - Created `src/networkPriority.js`.
+    - Promoted `_compute_cluster_degrees` and `oldest_nodes_first` to `self` methods.
+    - Parameterized dependencies (`timeDateUtil`, `kGlobals`, `helpers`) for the extracted function.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-03-04)
+
+#### Step 23: Extract Priority Set Merge UI and Consolidate UI Helpers
+- **Goal**: Move priority set merge modal logic to `src/networkControls.js` and consolidate redundant UI helper definitions in `clusternetwork.js`.
+- **Result**: 
+    - Created `setup_priority_set_merge_controls` in `src/networkControls.js`.
+    - Promoted `_extract_attributes_for_nodes`, `_extract_exportable_attributes`, `_extract_mjc_attributes`, `_extract_nodes_by_id`, `_cluster_list_view_render`, and `_setup_cluster_list_view` to top-level `self.` definitions in `clusternetwork.js`.
+    - Removed redundant definitions from `initial_json_load`.
+    - Reduced `clusternetwork.js` by ~150 lines.
+- **Status**: Completed (2026-03-04)
+
+#### Step 24: Extract UI Statistics and Degree Computation
+- **Goal**: Move `render_binned_table`, `render_chord_diagram`, `attribute_pairwise_distribution`, `extract_network_time_series`, `stratify`, and `compute_node_degrees` to specialized modules.
+- **Result**: 
+    - Created `src/networkStatisticsUI.js` for table and chord diagram rendering.
+    - Moved `compute_node_degrees` to `src/misc.js`.
+    - Updated `clusternetwork.js` to use wrappers for these functions.
+    - Reduced `clusternetwork.js` by ~250 lines.
+- **Status**: Completed (2026-03-04)
+
+#### Step 25: Extract Network Engine and Options Handling
+- **Goal**: Move D3 force layout initialization, SVG boilerplate, and options processing to a specialized module.
+- **Result**: 
+    - Created `src/networkEngine.js`.
+    - Extracted `initializeNetworkEngine` and `handleNetworkOptions`.
+    - Thinned out the `hivtrace_cluster_network_graph` constructor.
+    - Reduced `clusternetwork.js` by ~150 lines.
+- **Status**: Completed (2026-03-10)
+
+#### Step 26: Implement Event Dispatcher and Decouple Interactions
+- **Goal**: Implement a `d3.dispatch` based event bus to decouple UI components from the main graph instance.
+- **Result**: 
+    - Added `this.dispatch` to `HIVTxNetwork` class with underscore-named events (e.g., `node_pop_on`) for better compatibility.
+    - Created `src/networkEvents.js` to centralize event registration.
+    - Updated `NetworkElementDrawing` and `clusternetwork.js` to emit events instead of calling instance methods.
+    - Implemented robust `d3.event` checks and `stopPropagation` across all interaction handlers to ensure menu stability and prevent immediate disappearing.
+    - Fixed `i18n` fallback logic by merging global `__` translations with `english_fallbacks` and using a `Proxy` to ensure user-facing labels are displayed instead of internal keys, even in environments with external translation libraries.
+    - Fixed node context menu positioning in sub-networks by adding `.hivtrace-graph-container` class with `position: relative`, using `d3.mouse()` for container-relative coordinates, and ensuring unique context menu IDs per container to avoid collisions in multi-tab views.
+    - Improved robustness of `HTXModel` by ensuring the `today` reference date is always converted to a `Date` object, preventing `getFullYear` errors in sub-network views.
+    - Migrated interaction modules to direct module imports (e.g., `kGlobals`, `misc`) instead of relying on the network instance.
+    - Ensured that cluster events are re-bound on every graph update.
+    - Removed multiple wrapper functions from `clusternetwork.js`.
+    - Reduced `clusternetwork.js` by ~150 lines.
+- **Status**: Completed (2026-03-10)
+
+#### Step 27: Refactor Table Rendering to Remove D3 Dependency
+- **Goal**: Replace D3-based DOM manipulation and data binding in `src/tables.js` with jQuery and standard JavaScript.
+- **Result**: 
+    - Rewrote `add_a_sortable_table`, `format_a_cell`, and `filter_table` using jQuery and native DOM APIs.
+    - Preserved D3 compatibility by manually setting the `__data__` property on table rows and cells.
+    - Implemented custom `ascending` and `descending` sort helpers to replace `d3.ascending/descending`.
+    - Added `.node()` polyfill to jQuery objects passed to legacy D3-based callbacks to maintain backward compatibility.
+    - Retained the D3 dependency only for the final `.sort()` operation on detached DOM elements to ensure identical behavior with existing complex sort accessors.
+    - Verified identical behavior with the full Playwright test suite.
+- **Status**: Completed (2026-03-10)
+
+#### Step 28: Refactor Graph Summary Table to Remove D3 Dependency
+- **Goal**: Replace D3-based table generation and formatting in `src/hivtraceClusterGraphSummary.js` with jQuery.
+- **Result**: 
+    - Removed `d3` dependency from the module.
+    - Replaced `d3.select` and `.data().enter()` patterns with jQuery and `_.each` loops.
+    - Switched from local `d3.format` instances to standardized formatters in `kGlobals`.
+    - Verified identical output in the "Statistics" tab.
+- **Status**: Completed (2026-03-10)
+
+#### Step 29: Clean up UI Logic in Network Attribute Handlers
+- **Goal**: Replace D3 UI manipulations in `src/networkAttributeHandlers.js` with jQuery and modernize event handling.
+- **Result**: 
+    - Replaced `d3.select` with jQuery for UI element updates (labels, buttons, dropdowns).
+    - Modernized function signatures to accept optional `event` objects, reducing reliance on global `d3.event`.
+    - Maintained D3 only for data-driven scales and SVG radial gradients.
+    - Verified correctly functioning color, shape, and opacity selectors.
+- **Status**: Completed (2026-03-10)
+
+#### Step 30: Standardize Math Utilities in Helpers
+- **Goal**: Replace non-graphical D3 math utilities in `src/helpers.js` with native JavaScript implementations.
+- **Result**: 
+    - Replaced `d3.min`, `d3.max`, `d3.mean`, `d3.median`, `d3.quantile`, and `d3.ascending` with native JS and custom helpers in `datamonkey_describe_vector`.
+    - Removed implicit dependency on global `d3` for basic statistical calculations.
+- **Status**: Completed (2026-03-10)
+
+#### Step 31: Modernize Data Fetching in NetworkAPI
+- **Goal**: Replace `d3.json` and `d3.text` with the native `fetch` API in `src/core/NetworkAPI.js`.
+- **Result**: 
+    - Removed `d3` dependency from the core API module.
+    - Updated `fetch_priority_sets`, `priority_groups_update_node_sets`, and `priority_groups_edit_set_description` to use `fetch`.
+    - Switched UI updates in `load_priority_sets` from D3 to jQuery.
+    - Improved standalone compatibility of the core data fetching logic.
+- **Status**: Completed (2026-03-10)
+
+#### Step 32: Modernize Data Fetching in Application Entry Points
+- **Goal**: Replace non-graphical D3 utility usage in HTML entry points with `fetch` and jQuery.
+- **Result**: 
+    - Updated `index.html`, `html/network.html`, `html/plain.html`, `html/priority-sets-args.html`, and `html/social.html` to use `fetch` for loading network JSON and mapping data.
+    - Replaced D3-based DOM manipulations (errors, tab states, progress bars) with jQuery.
+    - Retained `d3.csv.parse` for complex CSV parsing while modernizing the fetching process.
+- **Status**: Completed (2026-03-10)
+
 ### Phase 2: Extract Core Engine for Standalone Package
 
 - **Goal**: Isolate network loading, cluster definition, and COI logic into `src/core/` to support CLI/Back-end usage.
@@ -269,6 +383,46 @@ This document tracks the staged refactoring of the `hivtrace-viz` codebase, focu
     - Added comprehensive CLI documentation in `scripts/README.md`.
     - Synchronized `debug_rc_171.js` with the new data loading logic.
 - **Status**: Completed (2026-03-03)
+
+### Phase 3: Bootstrap 5 Migration and UI Refinement
+
+- **Goal**: Complete the transition to Bootstrap 5, modernize the UI, and improve cross-module interaction via standardized patterns.
+
+#### Step 1: Modernize Table Rendering and Interaction
+- **Goal**: Refactor `src/tables.js` to use jQuery for DOM manipulation while maintaining D3 data-binding patterns.
+- **Result**:
+    - Replaced direct `__data__` property access with `d3.select(...).datum()` for all table and menu elements.
+    - Fixed table sorting to correctly pass cell data to custom sort accessors.
+    - Improved action button rendering to support both single button objects and arrays.
+    - Verified compatibility with the full Playwright test suite.
+- **Status**: Completed (2026-03-16)
+
+#### Step 2: Refine Cluster of Interest (COI) Editor UI
+- **Goal**: Improve the layout and presentation of the COI editor jsPanel.
+- **Result**:
+    - Moved node search and "+" button to a dedicated `headerToolbar` in the jsPanel.
+    - Standardized element heights using Bootstrap 5 "small" classes (`btn-sm`, `form-control-sm`).
+    - Implemented `btn-table-xs` for delete and edit actions to minimize UI footprint.
+    - Fixed "white-on-white" text visibility issues in autocomplete dropdowns within dark headers.
+    - Added "Enter" key support for adding nodes by ID.
+- **Status**: Completed (2026-03-16)
+
+#### Step 3: Enhance Test Stability for Bootstrap 5
+- **Goal**: Resolve timing issues in Playwright tests caused by the asynchronous nature of the new initialization flow.
+- **Result**:
+    - Updated all UI tests to explicitly wait for navigation tabs to be enabled (removing the `disabled` class) before clicking.
+    - Switched to `press("Enter")` for node addition in tests to avoid element interception issues with autocomplete dropdowns.
+- **Status**: Completed (2026-03-16)
+
+#### Step 4: Fix COI Save Flow and Auto-Expansion Logic
+- **Goal**: Restore the broken automatic growth check and ensure robust event handling in the COI editor.
+- **Result**:
+    - Fixed `first_save` flag handling to correctly trigger expansion checks on the second "Save" click (after metadata entry).
+    - Updated `auto_expand_pg_handler` in `HTXModel.js` to correctly handle "Regardless of date" tracking modes by skipping date filters for those specific modes.
+    - Migrated COI editor event handlers (keydown, click) from D3 to jQuery to ensure reliable access to the event object and prevent `TypeError` during node selection.
+    - Standardized menu bar element heights by removing legacy CSS overrides and using Bootstrap 5 `btn-sm` classes.
+    - Added "Enter" key support for adding nodes by ID in the editor.
+- **Status**: Completed (2026-03-16)
 
 ---
 *Note: This document will be updated after each step.*

@@ -314,11 +314,8 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         cluster_id
       );
 
-      var modal = d3.select(
-        self.get_ui_element_selector_by_role("cluster_list", true)
-      );
-      modal
-        .selectAll(".modal-title")
+      var $modal = $(self.get_ui_element_selector_by_role("cluster_list", true));
+      $modal.find(".modal-title")
         .text(
           i18n("clusters_tab")["listing_nodes"] +
             (priority_list
@@ -345,7 +342,7 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         $(
           self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
         ).data(i18n("clusters_tab")["view"]) !== "id",
-        modal.select(
+        d3.select(
           self.get_ui_element_selector_by_role("cluster_list_payload", true)
         ),
         priority_list
@@ -422,10 +419,13 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
         helpers.export_csv_button(rows_for_export, "overlap");
       });
 
+      const table_container = modal.select(
+        self.get_ui_element_selector_by_role("overlap_list_data_table", true)
+      );
+      $(table_container.node()).addClass("table table-striped table-sm table-hover caption-top table-smaller");
+
       tables.add_a_sortable_table(
-        modal.select(
-          self.get_ui_element_selector_by_role("overlap_list_data_table", true)
-        ),
+        table_container,
         headers,
         rows,
         true,
@@ -434,4 +434,73 @@ export function setup_cluster_list_view(self, kGlobals, timeDateUtil, helpers, i
       );
     }
   );
+}
+
+/**
+ * @function get_node_country
+ * @description Retrieves the country code for a given node.
+ * @param {Object} self - The network object.
+ * @param {Object} node - The node object.
+ * @param {Object} kGlobals - Global constants.
+ * @returns {string} The country code (Alpha2) of the node.
+ */
+export function get_node_country(self, node, kGlobals) {
+  var countryCodeAlpha2 = self.attribute_node_value_by_id(node, "country");
+  if (countryCodeAlpha2 === kGlobals.missing.label) {
+    countryCodeAlpha2 = self.attribute_node_value_by_id(node, "Country");
+  }
+  return countryCodeAlpha2;
+}
+
+/**
+ * @function update_network_string
+ * @description Updates the network status string with current network statistics.
+ * @param {Object} self - The network object.
+ * @param {string} network_status_string - The selector for the status string element.
+ * @param {number} node_count - Number of shown nodes.
+ * @param {number} edge_count - Number of shown edges.
+ * @returns {void}
+ */
+export function update_network_string(
+  self,
+  network_status_string,
+  node_count,
+  edge_count
+) {
+  if (network_status_string) {
+    const clusters_shown = _.filter(self.clusters, (c) => !c.collapsed).length;
+
+    const clusters_selected = _.filter(
+      self.clusters,
+      (c) => !c.is_hidden && c.match_filter !== undefined && c.match_filter > 0
+    ).length;
+
+    const nodes_selected = _.filter(
+      self.nodes,
+      (n) => n.match_filter && !n.is_hidden
+    ).length;
+
+    const networkString =
+      "<span class = 'badge bg-secondary'>" +
+      self.clusters.length +
+      "</span> clusters <span class = 'badge bg-primary'>" +
+      clusters_shown +
+      " expanded / " +
+      clusters_selected +
+      " match </span> <span class = 'badge bg-secondary'> " +
+      self.nodes.length +
+      "</span> nodes <span class = 'badge bg-primary'>" +
+      node_count +
+      " shown / " +
+      nodes_selected +
+      " match </span> <span class = 'badge bg-secondary'> " +
+      self.edges.length +
+      "</span> " +
+      (self._is_CDC_ ? "links" : "edges") +
+      " <span class = 'badge bg-primary'>" +
+      edge_count +
+      " shown</span>";
+
+    d3.select(network_status_string).html(networkString);
+  }
 }

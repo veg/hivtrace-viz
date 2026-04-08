@@ -112,10 +112,8 @@ export function initializeNetworkSettings(
   if (json.Settings && json.Settings.created) {
     self.today = new Date(json.Settings.created);
   } else {
-    self.today = network.check_network_option(
-      options,
-      "today",
-      timeDateUtil.getCurrentDate()
+    self.today = new Date(
+      network.check_network_option(options, "today", timeDateUtil.getCurrentDate())
     );
   }
 

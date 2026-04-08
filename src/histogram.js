@@ -13,7 +13,7 @@ var d3 = require("d3"),
 
 function hivtrace_histogram(graph, histogram_tag, histogram_label) {
   var defaultFloatFormat = d3.format(",.2f");
-  var histogram_w = 300,
+  var histogram_w = $(histogram_tag).width() || 300,
     histogram_h = 300;
 
   hivtrace_render_histogram(
@@ -53,7 +53,7 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
 */
 
 function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
-  var histogram_w = 300,
+  var histogram_w = $(histogram_tag).width() || 300,
     histogram_h = 300;
 
   var edge_lengths = _.map(graph["Edges"], (edge) => edge.length);

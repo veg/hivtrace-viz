@@ -200,3 +200,19 @@ export function compute_cluster_gradient(self, cluster, cat_id, kGlobals) {
   }
   return null;
 }
+
+/**
+ * Determines the size of a cluster box based on the number of entities in the cluster.
+ * @param {Object} self - The HIVTxNetwork instance.
+ * @param {Object} c - The cluster object.
+ * @returns {number} The size of the cluster box.
+ */
+export function cluster_box_size(self, c) {
+  let cc;
+  if (self.cluster_sizes_in_entities) {
+    cc = self.cluster_sizes_in_entities[c.cluster_id];
+  }
+  cc = cc || c.children.length;
+
+  return 8 * Math.sqrt(cc);
+}

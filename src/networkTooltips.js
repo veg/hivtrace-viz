@@ -23,17 +23,20 @@ export function toggle_tooltip(element, turn_on, title, tag, container) {
       $(this).remove();
     });
 
-    var this_box = $(element);
-
-    element.tooltip = this_box.tooltip({
+    element.tooltip = new bootstrap.Tooltip(element, {
       title: title + "<br>" + tag,
       html: true,
       container: container ? container : "body",
+      trigger: "manual",
     });
 
-    _.delay(_.bind(element.tooltip.tooltip, element.tooltip), 500, "show");
+    _.delay(() => {
+      if (element.tooltip) {
+        element.tooltip.show();
+      }
+    }, 500);
   } else if (!turn_on && element.tooltip) {
-    element.tooltip.tooltip("destroy");
+    element.tooltip.dispose();
     element.tooltip = undefined;
   }
 }
@@ -189,7 +192,7 @@ export function cluster_info_string(self, id, kGlobals, misc) {
  * @description Shows a tooltip for a node when the mouse is over it.
  */
 export function node_pop_on(self, d, element, kGlobals, misc, timeDateUtil) {
-  if (d3.event.defaultPrevented) return;
+  if (d3.event && d3.event.defaultPrevented) return;
 
   toggle_tooltip(
     element,
@@ -205,7 +208,7 @@ export function node_pop_on(self, d, element, kGlobals, misc, timeDateUtil) {
  * @description Hides the tooltip for a node when the mouse is no longer over it.
  */
 export function node_pop_off(element) {
-  if (d3.event.defaultPrevented) return;
+  if (d3.event && d3.event.defaultPrevented) return;
   toggle_tooltip(element, false);
 }
 
@@ -214,10 +217,11 @@ export function node_pop_off(element) {
  * @description Shows a tooltip for an edge when the mouse is over it.
  */
 export function edge_pop_on(self, e, element, kGlobals) {
+  if (d3.event && d3.event.defaultPrevented) return;
   toggle_tooltip(
     element,
     true,
-    e.source.id + " - " + e.target.id,
+    (e.source.id || e.source) + " - " + (e.target.id || e.target),
     edge_info_string(e, kGlobals),
     self.container
   );
@@ -228,6 +232,7 @@ export function edge_pop_on(self, e, element, kGlobals) {
  * @description Hides the tooltip for an edge when the mouse is no longer over it.
  */
 export function edge_pop_off(element) {
+  if (d3.event && d3.event.defaultPrevented) return;
   toggle_tooltip(element, false);
 }
 
@@ -236,6 +241,7 @@ export function edge_pop_off(element) {
  * @description Shows a tooltip for a cluster when the mouse is over it.
  */
 export function cluster_pop_on(self, d, element, kGlobals, misc) {
+  if (d3.event && d3.event.defaultPrevented) return;
   toggle_tooltip(
     element,
     true,
@@ -250,5 +256,6 @@ export function cluster_pop_on(self, d, element, kGlobals, misc) {
  * @description Hides the tooltip for a cluster when the mouse is no longer over it.
  */
 export function cluster_pop_off(element) {
+  if (d3.event && d3.event.defaultPrevented) return;
   toggle_tooltip(element, false);
 }

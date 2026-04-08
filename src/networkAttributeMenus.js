@@ -170,9 +170,9 @@ export function aux_populate_category_menus(
 
     [
       d3.select(self.get_ui_element_selector_by_role("attributes")),
-      d3.select(self.get_ui_element_selector_by_role("attributes_cat", true)),
+      d3.select(self.get_ui_element_selector_by_role("attributes_cat")),
     ].forEach((m) => {
-      if (m.empty()) {
+      if (!m || m.empty()) {
         return;
       }
       m.selectAll("li").remove();
@@ -204,112 +204,99 @@ export function aux_populate_category_menus(
           );
       }
 
-      var cat_menu = m.selectAll("li").data(menu_items);
+      var menu_li = m.selectAll("li").data(menu_items);
+      menu_li.enter().append("li");
 
-      cat_menu
-        .enter()
-        .append("li")
-        .classed("disabled", (d) => d[0][1] === "heading")
-        .style("font-variant", (d) => (d[0][1] < -1 ? "small-caps" : "normal"));
+      var menu_links = menu_li.selectAll("a").data((d) => d);
+      menu_links.enter().append("a");
+      menu_links.exit().remove();
 
-      cat_menu
-        .selectAll("a")
-        .data((d) => d)
-        .enter()
-        .append("a")
+      menu_links
+        .each(function (d) {
+          if (d[1] === "heading") {
+            const $this = $(this);
+            const parent = $this.parent();
+            $this.remove();
+            parent.append($("<h6 class='dropdown-header'></h6>").text(d[0]));
+          }
+        })
+        .filter((d) => d[1] !== "heading")
+        .classed("dropdown-item", true)
+        .attr("href", "#")
+        .attr(
+          "style",
+          "color: #212529 !important; text-decoration: none !important;"
+        )
+        .on("click", (d) => {
+          if (d3.event) d3.event.preventDefault();
+          if (d[2]) d[2].call();
+        })
         .html((d, i, j) => {
           let htm = d[0];
           let type = "unknown";
-
           if (d[1] in self.schema) {
             type = self.schema[d[1]].type;
           }
-
           if (d[1] in self.uniqs && type === "String") {
-            htm =
-              htm +
-              '<span title="Number of unique values" class="badge pull-right">' +
+            htm +=
+              '<span title="Number of unique values" class="badge bg-secondary float-end">' +
               self.uniqs[d[1]] +
               "</span>";
           }
-
           return htm;
         })
-        .attr("style", (d, i, j) => {
-          if (d[1] === "heading") return "font-style: italic";
-          if (j === 0) {
-            return " font-weight: bold;";
-          }
-          return null;
-        })
-        .attr("href", "#")
-        .on("click", (d) => {
-          if (d[2]) {
-            d[2].call();
-          }
-        });
+        .style("font-weight", (d, i, j) => (j === 0 ? "bold" : null));
     });
 
     [d3.select(self.get_ui_element_selector_by_role("shapes"))].forEach((m) => {
+      if (m.empty()) return;
       m.selectAll("li").remove();
-      var cat_menu = m
-        .selectAll("li")
-        .data(
+      var menu_items = [
+        [["None", null, _.partial(self.handle_shape_categorical, null)]],
+      ].concat(
+        valid_shapes.map((d, i) => [
           [
-            [["None", null, _.partial(self.handle_shape_categorical, null)]],
-          ].concat(
-            valid_shapes.map((d, i) => [
-              [
-                _menu_label_gen(d),
-                d["raw_attribute_key"],
-                _.partial(self.handle_shape_categorical, d["raw_attribute_key"]),
-              ],
-            ])
-          )
-        );
+            _menu_label_gen(d),
+            d["raw_attribute_key"],
+            _.partial(self.handle_shape_categorical, d["raw_attribute_key"]),
+          ],
+        ])
+      );
 
-      cat_menu
-        .enter()
-        .append("li")
-        .style("font-variant", (d) => (d[0][1] < -1 ? "small-caps" : "normal"));
+      var menu_li = m.selectAll("li").data(menu_items);
+      menu_li.enter().append("li");
 
-      cat_menu
-        .selectAll("a")
-        .data((d) => d)
-        .enter()
-        .append("a")
+      var menu_links = menu_li.selectAll("a").data((d) => d);
+      menu_links.enter().append("a");
+      menu_links.exit().remove();
+
+      menu_links
+        .classed("dropdown-item", true)
+        .attr("href", "#")
+        .attr(
+          "style",
+          "color: #212529 !important; text-decoration: none !important;"
+        )
+        .on("click", (d) => {
+          if (d3.event) d3.event.preventDefault();
+          if (d[2]) d[2].call();
+        })
         .html((d, i, j) => {
           let htm = d[0];
           let type = "unknown";
-
           if (_.contains(_.keys(self.schema), d[1])) {
             type = self.schema[d[1]].type;
           }
-
           if (_.contains(_.keys(self.uniqs), d[1]) && type === "String") {
-            htm =
-              htm +
-              '<span title="Number of unique values" class="badge pull-right">' +
+            htm +=
+              '<span title="Number of unique values" class="badge bg-secondary float-end">' +
               self.uniqs[d[1]] +
               "</span>";
           }
-
           return htm;
         })
-        .attr("style", (d, i, j) => {
-          if (j === 0) {
-            return " font-weight: bold;";
-          }
-          return null;
-        })
-        .attr("href", "#")
-        .on("click", (d) => {
-          if (d[2]) {
-            d[2].call();
-          }
-        });
+        .style("font-weight", (d, i, j) => (j === 0 ? "bold" : null));
     });
-
     $(self.get_ui_element_selector_by_role("opacity_invert"))
       .off("click")
       .on("click", function (e) {
@@ -320,7 +307,7 @@ export function aux_populate_category_menus(
           self.update(true);
           self.draw_attribute_labels();
         }
-        $(this).toggleClass("btn-active btn-default");
+        $(this).toggleClass("active");
       });
 
     $(self.get_ui_element_selector_by_role("attributes_invert"))
@@ -345,47 +332,44 @@ export function aux_populate_category_menus(
           self.update(true);
           self.draw_attribute_labels();
         }
-        $(this).toggleClass("btn-active btn-default");
+        $(this).toggleClass("active");
       });
 
     [d3.select(self.get_ui_element_selector_by_role("opacity"))].forEach((m) => {
+      if (m.empty()) return;
       m.selectAll("li").remove();
-      var cat_menu = m
-        .selectAll("li")
-        .data(
-          [[["None", null, _.partial(self.handle_attribute_opacity, null)]]].concat(
-            valid_scales.map((d, i) => [
-              [
-                d["label"],
-                d["raw_attribute_key"],
-                _.partial(self.handle_attribute_opacity, d["raw_attribute_key"]),
-              ],
-            ])
-          )
-        );
+      var menu_items = [
+        [["None", null, _.partial(self.handle_attribute_opacity, null)]],
+      ].concat(
+        valid_scales.map((d, i) => [
+          [
+            d["label"],
+            d["raw_attribute_key"],
+            _.partial(self.handle_attribute_opacity, d["raw_attribute_key"]),
+          ],
+        ])
+      );
 
-      cat_menu
-        .enter()
-        .append("li")
-        .style("font-variant", (d) => (d[0][1] < -1 ? "small-caps" : "normal"));
-      cat_menu
-        .selectAll("a")
-        .data((d) => d)
-        .enter()
-        .append("a")
-        .text((d, i, j) => d[0])
-        .attr("style", (d, i, j) => {
-          if (j === 0) {
-            return " font-weight: bold;";
-          }
-          return null;
-        })
+      var menu_li = m.selectAll("li").data(menu_items);
+      menu_li.enter().append("li");
+
+      var menu_links = menu_li.selectAll("a").data((d) => d);
+      menu_links.enter().append("a");
+      menu_links.exit().remove();
+
+      menu_links
+        .classed("dropdown-item", true)
         .attr("href", "#")
+        .attr(
+          "style",
+          "color: #212529 !important; text-decoration: none !important;"
+        )
         .on("click", (d) => {
-          if (d[2]) {
-            d[2].call();
-          }
-        });
+          if (d3.event) d3.event.preventDefault();
+          if (d[2]) d[2].call();
+        })
+        .text((d) => d[0])
+        .style("font-weight", (d, i, j) => (j === 0 ? "bold" : null));
     });
   }
 }

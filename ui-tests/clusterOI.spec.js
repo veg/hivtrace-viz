@@ -38,11 +38,11 @@ const getAcceptDialogFunction = (message) => {
 const openEditor = async (page) => {
   // go to clusterOI tab
   await expect(page.locator("#priority-set-tab")).toBeVisible();
+  await expect(page.locator("#priority-set-tab")).not.toHaveClass(/disabled/);
   await page.locator("#priority-set-tab").click();
 
   // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await expect(page.locator(".jsPanel")).toHaveCount(0);
 
   await expect(page.locator("#trace-priority-sets")).toBeVisible();
   await expect(
@@ -50,8 +50,7 @@ const openEditor = async (page) => {
   ).toBeVisible();
   await page.getByText("Create A Cluster of Interest", { exact: true }).click();
 
-  jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1, { timeout: 10000 });
 };
 
 const createCluster = async (page, nodes, editorOpen = false) => {
@@ -60,10 +59,9 @@ const createCluster = async (page, nodes, editorOpen = false) => {
   }
 
   for (const node of nodes) {
-    await page
-      .locator('[data-hivtrace-ui-role="priority-panel-nodeids"]')
-      .fill(node);
-    await page.locator("#priority-panel-add-node").click();
+    const input = page.locator('[data-hivtrace-ui-role="priority-panel-nodeids"]');
+    await input.fill(node);
+    await input.press("Enter");
   }
 
   let nodeTable = await page.locator("#priority-panel-node-table");
@@ -95,7 +93,7 @@ const previewClusterOI = async (page) => {
  */
 const saveClusterOI = async (page, name, expectDialog = false) => {
   await page.locator("#priority-panel-save").click();
-  await expect(page.locator(".has-error")).toBeVisible();
+  await expect(page.locator(".is-invalid")).toBeVisible();
 
   await page
     .locator('[data-hivtrace-ui-role="priority-panel-name"]')
@@ -115,9 +113,9 @@ const saveClusterOI = async (page, name, expectDialog = false) => {
   await expect(page.locator(".has-error")).toHaveCount(0);
 
   // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await expect(page.locator(".jsPanel")).toHaveCount(0);
 
+  await expect(page.locator("#priority-set-tab")).not.toHaveClass(/disabled/);
   await page.locator("#priority-set-tab").click();
 
   await expect(
@@ -192,8 +190,7 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
     })
     .click();
 
-  const jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1, { timeout: 10000 });
 
   await createCluster(page, ["01_AEMK272426TH2015"], true);
 

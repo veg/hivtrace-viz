@@ -33,9 +33,14 @@ function center_cluster_handler(self, d) {
     @param release [optional]: the cluster object to release the "fixed" flag from
 */
 
-function handle_cluster_click(self, cluster, release) {
+function handle_cluster_click(self, cluster, release, event) {
+  const e = event || d3.event;
+  if (e && e.defaultPrevented) return;
+  if (e) {
+    e.stopPropagation();
+  }
   var container = d3.select(self.container);
-  var id = "d3_context_menu_id";
+  var id = self.dom_prefix + "-context-menu";
   var menu_object = container.select("#" + id);
 
   if (menu_object.empty()) {
@@ -55,10 +60,14 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
+      .attr("href", "#")
       .text("Expand cluster")
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = 0;
-        self.expand_cluster_handler(cluster, true);
+        self.dispatch.cluster_expand(cluster);
         menu_object.style("display", "none");
       });
 
@@ -66,8 +75,12 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
+      .attr("href", "#")
       .text("Center on screen")
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = 0;
         center_cluster_handler(self, cluster);
         menu_object.style("display", "none");
@@ -77,11 +90,16 @@ function handle_cluster_click(self, cluster, release) {
       .append("li")
       .append("a")
       .attr("tabindex", "-1")
-      .text((d) => {
-        if (cluster.fixed) return "Allow cluster to float";
-        return "Hold cluster at current position";
-      })
+      .attr("href", "#")
+      .text(
+        cluster.fixed
+          ? "Allow cluster to float"
+          : "Hold cluster at current position"
+      )
       .on("click", (d) => {
+        if (d3.event) {
+          d3.event.stopPropagation();
+        }
         cluster.fixed = !cluster.fixed;
         menu_object.style("display", "none");
       });
@@ -91,8 +109,12 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => "Show this cluster in separate tab")
+        .attr("href", "#")
+        .text("Show this cluster in separate tab")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           self.open_exclusive_tab_view(
             cluster.cluster_id,
             null,
@@ -108,8 +130,12 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
-        .text((d) => "Add this cluster to the cluster of interest")
+        .attr("href", "#")
+        .text("Add this cluster to the cluster of interest")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           clustersOfInterest
             .get_editor()
             .append_nodes(_.map(cluster.children, (c) => self.entity_id(c)));
@@ -127,8 +153,12 @@ function handle_cluster_click(self, cluster, release) {
         .append("li")
         .append("a")
         .attr("tabindex", "-1")
+        .attr("href", "#")
         .text("Show on map")
         .on("click", (d) => {
+          if (d3.event) {
+            d3.event.stopPropagation();
+          }
           //console.log(cluster)
           self.open_exclusive_tab_view(
             cluster.cluster_id,
@@ -139,13 +169,14 @@ function handle_cluster_click(self, cluster, release) {
         });
     }
 
-    //cluster.fixed = 1;
-
-    menu_object
-      .style("position", "absolute")
-      .style("left", String(d3.event.offsetX) + "px")
-      .style("top", String(d3.event.offsetY) + "px")
-      .style("display", "block");
+    if (d3.event || event) {
+      const mouse_coords = d3.mouse(container.node());
+      menu_object
+        .style("position", "absolute")
+        .style("left", mouse_coords[0] + 5 + "px")
+        .style("top", mouse_coords[1] + 5 + "px")
+        .style("display", "block");
+    }
   } else {
     if (release) {
       release.fixed = 0;
@@ -156,7 +187,17 @@ function handle_cluster_click(self, cluster, release) {
   container.on(
     "click",
     (d) => {
-      handle_cluster_click(self, null, already_fixed ? null : cluster);
+      if (
+        d3.event.target === container.node() ||
+        d3.event.target.tagName === "svg"
+      ) {
+        handle_cluster_click(
+          self,
+          null,
+          already_fixed ? null : cluster,
+          d3.event
+        );
+      }
     },
     true
   );
@@ -169,5 +210,10 @@ module.exports = {
   normalize_node_attributes: (json) =>
     networkUtils.normalize_node_attributes(json, kGlobals),
   unpack_compact_json: networkUtils.unpack_compact_json,
+  attribute_node_value_by_id: (node, id, number, self) =>
+    networkUtils.attribute_node_value_by_id(node, id, number, self, kGlobals),
+  is_empty: (self) => networkUtils.is_empty(self),
+  has_network_attribute: (self, key) =>
+    networkUtils.has_network_attribute(self, key, kGlobals),
   handle_cluster_click,
 };

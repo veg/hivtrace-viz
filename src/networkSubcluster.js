@@ -117,12 +117,17 @@ export function view_subcluster(
           .attr(
             "min",
             timeDateUtil.DateViewFormatSlider(
-              d3.min(network.nodes, (node) =>
-                network.attribute_node_value_by_id(
-                  node,
-                  timeDateUtil._networkCDCDateField
+              d3.min(
+                _.filter(
+                  _.map(network.nodes, (node) =>
+                    network.attribute_node_value_by_id(
+                      node,
+                      timeDateUtil._networkCDCDateField
+                    )
+                  ),
+                  (d) => d instanceof Date
                 )
-              )
+              ) || timeDateUtil.getAncientDate()
             )
           )
           .on("change", function (e) {

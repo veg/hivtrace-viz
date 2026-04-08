@@ -11,6 +11,7 @@ import $ from "jquery";
  * @param {Function} i18n - Translation function.
  * @param {Object} kGlobals - Global constants.
  * @param {Object} HTX - HIVTxNetwork module.
+ * @param {Event} [event] - The event object.
  * @returns {void}
  */
 export function handle_attribute_categorical(
@@ -19,38 +20,41 @@ export function handle_attribute_categorical(
   self,
   i18n,
   kGlobals,
-  HTX
+  HTX,
+  event
 ) {
   const graph_data = self.json;
   var set_attr = "None";
 
-  d3.select(self.get_ui_element_selector_by_role("attributes_invert")).style(
-    "display",
-    "none"
-  );
+  $(self.get_ui_element_selector_by_role("attributes_invert")).hide();
 
   self.network_svg.selectAll("radialGradient").remove();
+  
 
   [
     ["attributes", false],
-    ["attributes_cat", true],
+    ["attributes_cat", false],
   ].forEach((lbl) => {
-    d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
-      .selectAll("li")
-      .selectAll("a")
-      .attr("style", (d, i) => {
-        if (d[1] === cat_id) {
-          set_attr = d[0];
-          return " font-weight: bold;";
-        }
-        return null;
-      });
-    d3.select(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
-      "Color: " + set_attr + ' <span class="caret"></span>'
+    const selector = self.get_ui_element_selector_by_role(lbl[0], lbl[1]);
+    if (!selector) return;
+    const $menu = $(selector);
+    $menu.find("li a").each(function () {
+      const $this = $(this);
+      const d = d3.select(this).datum();
+      if (d && d[1] === cat_id) {
+        set_attr = d[0];
+        $this.css("font-weight", "bold");
+      } else {
+        $this.css("font-weight", "");
+      }
+    });
+
+    $(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
+      "Color: " + set_attr
     );
   });
 
-  self.clusters.forEach((the_cluster) => {
+  _.each(self.clusters, (the_cluster) => {
     delete the_cluster["gradient"];
     the_cluster["binned_attributes"] = self.stratify(
       self.attribute_cluster_distribution(the_cluster, cat_id)
@@ -172,7 +176,9 @@ export function handle_attribute_categorical(
   if (!skip_update) {
     self.update(true);
   }
-  if (d3.event) {
+  if (event) {
+    event.preventDefault();
+  } else if (d3.event) {
     d3.event.preventDefault();
   }
 
@@ -188,6 +194,7 @@ export function handle_attribute_categorical(
  * @param {Function} i18n - Translation function.
  * @param {Object} kGlobals - Global constants.
  * @param {Object} scatterPlot - ScatterPlot module.
+ * @param {Event} [event] - The event object.
  * @returns {void}
  */
 export function handle_attribute_continuous(
@@ -195,7 +202,8 @@ export function handle_attribute_continuous(
   self,
   i18n,
   kGlobals,
-  scatterPlot
+  scatterPlot,
+  event
 ) {
   const graph_data = self.json;
   var set_attr = "None";
@@ -205,34 +213,38 @@ export function handle_attribute_continuous(
 
   self.network_svg.selectAll("radialGradient").remove();
 
-  self.clusters.forEach((the_cluster) => {
+  _.each(self.clusters, (the_cluster) => {
     delete the_cluster["binned_attributes"];
     delete the_cluster["gradient"];
   });
 
   [
     ["attributes", false],
-    ["attributes_cat", true],
+    ["attributes_cat", false],
   ].forEach((lbl) => {
-    d3.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1]))
-      .selectAll("li")
-      .selectAll("a")
-      .attr("style", (d, i) => {
-        if (d[1] === cat_id) {
-          set_attr = d[0];
-          return " font-weight: bold;";
-        }
-        return null;
-      });
-    d3.select(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
-      "Color: " + set_attr + ' <span class="caret"></span>'
+    const selector = self.get_ui_element_selector_by_role(lbl[0], lbl[1]);
+    if (!selector) return;
+    const $menu = $(selector);
+    $menu.find("li a").each(function () {
+      const $this = $(this);
+      const d = d3.select(this).datum();
+      if (d && d[1] === cat_id) {
+        set_attr = d[0];
+        $this.css("font-weight", "bold");
+      } else {
+        $this.css("font-weight", "");
+      }
+    });
+
+    $(self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])).html(
+      "Color: " + set_attr
     );
   });
 
-  d3.select(self.get_ui_element_selector_by_role("attributes_invert"))
-    .style("display", set_attr === "None" ? "none" : "inline")
-    .classed("btn-active", false)
-    .classed("btn-default", true);
+  $(self.get_ui_element_selector_by_role("attributes_invert"))
+    .css("display", set_attr === "None" ? "none" : "inline")
+    .removeClass("btn-active")
+    .addClass("btn-default");
 
   self.colorizer["continuous"] = true;
 
@@ -303,7 +315,7 @@ export function handle_attribute_continuous(
     self.colorizer["category_map"] = null;
     self.colorizer["category_pairwise"] = null;
 
-    self.clusters.forEach((the_cluster) => {
+    _.each(self.clusters, (the_cluster) => {
       the_cluster["gradient"] = self.compute_cluster_gradient(the_cluster, cat_id);
     });
 
@@ -337,9 +349,7 @@ export function handle_attribute_continuous(
         });
       }
     });
-    d3.select(
-      self.get_ui_element_selector_by_role("aux_svg_holder_enclosed", true)
-    ).style("display", null);
+    $(self.get_ui_element_selector_by_role("aux_svg_holder_enclosed", true)).show();
 
     scatterPlot.scatterPlot(
       points,
@@ -366,7 +376,9 @@ export function handle_attribute_continuous(
 
   self.draw_attribute_labels();
   self.update(true);
-  if (d3.event) {
+  if (event) {
+    event.preventDefault();
+  } else if (d3.event) {
     d3.event.preventDefault();
   }
 
@@ -381,24 +393,27 @@ export function handle_attribute_continuous(
  * @param {Object} self - The network object.
  * @param {Function} i18n - Translation function.
  * @param {Object} kGlobals - Global constants.
+ * @param {Event} [event] - The event object.
  * @returns {void}
  */
-export function handle_shape_categorical(cat_id, self, i18n, kGlobals) {
+export function handle_shape_categorical(cat_id, self, i18n, kGlobals, event) {
   const graph_data = self.json;
   var set_attr = "None";
 
   ["shapes"].forEach((lbl) => {
-    d3.select(self.get_ui_element_selector_by_role(lbl))
-      .selectAll("li")
-      .selectAll("a")
-      .attr("style", (d, i) => {
-        if (d[1] === cat_id) {
-          set_attr = d[0];
-          return " font-weight: bold;";
-        }
-        return null;
-      });
-    d3.select(self.get_ui_element_selector_by_role(lbl + "_label")).html(
+    const $menu = $(self.get_ui_element_selector_by_role(lbl));
+    $menu.find("li a").each(function () {
+      const $this = $(this);
+      const d = d3.select(this).datum();
+      if (d && d[1] === cat_id) {
+        set_attr = d[0];
+        $this.css("font-weight", "bold");
+      } else {
+        $this.css("font-weight", "");
+      }
+    });
+
+    $(self.get_ui_element_selector_by_role(lbl + "_label")).html(
       i18n("network_tab")["shape"] + ": " + set_attr + ' <span class="caret"></span>'
     );
   });
@@ -428,7 +443,9 @@ export function handle_shape_categorical(cat_id, self, i18n, kGlobals) {
 
   self.draw_attribute_labels();
   self.update(true);
-  if (d3.event) {
+  if (event) {
+    event.preventDefault();
+  } else if (d3.event) {
     d3.event.preventDefault();
   }
 }
@@ -440,24 +457,27 @@ export function handle_shape_categorical(cat_id, self, i18n, kGlobals) {
  * @param {Object} self - The network object.
  * @param {Function} i18n - Translation function.
  * @param {Object} kGlobals - Global constants.
+ * @param {Event} [event] - The event object.
  * @returns {void}
  */
-export function handle_attribute_opacity(cat_id, self, i18n, kGlobals) {
+export function handle_attribute_opacity(cat_id, self, i18n, kGlobals, event) {
   const graph_data = self.json;
   var set_attr = "None";
 
   ["opacity"].forEach((lbl) => {
-    d3.select(self.get_ui_element_selector_by_role(lbl))
-      .selectAll("li")
-      .selectAll("a")
-      .attr("style", (d, i) => {
-        if (d[1] === cat_id) {
-          set_attr = d[0];
-          return " font-weight: bold;";
-        }
-        return null;
-      });
-    d3.select(self.get_ui_element_selector_by_role(lbl + "_label")).html(
+    const $menu = $(self.get_ui_element_selector_by_role(lbl));
+    $menu.find("li a").each(function () {
+      const $this = $(this);
+      const d = d3.select(this).datum();
+      if (d && d[1] === cat_id) {
+        set_attr = d[0];
+        $this.css("font-weight", "bold");
+      } else {
+        $this.css("font-weight", "");
+      }
+    });
+
+    $(self.get_ui_element_selector_by_role(lbl + "_label")).html(
       i18n("network_tab")["opacity"] +
         ": " +
         set_attr +
@@ -465,10 +485,10 @@ export function handle_attribute_opacity(cat_id, self, i18n, kGlobals) {
     );
   });
 
-  d3.select(self.get_ui_element_selector_by_role("opacity_invert"))
-    .style("display", set_attr === "None" ? "none" : "inline")
-    .classed("btn-active", false)
-    .classed("btn-default", true);
+  $(self.get_ui_element_selector_by_role("opacity_invert"))
+    .css("display", set_attr === "None" ? "none" : "inline")
+    .removeClass("btn-active")
+    .addClass("btn-default");
 
   self.colorizer["opacity_id"] = cat_id;
   if (cat_id) {
@@ -490,7 +510,9 @@ export function handle_attribute_opacity(cat_id, self, i18n, kGlobals) {
 
   self.draw_attribute_labels();
   self.update(true);
-  if (d3.event) {
+  if (event) {
+    event.preventDefault();
+  } else if (d3.event) {
     d3.event.preventDefault();
   }
 }
