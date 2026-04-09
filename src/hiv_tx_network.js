@@ -924,6 +924,7 @@ class HIVTxNetwork {
 
     // Build a map of entity lists & sizes for defined_groups
     var size_by_pg = {};
+    var entities_by_pg = {};
 
     // Also keep sizes for overlap_groups for superset/duplicate checks
     var size_by_overlap = {};
@@ -942,7 +943,14 @@ class HIVTxNetwork {
       });
     });
 
-    // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
+    // Build size map for defined_groups (needed for superset/duplicate checks)
+    _.each(defined_groups, (pg) => {
+      const ents = this.aggregate_indvidual_level_records(pg.nodes);
+      entities_by_pg[pg.name] = ents;
+      size_by_pg[pg.name] = ents.length;
+    });
+
+    // For each defined group, compute overlap only considering nodes that are present in overlap_groups
     _.each(defined_groups, (pg) => {
       const overlap = {
         sets: new Set(),
@@ -952,13 +960,13 @@ class HIVTxNetwork {
       };
 
       const by_set_count = {};
-      _.each(pg.nodes, (n) => {
+      _.each(entities_by_pg[pg.name], (n) => {
         const entity_id = this.entity_id(n);
 
         // Only care about nodes in defined_groups that are present in overlap_groups
         if (
           entity_id in this[output_key] &&
-          this[output_key][entity_id].size > 1
+          this[output_key][entity_id].size >= 1
         ) {
           overlap.nodes++;
           this[output_key][entity_id].forEach((overlap_pg_name) => {
