@@ -2748,8 +2748,6 @@ class HIVTxNetwork {
       return;
     }
 
-    pg.archived = archived;
-
     fetch(this.mjc_archive_url, {
       method: "POST",
       headers: {
@@ -2757,21 +2755,23 @@ class HIVTxNetwork {
       },
       body: JSON.stringify({
         name: pg.name,
-        archived: pg.archived,
+        archived: archived,
         mjc_uuid: this.mjc_uuid,
       }),
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(
-            "Network response was not ok: " + response.statusText
-          );
+          throw new Error(response.statusText);
         }
         return response.json();
       })
       .then((data) => {
-        clustersOfInterest.draw_priority_set_table(this);
-        clustersOfInterest.draw_priority_set_table(this, null, null, true);
+        pg.archived = archived;
+        clustersOfInterest.draw_priority_set_table(this, null, null, false, true);
+        clustersOfInterest.draw_priority_set_table(this, null, null, true, true);
+      })
+      .catch((err) => {
+        alert("Failed to " + (archived ? "archive" : "unarchive") + " " + name + ": " + err.message);
       });
   }
 

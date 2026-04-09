@@ -1430,7 +1430,8 @@ function draw_priority_set_table(
   self,
   container,
   priority_groups,
-  archive_table = false
+  archive_table = false,
+  skip_recompute = false
 ) {
   container =
     container ||
@@ -1442,24 +1443,26 @@ function draw_priority_set_table(
     } else {
       priority_groups = _.filter(priority_groups, (pg) => !pg.archived);
     }
-    self.priority_groups_compute_node_membership();
-    if (self.isMJCNetwork) {
-      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
-      self.priority_groups_compute_overlap_mjc(
-        priority_groups,
-        self.overlap_defined_priority_groups,
-        "priority_node_overlap",
-        "overlap"
-      );
-    } else {
-      // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
-      self.priority_groups_compute_overlap_mjc(
-        priority_groups,
-        self.overlap_defined_priority_groups,
-        "priority_node_overlap_mjc",
-        "overlap_mjc"
-      );
-      self.priority_groups_compute_overlap(priority_groups);
+    if (!skip_recompute) {
+      self.priority_groups_compute_node_membership();
+      if (self.isMJCNetwork) {
+        // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap",
+          "overlap"
+        );
+      } else {
+        // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap_mjc",
+          "overlap_mjc"
+        );
+        self.priority_groups_compute_overlap(priority_groups);
+      }
     }
     var headers = [
       [
