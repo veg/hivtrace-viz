@@ -3984,7 +3984,7 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
   _network_js__WEBPACK_IMPORTED_MODULE_13__.ensure_node_attributes_exist(json);
 
   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
-  json.Edges = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(json.Edges, function (e) {
+  json.Edges = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(json.Edges || [], function (e) {
     return "source" in e && "target" in e;
   });
 
@@ -5519,13 +5519,10 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
       if (priority_group) {
         cluster_nodes = self.priority_groups_find_by_name(priority_group);
         if (cluster_nodes) {
-          // For MJC networks, use nodes array directly since node_objects only contains local nodes
-          if (self.isMJCNetwork) {
-            cluster_nodes = cluster_nodes.nodes || [];
-          } else if (self.has_multiple_sequences) {
-            cluster_nodes = self.aggregate_indvidual_level_records(cluster_nodes.node_objects);
+          if (self.has_multiple_sequences) {
+            cluster_nodes = self.aggregate_indvidual_level_records(cluster_nodes.node_objects || []);
           } else {
-            cluster_nodes = cluster_nodes.node_objects;
+            cluster_nodes = cluster_nodes.node_objects || [];
           }
         } else {
           return;
@@ -5533,12 +5530,25 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
       } else {
         cluster_nodes = self._extract_nodes_by_id(cluster_id);
       }
+
+      // Filter out REDACTED nodes if the toggle is active
+      if (self.isMJCNetwork && !self.fullMJCNetwork) {
+        var $redacted_toggle = $(self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true));
+        if ($redacted_toggle.data("redacted-hidden")) {
+          cluster_nodes = cluster_nodes.filter(function (n) {
+            return !self.entity_id(n).startsWith("REDACTED_");
+          });
+        }
+      }
       d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("cluster_list_data_export", true)).on("click", function (d) {
         if (self._is_CDC_executive_mode) {
           alert(_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.WarnExecutiveMode);
         } else {
           _helpers_js__WEBPACK_IMPORTED_MODULE_4__.export_csv_button(self._extract_attributes_for_nodes(cluster_nodes, column_ids));
         }
+      });
+      cluster_nodes = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].sortBy(cluster_nodes, function (n) {
+        return _this2.entity_id(n);
       });
       if (group_by_attribute) {
         underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(column_ids, function (column) {
@@ -5591,6 +5601,17 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
         var cluster_id = button_clicked.data("cluster");
         self._cluster_list_view_render(cluster_id ? cluster_id.toString() : "", !group_by_id, d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("cluster_list_payload", true)), button_clicked.data("priority_list"));
       });
+
+      // Redacted nodes toggle — only for non-admin MJC networks
+      d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)).on("click", function () {
+        d3__WEBPACK_IMPORTED_MODULE_0__.event.preventDefault();
+        var $btn = $(this);
+        var hidden = $btn.data("redacted-hidden");
+        $btn.data("redacted-hidden", !hidden);
+        $btn.text(hidden ? "Hide Redacted" : "Show Redacted");
+        var view_toggle = $(self.get_ui_element_selector_by_role("cluster_list_view_toggle", true));
+        self._cluster_list_view_render(view_toggle.data("cluster") ? view_toggle.data("cluster").toString() : "", view_toggle.data({"cluster_id":"Cluster ID","visibillity":"Visibillity","list":"List","view":"View","expand":"Expand","size":"Size","genotyped_last_two_months":"# genotyped <= two months","genotyped_last_two_months_ratio":"Recently genotyped ratio","number_of_genotypes_in_past_2_months":"Genotypes past 2 mo","scaled_number_of_genotypes_in_past_2_months":"Genotypes past 2 mo scaled","group_by_attribute":"Group by attribute","group_by_id":"Group by ID","listing_nodes":"Listing nodes ","missing":"Missing"}["view"]) !== "id", d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("cluster_list_payload", true)), view_toggle.data("priority_list"));
+      });
       $(self.get_ui_element_selector_by_role("cluster_list", true)).on("show.bs.modal", function (event) {
         var $modal = $(event.target);
         var link_clicked = event.relatedTarget ? $(event.relatedTarget) : null;
@@ -5614,6 +5635,16 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
           view_toggle.data("cluster", cluster_id);
           view_toggle.data("priority_list", null);
         }
+
+        // Show/hide and reset the redacted toggle for MJC non-admin networks
+        var $redacted_toggle = $(self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true));
+        if (self.isMJCNetwork && !self.fullMJCNetwork) {
+          $redacted_toggle.show();
+          $redacted_toggle.data("redacted-hidden", true);
+          $redacted_toggle.text("Show Redacted");
+        } else {
+          $redacted_toggle.hide();
+        }
         self._cluster_list_view_render(cluster_id,
         //cluster_id,
         $(self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)).data({"cluster_id":"Cluster ID","visibillity":"Visibillity","list":"List","view":"View","expand":"Expand","size":"Size","genotyped_last_two_months":"# genotyped <= two months","genotyped_last_two_months_ratio":"Recently genotyped ratio","number_of_genotypes_in_past_2_months":"Genotypes past 2 mo","scaled_number_of_genotypes_in_past_2_months":"Genotypes past 2 mo scaled","group_by_attribute":"Group by attribute","group_by_id":"Group by ID","listing_nodes":"Listing nodes ","missing":"Missing"}["view"]) !== "id", modal.select(self.get_ui_element_selector_by_role("cluster_list_payload", true)), priority_list);
@@ -5631,7 +5662,8 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
         var headers = [[{
           value: "Node",
           help: "EHARS_ID of the node that overlaps with other clusterOI",
-          sort: "value"
+          sort: "value",
+          presort: "asc"
         }, {
           value: self.isMJCNetwork ? "My Jurisdiction's Cluster(s) of Interest" : "Other Cluster(s) of Interest",
           help: self.isMJCNetwork ? "Names of my jurisdiction's clusterOI where this node is included" : "Names of other clusterOI where this node is included",
@@ -5646,7 +5678,9 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
           }
           var overlap = use_mjc_overlap_list && !self.isMJCNetwork ? self.priority_node_overlap_mjc[eid] : self.priority_node_overlap[eid];
           var other_sets = "None";
-          if (overlap && overlap.size > 1) {
+          // Cross-set overlap maps only contain "other side" names, so size >= 1 means overlap
+          var is_cross_set = self.isMJCNetwork || use_mjc_overlap_list;
+          if (overlap && overlap.size > (is_cross_set ? 0 : 1)) {
             other_sets = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].sortBy(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(_toConsumableArray(overlap), function (d) {
               return d !== priority_list;
             })).join("; ");
@@ -6113,9 +6147,9 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
       }
       return false;
     });
-    self.edges = graph_data.Edges.filter(function (v, i) {
+    self.edges = graph_data.Edges ? graph_data.Edges.filter(function (v, i) {
       return v.source in connected_links && v.target in connected_links;
-    });
+    }) : [];
     self.edges = self.edges.map(function (v, i) {
       var cp_v = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].clone(v);
       cp_v.source = connected_links[v.source];
@@ -6124,15 +6158,17 @@ var _hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(js
       return cp_v;
     });
     compute_node_degrees(self.nodes, self.edges);
-    default_layout(self.initial_packed);
-    self.clusters.forEach(function (d, i) {
-      self.cluster_mapping[d.cluster_id] = i;
-      d.hxb2_linked = d.children.some(function (c) {
-        return c.hxb2_linked;
+    if (!self.isMJCNetwork || self.fullMJCNetwork) {
+      default_layout(self.initial_packed);
+      self.clusters.forEach(function (d, i) {
+        self.cluster_mapping[d.cluster_id] = i;
+        d.hxb2_linked = d.children.some(function (c) {
+          return c.hxb2_linked;
+        });
+        _compute_cluster_degrees(d);
+        d.distances = [];
       });
-      _compute_cluster_degrees(d);
-      d.distances = [];
-    });
+    }
     try {
       if (options && options["extra_menu"]) {
         var extra_ui_container = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("extra_operations_container"));
@@ -11062,6 +11098,7 @@ function _action_drop_down(self, pg) {
 
 function draw_priority_set_table(self, container, priority_groups) {
   var archive_table = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+  var skip_recompute = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
   container = container || (archive_table ? self.priority_set_archive_table : self.priority_set_table);
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
@@ -11074,14 +11111,16 @@ function draw_priority_set_table(self, container, priority_groups) {
         return !pg.archived;
       });
     }
-    self.priority_groups_compute_node_membership();
-    if (self.isMJCNetwork) {
-      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
-      self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap", "overlap");
-    } else {
-      // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
-      self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap_mjc", "overlap_mjc");
-      self.priority_groups_compute_overlap(priority_groups);
+    if (!skip_recompute) {
+      self.priority_groups_compute_node_membership();
+      if (self.isMJCNetwork) {
+        // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
+        self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap", "overlap");
+      } else {
+        // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
+        self.priority_groups_compute_overlap_mjc(priority_groups, self.overlap_defined_priority_groups, "priority_node_overlap_mjc", "overlap_mjc");
+        self.priority_groups_compute_overlap(priority_groups);
+      }
     }
     var headers = [[{
       value: "Type",
@@ -11495,6 +11534,11 @@ function draw_priority_set_table(self, container, priority_groups) {
     d3__WEBPACK_IMPORTED_MODULE_0__.select("#priority_set_table_download").on("click", function (d) {
       _helpers_js__WEBPACK_IMPORTED_MODULE_6__.export_csv_button(self.priority_groups_export_sets(), "clusters_of_interest_table");
     });
+    var tab_count_role = archive_table ? "priority_set_archive_tab_count" : "priority_set_tab_count";
+    var tab_count_el = d3__WEBPACK_IMPORTED_MODULE_0__.select(_misc_js__WEBPACK_IMPORTED_MODULE_7__.get_ui_element_selector_by_role(tab_count_role, true));
+    if (!tab_count_el.empty()) {
+      tab_count_el.text(priority_groups.length);
+    }
     window.reinitializeDropdown && window.reinitializeDropdown();
   }
 }
@@ -13469,6 +13513,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
 
       // Build a map of entity lists & sizes for defined_groups
       var size_by_pg = {};
+      var entities_by_pg = {};
 
       // Also keep sizes for overlap_groups for superset/duplicate checks
       var size_by_overlap = {};
@@ -13486,7 +13531,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         });
       });
 
-      // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
+      // Build size map for defined_groups (needed for superset/duplicate checks)
+      _.each(defined_groups, function (pg) {
+        var ents = _this.aggregate_indvidual_level_records(pg.nodes);
+        entities_by_pg[pg.name] = ents;
+        size_by_pg[pg.name] = ents.length;
+      });
+
+      // For each defined group, compute overlap only considering nodes that are present in overlap_groups
       _.each(defined_groups, function (pg) {
         var overlap = {
           sets: new Set(),
@@ -13495,11 +13547,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           duplicates: []
         };
         var by_set_count = {};
-        _.each(pg.nodes, function (n) {
+        _.each(entities_by_pg[pg.name], function (n) {
           var entity_id = _this.entity_id(n);
 
           // Only care about nodes in defined_groups that are present in overlap_groups
-          if (entity_id in _this[output_key] && _this[output_key][entity_id].size > 1) {
+          if (entity_id in _this[output_key] && _this[output_key][entity_id].size >= 1) {
             overlap.nodes++;
             _this[output_key][entity_id].forEach(function (overlap_pg_name) {
               // Collect counts per PG (these are names from overlap_groups)
@@ -14219,7 +14271,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "process_multiple_sequences",
     value: function process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
       var _this9 = this;
-      if (this.has_multiple_sequences && this.isPrimaryGraph) {
+      if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
         reduce_distance_within = reduce_distance_within || 0.000001;
         reduce_distance_between = reduce_distance_between || 0.015;
         var clusters = misc.hivtrace_cluster_depthwise_traversal(this.json.Nodes, this.json.Edges);
@@ -15430,7 +15482,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         */
         var today_string = timeDateUtil.DateFormats[0](_this13.get_reference_date());
         _this13.map_ids_to_objects();
-        if (_this13._is_CDC_auto_mode) {
+        if (_this13._is_CDC_auto_mode && !_this13.isMJCNetwork) {
           _.each(_this13.clusters, function (cluster_data, cluster_id) {
             _.each(cluster_data.subclusters, function (subcluster_data) {
               _.each(subcluster_data.priority_score, function (priority_score, i) {
@@ -15561,7 +15613,6 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         console.warn("Could not find priority group with name " + name);
         return;
       }
-      pg.archived = archived;
       fetch(this.mjc_archive_url, {
         method: "POST",
         headers: {
@@ -15569,17 +15620,20 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         },
         body: JSON.stringify({
           name: pg.name,
-          archived: pg.archived,
+          archived: archived,
           mjc_uuid: this.mjc_uuid
         })
       }).then(function (response) {
         if (!response.ok) {
-          throw new Error("Network response was not ok: " + response.statusText);
+          throw new Error(response.statusText);
         }
         return response.json();
       }).then(function (data) {
-        clustersOfInterest.draw_priority_set_table(_this15);
-        clustersOfInterest.draw_priority_set_table(_this15, null, null, true);
+        pg.archived = archived;
+        clustersOfInterest.draw_priority_set_table(_this15, null, null, false, true);
+        clustersOfInterest.draw_priority_set_table(_this15, null, null, true, true);
+      }).catch(function (err) {
+        alert("Failed to " + (archived ? "archive" : "unarchive") + " " + name + ": " + err.message);
       });
     }
 
@@ -16198,11 +16252,26 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     value: function aggregate_indvidual_level_records(node_list) {
       var _this27 = this;
       if (this.isMJCNetwork) {
-        // TODO: improve this to actually merge the node attributes
-        return _.uniq(node_list, function (n) {
-          var _n$id;
-          return (_n$id = n.id) !== null && _n$id !== void 0 ? _n$id : n.name;
+        // Group by primary key and merge, setting AliasedSequencesID
+        // so that simplify_multisequence_cluster (and other callers) can
+        // map all sequence IDs back to their entity.
+        var binned = _.groupBy(node_list, function (n) {
+          return _this27.primary_key(n);
         });
+        var new_list = [];
+        _.each(binned, function (values, key) {
+          if (values.length == 1) {
+            new_list.push(_.clone(values[0]));
+          } else {
+            var new_record = _.clone(values[0]);
+            new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(values, function (d) {
+              var _d$id;
+              return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : (_d$id = d.id) !== null && _d$id !== void 0 ? _d$id : d.name;
+            }));
+            new_list.push(new_record);
+          }
+        });
+        return new_list;
       }
       node_list = node_list || this.json.Nodes;
       var aggregator = function aggregator(values, key, record, store_key) {
@@ -16221,13 +16290,13 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         }
       };
       if (this.has_multiple_sequences) {
-        var binned = _.groupBy(node_list, function (n) {
+        var _binned = _.groupBy(node_list, function (n) {
           return _this27.primary_key(n);
         });
-        var new_list = [];
-        _.each(binned, function (values, key) {
+        var _new_list = [];
+        _.each(_binned, function (values, key) {
           if (values.length == 1) {
-            new_list.push(_.clone(values[0]));
+            _new_list.push(_.clone(values[0]));
           } else {
             var new_record = _.clone(values[0]);
             new_record[kGlobals.network.NodeAttributeID] = _.object(_.map(new_record[kGlobals.network.NodeAttributeID], function (d, k) {
@@ -16259,10 +16328,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : d.id;
             }));
             new_record[kGlobals.network.NodeAttributeID]["sequence_count"] = new_record[kGlobals.network.AliasedSequencesID].length;
-            new_list.push(new_record);
+            _new_list.push(new_record);
           }
         });
-        return new_list;
+        return _new_list;
       }
       return node_list;
     }

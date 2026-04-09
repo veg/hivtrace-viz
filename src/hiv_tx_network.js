@@ -3626,7 +3626,6 @@ class HIVTxNetwork {
       // Group by primary key and merge, setting AliasedSequencesID
       // so that simplify_multisequence_cluster (and other callers) can
       // map all sequence IDs back to their entity.
-      // TODO: improve this to actually merge the node attributes
       let binned = _.groupBy(node_list, (n) => this.primary_key(n));
       let new_list = [];
       _.each(binned, (values, key) => {

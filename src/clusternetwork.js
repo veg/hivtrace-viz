@@ -2220,16 +2220,12 @@ var hivtrace_cluster_network_graph = function (
       if (priority_group) {
         cluster_nodes = self.priority_groups_find_by_name(priority_group);
         if (cluster_nodes) {
-          // For MJC networks, use node_objects (resolved graph nodes with patient_attributes)
-          // .nodes are raw CoI entries without patient_attributes, causing all values to show as "Missing"
-          if (self.isMJCNetwork) {
-            cluster_nodes = cluster_nodes.node_objects || [];
-          } else if (self.has_multiple_sequences) {
+          if (self.has_multiple_sequences) {
             cluster_nodes = self.aggregate_indvidual_level_records(
-              cluster_nodes.node_objects
+              cluster_nodes.node_objects || []
             );
           } else {
-            cluster_nodes = cluster_nodes.node_objects;
+            cluster_nodes = cluster_nodes.node_objects || [];
           }
         } else {
           return;
