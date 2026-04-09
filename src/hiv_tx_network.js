@@ -2729,7 +2729,7 @@ class HIVTxNetwork {
     if (overlap_priority_sets_url) {
       this.overlap_priority_set_url = overlap_priority_sets_url;
       this.fetch_priority_sets(this.overlap_priority_set_url, (results) => {
-        this.overlap_defined_priority_groups = results;
+        this.overlap_defined_priority_groups = results.clusters || results;
         callback();
       });
     } else {
