@@ -2237,6 +2237,19 @@ var hivtrace_cluster_network_graph = function (
       } else {
         cluster_nodes = self._extract_nodes_by_id(cluster_id);
       }
+
+      // Filter out REDACTED nodes if the toggle is active
+      if (self.isMJCNetwork && !self.fullMJCNetwork) {
+        var $redacted_toggle = $(
+          self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+        );
+        if ($redacted_toggle.data("redacted-hidden")) {
+          cluster_nodes = cluster_nodes.filter(
+            (n) => !self.entity_id(n).startsWith("REDACTED_")
+          );
+        }
+      }
+
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
       ).on("click", (d) => {
@@ -2335,6 +2348,30 @@ var hivtrace_cluster_network_graph = function (
         );
       });
 
+      // Redacted nodes toggle — only for non-admin MJC networks
+      d3.select(
+        self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+      ).on("click", function () {
+        d3.event.preventDefault();
+        var $btn = $(this);
+        var hidden = $btn.data("redacted-hidden");
+        $btn.data("redacted-hidden", !hidden);
+        $btn.text(hidden ? "Hide Redacted" : "Show Redacted");
+
+        var view_toggle = $(
+          self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
+        );
+
+        self._cluster_list_view_render(
+          view_toggle.data("cluster") ? view_toggle.data("cluster").toString() : "",
+          view_toggle.data(__("clusters_tab")["view"]) !== "id",
+          d3.select(
+            self.get_ui_element_selector_by_role("cluster_list_payload", true)
+          ),
+          view_toggle.data("priority_list")
+        );
+      });
+
       $(self.get_ui_element_selector_by_role("cluster_list", true)).on(
         "show.bs.modal",
         (event) => {
@@ -2388,6 +2425,21 @@ var hivtrace_cluster_network_graph = function (
           } else {
             view_toggle.data("cluster", cluster_id);
             view_toggle.data("priority_list", null);
+          }
+
+          // Show/hide and reset the redacted toggle for MJC non-admin networks
+          var $redacted_toggle = $(
+            self.get_ui_element_selector_by_role(
+              "cluster_list_redacted_toggle",
+              true
+            )
+          );
+          if (self.isMJCNetwork && !self.fullMJCNetwork) {
+            $redacted_toggle.show();
+            $redacted_toggle.data("redacted-hidden", true);
+            $redacted_toggle.text("Show Redacted");
+          } else {
+            $redacted_toggle.hide();
           }
 
           self._cluster_list_view_render(
