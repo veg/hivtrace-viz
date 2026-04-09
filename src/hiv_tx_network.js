@@ -223,7 +223,7 @@ class HIVTxNetwork {
             _.mapObject(consensus_attributes, (d, k) => {
               let freq = _.countBy(d, (i) => i);
               if (_.size(freq) == 1) {
-                return _.keys(freq)[0];
+                return d[0];
               }
               return null;
             }),
@@ -422,7 +422,7 @@ class HIVTxNetwork {
 
   */
   process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-    if (this.has_multiple_sequences && this.isPrimaryGraph) {
+    if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
       reduce_distance_within = reduce_distance_within || 0.000001;
       reduce_distance_between = reduce_distance_between || 0.015;
 
@@ -924,6 +924,7 @@ class HIVTxNetwork {
 
     // Build a map of entity lists & sizes for defined_groups
     var size_by_pg = {};
+    var entities_by_pg = {};
 
     // Also keep sizes for overlap_groups for superset/duplicate checks
     var size_by_overlap = {};
@@ -942,7 +943,14 @@ class HIVTxNetwork {
       });
     });
 
-    // For each mjc group, compute overlap only considering nodes that are present in overlap_groups
+    // Build size map for defined_groups (needed for superset/duplicate checks)
+    _.each(defined_groups, (pg) => {
+      const ents = this.aggregate_indvidual_level_records(pg.nodes);
+      entities_by_pg[pg.name] = ents;
+      size_by_pg[pg.name] = ents.length;
+    });
+
+    // For each defined group, compute overlap only considering nodes that are present in overlap_groups
     _.each(defined_groups, (pg) => {
       const overlap = {
         sets: new Set(),
@@ -952,13 +960,13 @@ class HIVTxNetwork {
       };
 
       const by_set_count = {};
-      _.each(pg.nodes, (n) => {
+      _.each(entities_by_pg[pg.name], (n) => {
         const entity_id = this.entity_id(n);
 
         // Only care about nodes in defined_groups that are present in overlap_groups
         if (
           entity_id in this[output_key] &&
-          this[output_key][entity_id].size > 1
+          this[output_key][entity_id].size >= 1
         ) {
           overlap.nodes++;
           this[output_key][entity_id].forEach((overlap_pg_name) => {
@@ -2576,7 +2584,7 @@ class HIVTxNetwork {
       );
       this.map_ids_to_objects();
 
-      if (this._is_CDC_auto_mode) {
+      if (this._is_CDC_auto_mode && !this.isMJCNetwork) {
         _.each(this.clusters, (cluster_data, cluster_id) => {
           _.each(cluster_data.subclusters, (subcluster_data) => {
             _.each(subcluster_data.priority_score, (priority_score, i) => {
@@ -2721,7 +2729,7 @@ class HIVTxNetwork {
     if (overlap_priority_sets_url) {
       this.overlap_priority_set_url = overlap_priority_sets_url;
       this.fetch_priority_sets(this.overlap_priority_set_url, (results) => {
-        this.overlap_defined_priority_groups = results;
+        this.overlap_defined_priority_groups = results.clusters || results;
         callback();
       });
     } else {
@@ -2740,8 +2748,6 @@ class HIVTxNetwork {
       return;
     }
 
-    pg.archived = archived;
-
     fetch(this.mjc_archive_url, {
       method: "POST",
       headers: {
@@ -2749,20 +2755,23 @@ class HIVTxNetwork {
       },
       body: JSON.stringify({
         name: pg.name,
-        archived: pg.archived,
+        archived: archived,
+        mjc_uuid: this.mjc_uuid,
       }),
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(
-            "Network response was not ok: " + response.statusText
-          );
+          throw new Error(response.statusText);
         }
         return response.json();
       })
       .then((data) => {
-        clustersOfInterest.draw_priority_set_table(this);
-        clustersOfInterest.draw_priority_set_table(this, null, null, true);
+        pg.archived = archived;
+        clustersOfInterest.draw_priority_set_table(this, null, null, false, true);
+        clustersOfInterest.draw_priority_set_table(this, null, null, true, true);
+      })
+      .catch((err) => {
+        alert("Failed to " + (archived ? "archive" : "unarchive") + " " + name + ": " + err.message);
       });
   }
 
@@ -3614,8 +3623,27 @@ class HIVTxNetwork {
 
   aggregate_indvidual_level_records(node_list) {
     if (this.isMJCNetwork) {
-      // TODO: improve this to actually merge the node attributes
-      return _.uniq(node_list, (n) => n.id ?? n.name);
+      // Group by primary key and merge, setting AliasedSequencesID
+      // so that simplify_multisequence_cluster (and other callers) can
+      // map all sequence IDs back to their entity.
+      let binned = _.groupBy(node_list, (n) => this.primary_key(n));
+      let new_list = [];
+      _.each(binned, (values, key) => {
+        if (values.length == 1) {
+          new_list.push(_.clone(values[0]));
+        } else {
+          let new_record = _.clone(values[0]);
+          new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
+            _.map(values, (d) =>
+              d[kGlobals.network.AliasedSequencesID]
+                ? d[kGlobals.network.AliasedSequencesID]
+                : d.id ?? d.name
+            )
+          );
+          new_list.push(new_record);
+        }
+      });
+      return new_list;
     }
     node_list = node_list || this.json.Nodes;
 

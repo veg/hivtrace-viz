@@ -1047,7 +1047,7 @@ function open_editor(
     onclosed: function () {
       priority_set_editor = null;
       self.redraw_tables();
-      window.reinitalizeDropdown && window.reinitalizeDropdown();
+      window.reinitializeDropdown && window.reinitializeDropdown();
     },
   });
 }
@@ -1172,7 +1172,7 @@ function _action_drop_down(self, pg) {
                 title:
                   pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
               });
-              window.reinitalizeDropdown && window.reinitalizeDropdown();
+              window.reinitializeDropdown && window.reinitializeDropdown();
             },
           },
         ];
@@ -1194,7 +1194,7 @@ function _action_drop_down(self, pg) {
                   " (sequence level)",
                 raw_mspp: true,
               });
-              window.reinitalizeDropdown && window.reinitalizeDropdown();
+              window.reinitializeDropdown && window.reinitializeDropdown();
             },
           });
         }
@@ -1389,7 +1389,7 @@ function _action_drop_down(self, pg) {
           )
         ) {
           self.priority_groups_archive_mjc_set(ref_set.name, !pg.archived);
-          window.reinitalizeDropdown && window.reinitalizeDropdown();
+          window.reinitializeDropdown && window.reinitializeDropdown();
         }
       },
     });
@@ -1430,7 +1430,8 @@ function draw_priority_set_table(
   self,
   container,
   priority_groups,
-  archive_table = false
+  archive_table = false,
+  skip_recompute = false
 ) {
   container =
     container ||
@@ -1442,24 +1443,26 @@ function draw_priority_set_table(
     } else {
       priority_groups = _.filter(priority_groups, (pg) => !pg.archived);
     }
-    self.priority_groups_compute_node_membership();
-    if (self.isMJCNetwork) {
-      // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
-      self.priority_groups_compute_overlap_mjc(
-        priority_groups,
-        self.overlap_defined_priority_groups,
-        "priority_node_overlap",
-        "overlap"
-      );
-    } else {
-      // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
-      self.priority_groups_compute_overlap_mjc(
-        priority_groups,
-        self.overlap_defined_priority_groups,
-        "priority_node_overlap_mjc",
-        "overlap_mjc"
-      );
-      self.priority_groups_compute_overlap(priority_groups);
+    if (!skip_recompute) {
+      self.priority_groups_compute_node_membership();
+      if (self.isMJCNetwork) {
+        // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap",
+          "overlap"
+        );
+      } else {
+        // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap_mjc",
+          "overlap_mjc"
+        );
+        self.priority_groups_compute_overlap(priority_groups);
+      }
     }
     var headers = [
       [
@@ -2126,6 +2129,18 @@ function draw_priority_set_table(
         "clusters_of_interest_table"
       );
     });
+
+    var tab_count_role = archive_table
+      ? "priority_set_archive_tab_count"
+      : "priority_set_tab_count";
+    var tab_count_el = d3.select(
+      misc.get_ui_element_selector_by_role(tab_count_role, true)
+    );
+    if (!tab_count_el.empty()) {
+      tab_count_el.text(priority_groups.length);
+    }
+
+    window.reinitializeDropdown && window.reinitializeDropdown();
   }
 }
 

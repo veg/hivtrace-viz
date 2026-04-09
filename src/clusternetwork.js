@@ -80,7 +80,7 @@ var hivtrace_cluster_network_graph = function (
   network.ensure_node_attributes_exist(json);
 
   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
-  json.Edges = _.filter(json.Edges, (e) => "source" in e && "target" in e);
+  json.Edges = _.filter(json.Edges || [], (e) => "source" in e && "target" in e);
 
   /** Not primary networks are individual cluster/subcluster views.
       They don't interfere with the primary network object, and UI elements
@@ -2113,8 +2113,7 @@ var hivtrace_cluster_network_graph = function (
               node.patient_attributes.selected_mjc_date_identified = "REDACTED";
             } else if (
               !(
-                priority_group_name in
-                node.patient_attributes.mjc_date_identified
+                Object.hasOwn(node.patient_attributes.mjc_date_identified, priority_group_name)
               )
             ) {
               node.patient_attributes.selected_mjc_date_identified = "";
@@ -2221,15 +2220,12 @@ var hivtrace_cluster_network_graph = function (
       if (priority_group) {
         cluster_nodes = self.priority_groups_find_by_name(priority_group);
         if (cluster_nodes) {
-          // For MJC networks, use nodes array directly since node_objects only contains local nodes
-          if (self.isMJCNetwork) {
-            cluster_nodes = cluster_nodes.nodes || [];
-          } else if (self.has_multiple_sequences) {
+          if (self.has_multiple_sequences) {
             cluster_nodes = self.aggregate_indvidual_level_records(
-              cluster_nodes.node_objects
+              cluster_nodes.node_objects || []
             );
           } else {
-            cluster_nodes = cluster_nodes.node_objects;
+            cluster_nodes = cluster_nodes.node_objects || [];
           }
         } else {
           return;
@@ -2237,6 +2233,19 @@ var hivtrace_cluster_network_graph = function (
       } else {
         cluster_nodes = self._extract_nodes_by_id(cluster_id);
       }
+
+      // Filter out REDACTED nodes if the toggle is active
+      if (self.isMJCNetwork && !self.fullMJCNetwork) {
+        var $redacted_toggle = $(
+          self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+        );
+        if ($redacted_toggle.data("redacted-hidden")) {
+          cluster_nodes = cluster_nodes.filter(
+            (n) => !self.entity_id(n).startsWith("REDACTED_")
+          );
+        }
+      }
+
       d3.select(
         self.get_ui_element_selector_by_role("cluster_list_data_export", true)
       ).on("click", (d) => {
@@ -2248,6 +2257,8 @@ var hivtrace_cluster_network_graph = function (
           );
         }
       });
+
+      cluster_nodes = _.sortBy(cluster_nodes, (n) => this.entity_id(n));
 
       if (group_by_attribute) {
         _.each(column_ids, (column) => {
@@ -2335,6 +2346,30 @@ var hivtrace_cluster_network_graph = function (
         );
       });
 
+      // Redacted nodes toggle — only for non-admin MJC networks
+      d3.select(
+        self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+      ).on("click", function () {
+        d3.event.preventDefault();
+        var $btn = $(this);
+        var hidden = $btn.data("redacted-hidden");
+        $btn.data("redacted-hidden", !hidden);
+        $btn.text(hidden ? "Hide Redacted" : "Show Redacted");
+
+        var view_toggle = $(
+          self.get_ui_element_selector_by_role("cluster_list_view_toggle", true)
+        );
+
+        self._cluster_list_view_render(
+          view_toggle.data("cluster") ? view_toggle.data("cluster").toString() : "",
+          view_toggle.data(__("clusters_tab")["view"]) !== "id",
+          d3.select(
+            self.get_ui_element_selector_by_role("cluster_list_payload", true)
+          ),
+          view_toggle.data("priority_list")
+        );
+      });
+
       $(self.get_ui_element_selector_by_role("cluster_list", true)).on(
         "show.bs.modal",
         (event) => {
@@ -2390,6 +2425,21 @@ var hivtrace_cluster_network_graph = function (
             view_toggle.data("priority_list", null);
           }
 
+          // Show/hide and reset the redacted toggle for MJC non-admin networks
+          var $redacted_toggle = $(
+            self.get_ui_element_selector_by_role(
+              "cluster_list_redacted_toggle",
+              true
+            )
+          );
+          if (self.isMJCNetwork && !self.fullMJCNetwork) {
+            $redacted_toggle.show();
+            $redacted_toggle.data("redacted-hidden", true);
+            $redacted_toggle.text("Show Redacted");
+          } else {
+            $redacted_toggle.hide();
+          }
+
           self._cluster_list_view_render(
             cluster_id,
             //cluster_id,
@@ -2442,6 +2492,7 @@ var hivtrace_cluster_network_graph = function (
                 value: "Node",
                 help: "EHARS_ID of the node that overlaps with other clusterOI",
                 sort: "value",
+                presort: "asc",
               },
               {
                 value: self.isMJCNetwork
@@ -2478,7 +2529,9 @@ var hivtrace_cluster_network_graph = function (
                   ? self.priority_node_overlap_mjc[eid]
                   : self.priority_node_overlap[eid];
               let other_sets = "None";
-              if (overlap && overlap.size > 1) {
+              // Cross-set overlap maps only contain "other side" names, so size >= 1 means overlap
+              const is_cross_set = self.isMJCNetwork || use_mjc_overlap_list;
+              if (overlap && overlap.size > (is_cross_set ? 0 : 1)) {
                 other_sets = _.sortBy(
                   _.filter([...overlap], (d) => d !== priority_list)
                 ).join("; ");
@@ -3324,9 +3377,11 @@ var hivtrace_cluster_network_graph = function (
       return false;
     });
 
-    self.edges = graph_data.Edges.filter(
-      (v, i) => v.source in connected_links && v.target in connected_links
-    );
+    self.edges = graph_data.Edges
+      ? graph_data.Edges.filter(
+          (v, i) => v.source in connected_links && v.target in connected_links
+        )
+      : [];
 
     self.edges = self.edges.map((v, i) => {
       var cp_v = _.clone(v);
@@ -3338,13 +3393,15 @@ var hivtrace_cluster_network_graph = function (
 
     compute_node_degrees(self.nodes, self.edges);
 
-    default_layout(self.initial_packed);
-    self.clusters.forEach((d, i) => {
-      self.cluster_mapping[d.cluster_id] = i;
-      d.hxb2_linked = d.children.some((c) => c.hxb2_linked);
-      _compute_cluster_degrees(d);
-      d.distances = [];
-    });
+    if (!self.isMJCNetwork || self.fullMJCNetwork) {
+      default_layout(self.initial_packed);
+      self.clusters.forEach((d, i) => {
+        self.cluster_mapping[d.cluster_id] = i;
+        d.hxb2_linked = d.children.some((c) => c.hxb2_linked);
+        _compute_cluster_degrees(d);
+        d.distances = [];
+      });
+    }
 
     try {
       if (options && options["extra_menu"]) {
@@ -8996,6 +9053,10 @@ var hivtrace_cluster_network_graph = function (
 
     if (options["mjc-archive-url"]) {
       self.mjc_archive_url = options["mjc-archive-url"];
+    }
+
+    if (options["mjc-uuid"]) {
+      self.mjc_uuid = options["mjc-uuid"];
     }
 
     if (self.showing_diff) {
