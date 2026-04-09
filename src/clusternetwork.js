@@ -2262,6 +2262,8 @@ var hivtrace_cluster_network_graph = function (
         }
       });
 
+      cluster_nodes = _.sortBy(cluster_nodes, (n) => this.entity_id(n));
+
       if (group_by_attribute) {
         _.each(column_ids, (column) => {
           var binned = _.groupBy(cluster_nodes, (n) =>
@@ -2494,6 +2496,7 @@ var hivtrace_cluster_network_graph = function (
                 value: "Node",
                 help: "EHARS_ID of the node that overlaps with other clusterOI",
                 sort: "value",
+                presort: "asc",
               },
               {
                 value: self.isMJCNetwork
@@ -2530,7 +2533,9 @@ var hivtrace_cluster_network_graph = function (
                   ? self.priority_node_overlap_mjc[eid]
                   : self.priority_node_overlap[eid];
               let other_sets = "None";
-              if (overlap && overlap.size > 1) {
+              // Cross-set overlap maps only contain "other side" names, so size >= 1 means overlap
+              const is_cross_set = self.isMJCNetwork || use_mjc_overlap_list;
+              if (overlap && overlap.size > (is_cross_set ? 0 : 1)) {
                 other_sets = _.sortBy(
                   _.filter([...overlap], (d) => d !== priority_list)
                 ).join("; ");

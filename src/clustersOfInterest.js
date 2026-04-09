@@ -2127,6 +2127,16 @@ function draw_priority_set_table(
       );
     });
 
+    var tab_count_role = archive_table
+      ? "priority_set_archive_tab_count"
+      : "priority_set_tab_count";
+    var tab_count_el = d3.select(
+      misc.get_ui_element_selector_by_role(tab_count_role, true)
+    );
+    if (!tab_count_el.empty()) {
+      tab_count_el.text(priority_groups.length);
+    }
+
     window.reinitializeDropdown && window.reinitializeDropdown();
   }
 }
