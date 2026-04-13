@@ -344,6 +344,7 @@ var hivtrace_cluster_network_graph = function (
   );
 
   if (self.isPrimaryGraph) {
+    HTX.HIVTxNetwork._primaryInstance = self;
     clustersOfInterest.init(self);
     nodesTab.init(d3.select(nodes_table));
   }
@@ -3163,16 +3164,33 @@ var hivtrace_cluster_network_graph = function (
           "No filter",
           "Diagnosed within last 36 months",
           "Diagnosed within last 12 months",
-          "Part of a system clusterOI",
-          "Part of a clusterOI (system or manual)",
-          "Part of a clusterOI meeting national priority",
+          "Part of a site system clusterOI",
+          "Part of a site clusterOI (system or manual)",
+          "Part of a site clusterOI meeting national priority",
+          "Not in a site clusterOI (system or manual)",
+          "Not meeting national priority",
         ];
 
         self._mjc_active_filters = new Set();
 
+        const _collect_pg_node_ids = function (pg_groups, pg_filter) {
+          const node_set = new Set();
+          _.each(
+            pg_filter ? _.filter(pg_groups, pg_filter) : pg_groups,
+            (pg) => { _.each(pg.node_objects, (n) => node_set.add(n.id)); }
+          );
+          return node_set;
+        };
+
+        const _pg_filters = {
+          system: (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem,
+          national_priority: (pg) => pg.meets_priority_def,
+        };
+
         self._compute_mjc_node_set = function (filter_index) {
           const ref_date = self.get_reference_date();
-          const pg_groups = self.overlap_defined_priority_groups;
+          const primary_instance = HTX.HIVTxNetwork._primaryInstance;
+          const pg_groups = primary_instance ? primary_instance.defined_priority_groups : null;
 
           // Diagnosed within last 36 months
           if (filter_index === 1) {
@@ -3200,33 +3218,29 @@ var hivtrace_cluster_network_graph = function (
             );
           }
 
-          // Part of a system clusterOI
-          if (filter_index === 3 && pg_groups) {
-            const node_set = new Set();
-            _.each(
-              _.filter(pg_groups, (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem),
-              (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
-            );
-            return node_set;
-          }
+          if (filter_index >= 3 && filter_index <= 7) {
+            if (!pg_groups || !pg_groups.length) {
+              alert("Site clusterOI data is not yet available for filtering.");
+              return null;
+            }
 
-          // Part of a clusterOI (system or manual)
-          if (filter_index === 4 && pg_groups) {
-            const node_set = new Set();
-            _.each(pg_groups, (pg) => {
-              _.each(pg.nodes, (n) => node_set.add(n.name));
-            });
-            return node_set;
-          }
+            // Part of a site system clusterOI
+            if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);
+            // Part of a site clusterOI (system or manual)
+            if (filter_index === 4) return _collect_pg_node_ids(pg_groups, null);
+            // Part of a site clusterOI meeting national priority
+            if (filter_index === 5) return _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
 
-          // Part of a clusterOI meeting national priority
-          if (filter_index === 5 && pg_groups) {
-            const node_set = new Set();
-            _.each(
-              _.filter(pg_groups, (pg) => pg.meets_priority_def),
-              (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
-            );
-            return node_set;
+            // Not in a site clusterOI (system or manual)
+            if (filter_index === 6) {
+              const in_coi = _collect_pg_node_ids(pg_groups, null);
+              return new Set(_.map(_.filter(self.nodes, (n) => !in_coi.has(n.id)), (n) => n.id));
+            }
+            // Not meeting national priority
+            if (filter_index === 7) {
+              const in_priority = _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
+              return new Set(_.map(_.filter(self.nodes, (n) => !in_priority.has(n.id)), (n) => n.id));
+            }
           }
 
           return null; // No filter (index 0) or unrecognized
