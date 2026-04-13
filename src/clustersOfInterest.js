@@ -1802,7 +1802,7 @@ function draw_priority_set_table(
             }
             return v ? "Yes" : "No";
           },
-          value: pg.meets_priority_def ? "Yes" : "No",
+          value: pg.meets_priority_def,
           html: true,
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },

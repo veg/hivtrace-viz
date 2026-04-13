@@ -3224,8 +3224,18 @@ var hivtrace_cluster_network_graph = function (
               return null;
             }
 
-            // Compute meets_priority_def lazily on the overlap PGs using the site's cluster data
-            self.compute_meets_priority_def(pg_groups);
+            // TODO: meets_priority_def cannot be correctly computed on the MJC page because
+            // the site instance here has MJC-derived clusters, not the standalone site's clusters.
+            // As a workaround, read the latest history entry's national_priority value.
+            // A proper fix would be to either have the server include meets_priority_def in the
+            // overlap PG JSON response, or pass the site's cluster/subcluster priority_score data
+            // into the MJC page context.
+            _.each(pg_groups, (pg) => {
+              if (pg.meets_priority_def === undefined && pg.history && pg.history.length) {
+                const latest = pg.history[pg.history.length - 1];
+                pg.meets_priority_def = !!latest.national_priority;
+              }
+            });
 
             // Part of a site system clusterOI
             if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);
