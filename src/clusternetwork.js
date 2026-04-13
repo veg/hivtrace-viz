@@ -3177,7 +3177,7 @@ var hivtrace_cluster_network_graph = function (
           const node_set = new Set();
           _.each(
             pg_filter ? _.filter(pg_groups, pg_filter) : pg_groups,
-            (pg) => { _.each(pg.node_objects, (n) => node_set.add(n.id)); }
+            (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
           );
           return node_set;
         };
@@ -3190,7 +3190,7 @@ var hivtrace_cluster_network_graph = function (
         self._compute_mjc_node_set = function (filter_index) {
           const ref_date = self.get_reference_date();
           const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-          const pg_groups = primary_instance ? primary_instance.defined_priority_groups : null;
+          const pg_groups = primary_instance ? primary_instance.overlap_defined_priority_groups : null;
 
           // Diagnosed within last 36 months
           if (filter_index === 1) {
@@ -3223,6 +3223,9 @@ var hivtrace_cluster_network_graph = function (
               alert("Site clusterOI data is not yet available for filtering.");
               return null;
             }
+
+            // Compute meets_priority_def lazily on the overlap PGs using the site's cluster data
+            self.compute_meets_priority_def(pg_groups);
 
             // Part of a site system clusterOI
             if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);

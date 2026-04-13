@@ -1703,44 +1703,9 @@ class HIVTxNetwork {
     */
   priority_groups_validate(groups, auto_extend) {
     if (_.some(groups, (g) => !g.validated)) {
-      /** extract the list of clusters meeting national priority criteria,
-          these have been precomputed elsewhere (priority_score)
-      */
-
-      /*const priority_subclusters = _.map(
-        _.filter(
-          _.flatten(
-            _.map(
-              _.flatten(
-                _.map(this.clusters, (c) =>
-                  _.filter(
-                    _.filter(c.subclusters, (sc) => sc.priority_score.length)
-                  )
-                )
-              ),
-              (d) => d.priority_score
-            ),
-            1
-          ),
-          (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
-        ),
-        (d) => new Set(d)
-      );*/
-
-      const priority_subclusters = _.chain(this.clusters)
-        .map("subclusters")
-        .flatten()
-        .filter((sc) => sc.priority_score.length)
-        .map("priority_score")
-        .flatten(1)
-        .map((d) => this.unique_entity_list_from_ids(d))
-        .filter(
-          (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
-        )
-        .map((d) => new Set(d))
-        .value();
-
       this.map_ids_to_objects();
+
+      const priority_subclusters = this._get_priority_subclusters();
 
       const nodeID2idx = {};
       const edgesByNode = {};
@@ -2251,15 +2216,7 @@ class HIVTxNetwork {
           }
 
           /** check to see the CoI meets priority definitions */
-
-          const node_set = new Set(
-            this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
-          );
-          pg.meets_priority_def = _.some(
-            priority_subclusters,
-            (ps) =>
-              _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
-          );
+          this.compute_meets_priority_def([pg], priority_subclusters);
 
           const recent_dx_cutoffs = [
             {
@@ -2360,6 +2317,41 @@ class HIVTxNetwork {
         Compute which CoI do various nodes belong to, and
         define additional attributes for each node
    */
+
+  _get_priority_subclusters() {
+    return _.chain(this.clusters)
+      .map("subclusters")
+      .flatten()
+      .filter((sc) => sc.priority_score.length)
+      .map("priority_score")
+      .flatten(1)
+      .map((d) => this.unique_entity_list_from_ids(d))
+      .filter(
+        (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
+      )
+      .map((d) => new Set(d))
+      .value();
+  }
+
+  compute_meets_priority_def(pg_groups, priority_subclusters) {
+    const needs_compute = _.filter(pg_groups, (pg) => pg.meets_priority_def === undefined);
+    if (!needs_compute.length) return;
+
+    if (!priority_subclusters) {
+      priority_subclusters = this._get_priority_subclusters();
+    }
+
+    _.each(needs_compute, (pg) => {
+      const node_set = new Set(
+        this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+      );
+      pg.meets_priority_def = _.some(
+        priority_subclusters,
+        (ps) =>
+          _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
+      );
+    });
+  }
 
   priority_groups_compute_node_membership() {
     const pg_nodesets = [];
