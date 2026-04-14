@@ -1703,29 +1703,7 @@ class HIVTxNetwork {
     */
   priority_groups_validate(groups, auto_extend) {
     if (_.some(groups, (g) => !g.validated)) {
-      /** extract the list of clusters meeting national priority criteria,
-          these have been precomputed elsewhere (priority_score)
-      */
-
-      /*const priority_subclusters = _.map(
-        _.filter(
-          _.flatten(
-            _.map(
-              _.flatten(
-                _.map(this.clusters, (c) =>
-                  _.filter(
-                    _.filter(c.subclusters, (sc) => sc.priority_score.length)
-                  )
-                )
-              ),
-              (d) => d.priority_score
-            ),
-            1
-          ),
-          (d) => d.length >= this.CDC_data["autocreate-priority-set-size"]
-        ),
-        (d) => new Set(d)
-      );*/
+      this.map_ids_to_objects();
 
       const priority_subclusters = _.chain(this.clusters)
         .map("subclusters")
@@ -1739,8 +1717,6 @@ class HIVTxNetwork {
         )
         .map((d) => new Set(d))
         .value();
-
-      this.map_ids_to_objects();
 
       const nodeID2idx = {};
       const edgesByNode = {};
