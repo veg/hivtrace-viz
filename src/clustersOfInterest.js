@@ -1527,9 +1527,10 @@ function draw_priority_set_table(
             return _.isNaN(n) ? 0 : n;
           },
           help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
-          hidden:
-            !self.isMJCNetwork ||
-            self.MJCVariables.mjcSizeInJurisdictionEnabled === false,
+          // Hidden in admin/full view because addJurisdictionSizes is only run
+          // for the per-jurisdiction site view. Flag-off redaction is surfaced
+          // as "REDACTED" in the cell, not by hiding the column.
+          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
         },
         {
           value: "Priority",
@@ -1763,9 +1764,7 @@ function draw_priority_set_table(
             return String(v);
           },
           html: true,
-          hidden:
-            !self.isMJCNetwork ||
-            self.MJCVariables.mjcSizeInJurisdictionEnabled === false,
+          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
         },
         {
           // meets priority definition
