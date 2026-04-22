@@ -1361,6 +1361,31 @@ class HIVTxNetwork {
     }
   };
 
+  /** Batched upsert of all defined CoIs in a single POST.
+        Used on load to avoid N requests; the server's upsertMany handles the array.
+  */
+  priority_groups_batch_upsert = function () {
+    if (!(this.priority_set_table_write && this.priority_set_table_writeable)) {
+      return;
+    }
+    const sets = this.priority_groups_export(this.defined_priority_groups);
+    if (!sets.length) return;
+
+    const to_post = {
+      operation: "update",
+      url: window.location.href,
+      sets: JSON.stringify(sets),
+    };
+
+    d3.text(this.priority_set_table_write)
+      .header("Content-Type", "application/json")
+      .post(JSON.stringify(to_post), (error) => {
+        if (error) {
+          console.log("priority_groups_batch_upsert error:", error);
+        }
+      });
+  };
+
   /**
    *
    */
@@ -2677,17 +2702,9 @@ class HIVTxNetwork {
       }
 
       this.priority_groups_validate(this.defined_priority_groups);
-      // Update the DB with the new ClusterOI
-      const auto_create_priority_sets_names =
-        this.auto_create_priority_sets.map((pg) => pg.name);
-      _.each(this.defined_priority_groups, (pg) => {
-        if (pg.name in auto_create_priority_sets_names) {
-          this.priority_groups_update_node_sets(pg.name, "insert");
-        } else {
-          // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
-          this.priority_groups_update_node_sets(pg.name, "update");
-        }
-      });
+      // Write all defined CoIs back to the DB in a single batched upsert
+      // (one request instead of N — server's upsertMany handles the array).
+      this.priority_groups_batch_upsert();
 
       clustersOfInterest.draw_priority_set_table(this);
       clustersOfInterest.draw_priority_set_table(this, null, null, true); // null just uses defaults (for archived MJ clusterOI)
