@@ -2253,45 +2253,48 @@ class HIVTxNetwork {
 
           /** check to see the CoI meets priority definitions */
 
-          const node_set = new Set(
-            this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
-          );
-          pg.meets_priority_def = _.some(
-            priority_subclusters,
-            (ps) =>
-              _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
-          );
-
-          const recent_dx_cutoffs = [
-            {
-              field_name: "cluster_dx_recent12_mo",
-              months: 12,
-            },
-            {
-              field_name: "cluster_dx_recent36_mo",
-              months: 36,
-            },
-          ];
-
-          const ref_date = this.get_reference_date();
-
-          for (let dx of recent_dx_cutoffs) {
-            const cutoff = timeDateUtil.n_months_ago(
-              this.get_reference_date(),
-              dx.months
+          // MJC supplies these from the backend; the viz can't reproduce them.
+          if (!this.isMJCNetwork) {
+            const node_set = new Set(
+              this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+            );
+            pg.meets_priority_def = _.some(
+              priority_subclusters,
+              (ps) =>
+                _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
             );
 
-            pg[dx.field_name] = this.unique_entity_list(
-              _.filter(pg.node_objects, (n) =>
-                this.filter_by_date(
-                  cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  n,
-                  false
+            const recent_dx_cutoffs = [
+              {
+                field_name: "cluster_dx_recent12_mo",
+                months: 12,
+              },
+              {
+                field_name: "cluster_dx_recent36_mo",
+                months: 36,
+              },
+            ];
+
+            const ref_date = this.get_reference_date();
+
+            for (let dx of recent_dx_cutoffs) {
+              const cutoff = timeDateUtil.n_months_ago(
+                this.get_reference_date(),
+                dx.months
+              );
+
+              pg[dx.field_name] = this.unique_entity_list(
+                _.filter(pg.node_objects, (n) =>
+                  this.filter_by_date(
+                    cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    n,
+                    false
+                  )
                 )
-              )
-            ).length;
+              ).length;
+            }
           }
 
           // create / update history field of priority group
