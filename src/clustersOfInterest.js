@@ -1507,7 +1507,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[0] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+              return c[0];
             }
             return 0;
           },
