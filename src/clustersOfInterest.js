@@ -1550,7 +1550,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1];
+              return c[0] * 1e6 + c[1];
             }
             return 0;
           },
@@ -1565,7 +1565,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1];
+              return c[0] * 1e6 + c[1];
             }
             return 0;
           },
