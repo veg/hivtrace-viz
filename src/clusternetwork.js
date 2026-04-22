@@ -6970,7 +6970,8 @@ var hivtrace_cluster_network_graph = function (
         options &&
         options["no-subclusters"] &&
         options["no-subcluster-compute"]
-      )
+      ) &&
+      !(self.isMJCNetwork && !self.fullMJCNetwork)
     ) {
       // compute priority clusters
       self.annotate_priority_clusters(
