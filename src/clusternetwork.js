@@ -2110,14 +2110,17 @@ var hivtrace_cluster_network_graph = function (
             node.patient_attributes &&
             "mjc_date_identified" in node.patient_attributes
           ) {
-            if (node.patient_attributes.mjc_date_identified === "REDACTED") {
-              node.patient_attributes.selected_mjc_date_identified = "REDACTED";
+            if (typeof node.patient_attributes.mjc_date_identified !== "object") {
+              node.patient_attributes.selected_mjc_date_identified =
+                node.patient_attributes.mjc_date_identified;
             } else if (
-              !(
-                Object.hasOwn(node.patient_attributes.mjc_date_identified, priority_group_name)
+              !Object.hasOwn(
+                node.patient_attributes.mjc_date_identified,
+                priority_group_name
               )
             ) {
-              node.patient_attributes.selected_mjc_date_identified = "";
+              node.patient_attributes.selected_mjc_date_identified =
+                kGlobals.missing.label;
             } else {
               node.patient_attributes.selected_mjc_date_identified =
                 timeDateUtil.DateViewFormatExport(
@@ -2137,17 +2140,19 @@ var hivtrace_cluster_network_graph = function (
             "mjc_date_identified_12mo" in node.patient_attributes
           ) {
             if (
-              node.patient_attributes.mjc_date_identified_12mo === "REDACTED"
+              typeof node.patient_attributes.mjc_date_identified_12mo !==
+              "object"
             ) {
               node.patient_attributes.selected_mjc_date_identified_12mo =
-                "REDACTED";
+                node.patient_attributes.mjc_date_identified_12mo;
             } else if (
-              !(
-                priority_group_name in
-                node.patient_attributes.mjc_date_identified_12mo
+              !Object.hasOwn(
+                node.patient_attributes.mjc_date_identified_12mo,
+                priority_group_name
               )
             ) {
-              node.patient_attributes.selected_mjc_date_identified_12mo = "";
+              node.patient_attributes.selected_mjc_date_identified_12mo =
+                kGlobals.missing.label;
             } else {
               node.patient_attributes.selected_mjc_date_identified_12mo =
                 node.patient_attributes.mjc_date_identified_12mo[
