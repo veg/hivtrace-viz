@@ -1507,7 +1507,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+              return c[0] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
             }
             return 0;
           },
@@ -1523,7 +1523,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+              return c[0];
             }
             return 0;
           },
@@ -1828,12 +1828,7 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                String(v[0]) +
-                (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                    v[1] +
-                    " persons</span>"
-                  : "") +
+                v[0] + " clusters; " + v[1] + " persons" +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                     v[2].join(", ") +
@@ -1895,12 +1890,7 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                String(v[0]) +
-                (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                    v[1] +
-                    " persons</span>"
-                  : "") +
+                v[0] + " clusters; " + v[1] + " persons" +
                 (v[2].length
                   ? ' <span title="' +
                     (!self.isMJCNetwork ? "MJ " : "") +
