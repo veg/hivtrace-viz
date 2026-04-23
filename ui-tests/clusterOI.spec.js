@@ -206,29 +206,32 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
       .filter({ has: page.getByText("Cluster 2") })
   ).toBeVisible();
 
-  // delete all clusters, accept confirmation dialog
-  await page.locator(".view-edit-cluster").first().click();
+  // delete Cluster 1; accept confirmation dialog
+  await page
+    .locator("#priority_set_table tbody tr")
+    .filter({ hasText: "Cluster 1" })
+    .locator(".view-edit-cluster")
+    .click();
   const acceptDialog = getAcceptDialogFunction(
     "This action cannot be undone. Proceed?"
   );
   await page.on("dialog", acceptDialog);
   await page
+    .locator(".btn-group.open")
     .getByText("Delete this cluster of interest", { exact: true })
-    .first()
     .click();
   await page.off("dialog", acceptDialog);
 
   await expect(
-    await page
-      .locator("#priority_set_table")
-      .filter({ has: page.getByText("Cluster 1") })
-      .filter({ has: page.getByText("Cluster 2") })
+    page
+      .locator("#priority_set_table tbody tr")
+      .filter({ hasText: "Cluster 1" })
   ).toHaveCount(0);
 
   await expect(
-    await page
-      .locator("#priority_set_table")
-      .filter({ has: page.getByText("Cluster 2") })
+    page
+      .locator("#priority_set_table tbody tr")
+      .filter({ hasText: "Cluster 2" })
   ).toHaveCount(1);
 
   // delete the last cluster
@@ -238,8 +241,8 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
   );
   await page.on("dialog", acceptDialog2);
   await page
+    .locator(".btn-group.open")
     .getByText("Delete this cluster of interest", { exact: true })
-    .first()
     .click();
   await page.off("dialog", acceptDialog2);
 
