@@ -284,11 +284,16 @@ var hivtrace_cluster_network_graph = function (
     // SLKP 20200727 issues
 
     /** Secure HIV-TRACE specific settings */
+    const rawJurisdictionOption = self.lookup_option(
+      "jurisdiction",
+      "unknown",
+      options
+    );
     self.CDC_data = {
-      jurisdiction: self
-        .lookup_option("jurisdiction", "unknown", options)
-        .toLowerCase()
-        .replace(/\s/g, ""),
+      jurisdiction: rawJurisdictionOption.toLowerCase().replace(/\s/g, ""),
+      // Raw group_id (case preserved) used for node-level jurisdiction comparisons
+      // against patient_attributes.jurisdiction / joint_owners emitted by the backend.
+      group_id: rawJurisdictionOption,
       timestamp: self.today,
       "autocreate-priority-set-size": 5,
     };
@@ -2041,9 +2046,11 @@ var hivtrace_cluster_network_graph = function (
               return uid;
             }
             if (_.has(n, c.raw_attribute_key)) {
-              return n[c.raw_attribute_key];
+              return self._format_attribute_value(n[c.raw_attribute_key]);
             }
-            return self.attribute_node_value_by_id(n, c.raw_attribute_key);
+            return self._format_attribute_value(
+              self.attribute_node_value_by_id(n, c.raw_attribute_key)
+            );
           })
         );
       });
@@ -2096,6 +2103,33 @@ var hivtrace_cluster_network_graph = function (
       return _.flatten(return_array, true);
     };
 
+    /**
+     * Returns true if the viewing jurisdiction owns `node` — either as primary
+     * owner (`patient_attributes.jurisdiction`) or joint owner
+     * (`patient_attributes.joint_owners`). Foreign nodes whose fields are
+     * redacted to the string "REDACTED" correctly fall through to false.
+     */
+    self.isMine = function (node) {
+      const group_id = self.CDC_data && self.CDC_data.group_id;
+      if (!group_id) return false;
+      const pa = node && node[kGlobals.network.NodeAttributeID];
+      if (!pa) return false;
+      if (pa.jurisdiction === group_id) return true;
+      if (Array.isArray(pa.joint_owners) && pa.joint_owners.includes(group_id)) {
+        return true;
+      }
+      return false;
+    };
+
+    /**
+     * Format an attribute value for display/export. Array values (e.g.
+     * `joint_owners`) are joined with "; " so they don't collide with the CSV
+     * delimiter and render readably in the node list.
+     */
+    self._format_attribute_value = function (v) {
+      return Array.isArray(v) ? v.join("; ") : v;
+    };
+
     self._extract_mjc_attributes = function (priority_group_name) {
       if (!self.isMJCNetwork) {
         return [];
@@ -2110,14 +2144,17 @@ var hivtrace_cluster_network_graph = function (
             node.patient_attributes &&
             "mjc_date_identified" in node.patient_attributes
           ) {
-            if (node.patient_attributes.mjc_date_identified === "REDACTED") {
-              node.patient_attributes.selected_mjc_date_identified = "REDACTED";
+            if (typeof node.patient_attributes.mjc_date_identified !== "object") {
+              node.patient_attributes.selected_mjc_date_identified =
+                node.patient_attributes.mjc_date_identified;
             } else if (
-              !(
-                Object.hasOwn(node.patient_attributes.mjc_date_identified, priority_group_name)
+              !Object.hasOwn(
+                node.patient_attributes.mjc_date_identified,
+                priority_group_name
               )
             ) {
-              node.patient_attributes.selected_mjc_date_identified = "";
+              node.patient_attributes.selected_mjc_date_identified =
+                kGlobals.missing.label;
             } else {
               node.patient_attributes.selected_mjc_date_identified =
                 timeDateUtil.DateViewFormatExport(
@@ -2137,17 +2174,19 @@ var hivtrace_cluster_network_graph = function (
             "mjc_date_identified_12mo" in node.patient_attributes
           ) {
             if (
-              node.patient_attributes.mjc_date_identified_12mo === "REDACTED"
+              typeof node.patient_attributes.mjc_date_identified_12mo !==
+              "object"
             ) {
               node.patient_attributes.selected_mjc_date_identified_12mo =
-                "REDACTED";
+                node.patient_attributes.mjc_date_identified_12mo;
             } else if (
-              !(
-                priority_group_name in
-                node.patient_attributes.mjc_date_identified_12mo
+              !Object.hasOwn(
+                node.patient_attributes.mjc_date_identified_12mo,
+                priority_group_name
               )
             ) {
-              node.patient_attributes.selected_mjc_date_identified_12mo = "";
+              node.patient_attributes.selected_mjc_date_identified_12mo =
+                kGlobals.missing.label;
             } else {
               node.patient_attributes.selected_mjc_date_identified_12mo =
                 node.patient_attributes.mjc_date_identified_12mo[
@@ -2159,7 +2198,8 @@ var hivtrace_cluster_network_graph = function (
       }
 
       const MJC_ATTRIBUTES = [
-        "mjc_data_owners",
+        "jurisdiction",
+        "joint_owners",
         "cur_state_cd",
         "rsd_state_cd",
         "selected_mjc_date_identified",
@@ -2264,7 +2304,9 @@ var hivtrace_cluster_network_graph = function (
       if (group_by_attribute) {
         _.each(column_ids, (column) => {
           var binned = _.groupBy(cluster_nodes, (n) =>
-            self.attribute_node_value_by_id(n, column.raw_attribute_key)
+            self._format_attribute_value(
+              self.attribute_node_value_by_id(n, column.raw_attribute_key)
+            )
           );
           var sorted_keys = _.keys(binned).sort();
           var attribute_record = the_list.append("li");
@@ -2305,7 +2347,9 @@ var hivtrace_cluster_network_graph = function (
             patient_list
               .append("dd")
               .text(
-                self.attribute_node_value_by_id(node, column.raw_attribute_key)
+                self._format_attribute_value(
+                  self.attribute_node_value_by_id(node, column.raw_attribute_key)
+                )
               );
           });
         });
@@ -6965,7 +7009,8 @@ var hivtrace_cluster_network_graph = function (
         options &&
         options["no-subclusters"] &&
         options["no-subcluster-compute"]
-      )
+      ) &&
+      !(self.isMJCNetwork && !self.fullMJCNetwork)
     ) {
       // compute priority clusters
       self.annotate_priority_clusters(

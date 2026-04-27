@@ -1361,6 +1361,31 @@ class HIVTxNetwork {
     }
   };
 
+  /** Batched upsert of all defined CoIs in a single POST.
+        Used on load to avoid N requests; the server's upsertMany handles the array.
+  */
+  priority_groups_batch_upsert = function () {
+    if (!(this.priority_set_table_write && this.priority_set_table_writeable)) {
+      return;
+    }
+    const sets = this.priority_groups_export(this.defined_priority_groups);
+    if (!sets.length) return;
+
+    const to_post = {
+      operation: "update",
+      url: window.location.href,
+      sets: JSON.stringify(sets),
+    };
+
+    d3.text(this.priority_set_table_write)
+      .header("Content-Type", "application/json")
+      .post(JSON.stringify(to_post), (error) => {
+        if (error) {
+          console.log("priority_groups_batch_upsert error:", error);
+        }
+      });
+  };
+
   /**
    *
    */
@@ -2228,45 +2253,48 @@ class HIVTxNetwork {
 
           /** check to see the CoI meets priority definitions */
 
-          const node_set = new Set(
-            this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
-          );
-          pg.meets_priority_def = _.some(
-            priority_subclusters,
-            (ps) =>
-              _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
-          );
-
-          const recent_dx_cutoffs = [
-            {
-              field_name: "cluster_dx_recent12_mo",
-              months: 12,
-            },
-            {
-              field_name: "cluster_dx_recent36_mo",
-              months: 36,
-            },
-          ];
-
-          const ref_date = this.get_reference_date();
-
-          for (let dx of recent_dx_cutoffs) {
-            const cutoff = timeDateUtil.n_months_ago(
-              this.get_reference_date(),
-              dx.months
+          // MJC supplies these from the backend; the viz can't reproduce them.
+          if (!this.isMJCNetwork) {
+            const node_set = new Set(
+              this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
+            );
+            pg.meets_priority_def = _.some(
+              priority_subclusters,
+              (ps) =>
+                _.filter([...ps], (psi) => node_set.has(psi)).length === ps.size
             );
 
-            pg[dx.field_name] = this.unique_entity_list(
-              _.filter(pg.node_objects, (n) =>
-                this.filter_by_date(
-                  cutoff,
-                  timeDateUtil._networkCDCDateField,
-                  ref_date,
-                  n,
-                  false
+            const recent_dx_cutoffs = [
+              {
+                field_name: "cluster_dx_recent12_mo",
+                months: 12,
+              },
+              {
+                field_name: "cluster_dx_recent36_mo",
+                months: 36,
+              },
+            ];
+
+            const ref_date = this.get_reference_date();
+
+            for (let dx of recent_dx_cutoffs) {
+              const cutoff = timeDateUtil.n_months_ago(
+                this.get_reference_date(),
+                dx.months
+              );
+
+              pg[dx.field_name] = this.unique_entity_list(
+                _.filter(pg.node_objects, (n) =>
+                  this.filter_by_date(
+                    cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    n,
+                    false
+                  )
                 )
-              )
-            ).length;
+              ).length;
+            }
           }
 
           // create / update history field of priority group
@@ -2677,17 +2705,9 @@ class HIVTxNetwork {
       }
 
       this.priority_groups_validate(this.defined_priority_groups);
-      // Update the DB with the new ClusterOI
-      const auto_create_priority_sets_names =
-        this.auto_create_priority_sets.map((pg) => pg.name);
-      _.each(this.defined_priority_groups, (pg) => {
-        if (pg.name in auto_create_priority_sets_names) {
-          this.priority_groups_update_node_sets(pg.name, "insert");
-        } else {
-          // update all ClusterOI (not only just expanded ones, since we need to update ClusterOI history)
-          this.priority_groups_update_node_sets(pg.name, "update");
-        }
-      });
+      // Write all defined CoIs back to the DB in a single batched upsert
+      // (one request instead of N — server's upsertMany handles the array).
+      this.priority_groups_batch_upsert();
 
       clustersOfInterest.draw_priority_set_table(this);
       clustersOfInterest.draw_priority_set_table(this, null, null, true); // null just uses defaults (for archived MJ clusterOI)

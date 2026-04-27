@@ -1360,7 +1360,7 @@ function _action_drop_down(self, pg) {
           let ref_set = self.priority_groups_find_by_name(pg.name);
           if (ref_set) {
             let copied_node_objects = _.clone(ref_set.node_objects)
-              .filter((n) => !n.id.startsWith("REDACTED_"))
+              .filter((n) => self.isMine(n))
               .map((n) => n.id);
             self.priority_groups_add_from_mjc(
               site_pg_name,
@@ -1507,7 +1507,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+              return c[0];
             }
             return 0;
           },
@@ -1521,14 +1521,16 @@ function draw_priority_set_table(
           value: "My Size",
           width: 100,
           sort: function (c) {
-            c = c.value;
-            if (c) {
-              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
-            }
-            return 0;
+            const v = c.value;
+            if (v === "REDACTED" || v === null || v === undefined) return 0;
+            const n = Number(v);
+            return _.isNaN(n) ? 0 : n;
           },
           help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
-          hidden: !self.isMJCNetwork,
+          // Hidden in admin/full view because addJurisdictionSizes is only run
+          // for the per-jurisdiction site view. Flag-off redaction is surfaced
+          // as "REDACTED" in the cell, not by hiding the column.
+          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
         },
         {
           value: "Priority",
@@ -1550,7 +1552,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1];
+              return c[0] * 1e6 + c[1];
             }
             return 0;
           },
@@ -1565,7 +1567,7 @@ function draw_priority_set_table(
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1];
+              return c[0] * 1e6 + c[1];
             }
             return 0;
           },
@@ -1750,44 +1752,19 @@ function draw_priority_set_table(
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
-          // size / new nodes in my jurisdiction (for MJ ClusterOI, filtered to just nodes from jurisdiction)
-          value: [
-            self
-              .unique_entity_list(pg.node_objects)
-              .filter((n) => !n.includes("REDACTED")).length,
-            _.chain(pg.nodes)
-              .filter((n) => !n.name.includes("REDACTED"))
-              .groupBy((n) => self.entity_id_from_string(n.name))
-              .mapObject((v) =>
-                _.uniq(_.map(v, (n) => self.priority_groups_is_new_node(n)))
-              )
-              .filter((v) => v.length == 1 && v[0])
-              .size()
-              .value(),
-          ],
+          // size in my jurisdiction — backend-computed at addJurisdictionSizes()
+          // in hivtrace-secure. Counts both primary-owned nodes and nodes jointly
+          // owned via city-state pairs. Redacted to "REDACTED" when
+          // mjcSizeInJurisdictionEnabled is off.
+          value: pg.size_in_jurisdiction,
           width: 100,
           format: function (v) {
-            if (
-              self.isMJCNetwork &&
-              !self.fullMJCNetwork &&
-              self.MJCVariables.mjcCurrentSizeEnabled === false
-            ) {
-              return "REDACTED";
-            }
-            if (v) {
-              return (
-                v[0] +
-                (v[1]
-                  ? ' <span title="Number of nodes from my jurisdiction added by the system since the last network update" class="label label-default">' +
-                    v[1] +
-                    " new</span>"
-                  : "")
-              );
-            }
-            return "N/A";
+            if (v === "REDACTED") return "REDACTED";
+            if (v === undefined || v === null) return "N/A";
+            return String(v);
           },
           html: true,
-          hidden: !self.isMJCNetwork,
+          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
         },
         {
           // meets priority definition
@@ -1828,12 +1805,7 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                String(v[0]) +
-                (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                    v[1] +
-                    " persons</span>"
-                  : "") +
+                v[0] + " clusters; " + v[1] + " persons" +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                     v[2].join(", ") +
@@ -1895,12 +1867,7 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                String(v[0]) +
-                (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                    v[1] +
-                    " persons</span>"
-                  : "") +
+                v[0] + " clusters; " + v[1] + " persons" +
                 (v[2].length
                   ? ' <span title="' +
                     (!self.isMJCNetwork ? "MJ " : "") +
