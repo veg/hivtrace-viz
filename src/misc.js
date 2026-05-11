@@ -326,7 +326,7 @@ function hiv_trace_export_table_to_text(
 
 function hivtrace_coi_timeseries(cluster, element, plot_width) {
   const margin = { top: 30, right: 60, bottom: 10, left: 120 };
-  const formatTime = d3.time.format("%Y-%m-%d");
+  const formatTime = d3.time.format.utc("%Y-%m-%d");
   let data = _.sortBy(
     _.map(cluster.node_info, (d) => [d[0], formatTime.parse(d[1])]),
     (d) => d[1]
@@ -342,7 +342,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
   plot_width = plot_width || 1000;
 
   let x = d3.time
-    .scale()
+    .scale.utc()
     .domain(x_range)
     .rangeRound([margin.left, plot_width - margin.right]);
 
@@ -356,7 +356,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     .scale(x)
     .orient("top")
     .ticks(plot_width / 80)
-    .tickFormat(d3.time.format("%m/%y"));
+    .tickFormat(d3.time.format.utc("%m/%y"));
 
   element.selectAll("svg").remove();
 
@@ -462,7 +462,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       //console.log (highlight_nodes);
       let years_ago = _.map([1, 3], (ya) => {
         let some_years_ago = new Date(d[1]);
-        some_years_ago.setFullYear(d[1].getFullYear() - ya);
+        some_years_ago.setUTCFullYear(d[1].getUTCFullYear() - ya);
         if (some_years_ago < x_range[0]) some_years_ago = x_range[0];
         return some_years_ago;
       });
@@ -914,33 +914,33 @@ function hivtrace_plot_cluster_dynamics(
 
   if (!bin_by) {
     bin_by = function (date) {
-      var year = date.getFullYear(),
+      var year = date.getUTCFullYear(),
         nearest_quarter = new Date(),
         mid_point = new Date();
 
-      nearest_quarter.setDate(1);
-      nearest_quarter.setFullYear(year);
-      mid_point.setFullYear(year);
+      nearest_quarter.setUTCDate(1);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCFullYear(year);
 
-      var quarter = Math.floor(date.getMonth() / 3);
+      var quarter = Math.floor(date.getUTCMonth() / 3);
 
-      nearest_quarter.setMonth(quarter * 3);
-      nearest_quarter.setHours(0, 0, 0);
-      mid_point.setHours(0, 0, 0);
+      nearest_quarter.setUTCMonth(quarter * 3);
+      nearest_quarter.setUTCHours(0, 0, 0, 0);
+      mid_point.setUTCHours(0, 0, 0, 0);
 
-      nearest_quarter.setFullYear(year);
-      mid_point.setMonth(quarter * 3 + 1);
-      mid_point.setDate(15);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCMonth(quarter * 3 + 1);
+      mid_point.setUTCDate(15);
 
       return ["Q" + (quarter + 1) + " " + year, nearest_quarter, mid_point];
     };
 
-    min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
+    min_diff = new Date(Date.UTC(2018, 3, 0)) - new Date(Date.UTC(2018, 0, 0));
   }
 
   var x_tick_format = function (d) {
-    var year = d.getFullYear();
-    var quarter = Math.floor(d.getMonth() / 3) + 1;
+    var year = d.getUTCFullYear();
+    var quarter = Math.floor(d.getUTCMonth() / 3) + 1;
 
     return String(year) + "-Q" + quarter;
   };
@@ -964,7 +964,7 @@ function hivtrace_plot_cluster_dynamics(
 
     */
 
-  var x = d3.time.scale().range([0, width]);
+  var x = d3.time.scale.utc().range([0, width]);
 
   var y = y_scale ? y_scale : d3.scale.linear();
 
@@ -978,8 +978,8 @@ function hivtrace_plot_cluster_dynamics(
     .axis()
     .scale(x)
     .orient("bottom")
-    .ticks(d3.time.month, 3)
-    .tickFormat(d3.time.format("%m/%Y"));
+    .ticks(d3.time.month.utc, 3)
+    .tickFormat(d3.time.format.utc("%m/%Y"));
 
   if (x_tick_format) {
     xAxis.tickFormat(x_tick_format);
