@@ -387,7 +387,8 @@ function format_a_cell(data, index, item, priority_set_editor) {
 
               var dropdown_list = button_group_dropdown
                 .append("ul")
-                .classed("dropdown-menu", true);
+                .classed("dropdown-menu", true)
+                .classed("dropdown-menu-right", b.dropdown_align === "right");
               //.attr("aria-labelledby", menu_id);
 
               let items = b.dropdown;
