@@ -416,8 +416,8 @@ var hivtrace_cluster_network_graph = function (
     ) {
       self.using_time_filter = timeDateUtil.getCurrentDate();
       self.warning_string += __("network_tab")["cluster_display_info"];
-      self.using_time_filter.setFullYear(
-        self.using_time_filter.getFullYear() - 1
+      self.using_time_filter.setUTCFullYear(
+        self.using_time_filter.getUTCFullYear() - 1
       );
       self.cluster_filtering_functions["recent"] = self.filter_time_period;
     }
@@ -3670,7 +3670,7 @@ var hivtrace_cluster_network_graph = function (
                 return {};
               }
 
-              determine_scaling(d, values, [d3.time.scale()]);
+              determine_scaling(d, values, [d3.time.scale.utc()]);
             }
             return d;
           }),
@@ -4696,8 +4696,7 @@ var hivtrace_cluster_network_graph = function (
     _.each(seed_nodes, (sn) => _.each(sn, (n) => (n.visited = false)));
 
     var beginning_of_time = timeDateUtil.getCurrentDate();
-    beginning_of_time.setFullYear(1900);
-
+    beginning_of_time.setUTCFullYear(1900);
     // unused var
     // const nodesD2 = _.map(full_subclusters, (fc, i) => hivtrace_cluster_depthwise_traversal(
     //   fc["Nodes"],
@@ -4714,9 +4713,11 @@ var hivtrace_cluster_network_graph = function (
     _.each(network_events, (DT) => {
       const event_date = timeDateUtil.DateViewFormatSlider.parse(DT);
       const event_date_m3y = timeDateUtil.DateViewFormatSlider.parse(DT);
-      event_date_m3y.setFullYear(event_date.getFullYear() - 3);
+      event_date_m3y.setUTCFullYear(event_date.getUTCFullYear() - 3);
+      event_date_m3y.setUTCHours(0, 0, 0, 0);
       const event_date_m1y = timeDateUtil.DateViewFormatSlider.parse(DT);
-      event_date_m1y.setFullYear(event_date.getFullYear() - 1);
+      event_date_m1y.setUTCFullYear(event_date.getUTCFullYear() - 1);
+      event_date_m1y.setUTCHours(0, 0, 0, 0);
       const n_filter = (n) =>
         self.filter_by_date(
           beginning_of_time,
@@ -8552,8 +8553,8 @@ var hivtrace_cluster_network_graph = function (
       self.using_time_filter = null;
     } else {
       self.using_time_filter = timeDateUtil.getCurrentDate();
-      self.using_time_filter.setFullYear(
-        self.using_time_filter.getFullYear() - 1
+      self.using_time_filter.setUTCFullYear(
+        self.using_time_filter.getUTCFullYear() - 1
       );
     }
 

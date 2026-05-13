@@ -1654,8 +1654,8 @@ class HIVTxNetwork {
     if (passed) {
       if (
         this._is_CDC_ &&
-        (parsed_value.getFullYear() < 1970 ||
-          parsed_value.getFullYear() > timeDateUtil.DateUpperBoundYear)
+        (parsed_value.getUTCFullYear() < 1970 ||
+          parsed_value.getUTCFullYear() > timeDateUtil.DateUpperBoundYear)
       ) {
         throw Error("Invalid date");
       }
@@ -2554,7 +2554,7 @@ class HIVTxNetwork {
   load_priority_sets(url, is_writeable) {
     this.fetch_priority_sets(url, (results) => {
       let latest_date = new Date();
-      latest_date.setFullYear(1900);
+      latest_date.setUTCFullYear(1900);
       this.defined_priority_groups = this.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
       _.each(this.defined_priority_groups, (pg) => {
         _.each(pg.nodes, (n) => {
@@ -3213,7 +3213,7 @@ class HIVTxNetwork {
           if (value) {
             if (relative) {
               value = (this.get_reference_date() - value) / 31536000000;
-            } else value = String(value.getFullYear());
+            } else value = String(value.getUTCFullYear());
           } else {
             value = kGlobals.missing.label;
           }

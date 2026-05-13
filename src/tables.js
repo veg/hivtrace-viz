@@ -642,11 +642,11 @@ function filter_parse(filter_value) {
                 [is_range[1], is_range[2]],
                 (d) =>
                   new Date(
-                    d.substring(0, 4) +
-                      "-" +
-                      d.substring(4, 6) +
-                      "-" +
+                    Date.UTC(
+                      d.substring(0, 4),
+                      parseInt(d.substring(4, 6)) - 1,
                       d.substring(6, 8)
+                    )
                   )
               ),
             };
