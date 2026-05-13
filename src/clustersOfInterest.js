@@ -1831,7 +1831,7 @@ function draw_priority_set_table(
               : [
                   {
                     icon: "fa-eye",
-                    dropdown_align: "right",
+                    force_line_break: true,
                     dropdown: [
                       {
                         label: "List overlaps",
@@ -1906,7 +1906,7 @@ function draw_priority_set_table(
               : [
                   {
                     icon: "fa-eye",
-                    dropdown_align: "right",
+                    force_line_break: true,
                     dropdown: [
                       {
                         label: "List overlaps",

@@ -385,10 +385,13 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .classed("btn btn-default btn-xs dropdown-toggle", true)
                 .attr("data-toggle", "dropdown");
 
+              if (b.force_line_break) {
+                button_group.attr("style", "display: block;");
+              }
+
               var dropdown_list = button_group_dropdown
                 .append("ul")
-                .classed("dropdown-menu", true)
-                .classed("dropdown-menu-right", b.dropdown_align === "right");
+                .classed("dropdown-menu", true);
               //.attr("aria-labelledby", menu_id);
 
               let items = b.dropdown;
