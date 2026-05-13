@@ -341,8 +341,8 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
 
   plot_width = plot_width || 1000;
 
-  let x = d3.time
-    .scale.utc()
+  let x = d3.time.scale
+    .utc()
     .domain(x_range)
     .rangeRound([margin.left, plot_width - margin.right]);
 
@@ -1084,7 +1084,7 @@ function hivtrace_plot_cluster_dynamics(
 
   let quarter_span = Math.floor((max_x - min_x) / 3600 / 24 / 1000 / 30);
   if (quarter_span > 8) {
-    xAxis.ticks(d3.time.month, 3 * Math.ceil(quarter_span / 8));
+    xAxis.ticks(d3.time.month.utc, 3 * Math.ceil(quarter_span / 8));
   }
 
   x.domain([min_x, max_x]).clamp(true);
