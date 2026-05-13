@@ -47871,7 +47871,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (_timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getClusterTimeScale() && "Cluster sizes" in self.json && self.json["Cluster sizes"].length > 250) {
       self.using_time_filter = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate();
       self.warning_string += {"color":"Color","shape":"Shape","opacity":"Opacity","hide_others":"Hide Others","show_small_clusters":"Show small clusters","none":"None","expand_spacing":"Expand spacing","compress_spacing":"Compress spacing","enlarge_window":"Enlarge window","shrink_window":"Shrink window","save_image":"Save image","show_labels_for_all":"Show labels for all nodes","hide_labels_for_all":"Hide labels for all nodes","highlight_unsupported_edges":"Highlight unsupported edges","show_epidemiological_growth":"Show epidemiological growth","only_recent_clusters":"Show only clusters changed in the recent 12 months","show_removed_edges":"Show removed edges","min_cluster_size":"Minimum cluster size","toggle_epicurve":"Toggle Epicurve","text_in_attributes":"Text in attributes","cluster_display_info":"Only displaying clusters with nodes dates in the last 12 months [use the Clusters menu to change this]","search_help":"Type in text to select columns which <em>contain the term</em>. <br /> For example, typing in <code>MSM</code> will select rows that have 'MSM' as a part of the column value. <p /> Type in space separated terms (<code>MSM IDU</code>) to search for <b>either</b> term. <p/> Type in terms in quotes (<code>'male'</code>) to search for this <b>exact</b> term.<p/> If columns have date information you can use <code>YYYYMMDD:YYYYMMDD</code> to search for date ranges.<p/> Use <code>&lt;value</code> or <code>&gt;value</code> to search numerical columns<p/>","categorical":"Categorical","continuous":"Continuous"}["cluster_display_info"];
-      self.using_time_filter.setFullYear(self.using_time_filter.getFullYear() - 1);
+      self.using_time_filter.setUTCFullYear(self.using_time_filter.getUTCFullYear() - 1);
       self.cluster_filtering_functions["recent"] = self.filter_time_period;
     }
   }
@@ -50042,7 +50042,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
               // invalid scale
               return {};
             }
-            determine_scaling(d, values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale()]);
+            determine_scaling(d, values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale.utc()]);
           }
           return d;
         }), function (d) {
@@ -50731,8 +50731,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       });
     });
     var beginning_of_time = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate();
-    beginning_of_time.setFullYear(1900);
-
+    beginning_of_time.setUTCFullYear(1900);
     // unused var
     // const nodesD2 = _.map(full_subclusters, (fc, i) => hivtrace_cluster_depthwise_traversal(
     //   fc["Nodes"],
@@ -50748,9 +50747,11 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(network_events, function (DT) {
       var event_date = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider.parse(DT);
       var event_date_m3y = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider.parse(DT);
-      event_date_m3y.setFullYear(event_date.getFullYear() - 3);
+      event_date_m3y.setUTCFullYear(event_date.getUTCFullYear() - 3);
+      event_date_m3y.setUTCHours(0, 0, 0, 0);
       var event_date_m1y = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider.parse(DT);
-      event_date_m1y.setFullYear(event_date.getFullYear() - 1);
+      event_date_m1y.setUTCFullYear(event_date.getUTCFullYear() - 1);
+      event_date_m1y.setUTCHours(0, 0, 0, 0);
       var n_filter = function n_filter(n) {
         return self.filter_by_date(beginning_of_time, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__._networkCDCDateField, event_date, n);
       };
@@ -51015,7 +51016,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
               value: d,
               format: function format(d) {
                 return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
-                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
+                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
                 }).length;
               }
             });
@@ -51023,7 +51024,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
               value: d,
               format: function format(d) {
                 var recent = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
-                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
+                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
                 }).length;
                 return recent / Math.sqrt(d.children.length);
               }
@@ -53369,7 +53370,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       self.using_time_filter = null;
     } else {
       self.using_time_filter = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate();
-      self.using_time_filter.setFullYear(self.using_time_filter.getFullYear() - 1);
+      self.using_time_filter.setUTCFullYear(self.using_time_filter.getUTCFullYear() - 1);
     }
     if (self.using_time_filter) {
       self.cluster_filtering_functions["recent"] = self.filter_time_period;
@@ -55111,6 +55112,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         html: true,
         actions: pg.overlap.sets === 0 ? [] : [{
           icon: "fa-eye",
+          force_line_break: true,
           dropdown: [{
             label: "List overlaps",
             data: {
@@ -55138,6 +55140,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           html: true,
           actions: overlap.sets === 0 ? [] : [{
             icon: "fa-eye",
+            force_line_break: true,
             dropdown: [{
               label: "List overlaps",
               data: {
@@ -58483,7 +58486,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         return parsed_value;
       });
       if (passed) {
-        if (this._is_CDC_ && (parsed_value.getFullYear() < 1970 || parsed_value.getFullYear() > timeDateUtil.DateUpperBoundYear)) {
+        if (this._is_CDC_ && (parsed_value.getUTCFullYear() < 1970 || parsed_value.getUTCFullYear() > timeDateUtil.DateUpperBoundYear)) {
           throw Error("Invalid date");
         }
         return parsed_value;
@@ -59203,7 +59206,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       var _this13 = this;
       this.fetch_priority_sets(url, function (results) {
         var latest_date = new Date();
-        latest_date.setFullYear(1900);
+        latest_date.setUTCFullYear(1900);
         _this13.defined_priority_groups = _this13.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
         _.each(_this13.defined_priority_groups, function (pg) {
           _.each(pg.nodes, function (n) {
@@ -59729,7 +59732,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             if (value) {
               if (relative) {
                 value = (_this21.get_reference_date() - value) / 31536000000;
-              } else value = String(value.getFullYear());
+              } else value = String(value.getUTCFullYear());
             } else {
               value = kGlobals.missing.label;
             }
@@ -60627,7 +60630,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     bottom: 10,
     left: 120
   };
-  var formatTime = d3.time.format("%Y-%m-%d");
+  var formatTime = d3.time.format.utc("%Y-%m-%d");
   var data = _.sortBy(_.map(cluster.node_info, function (d) {
     return [d[0], formatTime.parse(d[1])];
   }), function (d) {
@@ -60644,9 +60647,9 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     return d[1];
   })));
   plot_width = plot_width || 1000;
-  var x = d3.time.scale().domain(x_range).rangeRound([margin.left, plot_width - margin.right]);
+  var x = d3.time.scale.utc().domain(x_range).rangeRound([margin.left, plot_width - margin.right]);
   var y = d3.scale.ordinal().domain(d3.range(data.length + 1)).rangeRoundPoints([margin.top, height - margin.bottom], 0.1);
-  var x_axis_object = d3.svg.axis().scale(x).orient("top").ticks(plot_width / 80).tickFormat(d3.time.format("%m/%y"));
+  var x_axis_object = d3.svg.axis().scale(x).orient("top").ticks(plot_width / 80).tickFormat(d3.time.format.utc("%m/%y"));
   element.selectAll("svg").remove();
   var svg = element.append("svg").attr("width", plot_width).attr("height", height).attr("viewBox", [0, 0, plot_width, height]);
   svg.append("g").attr("transform", "translate(0," + 0.6 * margin.top + ")").attr("class", "y time_axis")
@@ -60707,7 +60710,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     //console.log (highlight_nodes);
     var years_ago = _.map([1, 3], function (ya) {
       var some_years_ago = new Date(d[1]);
-      some_years_ago.setFullYear(d[1].getFullYear() - ya);
+      some_years_ago.setUTCFullYear(d[1].getUTCFullYear() - ya);
       if (some_years_ago < x_range[0]) some_years_ago = x_range[0];
       return some_years_ago;
     });
@@ -61100,26 +61103,26 @@ function hivtrace_plot_cluster_dynamics(time_series, container, x_title, y_title
   var min_diff;
   if (!bin_by) {
     bin_by = function bin_by(date) {
-      var year = date.getFullYear(),
+      var year = date.getUTCFullYear(),
         nearest_quarter = new Date(),
         mid_point = new Date();
-      nearest_quarter.setDate(1);
-      nearest_quarter.setFullYear(year);
-      mid_point.setFullYear(year);
-      var quarter = Math.floor(date.getMonth() / 3);
-      nearest_quarter.setMonth(quarter * 3);
-      nearest_quarter.setHours(0, 0, 0);
-      mid_point.setHours(0, 0, 0);
-      nearest_quarter.setFullYear(year);
-      mid_point.setMonth(quarter * 3 + 1);
-      mid_point.setDate(15);
+      nearest_quarter.setUTCDate(1);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCFullYear(year);
+      var quarter = Math.floor(date.getUTCMonth() / 3);
+      nearest_quarter.setUTCMonth(quarter * 3);
+      nearest_quarter.setUTCHours(0, 0, 0, 0);
+      mid_point.setUTCHours(0, 0, 0, 0);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCMonth(quarter * 3 + 1);
+      mid_point.setUTCDate(15);
       return ["Q" + (quarter + 1) + " " + year, nearest_quarter, mid_point];
     };
-    min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
+    min_diff = new Date(Date.UTC(2018, 3, 0)) - new Date(Date.UTC(2018, 0, 0));
   }
   var x_tick_format = function x_tick_format(d) {
-    var year = d.getFullYear();
-    var quarter = Math.floor(d.getMonth() / 3) + 1;
+    var year = d.getUTCFullYear();
+    var quarter = Math.floor(d.getUTCMonth() / 3) + 1;
     return String(year) + "-Q" + quarter;
   };
   if (options && options["x-tick-format"]) {
@@ -61138,14 +61141,14 @@ function hivtrace_plot_cluster_dynamics(time_series, container, x_title, y_title
            converted into time series
      */
 
-  var x = d3.time.scale().range([0, width]);
+  var x = d3.time.scale.utc().range([0, width]);
   var y = y_scale ? y_scale : d3.scale.linear();
   if (!y_scale) {
     y.rangeRound([height, 0]);
   } else {
     y.range([height, 0]);
   }
-  var xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(d3.time.month, 3).tickFormat(d3.time.format("%m/%Y"));
+  var xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(d3.time.month.utc, 3).tickFormat(d3.time.format.utc("%m/%Y"));
   if (x_tick_format) {
     xAxis.tickFormat(x_tick_format);
   }
@@ -61232,7 +61235,7 @@ function hivtrace_plot_cluster_dynamics(time_series, container, x_title, y_title
   }
   var quarter_span = Math.floor((max_x - min_x) / 3600 / 24 / 1000 / 30);
   if (quarter_span > 8) {
-    xAxis.ticks(d3.time.month, 3 * Math.ceil(quarter_span / 8));
+    xAxis.ticks(d3.time.month.utc, 3 * Math.ceil(quarter_span / 8));
   }
   x.domain([min_x, max_x]).clamp(true);
   y.domain([0.0, Math.round(skip_cumulative ? max_bin + 1 : time_series.length * 1.2)]).clamp(true);
@@ -61704,7 +61707,7 @@ var d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/d3-exposed.js");
 
 function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   var _defaultFloatFormat = d3.format(",.2r");
-  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+  var _defaultDateViewFormatShort = d3.time.format.utc("%B %Y");
   var margin = {
       top: 10,
       right: 10,
@@ -61713,10 +61716,10 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
     },
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
-  var x = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
+  var x = (dates ? d3.time.scale.utc() : d3.scale.linear()).domain(d3.extent(points, function (p) {
     return p.x;
   })).range([0, width]);
-  var y = (dates ? d3.time.scale() : d3.scale.linear()).domain(d3.extent(points, function (p) {
+  var y = (dates ? d3.time.scale.utc() : d3.scale.linear()).domain(d3.extent(points, function (p) {
     return p.y;
   })).range([height, 0]);
   var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(dates ? _defaultDateViewFormatShort : _defaultFloatFormat);
@@ -62418,6 +62421,9 @@ function format_a_cell(data, index, item, priority_set_editor) {
           if (_.isArray(b.dropdown)) {
             var button_group_dropdown = button_group.append("div").classed("btn-group btn-group-xs", true);
             this_button = button_group_dropdown.append("button").classed("btn btn-default btn-xs dropdown-toggle", true).attr("data-toggle", "dropdown");
+            if (b.force_line_break) {
+              button_group.attr("style", "display: block;");
+            }
             var dropdown_list = button_group_dropdown.append("ul").classed("dropdown-menu", true);
             //.attr("aria-labelledby", menu_id);
 
@@ -62633,7 +62639,7 @@ function filter_parse(filter_value) {
           return {
             type: "date",
             value: _.map([is_range[1], is_range[2]], function (d) {
-              return new Date(d.substring(0, 4) + "-" + d.substring(4, 6) + "-" + d.substring(6, 8));
+              return new Date(Date.UTC(d.substring(0, 4), parseInt(d.substring(4, 6)) - 1, d.substring(6, 8)));
             })
           };
         }
@@ -62745,30 +62751,30 @@ var _networkCDCIdentified = "mjc_date_identified";
 var _networkCDCIdentified_12Mo = "mjc_date_identified_12mo";
 var _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 var DateViewFormatExport = d3.time.format.utc("%m/%d/%Y");
-var DateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
+var DateViewFormatMMDDYYY = d3.time.format.utc("%m%d%Y");
 /** this is currently used to display node addition dates to COI */
 
-var DateViewFormatShort = d3.time.format("%B %Y");
+var DateViewFormatShort = d3.time.format.utc("%B %Y");
 /** Used to generate legend labels for date-valued attributes for network displayes*/
 
-var DateViewFormat = d3.time.format("%b %d, %Y");
+var DateViewFormat = d3.time.format.utc("%b %d, %Y");
 /** Used to generate pop-over labels for node displays, and COI views*/
 
 /** SLKP 20241029; add another acceptable data time format */
 
-var DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
+var DateFormats = [d3.time.format.iso, d3.time.format.utc("%Y%m%d")];
 /** List of accepted time formats for attribute values*/
 
-var DateViewFormatSlider = d3.time.format("%Y-%m-%d");
+var DateViewFormatSlider = d3.time.format.utc("%Y-%m-%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
-var DateViewNodeSearch = d3.time.format("%Y/%m/%d");
+var DateViewNodeSearch = d3.time.format.utc("%Y/%m/%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
-var DateUpperBoundYear = new Date().getFullYear();
+var DateUpperBoundYear = new Date().getUTCFullYear();
 /** Maximum year value (no future dates)*/
 
-var DateViewFormatClusterCreate = d3.time.format("%Y%m");
+var DateViewFormatClusterCreate = d3.time.format.utc("%Y%m");
 /** used as a part of auto-named COI, e.g. NC_202105_44.1 */
 
 var cluster_time_scale;
@@ -62786,7 +62792,7 @@ function getCurrentDate() {
   return cdate;
 }
 function getAncientDate() {
-  return new Date(1900, 0, 1);
+  return new Date(Date.UTC(1900, 0, 1));
 }
 
 /**
@@ -62821,18 +62827,18 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
 
 function n_months_ago(reference_date, months) {
   var past_date = new Date(reference_date);
-  var past_months = past_date.getMonth();
+  var past_months = past_date.getUTCMonth();
   var diff_year = Math.floor(months / 12);
   var left_over = months - diff_year * 12;
   if (left_over > past_months) {
-    past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
-    past_date.setMonth(12 - (left_over - past_months));
+    past_date.setUTCFullYear(past_date.getUTCFullYear() - diff_year - 1);
+    past_date.setUTCMonth(12 - (left_over - past_months));
   } else {
-    past_date.setFullYear(past_date.getFullYear() - diff_year);
-    past_date.setMonth(past_months - left_over);
+    past_date.setUTCFullYear(past_date.getUTCFullYear() - diff_year);
+    past_date.setUTCMonth(past_months - left_over);
   }
-  past_date.setDate(past_date.getDate() + 1); // exclusive
-  past_date.setUTCHours(0, 0, 0);
+  past_date.setUTCDate(past_date.getUTCDate() + 1); // exclusive
+  past_date.setUTCHours(0, 0, 0, 0);
   return past_date;
 }
 module.exports = {
