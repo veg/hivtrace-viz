@@ -80,7 +80,10 @@ var hivtrace_cluster_network_graph = function (
   network.ensure_node_attributes_exist(json);
 
   /** SLKP 20190902: somehow some of our networks have malformed edges! This will remove them */
-  json.Edges = _.filter(json.Edges || [], (e) => "source" in e && "target" in e);
+  json.Edges = _.filter(
+    json.Edges || [],
+    (e) => "source" in e && "target" in e
+  );
 
   /** Not primary networks are individual cluster/subcluster views.
       They don't interfere with the primary network object, and UI elements
@@ -2115,7 +2118,10 @@ var hivtrace_cluster_network_graph = function (
       const pa = node && node[kGlobals.network.NodeAttributeID];
       if (!pa) return false;
       if (pa.jurisdiction === group_id) return true;
-      if (Array.isArray(pa.joint_owners) && pa.joint_owners.includes(group_id)) {
+      if (
+        Array.isArray(pa.joint_owners) &&
+        pa.joint_owners.includes(group_id)
+      ) {
         return true;
       }
       return false;
@@ -2144,7 +2150,9 @@ var hivtrace_cluster_network_graph = function (
             node.patient_attributes &&
             "mjc_date_identified" in node.patient_attributes
           ) {
-            if (typeof node.patient_attributes.mjc_date_identified !== "object") {
+            if (
+              typeof node.patient_attributes.mjc_date_identified !== "object"
+            ) {
               node.patient_attributes.selected_mjc_date_identified =
                 node.patient_attributes.mjc_date_identified;
             } else if (
@@ -2278,7 +2286,10 @@ var hivtrace_cluster_network_graph = function (
       // Filter out REDACTED nodes if the toggle is active
       if (self.isMJCNetwork && !self.fullMJCNetwork) {
         var $redacted_toggle = $(
-          self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+          self.get_ui_element_selector_by_role(
+            "cluster_list_redacted_toggle",
+            true
+          )
         );
         if ($redacted_toggle.data("redacted-hidden")) {
           cluster_nodes = cluster_nodes.filter(
@@ -2348,7 +2359,10 @@ var hivtrace_cluster_network_graph = function (
               .append("dd")
               .text(
                 self._format_attribute_value(
-                  self.attribute_node_value_by_id(node, column.raw_attribute_key)
+                  self.attribute_node_value_by_id(
+                    node,
+                    column.raw_attribute_key
+                  )
                 )
               );
           });
@@ -2393,7 +2407,10 @@ var hivtrace_cluster_network_graph = function (
 
       // Redacted nodes toggle — only for non-admin MJC networks
       d3.select(
-        self.get_ui_element_selector_by_role("cluster_list_redacted_toggle", true)
+        self.get_ui_element_selector_by_role(
+          "cluster_list_redacted_toggle",
+          true
+        )
       ).on("click", function () {
         d3.event.preventDefault();
         var $btn = $(this);
@@ -2406,7 +2423,9 @@ var hivtrace_cluster_network_graph = function (
         );
 
         self._cluster_list_view_render(
-          view_toggle.data("cluster") ? view_toggle.data("cluster").toString() : "",
+          view_toggle.data("cluster")
+            ? view_toggle.data("cluster").toString()
+            : "",
           view_toggle.data(__("clusters_tab")["view"]) !== "id",
           d3.select(
             self.get_ui_element_selector_by_role("cluster_list_payload", true)
@@ -3221,7 +3240,9 @@ var hivtrace_cluster_network_graph = function (
           const node_set = new Set();
           _.each(
             pg_filter ? _.filter(pg_groups, pg_filter) : pg_groups,
-            (pg) => { _.each(pg.nodes, (n) => node_set.add(n.name)); }
+            (pg) => {
+              _.each(pg.nodes, (n) => node_set.add(n.name));
+            }
           );
           return node_set;
         };
@@ -3234,7 +3255,9 @@ var hivtrace_cluster_network_graph = function (
         self._compute_mjc_node_set = function (filter_index) {
           const ref_date = self.get_reference_date();
           const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-          const pg_groups = primary_instance ? primary_instance.overlap_defined_priority_groups : null;
+          const pg_groups = primary_instance
+            ? primary_instance.overlap_defined_priority_groups
+            : null;
 
           // Diagnosed within last 36 months
           if (filter_index === 1) {
@@ -3242,7 +3265,13 @@ var hivtrace_cluster_network_graph = function (
             return new Set(
               _.map(
                 _.filter(self.nodes, (n) =>
-                  self.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false)
+                  self.filter_by_date(
+                    cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    n,
+                    false
+                  )
                 ),
                 (n) => n.id
               )
@@ -3255,7 +3284,13 @@ var hivtrace_cluster_network_graph = function (
             return new Set(
               _.map(
                 _.filter(self.nodes, (n) =>
-                  self.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false)
+                  self.filter_by_date(
+                    cutoff,
+                    timeDateUtil._networkCDCDateField,
+                    ref_date,
+                    n,
+                    false
+                  )
                 ),
                 (n) => n.id
               )
@@ -3275,28 +3310,51 @@ var hivtrace_cluster_network_graph = function (
             // overlap PG JSON response, or pass the site's cluster/subcluster priority_score data
             // into the MJC page context.
             _.each(pg_groups, (pg) => {
-              if (pg.meets_priority_def === undefined && pg.history && pg.history.length) {
+              if (
+                pg.meets_priority_def === undefined &&
+                pg.history &&
+                pg.history.length
+              ) {
                 const latest = pg.history[pg.history.length - 1];
                 pg.meets_priority_def = !!latest.national_priority;
               }
             });
 
             // Part of a site system clusterOI
-            if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);
+            if (filter_index === 3)
+              return _collect_pg_node_ids(pg_groups, _pg_filters.system);
             // Part of a site clusterOI (system or manual)
-            if (filter_index === 4) return _collect_pg_node_ids(pg_groups, null);
+            if (filter_index === 4)
+              return _collect_pg_node_ids(pg_groups, null);
             // Part of a site clusterOI meeting national priority
-            if (filter_index === 5) return _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
+            if (filter_index === 5)
+              return _collect_pg_node_ids(
+                pg_groups,
+                _pg_filters.national_priority
+              );
 
             // Not in a site clusterOI (system or manual)
             if (filter_index === 6) {
               const in_coi = _collect_pg_node_ids(pg_groups, null);
-              return new Set(_.map(_.filter(self.nodes, (n) => !in_coi.has(n.id)), (n) => n.id));
+              return new Set(
+                _.map(
+                  _.filter(self.nodes, (n) => !in_coi.has(n.id)),
+                  (n) => n.id
+                )
+              );
             }
             // Not meeting national priority
             if (filter_index === 7) {
-              const in_priority = _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
-              return new Set(_.map(_.filter(self.nodes, (n) => !in_priority.has(n.id)), (n) => n.id));
+              const in_priority = _collect_pg_node_ids(
+                pg_groups,
+                _pg_filters.national_priority
+              );
+              return new Set(
+                _.map(
+                  _.filter(self.nodes, (n) => !in_priority.has(n.id)),
+                  (n) => n.id
+                )
+              );
             }
           }
 
@@ -3314,7 +3372,9 @@ var hivtrace_cluster_network_graph = function (
               if (node_set === null) {
                 node_set = filter_set;
               } else {
-                node_set = new Set([...node_set].filter((id) => filter_set.has(id)));
+                node_set = new Set(
+                  [...node_set].filter((id) => filter_set.has(id))
+                );
               }
             });
           }
@@ -3325,7 +3385,9 @@ var hivtrace_cluster_network_graph = function (
 
           self.clusters.forEach((c) => {
             const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
-            c.mjc_hidden = node_set !== null && cluster_nodes.length > 0 &&
+            c.mjc_hidden =
+              node_set !== null &&
+              cluster_nodes.length > 0 &&
               cluster_nodes.every((n) => n.mjc_hidden);
           });
 
@@ -3352,7 +3414,9 @@ var hivtrace_cluster_network_graph = function (
                 if (is_no_filter) {
                   // "No filter" clears all active filters
                   self._mjc_active_filters.clear();
-                  mjc_filter_container.selectAll("a").style("font-weight", null);
+                  mjc_filter_container
+                    .selectAll("a")
+                    .style("font-weight", null);
                   d3.select(this).style("font-weight", "bold");
                 } else {
                   // Toggle this filter on/off
@@ -3366,7 +3430,8 @@ var hivtrace_cluster_network_graph = function (
 
                   // Un-bold "No filter" when any filter is active; re-bold it when none are
                   var no_filter_item = mjc_filter_container.select("a");
-                  no_filter_item.style("font-weight",
+                  no_filter_item.style(
+                    "font-weight",
                     self._mjc_active_filters.size === 0 ? "bold" : null
                   );
                 }
@@ -3377,12 +3442,16 @@ var hivtrace_cluster_network_graph = function (
                 if (count === 0) {
                   label_text = "No filter";
                 } else if (count === 1) {
-                  label_text = self._mjc_filter_options[self._mjc_active_filters.values().next().value];
+                  label_text =
+                    self._mjc_filter_options[
+                      self._mjc_active_filters.values().next().value
+                    ];
                 } else {
                   label_text = count + " filters active";
                 }
-                d3.select(self.get_ui_element_selector_by_role("mjc_node_filter_label"))
-                  .html("Show: " + label_text + ' <span class="caret"></span>');
+                d3.select(
+                  self.get_ui_element_selector_by_role("mjc_node_filter_label")
+                ).html("Show: " + label_text + ' <span class="caret"></span>');
 
                 self.apply_mjc_node_filter();
               });
@@ -5094,7 +5163,7 @@ var hivtrace_cluster_network_graph = function (
                 return _.filter(
                   d.children,
                   (child) =>
-                    d3.time.months(
+                    d3.time.months.utc(
                       child.patient_attributes["sample_dt"],
                       timeDateUtil.getCurrentDate()
                     ).length <= 2
@@ -5108,7 +5177,7 @@ var hivtrace_cluster_network_graph = function (
                 const recent = _.filter(
                   d.children,
                   (child) =>
-                    d3.time.months(
+                    d3.time.months.utc(
                       child.patient_attributes["sample_dt"],
                       timeDateUtil.getCurrentDate()
                     ).length <= 2
@@ -7302,8 +7371,13 @@ var hivtrace_cluster_network_graph = function (
 
     link
       .style("display", (d) => {
-        if (d.target.is_hidden || d.source.is_hidden || d.is_hidden ||
-            d.target.mjc_hidden || d.source.mjc_hidden) {
+        if (
+          d.target.is_hidden ||
+          d.source.is_hidden ||
+          d.is_hidden ||
+          d.target.mjc_hidden ||
+          d.source.mjc_hidden
+        ) {
           return "none";
         }
         return null;
