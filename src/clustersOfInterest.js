@@ -1416,6 +1416,29 @@ function _action_drop_down(self, pg) {
   return dropdown;
 }
 
+// Size-in-jurisdiction for the viewing site. Falls back to a client-side
+// derivation from raw counts + joint-owner adjustments when the backend
+// hasn't precomputed the field (admin/full-MJC view).
+function _mjc_size_in_jurisdiction(self, pg) {
+  if (pg.size_in_jurisdiction !== undefined && pg.size_in_jurisdiction !== null) {
+    return pg.size_in_jurisdiction;
+  }
+  const jid = self.CDC_data && self.CDC_data.group_id;
+  if (!jid) return null;
+  const counts = pg.jurisdiction_counts || {};
+  let n = counts[jid] || 0;
+  if (pg.nodes) {
+    n += _.filter(
+      pg.nodes,
+      (nd) =>
+        nd.joint_owners &&
+        nd.joint_owners.indexOf(jid) >= 0 &&
+        nd.jurisdiction !== jid
+    ).length;
+  }
+  return n;
+}
+
 /**
  * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
  * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
@@ -1527,10 +1550,7 @@ function draw_priority_set_table(
             return _.isNaN(n) ? 0 : n;
           },
           help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
-          // Hidden in admin/full view because addJurisdictionSizes is only run
-          // for the per-jurisdiction site view. Flag-off redaction is surfaced
-          // as "REDACTED" in the cell, not by hiding the column.
-          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
+          hidden: !self.isMJCNetwork,
         },
         {
           value: "Priority",
@@ -1752,11 +1772,8 @@ function draw_priority_set_table(
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
-          // size in my jurisdiction — backend-computed at addJurisdictionSizes()
-          // in hivtrace-secure. Counts both primary-owned nodes and nodes jointly
-          // owned via city-state pairs. Redacted to "REDACTED" when
-          // mjcSizeInJurisdictionEnabled is off.
-          value: pg.size_in_jurisdiction,
+          // Redacted to "REDACTED" when mjcSizeInJurisdictionEnabled is off.
+          value: _mjc_size_in_jurisdiction(self, pg),
           width: 100,
           format: function (v) {
             if (v === "REDACTED") return "REDACTED";
@@ -1764,7 +1781,7 @@ function draw_priority_set_table(
             return String(v);
           },
           html: true,
-          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
+          hidden: !self.isMJCNetwork,
         },
         {
           // meets priority definition
