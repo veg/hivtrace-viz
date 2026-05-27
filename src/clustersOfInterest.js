@@ -1417,26 +1417,25 @@ function _action_drop_down(self, pg) {
 }
 
 // Size-in-jurisdiction for the viewing site. Falls back to a client-side
-// derivation from raw counts + joint-owner adjustments when the backend
-// hasn't precomputed the field (admin/full-MJC view).
+// derivation from pg.nodes when the backend hasn't precomputed the field
+// (admin/full-MJC view). Person-based: each person counts at most once per
+// jurisdiction whether they own a node primarily or via joint ownership.
 function _mjc_size_in_jurisdiction(self, pg) {
   if (pg.size_in_jurisdiction !== undefined && pg.size_in_jurisdiction !== null) {
     return pg.size_in_jurisdiction;
   }
   const jid = self.CDC_data && self.CDC_data.group_id;
   if (!jid) return null;
-  const counts = pg.jurisdiction_counts || {};
-  let n = counts[jid] || 0;
-  if (pg.nodes) {
-    n += _.filter(
-      pg.nodes,
-      (nd) =>
-        nd.joint_owners &&
-        nd.joint_owners.indexOf(jid) >= 0 &&
-        nd.jurisdiction !== jid
-    ).length;
+  if (!pg.nodes) {
+    return (pg.jurisdiction_counts || {})[jid] || 0;
   }
-  return n;
+  const relevantNodes = _.filter(
+    pg.nodes,
+    (nd) =>
+      nd.jurisdiction === jid ||
+      (nd.joint_owners && nd.joint_owners.indexOf(jid) >= 0)
+  );
+  return self.unique_entity_list(relevantNodes).length;
 }
 
 /**
@@ -1535,9 +1534,9 @@ function draw_priority_set_table(
             return 0;
           },
           help:
-            "Number of nodes in the " +
+            "Number of distinct persons in the " +
             (self.isMJCNetwork ? "MJ " : "") +
-            "clusterOI",
+            "clusterOI.",
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
@@ -1549,7 +1548,7 @@ function draw_priority_set_table(
             const n = Number(v);
             return _.isNaN(n) ? 0 : n;
           },
-          help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
+          help: "Number of distinct persons in this MJ clusterOI from my jurisdiction (counting both primary ownership and joint ownership).",
           hidden: !self.isMJCNetwork,
         },
         {
@@ -1563,7 +1562,7 @@ function draw_priority_set_table(
           value: "DXs in last 12 mo.",
           width: 100,
           sort: "value",
-          help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
+          help: "Number of distinct persons in the cluster of interest with a diagnosis date in the past 12 months. A person counts if any of their sequences has a recent diagnosis date.",
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
@@ -1592,8 +1591,8 @@ function draw_priority_set_table(
             return 0;
           },
           help: self.isMJCNetwork
-            ? "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?"
-            : "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+            ? "How many ClusterOI have overlapping persons with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many distinct persons in this MJ ClusterOI overlap with ANY ClusterOI?"
+            : "How many MJ ClusterOI have overlapping persons with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many distinct persons in this ClusterOI overlap with ANY MJ ClusterOI?",
           hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
         },
         /*,
@@ -1724,10 +1723,12 @@ function draw_priority_set_table(
         },
         {
           // size / new nodes
-          // For MJC networks, use pg.nodes.length since node_objects only contains local nodes
+          // Person-based count: dedup pg.nodes (MJ) or pg.node_objects (regular) by ehars_uid.
+          // For MJ, pg.node_objects only contains local nodes, so we dedup the full sequence
+          // list pg.nodes via unique_entity_list (groups by primary_key = first |-segment).
           value: [
             self.isMJCNetwork
-              ? pg.nodes.length
+              ? self.unique_entity_list(pg.nodes).length
               : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))

@@ -3222,93 +3222,97 @@ var hivtrace_cluster_network_graph = function (
           }, 250)
         );
 
-      if (self.fullMJCNetwork) {
-        self._mjc_filter_options = [
-          "No filter",
-          "Diagnosed within last 36 months",
-          "Diagnosed within last 12 months",
-          "Part of a site system clusterOI",
-          "Part of a site clusterOI (system or manual)",
-          "Part of a site clusterOI meeting national priority",
-          "Not in a site clusterOI (system or manual)",
-          "Not meeting national priority",
-        ];
+      self._node_filter_options = [
+        "No filter",
+        "Diagnosed within last 36 months",
+        "Diagnosed within last 12 months",
+        "Part of a site system clusterOI",
+        "Part of a site clusterOI (system or manual)",
+        "Part of a site clusterOI meeting national priority",
+        "Not in a site clusterOI (system or manual)",
+        "Not meeting national priority",
+      ];
 
-        self._mjc_active_filters = new Set();
+      self._node_filter_active = new Set();
 
-        const _collect_pg_node_ids = function (pg_groups, pg_filter) {
-          const node_set = new Set();
-          _.each(
-            pg_filter ? _.filter(pg_groups, pg_filter) : pg_groups,
-            (pg) => {
-              _.each(pg.nodes, (n) => node_set.add(n.name));
-            }
-          );
-          return node_set;
-        };
+      const _collect_pg_node_ids = function (pg_groups, pg_filter) {
+        const node_set = new Set();
+        _.each(
+          pg_filter ? _.filter(pg_groups, pg_filter) : pg_groups,
+          (pg) => {
+            _.each(pg.nodes, (n) => node_set.add(n.name));
+          }
+        );
+        return node_set;
+      };
 
-        const _pg_filters = {
-          system: (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem,
-          national_priority: (pg) => pg.meets_priority_def,
-        };
+      const _pg_filters = {
+        system: (pg) => pg.createdBy === kGlobals.CDCCOICreatedBySystem,
+        national_priority: (pg) => pg.meets_priority_def,
+      };
 
-        self._compute_mjc_node_set = function (filter_index) {
-          const ref_date = self.get_reference_date();
+      self._compute_node_filter_set = function (filter_index) {
+        const ref_date = self.get_reference_date();
+        let pg_groups;
+        if (self.isMJCNetwork) {
           const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-          const pg_groups = primary_instance
+          pg_groups = primary_instance
             ? primary_instance.overlap_defined_priority_groups
             : null;
+        } else {
+          pg_groups = self.defined_priority_groups;
+        }
 
-          // Diagnosed within last 36 months
-          if (filter_index === 1) {
-            const cutoff = timeDateUtil.n_months_ago(ref_date, 36);
-            return new Set(
-              _.map(
-                _.filter(self.nodes, (n) =>
-                  self.filter_by_date(
-                    cutoff,
-                    timeDateUtil._networkCDCDateField,
-                    ref_date,
-                    n,
-                    false
-                  )
-                ),
-                (n) => n.id
-              )
-            );
+        // Diagnosed within last 36 months
+        if (filter_index === 1) {
+          const cutoff = timeDateUtil.n_months_ago(ref_date, 36);
+          return new Set(
+            _.map(
+              _.filter(self.nodes, (n) =>
+                self.filter_by_date(
+                  cutoff,
+                  timeDateUtil._networkCDCDateField,
+                  ref_date,
+                  n,
+                  false
+                )
+              ),
+              (n) => n.id
+            )
+          );
+        }
+
+        // Diagnosed within last 12 months
+        if (filter_index === 2) {
+          const cutoff = timeDateUtil.n_months_ago(ref_date, 12);
+          return new Set(
+            _.map(
+              _.filter(self.nodes, (n) =>
+                self.filter_by_date(
+                  cutoff,
+                  timeDateUtil._networkCDCDateField,
+                  ref_date,
+                  n,
+                  false
+                )
+              ),
+              (n) => n.id
+            )
+          );
+        }
+
+        if (filter_index >= 3 && filter_index <= 7) {
+          if (!pg_groups || !pg_groups.length) {
+            alert("Site clusterOI data is not yet available for filtering.");
+            return null;
           }
 
-          // Diagnosed within last 12 months
-          if (filter_index === 2) {
-            const cutoff = timeDateUtil.n_months_ago(ref_date, 12);
-            return new Set(
-              _.map(
-                _.filter(self.nodes, (n) =>
-                  self.filter_by_date(
-                    cutoff,
-                    timeDateUtil._networkCDCDateField,
-                    ref_date,
-                    n,
-                    false
-                  )
-                ),
-                (n) => n.id
-              )
-            );
-          }
-
-          if (filter_index >= 3 && filter_index <= 7) {
-            if (!pg_groups || !pg_groups.length) {
-              alert("Site clusterOI data is not yet available for filtering.");
-              return null;
-            }
-
-            // TODO: meets_priority_def cannot be correctly computed on the MJC page because
-            // the site instance here has MJC-derived clusters, not the standalone site's clusters.
-            // As a workaround, read the latest history entry's national_priority value.
-            // A proper fix would be to either have the server include meets_priority_def in the
-            // overlap PG JSON response, or pass the site's cluster/subcluster priority_score data
-            // into the MJC page context.
+          // The MJC page's cached overlap groups don't carry meets_priority_def
+          // (the site instance there has MJC-derived clusters, not standalone
+          // site clusters). Fall back to the latest history entry's
+          // national_priority value. Regular views compute meets_priority_def
+          // correctly at hiv_tx_network.js:2261-2265 and need no fallback.
+          if (self.isMJCNetwork) {
             _.each(pg_groups, (pg) => {
               if (
                 pg.meets_priority_def === undefined &&
@@ -3319,149 +3323,150 @@ var hivtrace_cluster_network_graph = function (
                 pg.meets_priority_def = !!latest.national_priority;
               }
             });
-
-            // Part of a site system clusterOI
-            if (filter_index === 3)
-              return _collect_pg_node_ids(pg_groups, _pg_filters.system);
-            // Part of a site clusterOI (system or manual)
-            if (filter_index === 4)
-              return _collect_pg_node_ids(pg_groups, null);
-            // Part of a site clusterOI meeting national priority
-            if (filter_index === 5)
-              return _collect_pg_node_ids(
-                pg_groups,
-                _pg_filters.national_priority
-              );
-
-            // Not in a site clusterOI (system or manual)
-            if (filter_index === 6) {
-              const in_coi = _collect_pg_node_ids(pg_groups, null);
-              return new Set(
-                _.map(
-                  _.filter(self.nodes, (n) => !in_coi.has(n.id)),
-                  (n) => n.id
-                )
-              );
-            }
-            // Not meeting national priority
-            if (filter_index === 7) {
-              const in_priority = _collect_pg_node_ids(
-                pg_groups,
-                _pg_filters.national_priority
-              );
-              return new Set(
-                _.map(
-                  _.filter(self.nodes, (n) => !in_priority.has(n.id)),
-                  (n) => n.id
-                )
-              );
-            }
           }
 
-          return null; // No filter (index 0) or unrecognized
-        };
+          // Part of a site system clusterOI
+          if (filter_index === 3)
+            return _collect_pg_node_ids(pg_groups, _pg_filters.system);
+          // Part of a site clusterOI (system or manual)
+          if (filter_index === 4)
+            return _collect_pg_node_ids(pg_groups, null);
+          // Part of a site clusterOI meeting national priority
+          if (filter_index === 5)
+            return _collect_pg_node_ids(
+              pg_groups,
+              _pg_filters.national_priority
+            );
 
-        self.apply_mjc_node_filter = function () {
-          var node_set = null;
+          // Not in a site clusterOI (system or manual)
+          if (filter_index === 6) {
+            const in_coi = _collect_pg_node_ids(pg_groups, null);
+            return new Set(
+              _.map(
+                _.filter(self.nodes, (n) => !in_coi.has(n.id)),
+                (n) => n.id
+              )
+            );
+          }
+          // Not meeting national priority
+          if (filter_index === 7) {
+            const in_priority = _collect_pg_node_ids(
+              pg_groups,
+              _pg_filters.national_priority
+            );
+            return new Set(
+              _.map(
+                _.filter(self.nodes, (n) => !in_priority.has(n.id)),
+                (n) => n.id
+              )
+            );
+          }
+        }
 
-          if (self._mjc_active_filters.size > 0) {
-            // Intersect all active filter sets
-            self._mjc_active_filters.forEach((filter_index) => {
-              const filter_set = self._compute_mjc_node_set(filter_index);
-              if (filter_set === null) return;
-              if (node_set === null) {
-                node_set = filter_set;
+        return null; // No filter (index 0) or unrecognized
+      };
+
+      self.apply_node_filter = function () {
+        var node_set = null;
+
+        if (self._node_filter_active.size > 0) {
+          // Intersect all active filter sets
+          self._node_filter_active.forEach((filter_index) => {
+            const filter_set = self._compute_node_filter_set(filter_index);
+            if (filter_set === null) return;
+            if (node_set === null) {
+              node_set = filter_set;
+            } else {
+              node_set = new Set(
+                [...node_set].filter((id) => filter_set.has(id))
+              );
+            }
+          });
+        }
+
+        self.nodes.forEach((n) => {
+          n.node_filter_hidden = node_set !== null && !node_set.has(n.id);
+        });
+
+        self.clusters.forEach((c) => {
+          const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
+          c.node_filter_hidden =
+            node_set !== null &&
+            cluster_nodes.length > 0 &&
+            cluster_nodes.every((n) => n.node_filter_hidden);
+        });
+
+        self.update(true);
+      };
+
+      self._setup_node_filter_ui = function () {
+        const filter_container = d3.select(
+          self.get_ui_element_selector_by_role("node_filter_menu")
+        );
+        if (filter_container.empty()) return;
+        filter_container.selectAll("li").remove();
+
+        self._node_filter_options.forEach((label, index) => {
+          var is_no_filter = index === 0;
+          filter_container
+            .append("li")
+            .append("a")
+            .attr("href", "#")
+            .style("font-weight", is_no_filter ? "bold" : null)
+            .text(label)
+            .on("click", function () {
+              d3.event.preventDefault();
+
+              if (is_no_filter) {
+                // "No filter" clears all active filters
+                self._node_filter_active.clear();
+                filter_container
+                  .selectAll("a")
+                  .style("font-weight", null);
+                d3.select(this).style("font-weight", "bold");
               } else {
-                node_set = new Set(
-                  [...node_set].filter((id) => filter_set.has(id))
+                // Toggle this filter on/off
+                if (self._node_filter_active.has(index)) {
+                  self._node_filter_active.delete(index);
+                  d3.select(this).style("font-weight", null);
+                } else {
+                  self._node_filter_active.add(index);
+                  d3.select(this).style("font-weight", "bold");
+                }
+
+                // Un-bold "No filter" when any filter is active; re-bold it when none are
+                var no_filter_item = filter_container.select("a");
+                no_filter_item.style(
+                  "font-weight",
+                  self._node_filter_active.size === 0 ? "bold" : null
                 );
               }
+
+              // Update the dropdown label
+              var count = self._node_filter_active.size;
+              var label_text;
+              if (count === 0) {
+                label_text = "No filter";
+              } else if (count === 1) {
+                label_text =
+                  self._node_filter_options[
+                    self._node_filter_active.values().next().value
+                  ];
+              } else {
+                label_text = count + " filters active";
+              }
+              d3.select(
+                self.get_ui_element_selector_by_role("node_filter_label")
+              ).html("Show: " + label_text + ' <span class="caret"></span>');
+
+              self.apply_node_filter();
             });
-          }
+        });
 
-          self.nodes.forEach((n) => {
-            n.mjc_hidden = node_set !== null && !node_set.has(n.id);
-          });
-
-          self.clusters.forEach((c) => {
-            const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
-            c.mjc_hidden =
-              node_set !== null &&
-              cluster_nodes.length > 0 &&
-              cluster_nodes.every((n) => n.mjc_hidden);
-          });
-
-          self.update(true);
-        };
-
-        self._setup_mjc_filter_ui = function () {
-          const mjc_filter_container = d3.select(
-            self.get_ui_element_selector_by_role("mjc_node_filter")
-          );
-          mjc_filter_container.selectAll("li").remove();
-
-          self._mjc_filter_options.forEach((label, index) => {
-            var is_no_filter = index === 0;
-            mjc_filter_container
-              .append("li")
-              .append("a")
-              .attr("href", "#")
-              .style("font-weight", is_no_filter ? "bold" : null)
-              .text(label)
-              .on("click", function () {
-                d3.event.preventDefault();
-
-                if (is_no_filter) {
-                  // "No filter" clears all active filters
-                  self._mjc_active_filters.clear();
-                  mjc_filter_container
-                    .selectAll("a")
-                    .style("font-weight", null);
-                  d3.select(this).style("font-weight", "bold");
-                } else {
-                  // Toggle this filter on/off
-                  if (self._mjc_active_filters.has(index)) {
-                    self._mjc_active_filters.delete(index);
-                    d3.select(this).style("font-weight", null);
-                  } else {
-                    self._mjc_active_filters.add(index);
-                    d3.select(this).style("font-weight", "bold");
-                  }
-
-                  // Un-bold "No filter" when any filter is active; re-bold it when none are
-                  var no_filter_item = mjc_filter_container.select("a");
-                  no_filter_item.style(
-                    "font-weight",
-                    self._mjc_active_filters.size === 0 ? "bold" : null
-                  );
-                }
-
-                // Update the dropdown label
-                var count = self._mjc_active_filters.size;
-                var label_text;
-                if (count === 0) {
-                  label_text = "No filter";
-                } else if (count === 1) {
-                  label_text =
-                    self._mjc_filter_options[
-                      self._mjc_active_filters.values().next().value
-                    ];
-                } else {
-                  label_text = count + " filters active";
-                }
-                d3.select(
-                  self.get_ui_element_selector_by_role("mjc_node_filter_label")
-                ).html("Show: " + label_text + ' <span class="caret"></span>');
-
-                self.apply_mjc_node_filter();
-              });
-          });
-
-          d3.select(
-            self.get_ui_element_selector_by_role("mjc_node_filter_enclosure")
-          ).style("display", null);
-        };
-      }
+        d3.select(
+          self.get_ui_element_selector_by_role("node_filter_enclosure")
+        ).style("display", null);
+      };
 
       $(self.get_ui_element_selector_by_role("set_min_cluster_size"))
         .off("change")
@@ -4022,8 +4027,8 @@ var hivtrace_cluster_network_graph = function (
           }
         );
 
-        if (self._setup_mjc_filter_ui) {
-          self._setup_mjc_filter_ui();
+        if (self._setup_node_filter_ui) {
+          self._setup_node_filter_ui();
         }
       }
     };
@@ -5388,7 +5393,7 @@ var hivtrace_cluster_network_graph = function (
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
         .style("opacity", (d) => node_opacity(d))
         .style("display", (d) => {
-          if (d.is_hidden || d.mjc_hidden) return "none";
+          if (d.is_hidden || d.node_filter_hidden) return "none";
           return null;
         })
         .call(
@@ -5492,7 +5497,7 @@ var hivtrace_cluster_network_graph = function (
       })
       .style("stroke-linejoin", (d, i) => (draw_from.length > 1 ? "round" : ""))
       .style("display", (d) => {
-        if (the_cluster.is_hidden || the_cluster.mjc_hidden) return "none";
+        if (the_cluster.is_hidden || the_cluster.node_filter_hidden) return "none";
         return null;
       });
   }
@@ -7375,8 +7380,8 @@ var hivtrace_cluster_network_graph = function (
           d.target.is_hidden ||
           d.source.is_hidden ||
           d.is_hidden ||
-          d.target.mjc_hidden ||
-          d.source.mjc_hidden
+          d.target.node_filter_hidden ||
+          d.source.node_filter_hidden
         ) {
           return "none";
         }
