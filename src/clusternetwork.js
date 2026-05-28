@@ -3251,29 +3251,21 @@ var hivtrace_cluster_network_graph = function (
         national_priority: (pg) => pg.meets_priority_def,
       };
 
-      // MJ view: site clusterOIs live on the primary site instance as the
-      // overlap groups. Regular view: site clusterOIs are this instance's
-      // defined_priority_groups directly. Resolved fresh each call so the
-      // click handler picks up clusterOIs loaded after dropdown setup.
+      // Site clusterOIs live on the primary network instance. On the MJ page
+      // they're cached as overlap_defined_priority_groups; on the regular page
+      // they're defined_priority_groups. Either way we prefer the primary
+      // instance because sub-network instances (e.g. cluster-detail panels)
+      // have their own empty defined_priority_groups. Resolved fresh each call
+      // so the click handler picks up clusterOIs loaded after dropdown setup.
       const _resolve_pg_groups = function () {
         const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-        // DEBUG (remove after diagnosing): expose state at filter resolution
-        console.log("[node_filter DEBUG] _resolve_pg_groups called", {
-          isMJCNetwork: self.isMJCNetwork,
-          self_defined_priority_groups: self.defined_priority_groups,
-          self_defined_priority_groups_length:
-            self.defined_priority_groups && self.defined_priority_groups.length,
-          primary_instance_exists: !!primary_instance,
-          primary_instance_is_self: primary_instance === self,
-          primary_overlap_defined_priority_groups:
-            primary_instance && primary_instance.overlap_defined_priority_groups,
-          primary_defined_priority_groups:
-            primary_instance && primary_instance.defined_priority_groups,
-        });
         if (self.isMJCNetwork) {
           return primary_instance
             ? primary_instance.overlap_defined_priority_groups
             : null;
+        }
+        if (primary_instance && primary_instance.defined_priority_groups) {
+          return primary_instance.defined_priority_groups;
         }
         return self.defined_priority_groups;
       };
