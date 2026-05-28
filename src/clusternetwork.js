@@ -3256,8 +3256,21 @@ var hivtrace_cluster_network_graph = function (
       // defined_priority_groups directly. Resolved fresh each call so the
       // click handler picks up clusterOIs loaded after dropdown setup.
       const _resolve_pg_groups = function () {
+        const primary_instance = HTX.HIVTxNetwork._primaryInstance;
+        // DEBUG (remove after diagnosing): expose state at filter resolution
+        console.log("[node_filter DEBUG] _resolve_pg_groups called", {
+          isMJCNetwork: self.isMJCNetwork,
+          self_defined_priority_groups: self.defined_priority_groups,
+          self_defined_priority_groups_length:
+            self.defined_priority_groups && self.defined_priority_groups.length,
+          primary_instance_exists: !!primary_instance,
+          primary_instance_is_self: primary_instance === self,
+          primary_overlap_defined_priority_groups:
+            primary_instance && primary_instance.overlap_defined_priority_groups,
+          primary_defined_priority_groups:
+            primary_instance && primary_instance.defined_priority_groups,
+        });
         if (self.isMJCNetwork) {
-          const primary_instance = HTX.HIVTxNetwork._primaryInstance;
           return primary_instance
             ? primary_instance.overlap_defined_priority_groups
             : null;
@@ -3407,10 +3420,18 @@ var hivtrace_cluster_network_graph = function (
       };
 
       self._setup_node_filter_ui = function () {
+        // DEBUG (remove after diagnosing)
+        console.log("[node_filter DEBUG] _setup_node_filter_ui called", {
+          isMJCNetwork: self.isMJCNetwork,
+          fullMJCNetwork: self.fullMJCNetwork,
+        });
         const filter_container = d3.select(
           self.get_ui_element_selector_by_role("node_filter_menu")
         );
-        if (filter_container.empty()) return;
+        if (filter_container.empty()) {
+          console.log("[node_filter DEBUG] no node_filter_menu in DOM, bailing");
+          return;
+        }
         filter_container.selectAll("li").remove();
 
         self._node_filter_options.forEach((label, index) => {
@@ -3432,6 +3453,11 @@ var hivtrace_cluster_network_graph = function (
                   .style("font-weight", null);
                 d3.select(this).style("font-weight", "bold");
               } else {
+                // DEBUG (remove after diagnosing)
+                console.log("[node_filter DEBUG] filter click", {
+                  index: index,
+                  label: label,
+                });
                 // Filters 3-7 need site clusterOI data. If it isn't loaded
                 // (e.g. no clusterOIs created yet), alert and don't activate
                 // the filter — otherwise it would silently stay "on" with no
@@ -3439,6 +3465,11 @@ var hivtrace_cluster_network_graph = function (
                 // apply_node_filter() call.
                 if (index >= 3 && index <= 7) {
                   const pg_groups = _resolve_pg_groups();
+                  console.log(
+                    "[node_filter DEBUG] pg_groups for filter",
+                    index,
+                    pg_groups
+                  );
                   if (!pg_groups || !pg_groups.length) {
                     alert(
                       "Site clusterOI data is not yet available for filtering."
