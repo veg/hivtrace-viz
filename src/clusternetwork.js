@@ -3251,17 +3251,23 @@ var hivtrace_cluster_network_graph = function (
         national_priority: (pg) => pg.meets_priority_def,
       };
 
-      self._compute_node_filter_set = function (filter_index) {
-        const ref_date = self.get_reference_date();
-        let pg_groups;
+      // MJ view: site clusterOIs live on the primary site instance as the
+      // overlap groups. Regular view: site clusterOIs are this instance's
+      // defined_priority_groups directly. Resolved fresh each call so the
+      // click handler picks up clusterOIs loaded after dropdown setup.
+      const _resolve_pg_groups = function () {
         if (self.isMJCNetwork) {
           const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-          pg_groups = primary_instance
+          return primary_instance
             ? primary_instance.overlap_defined_priority_groups
             : null;
-        } else {
-          pg_groups = self.defined_priority_groups;
         }
+        return self.defined_priority_groups;
+      };
+
+      self._compute_node_filter_set = function (filter_index) {
+        const ref_date = self.get_reference_date();
+        const pg_groups = _resolve_pg_groups();
 
         // Diagnosed within last 36 months
         if (filter_index === 1) {
@@ -3302,8 +3308,9 @@ var hivtrace_cluster_network_graph = function (
         }
 
         if (filter_index >= 3 && filter_index <= 7) {
+          // Click-time gating in _setup_node_filter_ui prevents activation
+          // when pg_groups is missing; this is a defensive silent no-op.
           if (!pg_groups || !pg_groups.length) {
-            alert("Site clusterOI data is not yet available for filtering.");
             return null;
           }
 
@@ -3425,6 +3432,20 @@ var hivtrace_cluster_network_graph = function (
                   .style("font-weight", null);
                 d3.select(this).style("font-weight", "bold");
               } else {
+                // Filters 3-7 need site clusterOI data. If it isn't loaded
+                // (e.g. no clusterOIs created yet), alert and don't activate
+                // the filter — otherwise it would silently stay "on" with no
+                // effect, and the alert would repeat on every subsequent
+                // apply_node_filter() call.
+                if (index >= 3 && index <= 7) {
+                  const pg_groups = _resolve_pg_groups();
+                  if (!pg_groups || !pg_groups.length) {
+                    alert(
+                      "Site clusterOI data is not yet available for filtering."
+                    );
+                    return;
+                  }
+                }
                 // Toggle this filter on/off
                 if (self._node_filter_active.has(index)) {
                   self._node_filter_active.delete(index);
