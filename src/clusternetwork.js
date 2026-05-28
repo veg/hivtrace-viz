@@ -3251,28 +3251,13 @@ var hivtrace_cluster_network_graph = function (
         national_priority: (pg) => pg.meets_priority_def,
       };
 
-      // Site clusterOIs live on the primary network instance. On the MJ page
-      // they're cached as overlap_defined_priority_groups; on the regular page
-      // they're defined_priority_groups. Either way we prefer the primary
-      // instance because sub-network instances (e.g. cluster-detail panels)
-      // have their own empty defined_priority_groups. Resolved fresh each call
-      // so the click handler picks up clusterOIs loaded after dropdown setup.
-      const _resolve_pg_groups = function () {
-        const primary_instance = HTX.HIVTxNetwork._primaryInstance;
-        if (self.isMJCNetwork) {
-          return primary_instance
-            ? primary_instance.overlap_defined_priority_groups
-            : null;
-        }
-        if (primary_instance && primary_instance.defined_priority_groups) {
-          return primary_instance.defined_priority_groups;
-        }
-        return self.defined_priority_groups;
-      };
-
       self._compute_node_filter_set = function (filter_index) {
         const ref_date = self.get_reference_date();
-        const pg_groups = _resolve_pg_groups();
+        // MJ view filters against site clusterOIs (overlap groups on the MJC
+        // instance); regular view filters against this instance's clusterOIs.
+        const pg_groups = self.isMJCNetwork
+          ? self.overlap_defined_priority_groups
+          : self.defined_priority_groups;
 
         // Diagnosed within last 36 months
         if (filter_index === 1) {
@@ -3313,17 +3298,11 @@ var hivtrace_cluster_network_graph = function (
         }
 
         if (filter_index >= 3 && filter_index <= 7) {
-          // Click-time gating in _setup_node_filter_ui prevents activation
-          // when pg_groups is missing; this is a defensive silent no-op.
-          if (!pg_groups || !pg_groups.length) {
-            return null;
-          }
+          // Defensive: click handler already gates on availability.
+          if (!pg_groups || !pg_groups.length) return null;
 
-          // The MJC page's cached overlap groups don't carry meets_priority_def
-          // (the site instance there has MJC-derived clusters, not standalone
-          // site clusters). Fall back to the latest history entry's
-          // national_priority value. Regular views compute meets_priority_def
-          // correctly at hiv_tx_network.js:2261-2265 and need no fallback.
+          // MJ overlap groups don't carry meets_priority_def; fall back to the
+          // latest history entry. Regular views already have the flag correct.
           if (self.isMJCNetwork) {
             _.each(pg_groups, (pg) => {
               if (
@@ -3412,18 +3391,13 @@ var hivtrace_cluster_network_graph = function (
       };
 
       self._setup_node_filter_ui = function () {
-        // DEBUG (remove after diagnosing)
-        console.log("[node_filter DEBUG] _setup_node_filter_ui called", {
-          isMJCNetwork: self.isMJCNetwork,
-          fullMJCNetwork: self.fullMJCNetwork,
-        });
+        // Only the dropdown's owner binds handlers; otherwise sub-network
+        // instances (cluster-detail panels) would steal the shared DOM click.
+        if (!self.isPrimaryGraph && !self.fullMJCNetwork) return;
         const filter_container = d3.select(
           self.get_ui_element_selector_by_role("node_filter_menu")
         );
-        if (filter_container.empty()) {
-          console.log("[node_filter DEBUG] no node_filter_menu in DOM, bailing");
-          return;
-        }
+        if (filter_container.empty()) return;
         filter_container.selectAll("li").remove();
 
         self._node_filter_options.forEach((label, index) => {
@@ -3445,23 +3419,12 @@ var hivtrace_cluster_network_graph = function (
                   .style("font-weight", null);
                 d3.select(this).style("font-weight", "bold");
               } else {
-                // DEBUG (remove after diagnosing)
-                console.log("[node_filter DEBUG] filter click", {
-                  index: index,
-                  label: label,
-                });
-                // Filters 3-7 need site clusterOI data. If it isn't loaded
-                // (e.g. no clusterOIs created yet), alert and don't activate
-                // the filter — otherwise it would silently stay "on" with no
-                // effect, and the alert would repeat on every subsequent
-                // apply_node_filter() call.
+                // Filters 3-7 need site clusterOI data; bail before toggling
+                // so the filter doesn't get stuck "on" with nothing to apply.
                 if (index >= 3 && index <= 7) {
-                  const pg_groups = _resolve_pg_groups();
-                  console.log(
-                    "[node_filter DEBUG] pg_groups for filter",
-                    index,
-                    pg_groups
-                  );
+                  const pg_groups = self.isMJCNetwork
+                    ? self.overlap_defined_priority_groups
+                    : self.defined_priority_groups;
                   if (!pg_groups || !pg_groups.length) {
                     alert(
                       "Site clusterOI data is not yet available for filtering."
