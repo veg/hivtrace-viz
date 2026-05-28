@@ -3254,18 +3254,13 @@ var hivtrace_cluster_network_graph = function (
       self._compute_node_filter_set = function (filter_index) {
         const ref_date = self.get_reference_date();
         // Site clusterOIs live on the primary instance (sub-network instances
-        // have empty arrays). MJ view uses the overlap groups; regular view
-        // uses defined_priority_groups directly.
+        // have empty arrays). MJ view uses overlap groups, regular view uses
+        // defined_priority_groups.
         const primary_instance = HTX.HIVTxNetwork._primaryInstance;
         const pg_groups = self.isMJCNetwork
           ? primary_instance && primary_instance.overlap_defined_priority_groups
           : (primary_instance && primary_instance.defined_priority_groups) ||
             self.defined_priority_groups;
-        console.log("[node_filter DEBUG] compute", {
-          filter_index,
-          isMJCNetwork: self.isMJCNetwork,
-          pg_groups_length: pg_groups && pg_groups.length,
-        });
 
         // Diagnosed within last 36 months
         if (filter_index === 1) {
@@ -3408,13 +3403,6 @@ var hivtrace_cluster_network_graph = function (
         const filter_container = d3.select(
           self.get_ui_element_selector_by_role("node_filter_menu")
         );
-        console.log("[node_filter DEBUG] setup", {
-          isPrimaryGraph: self.isPrimaryGraph,
-          fullMJCNetwork: self.fullMJCNetwork,
-          isMJCNetwork: self.isMJCNetwork,
-          container_empty: filter_container.empty(),
-          selector: self.get_ui_element_selector_by_role("node_filter_menu"),
-        });
         if (filter_container.empty()) return;
         filter_container.selectAll("li").remove();
 
@@ -3437,7 +3425,6 @@ var hivtrace_cluster_network_graph = function (
                   .style("font-weight", null);
                 d3.select(this).style("font-weight", "bold");
               } else {
-                console.log("[node_filter DEBUG] click", { index, label });
                 // Filters 3-7 need site clusterOI data; bail before toggling
                 // so the filter doesn't get stuck "on" with nothing to apply.
                 if (index >= 3 && index <= 7) {
@@ -3448,9 +3435,6 @@ var hivtrace_cluster_network_graph = function (
                     : (primary_instance &&
                         primary_instance.defined_priority_groups) ||
                       self.defined_priority_groups;
-                  console.log("[node_filter DEBUG] click pg_groups", {
-                    length: pg_groups && pg_groups.length,
-                  });
                   if (!pg_groups || !pg_groups.length) {
                     alert(
                       "Site clusterOI data is not yet available for filtering."
