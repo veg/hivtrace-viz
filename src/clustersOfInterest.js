@@ -1723,12 +1723,13 @@ function draw_priority_set_table(
         },
         {
           // size / new nodes
-          // Person-based count: dedup pg.nodes (MJ) or pg.node_objects (regular) by ehars_uid.
-          // For MJ, pg.node_objects only contains local nodes, so we dedup the full sequence
-          // list pg.nodes via unique_entity_list (groups by primary_key = first |-segment).
+          // Prefer pg.size (backend-computed, redaction-aware: "REDACTED" when
+          // disabled). Fall back to a frontend dedup by ehars_uid otherwise.
           value: [
             self.isMJCNetwork
-              ? self.unique_entity_list(pg.nodes).length
+              ? (pg.size !== undefined && pg.size !== null
+                  ? pg.size
+                  : self.unique_entity_list(pg.nodes).length)
               : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
@@ -1750,13 +1751,13 @@ function draw_priority_set_table(
           width: 100,
           format: function (v) {
             if (
-              self.isMJCNetwork &&
-              !self.fullMJCNetwork &&
-              self.MJCVariables.mjcCurrentSizeEnabled === false
+              (self.isMJCNetwork &&
+                !self.fullMJCNetwork &&
+                self.MJCVariables.mjcCurrentSizeEnabled === false) ||
+              (v && v[0] === "REDACTED")
             ) {
               return "REDACTED";
             }
-            //console.log (pg);
             if (v) {
               return (
                 v[0] +
