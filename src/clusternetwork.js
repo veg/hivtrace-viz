@@ -3253,11 +3253,19 @@ var hivtrace_cluster_network_graph = function (
 
       self._compute_node_filter_set = function (filter_index) {
         const ref_date = self.get_reference_date();
-        // MJ view filters against site clusterOIs (overlap groups on the MJC
-        // instance); regular view filters against this instance's clusterOIs.
+        // Site clusterOIs live on the primary instance (sub-network instances
+        // have empty arrays). MJ view uses the overlap groups; regular view
+        // uses defined_priority_groups directly.
+        const primary_instance = HTX.HIVTxNetwork._primaryInstance;
         const pg_groups = self.isMJCNetwork
-          ? self.overlap_defined_priority_groups
-          : self.defined_priority_groups;
+          ? primary_instance && primary_instance.overlap_defined_priority_groups
+          : (primary_instance && primary_instance.defined_priority_groups) ||
+            self.defined_priority_groups;
+        console.log("[node_filter DEBUG] compute", {
+          filter_index,
+          isMJCNetwork: self.isMJCNetwork,
+          pg_groups_length: pg_groups && pg_groups.length,
+        });
 
         // Diagnosed within last 36 months
         if (filter_index === 1) {
@@ -3375,28 +3383,38 @@ var hivtrace_cluster_network_graph = function (
           });
         }
 
-        self.nodes.forEach((n) => {
-          n.node_filter_hidden = node_set !== null && !node_set.has(n.id);
-        });
-
-        self.clusters.forEach((c) => {
-          const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
-          c.node_filter_hidden =
-            node_set !== null &&
-            cluster_nodes.length > 0 &&
-            cluster_nodes.every((n) => n.node_filter_hidden);
-        });
+        // Per-instance state (don't mutate shared node objects, otherwise
+        // other views rendering the same nodes get affected).
+        self._node_filter_visible_ids = node_set;
+        if (node_set !== null) {
+          self._node_filter_hidden_clusters = new Set();
+          self.clusters.forEach((c) => {
+            const cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
+            if (
+              cluster_nodes.length > 0 &&
+              cluster_nodes.every((n) => !node_set.has(n.id))
+            ) {
+              self._node_filter_hidden_clusters.add(c.cluster_id);
+            }
+          });
+        } else {
+          self._node_filter_hidden_clusters = null;
+        }
 
         self.update(true);
       };
 
       self._setup_node_filter_ui = function () {
-        // Only the dropdown's owner binds handlers; otherwise sub-network
-        // instances (cluster-detail panels) would steal the shared DOM click.
-        if (!self.isPrimaryGraph && !self.fullMJCNetwork) return;
         const filter_container = d3.select(
           self.get_ui_element_selector_by_role("node_filter_menu")
         );
+        console.log("[node_filter DEBUG] setup", {
+          isPrimaryGraph: self.isPrimaryGraph,
+          fullMJCNetwork: self.fullMJCNetwork,
+          isMJCNetwork: self.isMJCNetwork,
+          container_empty: filter_container.empty(),
+          selector: self.get_ui_element_selector_by_role("node_filter_menu"),
+        });
         if (filter_container.empty()) return;
         filter_container.selectAll("li").remove();
 
@@ -3419,12 +3437,20 @@ var hivtrace_cluster_network_graph = function (
                   .style("font-weight", null);
                 d3.select(this).style("font-weight", "bold");
               } else {
+                console.log("[node_filter DEBUG] click", { index, label });
                 // Filters 3-7 need site clusterOI data; bail before toggling
                 // so the filter doesn't get stuck "on" with nothing to apply.
                 if (index >= 3 && index <= 7) {
+                  const primary_instance = HTX.HIVTxNetwork._primaryInstance;
                   const pg_groups = self.isMJCNetwork
-                    ? self.overlap_defined_priority_groups
-                    : self.defined_priority_groups;
+                    ? primary_instance &&
+                      primary_instance.overlap_defined_priority_groups
+                    : (primary_instance &&
+                        primary_instance.defined_priority_groups) ||
+                      self.defined_priority_groups;
+                  console.log("[node_filter DEBUG] click pg_groups", {
+                    length: pg_groups && pg_groups.length,
+                  });
                   if (!pg_groups || !pg_groups.length) {
                     alert(
                       "Site clusterOI data is not yet available for filtering."
@@ -5400,7 +5426,12 @@ var hivtrace_cluster_network_graph = function (
         .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
         .style("opacity", (d) => node_opacity(d))
         .style("display", (d) => {
-          if (d.is_hidden || d.node_filter_hidden) return "none";
+          if (d.is_hidden) return "none";
+          if (
+            self._node_filter_visible_ids &&
+            !self._node_filter_visible_ids.has(d.id)
+          )
+            return "none";
           return null;
         })
         .call(
@@ -5504,7 +5535,12 @@ var hivtrace_cluster_network_graph = function (
       })
       .style("stroke-linejoin", (d, i) => (draw_from.length > 1 ? "round" : ""))
       .style("display", (d) => {
-        if (the_cluster.is_hidden || the_cluster.node_filter_hidden) return "none";
+        if (the_cluster.is_hidden) return "none";
+        if (
+          self._node_filter_hidden_clusters &&
+          self._node_filter_hidden_clusters.has(the_cluster.cluster_id)
+        )
+          return "none";
         return null;
       });
   }
@@ -7383,12 +7419,13 @@ var hivtrace_cluster_network_graph = function (
 
     link
       .style("display", (d) => {
+        if (d.target.is_hidden || d.source.is_hidden || d.is_hidden) {
+          return "none";
+        }
         if (
-          d.target.is_hidden ||
-          d.source.is_hidden ||
-          d.is_hidden ||
-          d.target.node_filter_hidden ||
-          d.source.node_filter_hidden
+          self._node_filter_visible_ids &&
+          (!self._node_filter_visible_ids.has(d.target.id) ||
+            !self._node_filter_visible_ids.has(d.source.id))
         ) {
           return "none";
         }
