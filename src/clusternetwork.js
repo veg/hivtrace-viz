@@ -4260,6 +4260,37 @@ var hivtrace_cluster_network_graph = function (
       }, 1);
     }
 
+    if (self.isPrimaryGraph) {
+      const showPlaceholder = (element, message) => {
+        if (element && element.node()) {
+          element.style("display", "none");
+          const parentNode = element.node().parentNode;
+          if (parentNode) {
+            const d3Parent = d3.select(parentNode);
+            d3Parent.selectAll(".table-loading-placeholder").remove();
+            d3Parent.insert("div", () => element.node())
+              .classed("table-loading-placeholder", true)
+              .style("padding", "2em")
+              .style("text-align", "center")
+              .style("color", "#666")
+              .style("font-size", "16px")
+              .html('<i class="fa fa-spinner fa-spin"></i> ' + message);
+          }
+        }
+      };
+
+      showPlaceholder(self.cluster_table, "Building clusters table...");
+
+      const subTable = network.check_network_option(options, "subcluster-table");
+      if (subTable) {
+        showPlaceholder(d3.select(subTable), "Building subclusters table...");
+      }
+
+      if (!self._is_CDC_) {
+        showPlaceholder(nodesTab.getNodeTable(), "Building node table...");
+      }
+    }
+
     runInitSteps(0);
   }
 
@@ -7472,47 +7503,6 @@ var hivtrace_cluster_network_graph = function (
       }
 
       if (!soft) {
-        // Place initial placeholders so tabs show visual feedback immediately
-        if (self.cluster_table && self.cluster_table.node()) {
-          self.cluster_table.style("display", "none");
-          var parent = d3.select(self.cluster_table.node().parentNode);
-          parent.selectAll(".table-loading-placeholder").remove();
-          parent.insert("div", () => self.cluster_table.node())
-            .classed("table-loading-placeholder", true)
-            .style("padding", "2em")
-            .style("text-align", "center")
-            .style("color", "#666")
-            .style("font-size", "16px")
-            .html('<i class="fa fa-spinner fa-spin"></i> Building clusters table...');
-        }
-        if (self.subcluster_table && self.subcluster_table.node()) {
-          self.subcluster_table.style("display", "none");
-          var parent = d3.select(self.subcluster_table.node().parentNode);
-          parent.selectAll(".table-loading-placeholder").remove();
-          parent.insert("div", () => self.subcluster_table.node())
-            .classed("table-loading-placeholder", true)
-            .style("padding", "2em")
-            .style("text-align", "center")
-            .style("color", "#666")
-            .style("font-size", "16px")
-            .html('<i class="fa fa-spinner fa-spin"></i> Building subclusters table...');
-        }
-        if (!self._is_CDC_) {
-          const nt = nodesTab.getNodeTable();
-          if (nt && nt.node()) {
-            nt.style("display", "none");
-            var parent = d3.select(nt.node().parentNode);
-            parent.selectAll(".table-loading-placeholder").remove();
-            parent.insert("div", () => nt.node())
-              .classed("table-loading-placeholder", true)
-              .style("padding", "2em")
-              .style("text-align", "center")
-              .style("color", "#666")
-              .style("font-size", "16px")
-              .html('<i class="fa fa-spinner fa-spin"></i> Building node table...');
-          }
-        }
-
         const steps = [
           // Step 1: Draw Clusters Table (Async/Chunked)
           (cb) => {

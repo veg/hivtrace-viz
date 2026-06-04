@@ -49625,6 +49625,29 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         runInitSteps(index + 1);
       }, 1);
     }
+    if (self.isPrimaryGraph) {
+      var showPlaceholder = function showPlaceholder(element, message) {
+        if (element && element.node()) {
+          element.style("display", "none");
+          var parentNode = element.node().parentNode;
+          if (parentNode) {
+            var d3Parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(parentNode);
+            d3Parent.selectAll(".table-loading-placeholder").remove();
+            d3Parent.insert("div", function () {
+              return element.node();
+            }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> ' + message);
+          }
+        }
+      };
+      showPlaceholder(self.cluster_table, "Building clusters table...");
+      var subTable = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "subcluster-table");
+      if (subTable) {
+        showPlaceholder(d3__WEBPACK_IMPORTED_MODULE_0__.select(subTable), "Building subclusters table...");
+      }
+      if (!self._is_CDC_) {
+        showPlaceholder(_nodesTab_js__WEBPACK_IMPORTED_MODULE_9__.getNodeTable(), "Building node table...");
+      }
+    }
     runInitSteps(0);
   }
 
@@ -51720,34 +51743,6 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         }, 0);
       }
       if (!soft) {
-        // Place initial placeholders so tabs show visual feedback immediately
-        if (self.cluster_table && self.cluster_table.node()) {
-          self.cluster_table.style("display", "none");
-          var parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.cluster_table.node().parentNode);
-          parent.selectAll(".table-loading-placeholder").remove();
-          parent.insert("div", function () {
-            return self.cluster_table.node();
-          }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> Building clusters table...');
-        }
-        if (self.subcluster_table && self.subcluster_table.node()) {
-          self.subcluster_table.style("display", "none");
-          var parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.subcluster_table.node().parentNode);
-          parent.selectAll(".table-loading-placeholder").remove();
-          parent.insert("div", function () {
-            return self.subcluster_table.node();
-          }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> Building subclusters table...');
-        }
-        if (!self._is_CDC_) {
-          var nt = _nodesTab_js__WEBPACK_IMPORTED_MODULE_9__.getNodeTable();
-          if (nt && nt.node()) {
-            nt.style("display", "none");
-            var parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(nt.node().parentNode);
-            parent.selectAll(".table-loading-placeholder").remove();
-            parent.insert("div", function () {
-              return nt.node();
-            }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> Building node table...');
-          }
-        }
         var steps = [
         // Step 1: Draw Clusters Table (Async/Chunked)
         function (cb) {
