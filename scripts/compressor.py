@@ -126,8 +126,8 @@ def pack_column_optimized(arr, path="", stats=None, disable_delta=False, disable
 
         keys = set()
         for item in arr:
-        if isinstance(item, dict):
-            keys.update(item.keys())
+            if isinstance(item, dict):
+                keys.update(item.keys())
 
         packed_nested = {}
         has_nulls = any(item is None or not isinstance(item, dict) for item in arr)
