@@ -5443,6 +5443,10 @@ var hivtrace_cluster_network_graph = function (
           clustersOfInterest.get_editor()
         );
       }
+    } else {
+      if (cb) {
+        cb();
+      }
     }
   };
 

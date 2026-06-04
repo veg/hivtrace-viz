@@ -50489,6 +50489,10 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         });
         _tables_js__WEBPACK_IMPORTED_MODULE_7__.add_a_sortable_table(element, headers, rows, true, options && options["caption"] ? options["caption"] : null, _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor());
       }
+    } else {
+      if (cb) {
+        cb();
+      }
     }
   };
 
