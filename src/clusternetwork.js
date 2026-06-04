@@ -97,9 +97,14 @@ var hivtrace_cluster_network_graph = function (
     false
   );
 
+  console.time("[PERF] HIVTxNetwork instantiation");
   var self = new HTX.HIVTxNetwork(json, button_bar_ui, null, !izPrimaryGraph);
+  console.timeEnd("[PERF] HIVTxNetwork instantiation");
+  self.post_init_callbacks = [];
 
+  console.time("[PERF] self.process_multiple_sequences");
   self.process_multiple_sequences();
+  console.timeEnd("[PERF] self.process_multiple_sequences");
 
   self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
   self.fullMJCNetwork = options && options["full-mjc-network"] ? true : false;
@@ -121,10 +126,12 @@ var hivtrace_cluster_network_graph = function (
     false
   );
 
+  console.time("[PERF] helpers.getUniqueValues");
   self.uniqValues = helpers.getUniqueValues(
     self.json.Nodes,
     self.json[kGlobals.network.GraphAttrbuteID]
   );
+  console.timeEnd("[PERF] helpers.getUniqueValues");
 
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
@@ -161,7 +168,9 @@ var hivtrace_cluster_network_graph = function (
   self.precomputed_subclusters = self.json["Subclusters"] || null;
   self.network_warning_tag = network_warning_tag;
 
+  console.time("[PERF] self.annotate_cluster_changes");
   self.annotate_cluster_changes();
+  console.timeEnd("[PERF] self.annotate_cluster_changes");
 
   self.filter_edges = true;
   self.hide_hxb2 = false;
@@ -3489,6 +3498,7 @@ var hivtrace_cluster_network_graph = function (
         );
     }
 
+    console.time("[PERF] filtering nodes and edges");
     if (kGlobals.network.GraphAttrbuteID in self.json) {
       attributes = self.json[kGlobals.network.GraphAttrbuteID];
     } else if (attributes && "hivtrace" in attributes) {
@@ -3530,6 +3540,7 @@ var hivtrace_cluster_network_graph = function (
       cp_v.id = i;
       return cp_v;
     });
+    console.timeEnd("[PERF] filtering nodes and edges");
 
     compute_node_degrees(self.nodes, self.edges);
 
@@ -4028,120 +4039,228 @@ var hivtrace_cluster_network_graph = function (
       }
     };
 
+    const initSteps = [];
+
     if (attributes) {
-      /*
-         map attributes into nodes and into the graph object itself using
-         kGlobals.network.GraphAttrbuteID as the key
-      */
+      initSteps.push({
+        name: "Mapping node attributes...",
+        run: () => {
+          if ("attribute_map" in attributes) {
+            var attribute_map = attributes["attribute_map"];
 
-      if ("attribute_map" in attributes) {
-        var attribute_map = attributes["attribute_map"];
+            if ("map" in attribute_map && attribute_map["map"].length > 0) {
+              graph_data[kGlobals.network.GraphAttrbuteID] = attribute_map[
+                "map"
+              ].map((a, i) => ({
+                label: a,
+                type: null,
+                values: {},
+                index: i,
+                range: 0,
+              }));
 
-        if ("map" in attribute_map && attribute_map["map"].length > 0) {
-          graph_data[kGlobals.network.GraphAttrbuteID] = attribute_map[
-            "map"
-          ].map((a, i) => ({
-            label: a,
-            type: null,
-            values: {},
-            index: i,
-            range: 0,
-          }));
+              graph_data.Nodes.forEach((n) => {
+                n[kGlobals.network.GraphAttrbuteID] = n.id.split(
+                  attribute_map["delimiter"]
+                );
+                n[kGlobals.network.GraphAttrbuteID].forEach((v, i) => {
+                  if (i < graph_data[kGlobals.network.GraphAttrbuteID].length) {
+                    if (
+                      !(
+                        v in
+                        graph_data[kGlobals.network.GraphAttrbuteID][i]["values"]
+                      )
+                    ) {
+                      graph_data[kGlobals.network.GraphAttrbuteID][i]["values"][v] =
+                        graph_data[kGlobals.network.GraphAttrbuteID][i]["range"];
+                      graph_data[kGlobals.network.GraphAttrbuteID][i]["range"] += 1;
+                    }
+                  }
+                });
+              });
 
-          graph_data.Nodes.forEach((n) => {
-            n[kGlobals.network.GraphAttrbuteID] = n.id.split(
-              attribute_map["delimiter"]
-            );
-            n[kGlobals.network.GraphAttrbuteID].forEach((v, i) => {
-              if (i < graph_data[kGlobals.network.GraphAttrbuteID].length) {
+              graph_data[kGlobals.network.GraphAttrbuteID].forEach((d) => {
                 if (
-                  !(
-                    v in
-                    graph_data[kGlobals.network.GraphAttrbuteID][i]["values"]
-                  )
+                  d["range"] < graph_data.Nodes.length &&
+                  d["range"] > 1 &&
+                  d["range"] <= 20
                 ) {
-                  graph_data[kGlobals.network.GraphAttrbuteID][i]["values"][v] =
-                    graph_data[kGlobals.network.GraphAttrbuteID][i]["range"];
-                  graph_data[kGlobals.network.GraphAttrbuteID][i]["range"] += 1;
+                  d["type"] = "category";
                 }
-              }
-              //graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] = 1 + (graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] ? graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] : 0);
-            });
-          });
-
-          graph_data[kGlobals.network.GraphAttrbuteID].forEach((d) => {
-            if (
-              d["range"] < graph_data.Nodes.length &&
-              d["range"] > 1 &&
-              d["range"] <= 20
-            ) {
-              d["type"] = "category";
+              });
             }
-          });
+          }
+        }
+      });
+
+      initSteps.push({
+        name: "Transforming predefined attributes...",
+        run: () => {
+          console.time("[PERF] populate_predefined_attribute");
+          for (const [key, def] of Object.entries(
+            self._networkPredefinedAttributeTransforms
+          )) {
+            self.populate_predefined_attribute(def, key);
+          }
+          console.timeEnd("[PERF] populate_predefined_attribute");
+        }
+      });
+
+      initSteps.push({
+        name: "Populating category menus...",
+        run: () => {
+          console.time("[PERF] self._aux_populate_category_menus");
+          self._aux_populate_category_menus();
+          console.timeEnd("[PERF] self._aux_populate_category_menus");
+        }
+      });
+    }
+
+    initSteps.push({
+      name: "Calculating cluster distances...",
+      run: () => {
+        if (self.cluster_sizes.length > max_points_to_render) {
+          var sorted_array = _.filter(
+            _.map(self.cluster_sizes, (d, i) => [d, i + 1]),
+            (d) => !_.isUndefined(d[0])
+          );
+          sorted_array = sorted_array.sort((a, b) => a[0] - b[0]);
+
+          for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
+            self.exclude_cluster_ids[sorted_array[k][1]] = 1;
+          }
+
+          if (_.size(self.exclude_cluster_ids)) {
+            self.warning_string +=
+              (self.warning_string.length ? "<br>" : "") +
+              "Excluded " +
+              (sorted_array.length - max_points_to_render) +
+              " clusters (maximum size " +
+              sorted_array[k - 1][0] +
+              " nodes) because only " +
+              max_points_to_render +
+              " objects can be shown at once.";
+          }
+        }
+
+        console.time("[PERF] cluster distances calculations");
+        self.edges.forEach((e, i) => {
+          self.clusters[
+            self.cluster_mapping[self.nodes[e.target].cluster]
+          ].distances.push(e.length);
+        });
+
+        self.clusters.forEach((d, i) => {
+          d.distances = helpers.describe_vector(d.distances);
+        });
+        console.timeEnd("[PERF] cluster distances calculations");
+
+        if (
+          network.check_network_option(
+            options,
+            "auto_expand_single_cluster",
+            false,
+            true
+          )
+        ) {
+          if (self.clusters.length == 1) {
+            self.clusters[0].collapsed = false;
+          }
         }
       }
-
-      for (const [key, def] of Object.entries(
-        self._networkPredefinedAttributeTransforms
-      )) {
-        self.populate_predefined_attribute(def, key);
-      }
-
-      self._aux_populate_category_menus();
-    }
-
-    if (self.cluster_sizes.length > max_points_to_render) {
-      var sorted_array = _.filter(
-        _.map(self.cluster_sizes, (d, i) => [d, i + 1]),
-        (d) => !_.isUndefined(d[0])
-      );
-      sorted_array = sorted_array.sort((a, b) => a[0] - b[0]);
-
-      //.map((d, i) => [d, i + 1])
-      //.sort((a, b) => a[0] - b[0]);
-
-      for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
-        self.exclude_cluster_ids[sorted_array[k][1]] = 1;
-      }
-
-      if (_.size(self.exclude_cluster_ids)) {
-        self.warning_string +=
-          (self.warning_string.length ? "<br>" : "") +
-          "Excluded " +
-          (sorted_array.length - max_points_to_render) +
-          " clusters (maximum size " +
-          sorted_array[k - 1][0] +
-          " nodes) because only " +
-          max_points_to_render +
-          " objects can be shown at once.";
-      }
-    }
-
-    self.edges.forEach((e, i) => {
-      self.clusters[
-        self.cluster_mapping[self.nodes[e.target].cluster]
-      ].distances.push(e.length);
     });
 
-    self.clusters.forEach((d, i) => {
-      d.distances = helpers.describe_vector(d.distances);
-    });
-    //self.clusters
-
-    if (
-      network.check_network_option(
-        options,
-        "auto_expand_single_cluster",
-        false,
-        true
-      )
-    ) {
-      if (self.clusters.length == 1) {
-        self.clusters[0].collapsed = false;
+    initSteps.push({
+      name: "Updating network visualization...",
+      run: () => {
+        self.update();
       }
+    });
+
+    initSteps.push({
+      name: "Applying configuration options...",
+      run: () => {
+        if (options) {
+          if (_.isNumber(options["charge"])) {
+            self.charge_correction = options["charge"];
+          }
+
+          if ("colorizer" in options) {
+            self.colorizer = options["colorizer"];
+          }
+
+          if ("node_shaper" in options) {
+            self.node_shaper = options["node_shaper"];
+          }
+
+          if ("callbacks" in options) {
+            options["callbacks"](self);
+          }
+
+          if (_.isArray(options["expand"])) {
+            self.expand_some_clusters(
+              _.filter(
+                self.clusters,
+                (c) => options["expand"].indexOf(c.cluster_id) >= 0
+              )
+            );
+          }
+
+          if (options["priority-sets-url"]) {
+            const is_writeable = options["is-writeable"];
+            self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], () =>
+              self.load_priority_sets(options["priority-sets-url"], is_writeable)
+            );
+          }
+
+          if (options["priority-set-add-from-mjc-url"]) {
+            self.priority_set_add_from_mjc_url =
+              options["priority-set-add-from-mjc-url"];
+          }
+
+          if (options["mjc-archive-url"]) {
+            self.mjc_archive_url = options["mjc-archive-url"];
+          }
+
+          if (options["mjc-uuid"]) {
+            self.mjc_uuid = options["mjc-uuid"];
+          }
+
+          if (self.showing_diff) {
+            self.handle_attribute_categorical("_newly_added");
+          }
+        }
+
+        if (self.isPrimaryGraph) {
+          self.annotate_multiple_clusters_on_nodes();
+        }
+
+        if (self._is_CDC_ && !self.isMJCNetwork) {
+          self.define_node_search_table();
+        }
+
+        self.draw_attribute_labels();
+        network_layout.start();
+      }
+    });
+
+    function runInitSteps(index) {
+      if (index >= initSteps.length) {
+        if (self.post_init_callbacks) {
+          const callbacks = self.post_init_callbacks;
+          delete self.post_init_callbacks;
+          callbacks.forEach(cb => cb());
+        }
+        return;
+      }
+      window.updateNetworkLoadingStatus(initSteps[index].name);
+      setTimeout(() => {
+        initSteps[index].run();
+        runInitSteps(index + 1);
+      }, 1);
     }
 
-    self.update();
+    runInitSteps(0);
   }
 
   /**
@@ -4892,7 +5011,20 @@ var hivtrace_cluster_network_graph = function (
   ) {
     container = container || nodesTab.getNodeTable();
 
-    if (container) {
+    if (container && container.node()) {
+      container.style("display", "none");
+      const parentNode = container.node().parentNode;
+      if (parentNode) {
+        const d3Parent = d3.select(parentNode);
+        d3Parent.selectAll(".table-loading-placeholder").remove();
+        d3Parent.insert("div", () => container.node())
+          .classed("table-loading-placeholder", true)
+          .style("padding", "2em")
+          .style("text-align", "center")
+          .style("color", "#666")
+          .style("font-size", "16px")
+          .html('<i class="fa fa-spinner fa-spin"></i> Building node table...');
+      }
       node_list = node_list || self.nodes;
 
       ND = ND || node_list.length;
@@ -5004,13 +5136,27 @@ var hivtrace_cluster_network_graph = function (
    * @param {Object} options - Additional options for the table.
    * @returns {void}
    */
-  self.draw_cluster_table = function (extra_columns, element, options) {
+  self.draw_cluster_table = function (extra_columns, element, options, cb) {
     var skip_clusters = options && options["no-clusters"];
     var skip_subclusters = !(options && options["subclusters"]);
 
     element = element || self.cluster_table;
 
-    if (element) {
+    if (element && element.node()) {
+      element.style("display", "none");
+      const parentNode = element.node().parentNode;
+      if (parentNode) {
+        const d3Parent = d3.select(parentNode);
+        d3Parent.selectAll(".table-loading-placeholder").remove();
+        const msg = skip_clusters ? "Building subclusters table..." : "Building clusters table...";
+        d3Parent.insert("div", () => element.node())
+          .classed("table-loading-placeholder", true)
+          .style("padding", "2em")
+          .style("text-align", "center")
+          .style("color", "#666")
+          .style("font-size", "16px")
+          .html('<i class="fa fa-spinner fa-spin"></i> ' + msg);
+      }
       var headers = [
         [
           {
@@ -5099,162 +5245,204 @@ var hivtrace_cluster_network_graph = function (
 
       var rows = [];
 
-      _.each(self.clusters, (cluster) => {
-        var make_row = function (d, is_subcluster) {
-          var this_row = [
-            // CLUSTER ID
-            {
-              value: [d.cluster_id, is_subcluster, d], //.cluster_id,
-              callback: _cluster_table_draw_id,
-            },
-            // CLUSTER ATTRIBUTES AND BUTTONS
-            {
-              value: function () {
-                var actual_cluster = is_subcluster ? d.parent_cluster : d;
+      var make_row = function (d, is_subcluster) {
+        var this_row = [
+          // CLUSTER ID
+          {
+            value: [d.cluster_id, is_subcluster, d], //.cluster_id,
+            callback: _cluster_table_draw_id,
+          },
+          // CLUSTER ATTRIBUTES AND BUTTONS
+          {
+            value: function () {
+              var actual_cluster = is_subcluster ? d.parent_cluster : d;
 
-                return [
-                  actual_cluster.collapsed,
-                  actual_cluster.hxb2_linked,
-                  actual_cluster.match_filter,
-                  actual_cluster.cluster_id,
-                  is_subcluster
-                    ? null
-                    : self.cluster_attributes
-                    ? self.cluster_attributes[actual_cluster.cluster_id]
-                    : null,
-                ];
-              },
-              callback: _cluster_table_draw_buttons,
-              volatile: true,
-            },
-            // CLUSTER SIZE
-            {
-              value: self.unique_entity_list(d.children).length,
-            },
-          ];
-
-          if (self._is_CDC_) {
-            this_row[2].volatile = true;
-            this_row[2].actions = function (item, value) {
-              if (!clustersOfInterest.get_editor()) {
-                return null;
-              }
               return [
-                {
-                  icon: "fa-plus",
-                  action: function (button, v) {
-                    if (clustersOfInterest.get_editor()) {
-                      clustersOfInterest
-                        .get_editor()
-                        .append_node_objects(d.children);
-                    }
-                    return false;
-                  },
-                  help: "Add to cluster of interest",
-                },
+                actual_cluster.collapsed,
+                actual_cluster.hxb2_linked,
+                actual_cluster.match_filter,
+                actual_cluster.cluster_id,
+                is_subcluster
+                  ? null
+                  : self.cluster_attributes
+                  ? self.cluster_attributes[actual_cluster.cluster_id]
+                  : null,
               ];
-            };
-          }
+            },
+            callback: _cluster_table_draw_buttons,
+            volatile: true,
+          },
+          // CLUSTER SIZE
+          {
+            value: self.unique_entity_list(d.children).length,
+          },
+        ];
 
-          if (self._is_seguro) {
-            this_row.push({
-              value: d,
-              format: function (d) {
-                return _.filter(
-                  d.children,
-                  (child) =>
-                    d3.time.months.utc(
-                      child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
-                    ).length <= 2
-                ).length;
+        if (self._is_CDC_) {
+          this_row[2].volatile = true;
+          this_row[2].actions = function (item, value) {
+            if (!clustersOfInterest.get_editor()) {
+              return null;
+            }
+            return [
+              {
+                icon: "fa-plus",
+                action: function (button, v) {
+                  if (clustersOfInterest.get_editor()) {
+                    clustersOfInterest
+                      .get_editor()
+                      .append_node_objects(d.children);
+                  }
+                  return false;
+                },
+                help: "Add to cluster of interest",
               },
-            });
-
-            this_row.push({
-              value: d,
-              format: function (d) {
-                const recent = _.filter(
-                  d.children,
-                  (child) =>
-                    d3.time.months.utc(
-                      child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
-                    ).length <= 2
-                ).length;
-                return recent / Math.sqrt(d.children.length);
-              },
-            });
-          }
-
-          if (!self._is_CDC_) {
-            this_row.push({
-              value: d.degrees,
-              format: function (d) {
-                try {
-                  return (
-                    kGlobals.formats.FloatFormat(d["mean"]) +
-                    " [" +
-                    kGlobals.formats.FloatFormat(d["median"]) +
-                    ", " +
-                    kGlobals.formats.FloatFormat(d["Q1"]) +
-                    " - " +
-                    kGlobals.formats.FloatFormat(d["Q3"]) +
-                    "]"
-                  );
-                } catch (e) {
-                  return "";
-                }
-              },
-            });
-            this_row.push({
-              value: d.distances,
-              format: function (d) {
-                try {
-                  return (
-                    kGlobals.formats.FloatFormat(d["mean"]) +
-                    " [" +
-                    kGlobals.formats.FloatFormat(d["median"]) +
-                    ", " +
-                    kGlobals.formats.FloatFormat(d["Q1"]) +
-                    " - " +
-                    kGlobals.formats.FloatFormat(d["Q3"]) +
-                    "]"
-                  );
-                } catch (e) {
-                  return "";
-                }
-              },
-            });
-          }
-          if (extra_columns) {
-            _.each(extra_columns, (ed) => {
-              this_row.push(ed.generator(d, self));
-            });
-          }
-
-          return this_row;
-        };
-
-        if (!skip_clusters) {
-          rows.push(make_row(cluster, false));
+            ];
+          };
         }
 
-        if (!skip_subclusters) {
-          _.each(cluster.subclusters, (sub_cluster) => {
-            rows.push(make_row(sub_cluster, true));
+        if (self._is_seguro) {
+          this_row.push({
+            value: d,
+            format: function (d) {
+              return _.filter(
+                d.children,
+                (child) =>
+                  d3.time.months.utc(
+                    child.patient_attributes["sample_dt"],
+                    timeDateUtil.getCurrentDate()
+                  ).length <= 2
+              ).length;
+            },
+          });
+
+          this_row.push({
+            value: d,
+            format: function (d) {
+              const recent = _.filter(
+                d.children,
+                (child) =>
+                  d3.time.months.utc(
+                    child.patient_attributes["sample_dt"],
+                    timeDateUtil.getCurrentDate()
+                  ).length <= 2
+              ).length;
+              return recent / Math.sqrt(d.children.length);
+            },
           });
         }
-      });
 
-      tables.add_a_sortable_table(
-        element,
-        headers,
-        rows,
-        true,
-        options && options["caption"] ? options["caption"] : null,
-        clustersOfInterest.get_editor()
-      );
+        if (!self._is_CDC_) {
+          this_row.push({
+            value: d.degrees,
+            format: function (d) {
+              try {
+                return (
+                  kGlobals.formats.FloatFormat(d["mean"]) +
+                  " [" +
+                  kGlobals.formats.FloatFormat(d["median"]) +
+                  ", " +
+                  kGlobals.formats.FloatFormat(d["Q1"]) +
+                  " - " +
+                  kGlobals.formats.FloatFormat(d["Q3"]) +
+                  "]"
+                );
+              } catch (e) {
+                return "";
+              }
+            },
+          });
+          this_row.push({
+            value: d.distances,
+            format: function (d) {
+              try {
+                return (
+                  kGlobals.formats.FloatFormat(d["mean"]) +
+                  " [" +
+                  kGlobals.formats.FloatFormat(d["median"]) +
+                  ", " +
+                  kGlobals.formats.FloatFormat(d["Q1"]) +
+                  " - " +
+                  kGlobals.formats.FloatFormat(d["Q3"]) +
+                  "]"
+                );
+              } catch (e) {
+                return "";
+              }
+            },
+          });
+        }
+        if (extra_columns) {
+          _.each(extra_columns, (ed) => {
+            this_row.push(ed.generator(d, self));
+          });
+        }
+
+        return this_row;
+      };
+
+      if (cb) {
+        var chunk_size = 3000;
+        var cluster_index = 0;
+
+        function processClusterRowsChunk() {
+          var end = Math.min(cluster_index + chunk_size, self.clusters.length);
+          for (var idx = cluster_index; idx < end; idx++) {
+            var cluster = self.clusters[idx];
+            if (!skip_clusters) {
+              rows.push(make_row(cluster, false));
+            }
+            if (!skip_subclusters) {
+              _.each(cluster.subclusters, (sub_cluster) => {
+                rows.push(make_row(sub_cluster, true));
+              });
+            }
+          }
+
+          cluster_index = end;
+          if (self.clusters.length > 3000) {
+            const percent = Math.round((cluster_index / self.clusters.length) * 100);
+            const typeLabel = skip_clusters ? "subcluster" : "cluster";
+            window.updateNetworkLoadingStatus(`Preparing ${typeLabel} table rows... (${percent}%)`);
+          }
+
+          if (cluster_index < self.clusters.length) {
+            setTimeout(processClusterRowsChunk, 1);
+          } else {
+            tables.add_a_sortable_table(
+              element,
+              headers,
+              rows,
+              true,
+              options && options["caption"] ? options["caption"] : null,
+              clustersOfInterest.get_editor()
+            );
+            cb();
+          }
+        }
+
+        processClusterRowsChunk();
+      } else {
+        _.each(self.clusters, (cluster) => {
+          if (!skip_clusters) {
+            rows.push(make_row(cluster, false));
+          }
+          if (!skip_subclusters) {
+            _.each(cluster.subclusters, (sub_cluster) => {
+              rows.push(make_row(sub_cluster, true));
+            });
+          }
+        });
+
+        tables.add_a_sortable_table(
+          element,
+          headers,
+          rows,
+          true,
+          options && options["caption"] ? options["caption"] : null,
+          clustersOfInterest.get_editor()
+        );
+      }
     }
   };
 
@@ -5385,7 +5573,11 @@ var hivtrace_cluster_network_graph = function (
           (d) => d.match_filter && !self.hide_unselected
         )
         .classed("injected_object", (d) => d.node_class === "injected")
-        .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
+        .attr("transform", (d) => {
+          const x = (isNaN(d.x) || typeof d.x === "undefined") ? (self.width / 2 || 0) : d.x;
+          const y = (isNaN(d.y) || typeof d.y === "undefined") ? (self.height / 2 || 0) : d.y;
+          return "translate(" + x + "," + y + ")";
+        })
         .style("opacity", (d) => node_opacity(d))
         .style("display", (d) => {
           if (d.is_hidden || d.mjc_hidden) return "none";
@@ -5542,6 +5734,12 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.handle_shape_categorical = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(() => {
+        self.handle_shape_categorical(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
 
     ["shapes"].forEach((lbl) => {
@@ -5549,7 +5747,7 @@ var hivtrace_cluster_network_graph = function (
         .selectAll("li")
         .selectAll("a")
         .attr("style", (d, i) => {
-          if (d[1] === cat_id) {
+          if (d && d[1] === cat_id) {
             set_attr = d[0];
             return " font-weight: bold;";
           }
@@ -6119,6 +6317,12 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.handle_attribute_opacity = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(() => {
+        self.handle_attribute_opacity(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
 
     ["opacity"].forEach((lbl) => {
@@ -6126,7 +6330,7 @@ var hivtrace_cluster_network_graph = function (
         .selectAll("li")
         .selectAll("a")
         .attr("style", (d, i) => {
-          if (d[1] === cat_id) {
+          if (d && d[1] === cat_id) {
             set_attr = d[0];
             return " font-weight: bold;";
           }
@@ -6175,6 +6379,12 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.handle_attribute_continuous = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(() => {
+        self.handle_attribute_continuous(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
 
     render_chord_diagram("aux_svg_holder", null, null);
@@ -6195,7 +6405,7 @@ var hivtrace_cluster_network_graph = function (
         .selectAll("li")
         .selectAll("a")
         .attr("style", (d, i) => {
-          if (d[1] === cat_id) {
+          if (d && d[1] === cat_id) {
             set_attr = d[0];
             return " font-weight: bold;";
           }
@@ -6685,6 +6895,12 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.handle_attribute_categorical = function (cat_id, skip_update) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(() => {
+        self.handle_attribute_categorical(cat_id, skip_update);
+      });
+      return;
+    }
     var set_attr = "None";
 
     d3.select(self.get_ui_element_selector_by_role("attributes_invert")).style(
@@ -6702,7 +6918,7 @@ var hivtrace_cluster_network_graph = function (
         .selectAll("li")
         .selectAll("a")
         .attr("style", (d, i) => {
-          if (d[1] === cat_id) {
+          if (d && d[1] === cat_id) {
             set_attr = d[0];
             return " font-weight: bold;";
           }
@@ -7001,6 +7217,21 @@ var hivtrace_cluster_network_graph = function (
    * @returns {void}
    */
   self.link_generator_function = function (d) {
+    if (
+      !d.source ||
+      !d.target ||
+      typeof d.source.x === "undefined" ||
+      typeof d.source.y === "undefined" ||
+      typeof d.target.x === "undefined" ||
+      typeof d.target.y === "undefined" ||
+      isNaN(d.source.x) ||
+      isNaN(d.source.y) ||
+      isNaN(d.target.x) ||
+      isNaN(d.target.y)
+    ) {
+      return;
+    }
+
     var pull = d.pull || 0.0;
     var path;
 
@@ -7099,125 +7330,18 @@ var hivtrace_cluster_network_graph = function (
     }
 
     if (self.isMJCNetwork && !self.fullMJCNetwork) {
+      d3.select(self.container).selectAll(".my_progress").style("display", "none");
       return;
     }
 
-    self.needs_an_update = false;
-
-    if (options && options["extra-graphics"]) {
-      options["extra-graphics"].call(null, self, options);
-    }
-
-    if (friction) {
-      network_layout.friction(friction);
-    }
-    self.display_warning(self.warning_string, true);
-
     var rendered_nodes, rendered_clusters, link;
+    var draw_me;
 
     if (!soft) {
-      var draw_me = prepare_data_to_graph();
-
+      window.updateNetworkLoadingStatus("Preparing data to graph...");
+      draw_me = prepare_data_to_graph();
       network_layout.nodes(draw_me.all).links(draw_me.edges);
       update_network_string(draw_me.nodes.length, draw_me.edges.length);
-
-      var edge_set = {};
-
-      _.each(draw_me.edges, (d) => {
-        d.pull = 0.0;
-        var tag;
-
-        if (d.source < d.target) {
-          tag = String(d.source) + "|" + d.target;
-        } else {
-          tag = String(d.target) + "|" + d.source;
-        }
-        if (tag in edge_set) {
-          edge_set[tag].push(d);
-        } else {
-          edge_set[tag] = [d];
-        }
-      });
-
-      _.each(edge_set, (v) => {
-        if (v.length > 1) {
-          var step = 1 / (v.length - 1);
-          _.each(v, (edge, index) => {
-            edge.pull = -0.5 + index * step;
-          });
-        }
-      });
-
-      link = self.network_svg
-        .selectAll(".link")
-        .data(draw_me.edges, (d) => d.id);
-
-      //link.enter().append("line").classed("link", true);
-      link.enter().append("path").classed("link", true);
-      link.exit().remove();
-
-      link
-        .classed("removed", (d) => self.highlight_unsuppored_edges && d.removed)
-        .classed(
-          "unsupported",
-          (d) =>
-            self.highlight_unsuppored_edges &&
-            "support" in d &&
-            d["support"] > 0.05
-        )
-        .classed(
-          "core-link",
-          (d) =>
-            //console.log (d["length"] <= self.core_link_length);
-            d["length"] <= self.core_link_length
-          //return false;
-        )
-        .classed(
-          "mspp-link",
-          (d) =>
-            //console.log (d["length"] <= self.core_link_length);
-            d["weight"] > 1
-          //return false;
-        );
-
-      link
-        .on("mouseover", edge_pop_on)
-        .on("mouseout", edge_pop_off)
-        .filter((d) => d.directed)
-        .attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
-
-      rendered_nodes = self.network_svg
-        .selectAll(".node")
-        .data(draw_me.nodes, (d) => d.id);
-
-      rendered_nodes.exit().remove();
-
-      /*rendered_nodes.enter().each (function (d) {
-        this.append ("path");
-      });*/
-
-      rendered_nodes.enter().append("g").append("path");
-
-      rendered_clusters = self.network_svg.selectAll(".cluster-group").data(
-        draw_me.clusters.map((d) => d),
-        (d) => d.cluster_id
-      );
-
-      rendered_clusters.exit().remove();
-      rendered_clusters
-        .enter()
-        .append("g")
-        .attr("class", "cluster-group")
-        .attr("transform", (d) => "translate(" + d.x + "," + d.y + ")")
-        .on("click", (d) => network.handle_cluster_click(self, d))
-        .on("mouseover", cluster_pop_on)
-        .on("mouseout", cluster_pop_off)
-        .call(network_layout.drag().on("dragstart", cluster_pop_off));
-
-      self.draw_cluster_table(
-        self.extra_cluster_table_columns,
-        self.cluster_table
-      );
 
       if (
         self._is_CDC_ &&
@@ -7225,8 +7349,9 @@ var hivtrace_cluster_network_graph = function (
         options &&
         options["no-subcluster-compute"]
       ) {
-        // use precomputed subclusters
+        window.updateNetworkLoadingStatus("Computing subclusters...");
 
+        // use precomputed subclusters
         _.each(self.clusters, (cluster_nodes, cluster_index) => {
           /** extract subclusters; all nodes at given threshold */
           /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
@@ -7303,150 +7428,500 @@ var hivtrace_cluster_network_graph = function (
             (d) => d.priority_score[0] || 0
           );
         });
-      }
-
-      if (self.subcluster_table) {
-        /*
-            SLKP 20200727 scan subclusters and identify which, if any
-            will need to be automatically created as priority sets
-        */
-
-        // draw subcluster tables
-
-        self.draw_cluster_table(
-          self.extra_subcluster_table_columns,
-          self.subcluster_table,
-          {
-            "no-clusters": true,
-            subclusters: true,
-            headers: function (headers) {
-              headers[0][0].value = "Subcluster ID";
-              headers[0][0].help = "Unique subcluster ID";
-              headers[0][2].help = "Number of total cases in the subcluster";
-            },
-          }
-        );
-      }
-
-      if (self._is_CDC_) {
-        // defer until later
-      } else {
-        self.draw_node_table(self.extra_node_table_columns, null, null, {
-          "no-filter": true,
-        });
-      }
-    } else {
-      rendered_nodes = self.network_svg.selectAll(".node");
-      rendered_clusters = self.network_svg.selectAll(".cluster-group");
-      link = self.network_svg.selectAll(".link");
-      update_network_string(rendered_nodes.size(), link.size());
     }
+  }
 
-    self.rendered_object_counts = {
-      nodes: rendered_nodes.size(),
-      edges: link.size(),
-      clusters: rendered_clusters.size(),
-      has_hatching: false,
-    };
+    // 2. Defer heavy SVG rendering and layout to a timeout to yield control to the browser.
+    // This allows the browser to paint and display the tables first!
+    setTimeout(() => {
+      self.needs_an_update = false;
 
-    rendered_nodes.each(function (d) {
-      draw_a_node(this, d);
-      self.rendered_object_counts.has_hatching =
-        self.rendered_object_counts.has_hatching || node_multiple_membership(d);
-    });
+      if (options && options["extra-graphics"]) {
+        options["extra-graphics"].call(null, self, options);
+      }
 
-    rendered_clusters.each(function (d) {
-      draw_a_cluster(this, d);
-    });
+      if (friction) {
+        network_layout.friction(friction);
+      }
+      self.display_warning(self.warning_string, true);
 
-    link.style("opacity", (d) =>
-      Math.max(node_opacity(d.target), node_opacity(d.source))
-    );
-
-    if (self.additional_edge_styler) {
-      link.each(function (d) {
-        self.additional_edge_styler(this, d, self);
-      });
-    }
-
-    link
-      .style("display", (d) => {
-        if (
-          d.target.is_hidden ||
-          d.source.is_hidden ||
-          d.is_hidden ||
-          d.target.mjc_hidden ||
-          d.source.mjc_hidden
-        ) {
-          return "none";
+      function runSteps(steps, index) {
+        if (index >= steps.length) {
+          d3.select(self.container).selectAll(".my_progress").style("display", "none");
+          return;
         }
-        return null;
-      })
-      .classed(
-        "selected_object",
-        (d) => d.ref.length_filter && !self.hide_unselected
-      );
+        setTimeout(() => {
+          steps[index](() => {
+            runSteps(steps, index + 1);
+          });
+        }, 0);
+      }
 
-    if (!soft) {
-      currently_displayed_objects =
-        rendered_clusters[0].length + rendered_nodes[0].length;
-
-      network_layout.on("tick", () => {
-        var sizes = network_layout.size();
-
-        rendered_nodes.attr("transform", (d) => {
-          // Defalut values (just to keep nodes in the svg container rectangle).
-          var xBoundLower = 10;
-          var xBoundUpper = sizes[0] - 10;
-          var yBoundLower = 10;
-          var yBoundUpper = sizes[1] - 10;
-
-          if (self.showing_on_map) {
-            const allowed_offset_from_center_of_country = 15;
-            // If the country is in the list that we have, override the default values for the bounds.
-            var country_code = self._get_node_country(d);
-
-            if (country_code in self.countryCentersObject) {
-              const center = self.countryCentersObject[country_code].countryXY;
-
-              xBoundLower = center[0] - allowed_offset_from_center_of_country;
-              xBoundUpper = center[0] + allowed_offset_from_center_of_country;
-              yBoundLower = center[1] - allowed_offset_from_center_of_country;
-              yBoundUpper = center[1] + allowed_offset_from_center_of_country;
-            }
+      if (!soft) {
+        // Place initial placeholders so tabs show visual feedback immediately
+        if (self.cluster_table && self.cluster_table.node()) {
+          self.cluster_table.style("display", "none");
+          var parent = d3.select(self.cluster_table.node().parentNode);
+          parent.selectAll(".table-loading-placeholder").remove();
+          parent.insert("div", () => self.cluster_table.node())
+            .classed("table-loading-placeholder", true)
+            .style("padding", "2em")
+            .style("text-align", "center")
+            .style("color", "#666")
+            .style("font-size", "16px")
+            .html('<i class="fa fa-spinner fa-spin"></i> Building clusters table...');
+        }
+        if (self.subcluster_table && self.subcluster_table.node()) {
+          self.subcluster_table.style("display", "none");
+          var parent = d3.select(self.subcluster_table.node().parentNode);
+          parent.selectAll(".table-loading-placeholder").remove();
+          parent.insert("div", () => self.subcluster_table.node())
+            .classed("table-loading-placeholder", true)
+            .style("padding", "2em")
+            .style("text-align", "center")
+            .style("color", "#666")
+            .style("font-size", "16px")
+            .html('<i class="fa fa-spinner fa-spin"></i> Building subclusters table...');
+        }
+        if (!self._is_CDC_) {
+          const nt = nodesTab.getNodeTable();
+          if (nt && nt.node()) {
+            nt.style("display", "none");
+            var parent = d3.select(nt.node().parentNode);
+            parent.selectAll(".table-loading-placeholder").remove();
+            parent.insert("div", () => nt.node())
+              .classed("table-loading-placeholder", true)
+              .style("padding", "2em")
+              .style("text-align", "center")
+              .style("color", "#666")
+              .style("font-size", "16px")
+              .html('<i class="fa fa-spinner fa-spin"></i> Building node table...');
           }
+        }
 
-          return (
-            "translate(" +
-            (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) +
-            "," +
-            (d.y = Math.max(yBoundLower, Math.min(yBoundUpper, d.y))) +
-            ")"
-          );
+        const steps = [
+          // Step 1: Draw Clusters Table (Async/Chunked)
+          (cb) => {
+            console.time("[PERF] self.draw_cluster_table");
+            self.draw_cluster_table(
+              self.extra_cluster_table_columns,
+              self.cluster_table,
+              null,
+              () => {
+                console.timeEnd("[PERF] self.draw_cluster_table");
+                cb();
+              }
+            );
+          },
+          // Step 2: Draw Subclusters Table (Async/Chunked)
+          (cb) => {
+            if (self.subcluster_table) {
+              console.time("[PERF] self.draw_subcluster_table");
+              self.draw_cluster_table(
+                self.extra_subcluster_table_columns,
+                self.subcluster_table,
+                {
+                  "no-clusters": true,
+                  subclusters: true,
+                  headers: function (headers) {
+                    headers[0][0].value = "Subcluster ID";
+                    headers[0][0].help = "Unique subcluster ID";
+                    headers[0][2].help = "Number of total cases in the subcluster";
+                  },
+                },
+                () => {
+                  console.timeEnd("[PERF] self.draw_subcluster_table");
+                  cb();
+                }
+              );
+            } else {
+              cb();
+            }
+          },
+          // Step 3: Draw Node Table (Async/Chunked)
+          (cb) => {
+            if (self._is_CDC_) {
+              cb();
+            } else {
+              self.draw_node_table(self.extra_node_table_columns, null, null, {
+                "no-filter": true,
+              });
+              cb();
+            }
+          },
+          // Step 4: Edge set calculation
+          (cb) => {
+            window.updateNetworkLoadingStatus("Analyzing network links...");
+            var edge_set = {};
+
+            _.each(draw_me.edges, (d) => {
+              d.pull = 0.0;
+              var tag;
+
+              if (d.source < d.target) {
+                tag = String(d.source) + "|" + d.target;
+              } else {
+                tag = String(d.target) + "|" + d.source;
+              }
+              if (tag in edge_set) {
+                edge_set[tag].push(d);
+              } else {
+                edge_set[tag] = [d];
+              }
+            });
+
+            _.each(edge_set, (v) => {
+              if (v.length > 1) {
+                var step = 1 / (v.length - 1);
+                _.each(v, (edge, index) => {
+                  edge.pull = -0.5 + index * step;
+                });
+              }
+            });
+            cb();
+          },
+
+          // Step 2: Draw links (append SVG paths in chunks)
+          (cb) => {
+            window.updateNetworkLoadingStatus("Rendering link elements...");
+            link = self.network_svg
+              .selectAll(".link")
+              .data(draw_me.edges, (d) => d.id);
+
+            var enter_data = draw_me.edges;
+            link.exit().remove();
+
+            var chunk_size = 1000;
+            var index = 0;
+            function appendLinksChunk() {
+              var end = Math.min(index + chunk_size, enter_data.length);
+              for (var i = index; i < end; i++) {
+                var d = enter_data[i];
+                var path = self.network_svg.append("path")
+                  .datum(d)
+                  .classed("link", true)
+                  .classed("removed", self.highlight_unsuppored_edges && d.removed)
+                  .classed(
+                    "unsupported",
+                    self.highlight_unsuppored_edges &&
+                    "support" in d &&
+                    d["support"] > 0.05
+                  )
+                  .classed(
+                    "core-link",
+                    d["length"] <= self.core_link_length
+                  )
+                  .classed(
+                    "mspp-link",
+                    d["weight"] > 1
+                  )
+                  .on("mouseover", edge_pop_on)
+                  .on("mouseout", edge_pop_off);
+
+                if (d.directed) {
+                  path.attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
+                }
+              }
+              index = end;
+              if (index < enter_data.length) {
+                setTimeout(appendLinksChunk, 1);
+              } else {
+                cb();
+              }
+            }
+            appendLinksChunk();
+          },
+
+          // Step 3: Draw nodes and clusters (append SVG groups/paths in chunks)
+          (cb) => {
+            window.updateNetworkLoadingStatus("Rendering node elements...");
+            rendered_nodes = self.network_svg
+              .selectAll(".node")
+              .data(draw_me.nodes, (d) => d.id);
+
+            var node_enter_data = draw_me.nodes;
+            rendered_nodes.exit().remove();
+
+            rendered_clusters = self.network_svg.selectAll(".cluster-group").data(
+              draw_me.clusters.map((d) => d),
+              (d) => d.cluster_id
+            );
+
+            rendered_clusters.exit().remove();
+            rendered_clusters
+              .enter()
+              .append("g")
+              .attr("class", "cluster-group")
+              .attr("transform", (d) => {
+                const x = (isNaN(d.x) || typeof d.x === "undefined") ? (self.width / 2 || 0) : d.x;
+                const y = (isNaN(d.y) || typeof d.y === "undefined") ? (self.height / 2 || 0) : d.y;
+                return "translate(" + x + "," + y + ")";
+              })
+              .on("click", (d) => network.handle_cluster_click(self, d))
+              .on("mouseover", cluster_pop_on)
+              .on("mouseout", cluster_pop_off)
+              .call(network_layout.drag().on("dragstart", cluster_pop_off));
+
+            var node_chunk_size = 1000;
+            var node_index = 0;
+            function appendNodesChunk() {
+              var end = Math.min(node_index + node_chunk_size, node_enter_data.length);
+              for (var i = node_index; i < end; i++) {
+                var d = node_enter_data[i];
+                var g = self.network_svg.append("g")
+                  .datum(d)
+                  .classed("node", true);
+                g.append("path");
+              }
+              node_index = end;
+              if (node_index < node_enter_data.length) {
+                setTimeout(appendNodesChunk, 1);
+              } else {
+                cb();
+              }
+            }
+            appendNodesChunk();
+          },
+
+          // Step 4: Render objects counts and detail styling (Chunked)
+          (cb) => {
+            window.updateNetworkLoadingStatus("Styling nodes and clusters...");
+            rendered_nodes = self.network_svg.selectAll(".node");
+            link = self.network_svg.selectAll(".link");
+            rendered_clusters = self.network_svg.selectAll(".cluster-group");
+
+            self.rendered_object_counts = {
+              nodes: rendered_nodes.size(),
+              edges: link.size(),
+              clusters: rendered_clusters.size(),
+              has_hatching: false,
+            };
+
+            var nodes_array = rendered_nodes[0];
+            var node_style_index = 0;
+            function styleNodesChunk() {
+              var end = Math.min(node_style_index + 1000, nodes_array.length);
+              for (var i = node_style_index; i < end; i++) {
+                var node_el = nodes_array[i];
+                if (node_el) {
+                  var d = d3.select(node_el).datum();
+                  draw_a_node(node_el, d);
+                  self.rendered_object_counts.has_hatching =
+                    self.rendered_object_counts.has_hatching || node_multiple_membership(d);
+                }
+              }
+              node_style_index = end;
+              if (node_style_index < nodes_array.length) {
+                setTimeout(styleNodesChunk, 1);
+              } else {
+                styleClusters();
+              }
+            }
+
+            function styleClusters() {
+              rendered_clusters.each(function (d) {
+                draw_a_cluster(this, d);
+              });
+              styleLinks();
+            }
+
+            var links_array = link[0];
+            var link_style_index = 0;
+            function styleLinks() {
+              var end = Math.min(link_style_index + 1000, links_array.length);
+              for (var i = link_style_index; i < end; i++) {
+                var link_el = links_array[i];
+                if (link_el) {
+                  var d = d3.select(link_el).datum();
+                  var opacity = Math.max(node_opacity(d.target), node_opacity(d.source));
+                  d3.select(link_el).style("opacity", opacity);
+                  if (self.additional_edge_styler) {
+                    self.additional_edge_styler(link_el, d, self);
+                  }
+                  var display = (d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden) ? "none" : null;
+                  d3.select(link_el)
+                    .style("display", display)
+                    .classed("selected_object", d.ref.length_filter && !self.hide_unselected);
+                }
+              }
+              link_style_index = end;
+              if (link_style_index < links_array.length) {
+                setTimeout(styleLinks, 1);
+              } else {
+                cb();
+              }
+            }
+
+            styleNodesChunk();
+          },
+
+          // Step 5: Setup force layout tick and start
+          (cb) => {
+            window.updateNetworkLoadingStatus("Starting layout simulation...");
+            currently_displayed_objects =
+              rendered_clusters[0].length + rendered_nodes[0].length;
+
+            network_layout.on("tick", null); // Clear default listener during batching
+            network_layout.start();
+            network_layout.stop();
+
+            function updateDOMPositions() {
+              var sizes = network_layout.size();
+
+              rendered_nodes.attr("transform", (d) => {
+                // Defalut values (just to keep nodes in the svg container rectangle).
+                var xBoundLower = 10;
+                var xBoundUpper = sizes[0] - 10;
+                var yBoundLower = 10;
+                var yBoundUpper = sizes[1] - 10;
+
+                if (self.showing_on_map) {
+                  const allowed_offset_from_center_of_country = 15;
+                  // If the country is in the list that we have, override the default values for the bounds.
+                  var country_code = self._get_node_country(d);
+
+                  if (country_code in self.countryCentersObject) {
+                    const center = self.countryCentersObject[country_code].countryXY;
+
+                    xBoundLower = center[0] - allowed_offset_from_center_of_country;
+                    xBoundUpper = center[0] + allowed_offset_from_center_of_country;
+                    yBoundLower = center[1] - allowed_offset_from_center_of_country;
+                    yBoundUpper = center[1] + allowed_offset_from_center_of_country;
+                  }
+                }
+
+                return (
+                  "translate(" +
+                  (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) +
+                  "," +
+                  (d.y = Math.max(yBoundLower, Math.min(yBoundUpper, d.y))) +
+                  ")"
+                );
+              });
+              rendered_clusters.attr(
+                "transform",
+                (d) =>
+                  "translate(" +
+                  (d.x = Math.max(
+                    d.rendered_size,
+                    Math.min(sizes[0] - d.rendered_size, d.x)
+                  )) +
+                  "," +
+                  (d.y = Math.max(
+                    d.rendered_size,
+                    Math.min(sizes[1] - d.rendered_size, d.y)
+                  )) +
+                  ")"
+              );
+
+              link.each(self.link_generator_function);
+            }
+
+            let lastUpdate = 0;
+            function tickBatch() {
+              const isInitialLoad = window.perfMeasurements && !window.perfMeasurements.done;
+              const ticksPerBatch = isInitialLoad ? 40 : 8;
+
+              // Run a batch of layout calculations asynchronously
+              for (let i = 0; i < ticksPerBatch; i++) {
+                network_layout.tick();
+                if (network_layout.alpha() < 0.005) {
+                  break;
+                }
+              }
+
+              const alpha = network_layout.alpha();
+              const isEnd = alpha < 0.005;
+
+              // Update DOM elements only if it is the end, or if we are not in initial load,
+              // or periodically (e.g. every 250ms) to show progress.
+              const now = Date.now();
+              if (isEnd || !isInitialLoad || now - lastUpdate > 250) {
+                updateDOMPositions();
+                lastUpdate = now;
+              }
+
+              if (window.perfMeasurements && !window.perfMeasurements.done) {
+                const progress = Math.max(0, Math.min(100, Math.round((1 - (alpha - 0.005) / (0.1 - 0.005)) * 100)));
+                window.updateNetworkLoadingStatus(`Generating layout & SVG... (${progress}%)`);
+              }
+
+              if (isEnd) {
+                // Restore standard tick handler for interactive drag actions
+                network_layout.on("tick", updateDOMPositions);
+                network_layout.start();
+                if (window.perfMeasurements && !window.perfMeasurements.done) {
+                  window.perfMeasurements.done = true;
+                  if (window.finalizeNetworkLoading) {
+                    window.finalizeNetworkLoading();
+                  }
+                }
+                cb();
+              } else {
+                setTimeout(tickBatch, 1);
+              }
+            }
+
+            setTimeout(tickBatch, 1);
+          }
+        ];
+
+        runSteps(steps, 0);
+      } else {
+        rendered_nodes = self.network_svg.selectAll(".node");
+        rendered_clusters = self.network_svg.selectAll(".cluster-group");
+        link = self.network_svg.selectAll(".link");
+        update_network_string(rendered_nodes.size(), link.size());
+
+        self.rendered_object_counts = {
+          nodes: rendered_nodes.size(),
+          edges: link.size(),
+          clusters: rendered_clusters.size(),
+          has_hatching: false,
+        };
+
+        rendered_nodes.each(function (d) {
+          draw_a_node(this, d);
+          self.rendered_object_counts.has_hatching =
+            self.rendered_object_counts.has_hatching || node_multiple_membership(d);
         });
-        rendered_clusters.attr(
-          "transform",
-          (d) =>
-            "translate(" +
-            (d.x = Math.max(
-              d.rendered_size,
-              Math.min(sizes[0] - d.rendered_size, d.x)
-            )) +
-            "," +
-            (d.y = Math.max(
-              d.rendered_size,
-              Math.min(sizes[1] - d.rendered_size, d.y)
-            )) +
-            ")"
+
+        rendered_clusters.each(function (d) {
+          draw_a_cluster(this, d);
+        });
+
+        link.style("opacity", (d) =>
+          Math.max(node_opacity(d.target), node_opacity(d.source))
         );
+
+        if (self.additional_edge_styler) {
+          link.each(function (d) {
+            self.additional_edge_styler(this, d, self);
+          });
+        }
+
+        link
+          .style("display", (d) => {
+            if (
+              d.target.is_hidden ||
+              d.source.is_hidden ||
+              d.is_hidden ||
+              d.target.mjc_hidden ||
+              d.source.mjc_hidden
+            ) {
+              return "none";
+            }
+            return null;
+          })
+          .classed(
+            "selected_object",
+            (d) => d.ref.length_filter && !self.hide_unselected
+          );
 
         link.each(self.link_generator_function);
-      });
-
-      network_layout.start();
-    } else {
-      link.each(self.link_generator_function);
-    }
+        d3.select(self.container).selectAll(".my_progress").style("display", "none");
+      }
+    }, 20);
   };
 
   /**
@@ -7456,6 +7931,10 @@ var hivtrace_cluster_network_graph = function (
    */
   function tick() {
     if (self.isMJCNetwork && !self.fullMJCNetwork) {
+      return;
+    }
+
+    if (typeof node === "undefined" || typeof link === "undefined") {
       return;
     }
 
@@ -9158,70 +9637,8 @@ var hivtrace_cluster_network_graph = function (
 
   initial_json_load();
 
-  if (options) {
-    if (_.isNumber(options["charge"])) {
-      self.charge_correction = options["charge"];
-    }
-
-    if ("colorizer" in options) {
-      self.colorizer = options["colorizer"];
-    }
-
-    if ("node_shaper" in options) {
-      self.node_shaper = options["node_shaper"];
-    }
-
-    if ("callbacks" in options) {
-      options["callbacks"](self);
-    }
-
-    if (_.isArray(options["expand"])) {
-      self.expand_some_clusters(
-        _.filter(
-          self.clusters,
-          (c) => options["expand"].indexOf(c.cluster_id) >= 0
-        )
-      );
-    }
-
-    if (options["priority-sets-url"]) {
-      const is_writeable = options["is-writeable"];
-      //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI,
-      // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
-      self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], () =>
-        self.load_priority_sets(options["priority-sets-url"], is_writeable)
-      );
-    }
-
-    if (options["priority-set-add-from-mjc-url"]) {
-      self.priority_set_add_from_mjc_url =
-        options["priority-set-add-from-mjc-url"];
-    }
-
-    if (options["mjc-archive-url"]) {
-      self.mjc_archive_url = options["mjc-archive-url"];
-    }
-
-    if (options["mjc-uuid"]) {
-      self.mjc_uuid = options["mjc-uuid"];
-    }
-
-    if (self.showing_diff) {
-      self.handle_attribute_categorical("_newly_added");
-    }
-  }
-
-  if (self.isPrimaryGraph) {
-    self.annotate_multiple_clusters_on_nodes();
-  }
-
-  if (self._is_CDC_ && !self.isMJCNetwork) {
-    self.define_node_search_table();
-  }
-
-  self.draw_attribute_labels();
-  d3.select(self.container).selectAll(".my_progress").style("display", "none");
-  network_layout.start();
+  // Options setup, search table definitions, and layout start are now handled
+  // asynchronously within initial_json_load steps to keep the main thread responsive.
 
   return self;
 };

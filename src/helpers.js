@@ -498,6 +498,217 @@ function collapseLargeCategories(nodes, schema) {
   return true;
 }
 
+let pollId = null;
+let statusPollId = null;
+
+if (typeof window !== "undefined") {
+  window.updateNetworkLoadingStatus = function (msg) {
+    d3.selectAll(".placeholder-status-msg").text(msg);
+  };
+
+  window.finalizeNetworkLoading = function () {
+    if (pollId) {
+      clearInterval(pollId);
+      pollId = null;
+    }
+    if (statusPollId) {
+      clearInterval(statusPollId);
+      statusPollId = null;
+    }
+    d3.selectAll(".tab-pane").each(function () {
+      const pane = d3.select(this);
+      pane.selectAll(".loading-placeholder").remove();
+      pane.selectAll(function () {
+        return this.children;
+      }).style("display", null);
+    });
+  };
+
+  // Intercept window.init definition to mark loading completion automatically
+  let realInit = null;
+  Object.defineProperty(window, "init", {
+    get: () => realInit,
+    set: (val) => {
+      realInit = function (...args) {
+        const selfContext = this;
+        const data = args[0];
+
+        async function runInit() {
+          try {
+            const { HIVTxNetwork, network } = window.hivtrace;
+
+            const graph = "trace_results" in data ? data.trace_results : data;
+
+            console.time("[PERF] Parsing network structure");
+            window.updateNetworkLoadingStatus("Parsing network structure...");
+            await new Promise((resolve) => setTimeout(resolve, 40));
+            console.timeEnd("[PERF] Parsing network structure");
+
+            if (graph.Settings && graph.Settings.compact_json) {
+              console.time("[PERF] Unpacking compact JSON data");
+              window.updateNetworkLoadingStatus("Unpacking compact JSON data...");
+              await new Promise((resolve) => setTimeout(resolve, 40));
+              network.unpack_compact_json(graph);
+              console.timeEnd("[PERF] Unpacking compact JSON data");
+            }
+
+            console.time("[PERF] Extracting clusters and nodes");
+            window.updateNetworkLoadingStatus("Extracting clusters and nodes...");
+            await new Promise((resolve) => setTimeout(resolve, 40));
+
+            // Set up a temporary HIVTxNetwork to do collapsing
+            const tempNetwork = new HIVTxNetwork(graph, null, null, true);
+            console.timeEnd("[PERF] Extracting clusters and nodes");
+
+            if (tempNetwork.has_multiple_sequences) {
+              console.time("[PERF] Processing multiple sequences async");
+              await tempNetwork.process_multiple_sequences_async((msg) => {
+                window.updateNetworkLoadingStatus(msg);
+              });
+
+              // Save stats on graph for the final constructor
+              graph._has_multiple_sequences = true;
+              graph._primary_key_list = tempNetwork.primary_key_list;
+              graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
+              console.timeEnd("[PERF] Processing multiple sequences async");
+            }
+
+            window.updateNetworkLoadingStatus("Generating layout & SVG...");
+            await new Promise((resolve) => setTimeout(resolve, 40));
+
+            try {
+              console.time("[PERF] Synchronous clusterNetwork Constructor");
+              const result = val.apply(selfContext, args);
+              console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
+
+              // If the graph is empty, or layout did not initialize/finish, finalize immediately.
+              const isGraphEmpty = window.user_graph && (typeof window.user_graph.is_empty === "function" && window.user_graph.is_empty());
+              if (isGraphEmpty || !window.perfMeasurements || window.perfMeasurements.done) {
+                window.perfMeasurements = window.perfMeasurements || {};
+                window.perfMeasurements.done = true;
+                if (window.finalizeNetworkLoading) {
+                  window.finalizeNetworkLoading();
+                }
+              }
+              return result;
+            } catch (e) {
+              console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
+              console.error(e);
+              if (window.finalizeNetworkLoading) {
+                window.finalizeNetworkLoading();
+              }
+            }
+          } catch (err) {
+            console.error("Error during async network preprocessing:", err);
+            // Fallback: run synchronous init anyway
+            try {
+              const result = val.apply(selfContext, args);
+              if (window.finalizeNetworkLoading) {
+                window.finalizeNetworkLoading();
+              }
+              return result;
+            } catch (e) {
+              console.error(e);
+              if (window.finalizeNetworkLoading) {
+                window.finalizeNetworkLoading();
+              }
+            }
+          }
+        }
+
+        runInit();
+      };
+    },
+    configurable: true,
+  });
+}
+
+function initializeLoadingScreen() {
+  if (
+    typeof window !== "undefined" &&
+    window.perfMeasurements &&
+    window.perfMeasurements.done
+  ) {
+    return;
+  }
+
+  // Hide the progress bar immediately on load
+  d3.selectAll(".my_progress").style("display", "none");
+
+  // Enable all tabs so they are clickable
+  d3.selectAll(".nav-tabs li")
+    .classed("disabled", false)
+    .selectAll("a")
+    .attr("data-toggle", "tab");
+
+  // Set up loading placeholders in each tab panel
+  d3.selectAll(".tab-pane").each(function () {
+    const pane = d3.select(this);
+    if (pane.select(".loading-placeholder").empty()) {
+      pane.selectAll(function () {
+        return this.children;
+      }).style("display", "none");
+      pane.append("div")
+        .classed("loading-placeholder", true)
+        .html(`
+          <div style="padding: 80px 20px; text-align: center; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px; margin: 20px 0;">
+            <div style="margin-bottom: 20px;">
+              <i class="fa fa-spinner fa-spin fa-3x" style="color: #337ab7;"></i>
+            </div>
+            <h4 style="font-weight: 300; margin-bottom: 10px; color: #333;">Analyzing Network Data</h4>
+            <p class="placeholder-status-msg" style="color: #777; font-size: 14px;">Loading data files...</p>
+          </div>
+        `);
+    }
+  });
+
+  // Poll for template performance measurements completion
+  if (!pollId) {
+    pollId = setInterval(() => {
+      if (window.perfMeasurements && window.perfMeasurements.done) {
+        window.finalizeNetworkLoading();
+      }
+    }, 50);
+  }
+
+  // Poll for progress status label text changes
+  if (!statusPollId) {
+    statusPollId = setInterval(() => {
+      const statusEl = document.querySelector(".my_progress_status");
+      if (statusEl && statusEl.textContent) {
+        window.updateNetworkLoadingStatus(statusEl.textContent);
+      }
+    }, 50);
+  }
+}
+
+function track_progress(request) {
+  initializeLoadingScreen();
+
+  request.on("progress", function (event) {
+    var e = event || d3.event;
+    if (e && e.lengthComputable && e.total) {
+      var percent = Math.round((e.loaded / e.total) * 100);
+      window.updateNetworkLoadingStatus(
+        "Downloading network data... (" + percent + "%)"
+      );
+    } else if (e) {
+      var loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+      window.updateNetworkLoadingStatus(
+        "Downloading network data... (" + loadedMB + " MB loaded)"
+      );
+    }
+  });
+}
+
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeLoadingScreen);
+  } else {
+    initializeLoadingScreen();
+  }
+}
+
 module.exports.export_csv_button = datamonkey_export_csv_button;
 module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
@@ -508,3 +719,4 @@ module.exports.getUniqueValues = getUniqueValues;
 module.exports.exportColorScheme = exportColorScheme;
 module.exports.copyToClipboard = copyToClipboard;
 module.exports.collapseLargeCategories = collapseLargeCategories;
+module.exports.track_progress = track_progress;

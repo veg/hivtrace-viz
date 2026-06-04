@@ -774,6 +774,7 @@ function open_editor(
       panel_object.table_handler = function (panel) {
         var table_container = panel_content.selectAll("table").data(["panel"]);
         table_container.enter().append("table");
+        table_container = panel_content.selectAll("table");
         table_container
           .classed(
             "table table-striped table-condensed table-hover table-smaller",

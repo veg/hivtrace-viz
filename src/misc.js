@@ -746,11 +746,11 @@ while (len--) {
       );
     }
 
-    _.each(edges, (e) => {
-      try {
-        adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-        adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-      } catch {
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      const s_node = nodes[e.source];
+      const t_node = nodes[e.target];
+      if (!s_node || !t_node) {
         throw Error(
           "Edge does not map to an existing node " +
             e.source +
@@ -758,7 +758,9 @@ while (len--) {
             e.target
         );
       }
-    });
+      adjacency[s_node.id].push([t_node, e]);
+      adjacency[t_node.id].push([s_node, e]);
+    }
   }
 
   var traverse = function (node) {
@@ -783,26 +785,14 @@ while (len--) {
         traverse(neighbor[0]);
       }
     }
-
-    /*
-    _.each(adjacency[node.id], (neighbor) => {
-      if (!neighbor[0].visited) {
-        by_node[neighbor[0].id] = by_node[node.id];
-        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
-        if (save_edges) {
-          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
-        }
-        traverse(neighbor[0]);
-      }
-    });
-    */
   };
 
-  _.each(seed_nodes, (n) => {
+  for (let i = 0; i < seed_nodes.length; i++) {
+    const n = seed_nodes[i];
     if (!n.visited) {
       traverse(n);
     }
-  });
+  }
 
   return clusters;
 }
