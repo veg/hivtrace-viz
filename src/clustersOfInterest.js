@@ -11,6 +11,24 @@ import * as kGlobals from "./globals.js";
 
 let priority_set_editor = null;
 
+function safe_format_date(v, formatter) {
+  if (!v) return "";
+  if (v instanceof Date) {
+    return formatter(v);
+  }
+  var parsed = timeDateUtil.DateViewFormatSlider.parse(v);
+  if (!parsed) {
+    parsed = timeDateUtil.DateViewFormatMMDDYYY.parse(v);
+  }
+  if (!parsed) {
+    parsed = new Date(v);
+  }
+  if (parsed && !isNaN(parsed.getTime())) {
+    return formatter(parsed);
+  }
+  return v;
+}
+
 /**
  * Initializes the component, setting up event listeners and UI elements.
 
@@ -510,7 +528,7 @@ function open_editor(
         .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": 0.015,
             timestamp: createdDate,
           });
@@ -521,7 +539,7 @@ function open_editor(
         .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": self.subcluster_threshold,
             timestamp: createdDate,
           });
@@ -826,8 +844,9 @@ function open_editor(
                     }
                     if (!is_node_editable(payload)) {
                       this_cell.text(
-                        timeDateUtil.DateViewFormatMMDDYYY(
-                          payload["_priority_set_date"]
+                        safe_format_date(
+                          payload["_priority_set_date"],
+                          timeDateUtil.DateViewFormatMMDDYYY
                         )
                       );
                     } else {
@@ -836,8 +855,9 @@ function open_editor(
                         .attr("type", "date")
                         .attr(
                           "value",
-                          timeDateUtil.DateViewFormatSlider(
-                            payload["_priority_set_date"]
+                          safe_format_date(
+                            payload["_priority_set_date"],
+                            timeDateUtil.DateViewFormatSlider
                           )
                         )
                         .on("change", (e, d) => {
@@ -2156,7 +2176,7 @@ function priority_set_view(self, priority_set, options) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
     if (d._added_date)
-      d._added_date = timeDateUtil.DateViewFormatSlider(d._added_date);
+      d._added_date = safe_format_date(d._added_date, timeDateUtil.DateViewFormatSlider);
     else d._added_date = null;
   });
 

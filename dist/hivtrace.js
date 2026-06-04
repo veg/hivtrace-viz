@@ -50002,7 +50002,17 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
                 if (v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
                   return v;
                 }
-                return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(v);
+                if (v instanceof Date) {
+                  return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(v);
+                }
+                var parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider.parse(v);
+                if (!parsed) {
+                  parsed = new Date(v);
+                }
+                if (parsed && !isNaN(parsed.getTime())) {
+                  return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(parsed);
+                }
+                return v;
               }
             };
           } else if (self.displayed_node_subset[c].type === "Number") {
@@ -53458,6 +53468,23 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 
 var priority_set_editor = null;
+function safe_format_date(v, formatter) {
+  if (!v) return "";
+  if (v instanceof Date) {
+    return formatter(v);
+  }
+  var parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider.parse(v);
+  if (!parsed) {
+    parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY.parse(v);
+  }
+  if (!parsed) {
+    parsed = new Date(v);
+  }
+  if (parsed && !isNaN(parsed.getTime())) {
+    return formatter(parsed);
+  }
+  return v;
+}
 
 /**
  * Initializes the component, setting up event listeners and UI elements.
@@ -53761,13 +53788,13 @@ function open_editor(self, node_set, name, description, cluster_kind, kind_optio
         save_priority_set();
       });
       form.append("button").classed("btn btn-info btn-sm pull-right", true).attr("id", "priority-panel-preview").text("Preview @1.5%").on("click", function (e) {
-        priority_set_view(self, priority_set_editor, {
+        priority_set_view(self, panel_object, {
           "priority-edge-length": 0.015,
           timestamp: createdDate
         });
       });
       form.append("button").classed("btn btn-info btn-sm pull-right", true).attr("id", "priority-panel-preview-subcluster").text("Preview @" + self.subcluster_threshold * 100 + "%").on("click", function (e) {
-        priority_set_view(self, priority_set_editor, {
+        priority_set_view(self, panel_object, {
           "priority-edge-length": self.subcluster_threshold,
           timestamp: createdDate
         });
@@ -53994,9 +54021,9 @@ function open_editor(self, node_set, name, description, cluster_kind, kind_optio
                     this_cell.style("color", "darkred");
                   }
                   if (!is_node_editable(payload)) {
-                    this_cell.text(_timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY(payload["_priority_set_date"]));
+                    this_cell.text(safe_format_date(payload["_priority_set_date"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY));
                   } else {
-                    this_cell.append("input").attr("type", "date").attr("value", _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider(payload["_priority_set_date"])).on("change", function (e, d) {
+                    this_cell.append("input").attr("type", "date").attr("value", safe_format_date(payload["_priority_set_date"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider)).on("change", function (e, d) {
                       try {
                         payload["_priority_set_date"] = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider.parse($(d3__WEBPACK_IMPORTED_MODULE_0__.event.target).val());
                       } catch (_unused) {
@@ -54918,7 +54945,7 @@ function priority_set_view(self, priority_set, options) {
   underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(nodes, function (d) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
-    if (d._added_date) d._added_date = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider(d._added_date);else d._added_date = null;
+    if (d._added_date) d._added_date = safe_format_date(d._added_date, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider);else d._added_date = null;
   });
   var pgDates = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].sortBy(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].keys(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].groupBy(nodes, function (d) {
     return d._added_date;

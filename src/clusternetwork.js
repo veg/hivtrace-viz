@@ -4783,7 +4783,17 @@ var hivtrace_cluster_network_graph = function (
                 if (v === kGlobals.missing.label) {
                   return v;
                 }
-                return timeDateUtil.DateViewFormatSlider(v);
+                if (v instanceof Date) {
+                  return timeDateUtil.DateViewFormatSlider(v);
+                }
+                var parsed = timeDateUtil.DateViewFormatSlider.parse(v);
+                if (!parsed) {
+                  parsed = new Date(v);
+                }
+                if (parsed && !isNaN(parsed.getTime())) {
+                  return timeDateUtil.DateViewFormatSlider(parsed);
+                }
+                return v;
               },
             };
           } else if (self.displayed_node_subset[c].type === "Number") {
