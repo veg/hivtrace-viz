@@ -59857,38 +59857,54 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         return _.has(_this17.json[kGlobals.network.GraphAttrbuteID], d);
       })) {
         this.inject_attribute_description(key, computed);
-        _.each(this.json.Nodes, function (node) {
-          var attr_value = computed["map"](node, _this17);
-
-          //if (key == "priority_set") {
-          //    console.log (node.id, node.priority_set, node._added_date, attr_value);
-          //}
+        var uniq_value_set = new Set();
+        var has_enum = !!computed.enum;
+        var is_date = computed.type === "Date";
+        var is_number = computed.type === "Number";
+        var N = this.json.Nodes.length;
+        for (var i = 0; i < N; i++) {
+          var node = this.json.Nodes[i];
+          var attr_value = computed["map"](node, this);
           HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
-        });
+          if (!has_enum) {
+            if (is_date) {
+              if (attr_value instanceof Date) {
+                uniq_value_set.add(attr_value.getTime());
+              }
+            } else if (is_number) {
+              if (typeof attr_value === "number" && !isNaN(attr_value)) {
+                uniq_value_set.add(attr_value);
+              } else if (typeof attr_value === "string") {
+                if (attr_value.length > 0) {
+                  var num = Number(attr_value);
+                  if (!isNaN(num)) {
+                    uniq_value_set.add(num);
+                  } else {
+                    uniq_value_set.add(kGlobals.missing.label);
+                  }
+                } else {
+                  uniq_value_set.add(kGlobals.missing.label);
+                }
+              } else {
+                uniq_value_set.add(attr_value !== undefined && attr_value !== null ? attr_value : kGlobals.missing.label);
+              }
+            } else {
+              uniq_value_set.add(attr_value !== undefined && attr_value !== null && attr_value !== "" ? attr_value : kGlobals.missing.label);
+            }
+          }
+        }
 
         // add unique values
-        if (computed.enum) {
+        if (has_enum) {
           this.uniqValues[key] = computed.enum;
         } else {
-          var uniq_value_set = new Set();
-          if (computed.type === "Date") {
-            _.each(this.json.Nodes, function (n) {
-              try {
-                uniq_value_set.add(_this17.attribute_node_value_by_id(n, key).getTime());
-              } catch (_unused3) {}
-            });
-          } else {
-            _.each(this.json.Nodes, function (n) {
-              return uniq_value_set.add(_this17.attribute_node_value_by_id(n, key, computed.type === "Number"));
-            });
-          }
           this.uniqValues[key] = _toConsumableArray(uniq_value_set);
-          if (computed.type === "Number" || computed.type == "Date") {
+          if (is_number || is_date) {
             var color_stops = computed["color_stops"] || kGlobals.network.ContinuousColorStops;
             if (color_stops > this.uniqValues[key].length) {
               computed["color_stops"] = this.uniqValues[key].length;
             }
-            if (computed.type === "Number") {
+            if (is_number) {
               computed.is_integer = _.every(this.uniqValues[key], function (d) {
                 return Number.isInteger(d);
               });
@@ -60112,7 +60128,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this20.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified, false, false, true);
-          } catch (_unused4) {
+          } catch (_unused3) {
             return kGlobals.missing.label;
           }
         }
@@ -60142,7 +60158,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this21.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified_12Mo, false, false, true);
-          } catch (_unused5) {
+          } catch (_unused4) {
             return kGlobals.missing.label;
           }
         }
@@ -60177,7 +60193,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               value = kGlobals.missing.label;
             }
             return value;
-          } catch (_unused6) {
+          } catch (_unused5) {
             return kGlobals.missing.label;
           }
         },
@@ -60211,7 +60227,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this23.attribute_node_value_by_id(node, timeDateUtil._networkCDCMonthYearField, false, false, true);
-          } catch (_unused7) {
+          } catch (_unused6) {
             return kGlobals.missing.label;
           }
         }
@@ -60235,7 +60251,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this24.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast12Mo, false, false, true);
-          } catch (_unused8) {
+          } catch (_unused7) {
             return kGlobals.missing.label;
           }
         }
@@ -60253,7 +60269,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this25.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast36Mo, false, false, true);
-          } catch (_unused9) {
+          } catch (_unused8) {
             return kGlobals.missing.label;
           }
         }
@@ -60557,7 +60573,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                           }
                         }
                         new_attr_obj[k] = new Date(Date.parse(min_d));
-                      } catch (_unused10) {
+                      } catch (_unused9) {
                         new_attr_obj[k] = null;
                       }
                     } else {

@@ -3036,43 +3036,52 @@ class HIVTxNetwork {
       )
     ) {
       this.inject_attribute_description(key, computed);
-      _.each(this.json.Nodes, (node) => {
-        const attr_value = computed["map"](node, this);
 
-        //if (key == "priority_set") {
-        //    console.log (node.id, node.priority_set, node._added_date, attr_value);
-        //}
+      var uniq_value_set = new Set();
+      const has_enum = !!computed.enum;
+      const is_date = computed.type === "Date";
+      const is_number = computed.type === "Number";
+
+      const N = this.json.Nodes.length;
+      for (let i = 0; i < N; i++) {
+        const node = this.json.Nodes[i];
+        const attr_value = computed["map"](node, this);
         HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
-      });
+
+        if (!has_enum) {
+          if (is_date) {
+            if (attr_value instanceof Date) {
+              uniq_value_set.add(attr_value.getTime());
+            }
+          } else if (is_number) {
+            if (typeof attr_value === "number" && !isNaN(attr_value)) {
+              uniq_value_set.add(attr_value);
+            } else if (typeof attr_value === "string") {
+              if (attr_value.length > 0) {
+                const num = Number(attr_value);
+                if (!isNaN(num)) {
+                  uniq_value_set.add(num);
+                } else {
+                  uniq_value_set.add(kGlobals.missing.label);
+                }
+              } else {
+                uniq_value_set.add(kGlobals.missing.label);
+              }
+            } else {
+              uniq_value_set.add(attr_value !== undefined && attr_value !== null ? attr_value : kGlobals.missing.label);
+            }
+          } else {
+            uniq_value_set.add(attr_value !== undefined && attr_value !== null && attr_value !== "" ? attr_value : kGlobals.missing.label);
+          }
+        }
+      }
 
       // add unique values
-      if (computed.enum) {
+      if (has_enum) {
         this.uniqValues[key] = computed.enum;
       } else {
-        var uniq_value_set = new Set();
-
-        if (computed.type === "Date") {
-          _.each(this.json.Nodes, (n) => {
-            try {
-              uniq_value_set.add(
-                this.attribute_node_value_by_id(n, key).getTime()
-              );
-            } catch {}
-          });
-        } else {
-          _.each(this.json.Nodes, (n) =>
-            uniq_value_set.add(
-              this.attribute_node_value_by_id(
-                n,
-                key,
-                computed.type === "Number"
-              )
-            )
-          );
-        }
-
         this.uniqValues[key] = [...uniq_value_set];
-        if (computed.type === "Number" || computed.type == "Date") {
+        if (is_number || is_date) {
           var color_stops =
             computed["color_stops"] || kGlobals.network.ContinuousColorStops;
 
@@ -3080,7 +3089,7 @@ class HIVTxNetwork {
             computed["color_stops"] = this.uniqValues[key].length;
           }
 
-          if (computed.type === "Number") {
+          if (is_number) {
             computed.is_integer = _.every(this.uniqValues[key], (d) =>
               Number.isInteger(d)
             );
