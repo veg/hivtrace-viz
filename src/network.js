@@ -9,8 +9,6 @@ var d3 = require("d3"),
   kGlobals = require("./globals.js"),
   networkUtils = require("./core/networkUtils.js");
 
-
-
 /**
     normalize_node_attributes
     
