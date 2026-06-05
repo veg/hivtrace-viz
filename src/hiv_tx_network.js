@@ -3025,6 +3025,7 @@ class HIVTxNetwork {
     */
 
   populate_predefined_attribute(computed, key) {
+    const tStart = performance.now();
     if (_.isFunction(computed)) {
       computed = computed(this);
     }
@@ -3042,6 +3043,7 @@ class HIVTxNetwork {
       const is_date = computed.type === "Date";
       const is_number = computed.type === "Number";
 
+      const tLoopStart = performance.now();
       const N = this.json.Nodes.length;
       for (let i = 0; i < N; i++) {
         const node = this.json.Nodes[i];
@@ -3075,6 +3077,7 @@ class HIVTxNetwork {
           }
         }
       }
+      const tLoopEnd = performance.now();
 
       // add unique values
       if (has_enum) {
@@ -3115,6 +3118,10 @@ class HIVTxNetwork {
           ] = true;
         }
       }
+      const tEnd = performance.now();
+      console.log(
+        `[PERF_DETAIL] populate_predefined_attribute(${key}): total = ${(tEnd - tStart).toFixed(2)}ms (loop = ${(tLoopEnd - tLoopStart).toFixed(2)}ms, metadata = ${(tEnd - tLoopEnd + tLoopStart - tStart).toFixed(2)}ms)`
+      );
     }
   }
 

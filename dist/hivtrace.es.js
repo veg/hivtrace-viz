@@ -59850,6 +59850,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "populate_predefined_attribute",
     value: function populate_predefined_attribute(computed, key) {
       var _this17 = this;
+      var tStart = performance.now();
       if (_.isFunction(computed)) {
         computed = computed(this);
       }
@@ -59861,6 +59862,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         var has_enum = !!computed.enum;
         var is_date = computed.type === "Date";
         var is_number = computed.type === "Number";
+        var tLoopStart = performance.now();
         var N = this.json.Nodes.length;
         for (var i = 0; i < N; i++) {
           var node = this.json.Nodes[i];
@@ -59893,6 +59895,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             }
           }
         }
+        var tLoopEnd = performance.now();
 
         // add unique values
         if (has_enum) {
@@ -59920,6 +59923,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             this.json[kGlobals.network.GraphAttrbuteID][computed["overwrites"]]["_hidden_"] = true;
           }
         }
+        var tEnd = performance.now();
+        console.log("[PERF_DETAIL] populate_predefined_attribute(".concat(key, "): total = ").concat((tEnd - tStart).toFixed(2), "ms (loop = ").concat((tLoopEnd - tLoopStart).toFixed(2), "ms, metadata = ").concat((tEnd - tLoopEnd + tLoopStart - tStart).toFixed(2), "ms)"));
       }
     }
 
