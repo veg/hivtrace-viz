@@ -55876,6 +55876,192 @@ module.exports = {
 
 /***/ }),
 
+/***/ "./src/core/networkUtils.js":
+/*!**********************************!*\
+  !*** ./src/core/networkUtils.js ***!
+  \**********************************/
+/***/ (function(module, __unused_webpack_exports, __webpack_require__) {
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+var _ = __webpack_require__(/*! underscore */ "./node_modules/underscore/underscore-umd.js");
+function unpack_column(col, length) {
+  if (Array.isArray(col)) {
+    return col;
+  }
+  if (col === null || _typeof(col) !== "object") {
+    return Array(length).fill(col);
+  }
+
+  // Handle Front coding
+  if ("front" in col) {
+    var unpacked_lens = unpack_column(col.lens, length);
+    var unpacked_suffixes = unpack_column(col.suffixes, length);
+    var arr = [unpacked_suffixes[0]];
+    for (var i = 1; i < length; i++) {
+      var common_len = unpacked_lens[i];
+      var suffix = unpacked_suffixes[i];
+      var prev = arr[i - 1];
+      arr.push(prev.substring(0, common_len) + suffix);
+    }
+    return arr;
+  }
+
+  // Handle RLE coding
+  if ("rle" in col) {
+    var runs_len = col.len;
+    var unpacked_values = unpack_column(col.values, runs_len);
+    var unpacked_runs = unpack_column(col.runs, runs_len);
+    var arr = [];
+    for (var i = 0; i < runs_len; i++) {
+      var val = unpacked_values[i];
+      var run = unpacked_runs[i];
+      for (var j = 0; j < run; j++) {
+        arr.push(val);
+      }
+    }
+    return arr;
+  }
+
+  // Handle Delta coding
+  if ("delta" in col) {
+    var diffs = unpack_column(col.values, length);
+    var arr = Array(length);
+    arr[0] = diffs[0];
+    for (var i = 1; i < length; i++) {
+      arr[i] = arr[i - 1] + diffs[i];
+    }
+    return arr;
+  }
+  if ("default" in col) {
+    var arr = Array(length).fill(col.default);
+    if (col.exceptions) {
+      for (var idxStr in col.exceptions) {
+        arr[parseInt(idxStr, 10)] = col.exceptions[idxStr];
+      }
+    }
+    return arr;
+  }
+  if ("keys" in col && "values" in col) {
+    return col.values.map(function (v) {
+      return col.keys[v];
+    });
+  }
+
+  // Recursive object
+  var unpackedSubCols = {};
+  for (var subKey in col) {
+    unpackedSubCols[subKey] = unpack_column(col[subKey], length);
+  }
+  var result = [];
+  for (var i = 0; i < length; i++) {
+    if (unpackedSubCols["_null_mask"] && unpackedSubCols["_null_mask"][i]) {
+      result.push(null);
+      continue;
+    }
+    var row = {};
+    for (var subKey in col) {
+      if (subKey === "_null_mask") continue;
+      row[subKey] = unpackedSubCols[subKey][i];
+    }
+    result.push(row);
+  }
+  return result;
+}
+function unpack_compact_json(json) {
+  if (json.Settings && json.Settings.compact_json === "optimized") {
+    _.each(["Nodes", "Edges"], function (key) {
+      if (json[key] && !_.isArray(json[key])) {
+        // Find length of columns
+        var len = 0;
+        if (key === "Nodes" && json.Settings && json.Settings.node_count) {
+          len = json.Settings.node_count;
+        } else if (key === "Edges" && json.Settings && json.Settings.edge_count) {
+          len = json.Settings.edge_count;
+        } else {
+          // Fallback
+          _.each(json[key], function (col) {
+            if (len === 0) {
+              if (_.isArray(col)) {
+                len = col.length;
+              } else if (col && _typeof(col) === "object") {
+                if (_.isArray(col.values)) {
+                  len = col.values.length;
+                }
+              }
+            }
+          });
+          if (len === 0) {
+            _.each(json[key], function (col) {
+              if (col && _typeof(col) === "object" && col.values) {
+                len = Math.max(len, col.values.length);
+              }
+            });
+          }
+        }
+        var expanded = [];
+        var keys = _.keys(json[key]);
+        var unpackedCols = {};
+        _.each(keys, function (k) {
+          unpackedCols[k] = unpack_column(json[key][k], len);
+        });
+        for (var i = 0; i < len; i++) {
+          var row = {};
+          _.each(keys, function (k) {
+            row[k] = unpackedCols[k][i];
+          });
+          expanded.push(row);
+        }
+        json[key] = expanded;
+      }
+    });
+    if (json.Settings) {
+      json.Settings.compact_json = false;
+      delete json.Settings.node_count;
+      delete json.Settings.edge_count;
+    }
+  } else {
+    _.each(["Nodes", "Edges"], function (key) {
+      var fields = _.keys(json[key]);
+      var expanded = [];
+      _.each(fields, function (f, idx) {
+        var field_values = json[key][f];
+        if (!_.isArray(field_values) && "values" in field_values) {
+          var expanded_values = [];
+          _.each(field_values["values"], function (v) {
+            expanded_values.push(field_values["keys"][v]);
+          });
+          field_values = expanded_values;
+        }
+        _.each(field_values, function (fv, j) {
+          if (idx === 0) {
+            expanded.push({});
+          }
+          expanded[j][f] = fv;
+        });
+      });
+      json[key] = expanded;
+    });
+  }
+
+  // Reconstruct sequences at the end of unpacking (both old and optimized formats)
+  if (json.Edges && _.isArray(json.Edges) && json.Nodes && _.isArray(json.Nodes)) {
+    _.each(json.Edges, function (e) {
+      if (!e.sequences && "source" in e && "target" in e) {
+        var sourceNode = json.Nodes[e.source];
+        var targetNode = json.Nodes[e.target];
+        if (sourceNode && targetNode) {
+          e.sequences = [sourceNode.id, targetNode.id];
+        }
+      }
+    });
+  }
+}
+module.exports = {
+  unpack_compact_json: unpack_compact_json
+};
+
+/***/ }),
+
 /***/ "./src/globals.js":
 /*!************************!*\
   !*** ./src/globals.js ***!
@@ -61433,44 +61619,8 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 var d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/d3-exposed.js"),
   _ = __webpack_require__(/*! underscore */ "./node_modules/underscore/underscore-umd.js"),
   clustersOfInterest = __webpack_require__(/*! ./clustersOfInterest.js */ "./src/clustersOfInterest.js"),
-  kGlobals = __webpack_require__(/*! ./globals.js */ "./src/globals.js");
-
-/**
-    unpack_compact_json:
-    If the input network JSON is in compact form, i.e. instead of storing 
-        key : value
-    it stores
-        key : integer index of value
-        unique_values: list of values
-    convert it to 
-        key: value 
-        
-    The operation is performed in place on the `json` argument
-*/
-
-function unpack_compact_json(json) {
-  _.each(["Nodes", "Edges"], function (key) {
-    var fields = _.keys(json[key]);
-    var expanded = [];
-    _.each(fields, function (f, idx) {
-      var field_values = json[key][f];
-      if (!_.isArray(field_values) && "values" in field_values) {
-        var expanded_values = [];
-        _.each(field_values["values"], function (v) {
-          expanded_values.push(field_values["keys"][v]);
-        });
-        field_values = expanded_values;
-      }
-      _.each(field_values, function (fv, j) {
-        if (idx === 0) {
-          expanded.push({});
-        }
-        expanded[j][f] = fv;
-      });
-    });
-    json[key] = expanded;
-  });
-}
+  kGlobals = __webpack_require__(/*! ./globals.js */ "./src/globals.js"),
+  networkUtils = __webpack_require__(/*! ./core/networkUtils.js */ "./src/core/networkUtils.js");
 
 /**
     normalize_node_attributes
@@ -61658,7 +61808,7 @@ module.exports = {
   check_network_option: check_network_option,
   ensure_node_attributes_exist: ensure_node_attributes_exist,
   normalize_node_attributes: normalize_node_attributes,
-  unpack_compact_json: unpack_compact_json,
+  unpack_compact_json: networkUtils.unpack_compact_json,
   handle_cluster_click: handle_cluster_click
 };
 
