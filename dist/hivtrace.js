@@ -53454,7 +53454,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
   self.network_svg = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).append("svg:svg")
   //.style ("border", "solid black 1px")
   .attr("id", self.dom_prefix + "-network-svg").attr("width", self.width + self.margin.left + self.margin.right).attr("height", self.height + self.margin.top + self.margin.bottom);
-  self.network_svg.append("text").classed("svg-loading-placeholder", true).attr("x", (self.width + self.margin.left + self.margin.right) / 2).attr("y", (self.height + self.margin.top + self.margin.bottom) / 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle").style("font-size", "18px").style("fill", "#666666").style("font-family", "sans-serif").text("Loading network visualization...");
+  self.network_svg.append("text").classed("svg-loading-placeholder", true).attr("x", (self.width + self.margin.left + self.margin.right) / 2).attr("y", self.margin.top + 30).attr("text-anchor", "middle").attr("dominant-baseline", "middle").style("font-size", "18px").style("fill", "#666666").style("font-family", "sans-serif").text("Loading network visualization...");
   self.network_cluster_dynamics = null;
 
   //.append("g")

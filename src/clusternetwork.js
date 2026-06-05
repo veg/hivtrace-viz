@@ -9675,7 +9675,7 @@ var hivtrace_cluster_network_graph = function (
   self.network_svg.append("text")
     .classed("svg-loading-placeholder", true)
     .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
-    .attr("y", (self.height + self.margin.top + self.margin.bottom) / 2)
+    .attr("y", self.margin.top + 30)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
     .style("font-size", "18px")
