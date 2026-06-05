@@ -1437,6 +1437,31 @@ function _action_drop_down(self, pg) {
   return dropdown;
 }
 
+// Size-in-jurisdiction for the viewing site. Falls back to a client-side
+// derivation from pg.nodes when the backend hasn't precomputed the field
+// (admin/full-MJC view). Person-based: each person counts at most once per
+// jurisdiction whether they own a node primarily or via joint ownership.
+function _mjc_size_in_jurisdiction(self, pg) {
+  if (
+    pg.size_in_jurisdiction !== undefined &&
+    pg.size_in_jurisdiction !== null
+  ) {
+    return pg.size_in_jurisdiction;
+  }
+  const jid = self.CDC_data && self.CDC_data.group_id;
+  if (!jid) return null;
+  if (!pg.nodes) {
+    return (pg.jurisdiction_counts || {})[jid] || 0;
+  }
+  const relevantNodes = _.filter(
+    pg.nodes,
+    (nd) =>
+      nd.jurisdiction === jid ||
+      (nd.joint_owners && nd.joint_owners.indexOf(jid) >= 0)
+  );
+  return self.unique_entity_list(relevantNodes).length;
+}
+
 /**
  * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
  * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
@@ -1533,9 +1558,9 @@ function draw_priority_set_table(
             return 0;
           },
           help:
-            "Number of nodes in the " +
+            "Number of distinct persons in the " +
             (self.isMJCNetwork ? "MJ " : "") +
-            "clusterOI",
+            "clusterOI.",
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
@@ -1547,11 +1572,8 @@ function draw_priority_set_table(
             const n = Number(v);
             return _.isNaN(n) ? 0 : n;
           },
-          help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
-          // Hidden in admin/full view because addJurisdictionSizes is only run
-          // for the per-jurisdiction site view. Flag-off redaction is surfaced
-          // as "REDACTED" in the cell, not by hiding the column.
-          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
+          help: "Number of distinct persons in this MJ clusterOI from my jurisdiction (counting both primary ownership and joint ownership).",
+          hidden: !self.isMJCNetwork,
         },
         {
           value: "Priority",
@@ -1564,7 +1586,7 @@ function draw_priority_set_table(
           value: "DXs in last 12 mo.",
           width: 100,
           sort: "value",
-          help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
+          help: "Number of distinct persons in the cluster of interest with a diagnosis date in the past 12 months. A person counts if any of their sequences has a recent diagnosis date.",
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
@@ -1593,8 +1615,8 @@ function draw_priority_set_table(
             return 0;
           },
           help: self.isMJCNetwork
-            ? "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?"
-            : "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+            ? "How many ClusterOI have overlapping persons with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many distinct persons in this MJ ClusterOI overlap with ANY ClusterOI?"
+            : "How many MJ ClusterOI have overlapping persons with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many distinct persons in this ClusterOI overlap with ANY MJ ClusterOI?",
           hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
         },
         /*,
@@ -1725,10 +1747,13 @@ function draw_priority_set_table(
         },
         {
           // size / new nodes
-          // For MJC networks, use pg.nodes.length since node_objects only contains local nodes
+          // Prefer pg.size (backend-computed, redaction-aware: "REDACTED" when
+          // disabled). Fall back to a frontend dedup by ehars_uid otherwise.
           value: [
             self.isMJCNetwork
-              ? pg.nodes.length
+              ? pg.size !== undefined && pg.size !== null
+                ? pg.size
+                : self.unique_entity_list(pg.nodes).length
               : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
@@ -1750,13 +1775,13 @@ function draw_priority_set_table(
           width: 100,
           format: function (v) {
             if (
-              self.isMJCNetwork &&
-              !self.fullMJCNetwork &&
-              self.MJCVariables.mjcCurrentSizeEnabled === false
+              (self.isMJCNetwork &&
+                !self.fullMJCNetwork &&
+                self.MJCVariables.mjcCurrentSizeEnabled === false) ||
+              (v && v[0] === "REDACTED")
             ) {
               return "REDACTED";
             }
-            //console.log (pg);
             if (v) {
               return (
                 v[0] +
@@ -1773,11 +1798,8 @@ function draw_priority_set_table(
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
         },
         {
-          // size in my jurisdiction — backend-computed at addJurisdictionSizes()
-          // in hivtrace-secure. Counts both primary-owned nodes and nodes jointly
-          // owned via city-state pairs. Redacted to "REDACTED" when
-          // mjcSizeInJurisdictionEnabled is off.
-          value: pg.size_in_jurisdiction,
+          // Redacted to "REDACTED" when mjcSizeInJurisdictionEnabled is off.
+          value: _mjc_size_in_jurisdiction(self, pg),
           width: 100,
           format: function (v) {
             if (v === "REDACTED") return "REDACTED";
@@ -1785,7 +1807,7 @@ function draw_priority_set_table(
             return String(v);
           },
           html: true,
-          hidden: !self.isMJCNetwork || self.fullMJCNetwork,
+          hidden: !self.isMJCNetwork,
         },
         {
           // meets priority definition
@@ -1826,7 +1848,10 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                v[0] + " clusters; " + v[1] + " persons" +
+                v[0] +
+                " clusters; " +
+                v[1] +
+                " persons" +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                     v[2].join(", ") +
@@ -1889,7 +1914,10 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                v[0] + " clusters; " + v[1] + " persons" +
+                v[0] +
+                " clusters; " +
+                v[1] +
+                " persons" +
                 (v[2].length
                   ? ' <span title="' +
                     (!self.isMJCNetwork ? "MJ " : "") +
@@ -2176,7 +2204,10 @@ function priority_set_view(self, priority_set, options) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
     if (d._added_date)
-      d._added_date = safe_format_date(d._added_date, timeDateUtil.DateViewFormatSlider);
+      d._added_date = safe_format_date(
+        d._added_date,
+        timeDateUtil.DateViewFormatSlider
+      );
     else d._added_date = null;
   });
 

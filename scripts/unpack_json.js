@@ -10,7 +10,7 @@ function printUsage() {
 
 function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     printUsage();
     process.exit(1);
@@ -40,7 +40,12 @@ function main() {
   }
 
   // Unpack if the target contains Nodes/Edges and is in compact form
-  if (target && typeof target === "object" && target.Nodes && !Array.isArray(target.Nodes)) {
+  if (
+    target &&
+    typeof target === "object" &&
+    target.Nodes &&
+    !Array.isArray(target.Nodes)
+  ) {
     try {
       networkUtils.unpack_compact_json(target);
       // Clean up the compact_json flag if it was set

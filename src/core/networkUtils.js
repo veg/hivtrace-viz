@@ -4,7 +4,7 @@ function unpack_column(col, length) {
   if (Array.isArray(col)) {
     return col;
   }
-  
+
   if (col === null || typeof col !== "object") {
     return Array(length).fill(col);
   }
@@ -49,7 +49,7 @@ function unpack_column(col, length) {
     }
     return arr;
   }
-  
+
   if ("default" in col) {
     var arr = Array(length).fill(col.default);
     if (col.exceptions) {
@@ -59,17 +59,19 @@ function unpack_column(col, length) {
     }
     return arr;
   }
-  
+
   if ("keys" in col && "values" in col) {
-    return col.values.map(function(v) { return col.keys[v]; });
+    return col.values.map(function (v) {
+      return col.keys[v];
+    });
   }
-  
+
   // Recursive object
   var unpackedSubCols = {};
   for (var subKey in col) {
     unpackedSubCols[subKey] = unpack_column(col[subKey], length);
   }
-  
+
   var result = [];
   for (var i = 0; i < length; i++) {
     if (unpackedSubCols["_null_mask"] && unpackedSubCols["_null_mask"][i]) {
@@ -107,7 +109,11 @@ function unpack_compact_json(json) {
         var len = 0;
         if (key === "Nodes" && json.Settings && json.Settings.node_count) {
           len = json.Settings.node_count;
-        } else if (key === "Edges" && json.Settings && json.Settings.edge_count) {
+        } else if (
+          key === "Edges" &&
+          json.Settings &&
+          json.Settings.edge_count
+        ) {
           len = json.Settings.edge_count;
         } else {
           // Fallback
@@ -182,7 +188,12 @@ function unpack_compact_json(json) {
   }
 
   // Reconstruct sequences at the end of unpacking (both old and optimized formats)
-  if (json.Edges && _.isArray(json.Edges) && json.Nodes && _.isArray(json.Nodes)) {
+  if (
+    json.Edges &&
+    _.isArray(json.Edges) &&
+    json.Nodes &&
+    _.isArray(json.Nodes)
+  ) {
     _.each(json.Edges, (e) => {
       if (!e.sequences && "source" in e && "target" in e) {
         var sourceNode = json.Nodes[e.source];
