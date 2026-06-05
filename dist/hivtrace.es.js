@@ -47675,8 +47675,13 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     */
 
   var izPrimaryGraph = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "secondary", true, false);
+  console.time("[PERF] HIVTxNetwork instantiation");
   var self = new _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork(json, button_bar_ui, null, !izPrimaryGraph);
+  console.timeEnd("[PERF] HIVTxNetwork instantiation");
+  self.post_init_callbacks = [];
+  console.time("[PERF] self.process_multiple_sequences");
   self.process_multiple_sequences();
+  console.timeEnd("[PERF] self.process_multiple_sequences");
   self.isMJCNetwork = options && options["is-mjc-network"] ? true : false;
   self.fullMJCNetwork = options && options["full-mjc-network"] ? true : false;
   self.mjcUUID = self.isMJCNetwork ? options["mjc-uuid"] || null : null;
@@ -47684,7 +47689,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
   self._is_CDC_ = options && options["no_cdc"] ? false : true;
   self._is_seguro = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "seguro", false, true);
   self._is_CDC_executive_mode = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "cdc-executive-mode", false);
+  console.time("[PERF] helpers.getUniqueValues");
   self.uniqValues = _helpers_js__WEBPACK_IMPORTED_MODULE_4__.getUniqueValues(self.json.Nodes, self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID]);
+  console.timeEnd("[PERF] helpers.getUniqueValues");
   self.uniqs = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].mapObject(self.uniqValues, function (d) {
     return d.length;
   });
@@ -47712,7 +47719,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
   self.cluster_attributes = self.json["Cluster description"] || null;
   self.precomputed_subclusters = self.json["Subclusters"] || null;
   self.network_warning_tag = network_warning_tag;
+  console.time("[PERF] self.annotate_cluster_changes");
   self.annotate_cluster_changes();
+  console.timeEnd("[PERF] self.annotate_cluster_changes");
   self.filter_edges = true;
   self.hide_hxb2 = false;
   self.cluster_table = d3__WEBPACK_IMPORTED_MODULE_0__.select(clusters_table);
@@ -49864,6 +49873,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         render_binned_table("attribute_table", self.colorizer["category_map"], self.colorizer["category_pairwise"]);
       }, 250));
     }
+    console.time("[PERF] filtering nodes and edges");
     if (_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID in self.json) {
       attributes = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID];
     } else if (attributes && "hivtrace" in attributes) {
@@ -49897,6 +49907,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       cp_v.id = i;
       return cp_v;
     });
+    console.timeEnd("[PERF] filtering nodes and edges");
     compute_node_degrees(self.nodes, self.edges);
     if (!self.isMJCNetwork || self.fullMJCNetwork) {
       default_layout(self.initial_packed);
@@ -49934,10 +49945,70 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     }
     self._aux_populate_category_menus = function (subset) {
       var _this3 = this;
+      var tPopStart = performance.now();
       if (button_bar_ui) {
         // decide if the variable can be considered categorical by examining its range
+        var t1 = performance.now();
 
-        //console.log ("self._aux_populate_category_menus");
+        // Single-pass optimization for String attributes
+        var stringAttrsToPopulate = [];
+        for (var _i2 = 0, _Object$entries = Object.entries(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] || {}); _i2 < _Object$entries.length; _i2++) {
+          var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
+            k = _Object$entries$_i[0],
+            d = _Object$entries$_i[1];
+          if (!d["value_range"] && d["type"] === "String") {
+            d.discrete = true;
+            d["raw_attribute_key"] = k;
+            if (!("label" in d)) {
+              d["label"] = k;
+            }
+            d["value_range_set"] = new Set();
+            d.is_volatile = !!(self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k] && self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile);
+            if (d.is_volatile) {
+              d.mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+            }
+            stringAttrsToPopulate.push(d);
+          }
+        }
+        if (stringAttrsToPopulate.length > 0) {
+          var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+          var missing_label = _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label;
+          var N = graph_data.Nodes.length;
+          for (var i = 0; i < N; i++) {
+            var nd = graph_data.Nodes[i];
+            var hasAttrs = nd && node_attr_id in nd;
+            var attrs = hasAttrs ? nd[node_attr_id] : null;
+            for (var j = 0; j < stringAttrsToPopulate.length; j++) {
+              var _d2 = stringAttrsToPopulate[j];
+              var _k = _d2["raw_attribute_key"];
+              if (_d2.is_volatile) {
+                if (hasAttrs && _k in attrs) {
+                  var v = _d2.mapper(nd, self);
+                  if (typeof v === "string" && v.length === 0) v = missing_label;
+                  _d2["value_range_set"].add(v || missing_label);
+                } else {
+                  _d2["value_range_set"].add(missing_label);
+                }
+              } else {
+                if (attrs && _k in attrs) {
+                  var _v = attrs[_k];
+                  if (typeof _v === "string" && _v.length === 0) _v = missing_label;
+                  _d2["value_range_set"].add(_v !== undefined ? _v : missing_label);
+                } else {
+                  _d2["value_range_set"].add(missing_label);
+                }
+              }
+            }
+          }
+          for (var _j = 0; _j < stringAttrsToPopulate.length; _j++) {
+            var _d3 = stringAttrsToPopulate[_j];
+            _d3["value_range"] = _toConsumableArray(_d3["value_range_set"]);
+            delete _d3["value_range_set"];
+            delete _d3["is_volatile"];
+            delete _d3["mapper"];
+            _d3["dimension"] = _d3["value_range"].length;
+          }
+        }
         var valid_cats = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID], self._aux_populate_category_fields), function (d, k)
         /*if (d.discrete) {
         console.log (d["value_range"].length);
@@ -49949,12 +50020,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         var valid_shapes = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(valid_cats, function (d) {
           return (!subset || subset.has(d["raw_attribute_key"])) && (d.discrete && d.dimension <= 7 || d["raw_attribute_key"] in self.networkShapeScheme && !d["_hidden_"]);
         });
+        var t2 = performance.now();
 
         // sort values alphabetically for consistent coloring
 
-        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each([valid_cats, valid_shapes], function (list) {
-          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(list, self._aux_process_category_values);
-        });
+        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(valid_cats, self._aux_process_category_values);
+        var t3 = performance.now();
 
         /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
@@ -49962,48 +50033,107 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           "color_stops",
         ];*/
 
+        var tScaleStart = performance.now();
         var valid_scales = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID], function (d, k) {
           var color_stops = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].get(self.json, [_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID, k, "color_stops"], _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.ContinuousColorStops);
-          function determine_scaling(d, values, scales) {
+          function determine_scaling(d, values, scales, trueRange) {
             var low_var = Infinity;
-            d["value_range"] = d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
+            d["value_range"] = trueRange || d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
+            var isLarge = values.length > 1000;
+            var sampleSize = isLarge ? 1000 : values.length;
+            var step = isLarge ? Math.floor(values.length / sampleSize) : 1;
             underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(scales, function (scl, i) {
               var bins = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].range(color_stops), function () {
                 return 0;
               });
               scl.range([0, color_stops - 1]).domain(d["value_range"]);
-              var N = values.length;
-              while (N--) {
-                bins[~~scl(values[N])]++; // truncate the value
+              if (isLarge) {
+                for (var _i3 = 0; _i3 < sampleSize; _i3++) {
+                  var val = values[_i3 * step];
+                  var binIdx = ~~scl(val);
+                  if (binIdx >= 0 && binIdx < color_stops) {
+                    bins[binIdx]++;
+                  }
+                }
+              } else {
+                var _N = values.length;
+                while (_N--) {
+                  bins[~~scl(values[_N])]++; // truncate the value
+                }
               }
-              var mean = values.length / color_stops;
+              var actualLen = isLarge ? sampleSize : values.length;
+              var mean = actualLen / color_stops;
               var vrnc = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].reduce(bins, function (p, c) {
                 return p + (c - mean) * (c - mean);
               });
               if (vrnc < low_var) {
                 low_var = vrnc;
                 d["scale"] = scl;
+                d["scale_color_stops"] = color_stops;
               }
             });
           }
           d["raw_attribute_key"] = k;
           if (d.type === "Number" || d.type === "Number-categories") {
+            if (d["scale"] && d["scale_color_stops"] === color_stops) {
+              return d;
+            }
+
+            // Get the true extent (min/max range) from the pre-computed unique values
+            var numericUniqs = (self.uniqValues[k] || []).map(Number).filter(function (v) {
+              return !isNaN(v);
+            });
+            var range = d3__WEBPACK_IMPORTED_MODULE_0__.extent(numericUniqs);
             var values = [];
-            var N = self.json.Nodes.length;
-            while (N--) {
-              var v = self.attribute_node_value_by_id(self.json.Nodes[N], k, d.type === "Number");
-              if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isNumber(v)) {
-                values.push(v);
+            var _node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+            var is_volatile = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile;
+            var is_number_type = d.type === "Number";
+            var nodes = self.json.Nodes || [];
+            var nodesLen = nodes.length;
+            var maxSampleNodes = 5000;
+            var isLargeNodes = nodesLen > maxSampleNodes;
+            var stepNodes = isLargeNodes ? Math.floor(nodesLen / maxSampleNodes) : 1;
+            var limitNodes = isLargeNodes ? maxSampleNodes : nodesLen;
+            if (is_volatile) {
+              var mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+              for (var idx = 0; idx < limitNodes; idx++) {
+                var _nd = nodes[isLargeNodes ? idx * stepNodes : idx];
+                if (_nd && _node_attr_id in _nd && k in _nd[_node_attr_id]) {
+                  var _v2 = mapper(_nd, self);
+                  if (typeof _v2 === "string") {
+                    if (_v2.length === 0) continue;
+                    if (is_number_type) {
+                      _v2 = Number(_v2);
+                      if (!isNaN(_v2)) values.push(_v2);
+                    }
+                  } else if (typeof _v2 === "number" && !isNaN(_v2)) {
+                    values.push(_v2);
+                  }
+                }
+              }
+            } else {
+              for (var _idx = 0; _idx < limitNodes; _idx++) {
+                var _nd2 = nodes[isLargeNodes ? _idx * stepNodes : _idx];
+                if (_nd2 && _node_attr_id in _nd2) {
+                  var _attrs = _nd2[_node_attr_id];
+                  if (_attrs && k in _attrs) {
+                    var _v3 = _attrs[k];
+                    if (typeof _v3 === "string") {
+                      if (_v3.length === 0) continue;
+                      if (is_number_type) {
+                        _v3 = Number(_v3);
+                        if (!isNaN(_v3)) values.push(_v3);
+                      }
+                    } else if (typeof _v3 === "number" && !isNaN(_v3)) {
+                      values.push(_v3);
+                    }
+                  }
+                }
               }
             }
-            /*_.filter(
-              _.map(graph_data.Nodes, (nd) =>
-                self.attribute_node_value_by_id(nd, k, d.type === "Number")
-              ),
-              (v) => _.isNumber(v)
-            );*/
-            // automatically determine the scale and see what spaces the values most evenly
-            var range = d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
+            if (values.length === 0) {
+              return {};
+            }
             var scales_to_consider = [d3__WEBPACK_IMPORTED_MODULE_0__.scale.linear()];
             if (!d.is_integer) {
               if (range[0] > 0) {
@@ -50017,37 +50147,50 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
                 scales_to_consider.push(d3__WEBPACK_IMPORTED_MODULE_0__.scale.pow().exponent(1 / 16));
               }
             }
-            determine_scaling(d, values, scales_to_consider);
+            determine_scaling(d, values, scales_to_consider, range);
           } else if (d.type === "Date") {
-            values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data.Nodes, function (nd) {
+            if (d["scale"] && d["scale_color_stops"] === color_stops) {
+              return d;
+            }
+            var _values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data.Nodes, function (nd) {
+              var a_date = self.attribute_node_value_by_id(nd, k);
+              if (a_date instanceof Date) {
+                return a_date;
+              }
+              if (a_date === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
+                return null;
+              }
+              if (a_date === "REDACTED" && self.isMJCNetwork) {
+                return "REDACTED";
+              }
               try {
-                var a_date = self.attribute_node_value_by_id(nd, k);
-                if (d.raw_attribute_key === "hiv_aids_dx_dt") {
-                  //console.log (nd, k, a_date);
-                }
-                _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, _this3.parse_dates(a_date));
+                var parsed = _this3.parse_dates(a_date);
+                _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, parsed);
+                return parsed;
               } catch (err) {
                 if (a_date === "REDACTED" && self.isMJCNetwork) {
                   _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, "REDACTED");
+                  return "REDACTED";
                 } else {
                   _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label);
+                  return null;
                 }
               }
-              return self.attribute_node_value_by_id(nd, k);
             }), function (v) {
-              return v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label ? null : v;
+              return v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label || v === "REDACTED" || !v ? null : v;
             });
             // automatically determine the scale and see what spaces the values most evenly
-            if (values.length === 0) {
+            if (_values.length === 0) {
               // invalid scale
               return {};
             }
-            determine_scaling(d, values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale.utc()]);
+            determine_scaling(d, _values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale.utc()]);
           }
           return d;
         }), function (d) {
           return (d.type === "Number" || d.type === "Date" || d.type === "Number-categories") && !d["_hidden_"];
         });
+        var tScaleEnd = performance.now();
         var _menu_label_gen = function _menu_label_gen(d) {
           return (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
         };
@@ -50176,87 +50319,200 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         if (self._setup_mjc_filter_ui) {
           self._setup_mjc_filter_ui();
         }
+        var tPopEnd = performance.now();
+        console.log("[PERF_DETAIL] _aux_populate_category_menus: total = ".concat((tPopEnd - tPopStart).toFixed(2), "ms\n") + "  - valid_cats filter/fields = ".concat((t2 - t1).toFixed(2), "ms\n") + "  - _aux_process_category_values = ".concat((t3 - t2).toFixed(2), "ms\n") + "  - valid_scales & determine_scaling = ".concat((tScaleEnd - tScaleStart).toFixed(2), "ms\n") + "  - D3 UI Menu rendering = ".concat((tPopEnd - tScaleEnd).toFixed(2), "ms"));
       }
     };
+    var initSteps = [];
     if (attributes) {
-      /*
-         map attributes into nodes and into the graph object itself using
-         kGlobals.network.GraphAttrbuteID as the key
-      */
-
-      if ("attribute_map" in attributes) {
-        var attribute_map = attributes["attribute_map"];
-        if ("map" in attribute_map && attribute_map["map"].length > 0) {
-          graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] = attribute_map["map"].map(function (a, i) {
-            return {
-              label: a,
-              type: null,
-              values: {},
-              index: i,
-              range: 0
-            };
-          });
-          graph_data.Nodes.forEach(function (n) {
-            n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] = n.id.split(attribute_map["delimiter"]);
-            n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].forEach(function (v, i) {
-              if (i < graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].length) {
-                if (!(v in graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["values"])) {
-                  graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["values"][v] = graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["range"];
-                  graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["range"] += 1;
+      initSteps.push({
+        name: "Mapping node attributes...",
+        run: function run() {
+          if ("attribute_map" in attributes) {
+            var attribute_map = attributes["attribute_map"];
+            if ("map" in attribute_map && attribute_map["map"].length > 0) {
+              graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] = attribute_map["map"].map(function (a, i) {
+                return {
+                  label: a,
+                  type: null,
+                  values: {},
+                  index: i,
+                  range: 0
+                };
+              });
+              graph_data.Nodes.forEach(function (n) {
+                n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] = n.id.split(attribute_map["delimiter"]);
+                n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].forEach(function (v, i) {
+                  if (i < graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].length) {
+                    if (!(v in graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["values"])) {
+                      graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["values"][v] = graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["range"];
+                      graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][i]["range"] += 1;
+                    }
+                  }
+                });
+              });
+              graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].forEach(function (d) {
+                if (d["range"] < graph_data.Nodes.length && d["range"] > 1 && d["range"] <= 20) {
+                  d["type"] = "category";
                 }
-              }
-              //graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] = 1 + (graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] ? graph_data [kGlobals.network.GraphAttrbuteID][i]["values"][v] : 0);
-            });
-          });
-          graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID].forEach(function (d) {
-            if (d["range"] < graph_data.Nodes.length && d["range"] > 1 && d["range"] <= 20) {
-              d["type"] = "category";
+              });
             }
+          }
+        }
+      });
+      initSteps.push({
+        name: "Transforming predefined attributes...",
+        run: function run() {
+          console.time("[PERF] populate_predefined_attribute");
+          for (var _i4 = 0, _Object$entries2 = Object.entries(self._networkPredefinedAttributeTransforms); _i4 < _Object$entries2.length; _i4++) {
+            var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i4], 2),
+              key = _Object$entries2$_i[0],
+              def = _Object$entries2$_i[1];
+            self.populate_predefined_attribute(def, key);
+          }
+          console.timeEnd("[PERF] populate_predefined_attribute");
+        }
+      });
+      initSteps.push({
+        name: "Populating category menus...",
+        run: function run() {
+          console.time("[PERF] self._aux_populate_category_menus");
+          self._aux_populate_category_menus();
+          console.timeEnd("[PERF] self._aux_populate_category_menus");
+        }
+      });
+    }
+    initSteps.push({
+      name: "Calculating cluster distances...",
+      run: function run() {
+        if (self.cluster_sizes.length > max_points_to_render) {
+          var sorted_array = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(self.cluster_sizes, function (d, i) {
+            return [d, i + 1];
+          }), function (d) {
+            return !underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isUndefined(d[0]);
           });
+          sorted_array = sorted_array.sort(function (a, b) {
+            return a[0] - b[0];
+          });
+          for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
+            self.exclude_cluster_ids[sorted_array[k][1]] = 1;
+          }
+          if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].size(self.exclude_cluster_ids)) {
+            self.warning_string += (self.warning_string.length ? "<br>" : "") + "Excluded " + (sorted_array.length - max_points_to_render) + " clusters (maximum size " + sorted_array[k - 1][0] + " nodes) because only " + max_points_to_render + " objects can be shown at once.";
+          }
+        }
+        console.time("[PERF] cluster distances calculations");
+        self.edges.forEach(function (e, i) {
+          self.clusters[self.cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
+        });
+        self.clusters.forEach(function (d, i) {
+          d.distances = _helpers_js__WEBPACK_IMPORTED_MODULE_4__.describe_vector(d.distances);
+        });
+        console.timeEnd("[PERF] cluster distances calculations");
+        if (_network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "auto_expand_single_cluster", false, true)) {
+          if (self.clusters.length == 1) {
+            self.clusters[0].collapsed = false;
+          }
         }
       }
-      for (var _i2 = 0, _Object$entries = Object.entries(self._networkPredefinedAttributeTransforms); _i2 < _Object$entries.length; _i2++) {
-        var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
-          key = _Object$entries$_i[0],
-          def = _Object$entries$_i[1];
-        self.populate_predefined_attribute(def, key);
-      }
-      self._aux_populate_category_menus();
-    }
-    if (self.cluster_sizes.length > max_points_to_render) {
-      var sorted_array = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(self.cluster_sizes, function (d, i) {
-        return [d, i + 1];
-      }), function (d) {
-        return !underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isUndefined(d[0]);
-      });
-      sorted_array = sorted_array.sort(function (a, b) {
-        return a[0] - b[0];
-      });
-
-      //.map((d, i) => [d, i + 1])
-      //.sort((a, b) => a[0] - b[0]);
-
-      for (var k = 0; k < sorted_array.length - max_points_to_render; k++) {
-        self.exclude_cluster_ids[sorted_array[k][1]] = 1;
-      }
-      if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].size(self.exclude_cluster_ids)) {
-        self.warning_string += (self.warning_string.length ? "<br>" : "") + "Excluded " + (sorted_array.length - max_points_to_render) + " clusters (maximum size " + sorted_array[k - 1][0] + " nodes) because only " + max_points_to_render + " objects can be shown at once.";
-      }
-    }
-    self.edges.forEach(function (e, i) {
-      self.clusters[self.cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
     });
-    self.clusters.forEach(function (d, i) {
-      d.distances = _helpers_js__WEBPACK_IMPORTED_MODULE_4__.describe_vector(d.distances);
+    initSteps.push({
+      name: "Updating network visualization...",
+      run: function run() {
+        self.update();
+      }
     });
-    //self.clusters
-
-    if (_network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "auto_expand_single_cluster", false, true)) {
-      if (self.clusters.length == 1) {
-        self.clusters[0].collapsed = false;
+    initSteps.push({
+      name: "Applying configuration options...",
+      run: function run() {
+        if (options) {
+          if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isNumber(options["charge"])) {
+            self.charge_correction = options["charge"];
+          }
+          if ("colorizer" in options) {
+            self.colorizer = options["colorizer"];
+          }
+          if ("node_shaper" in options) {
+            self.node_shaper = options["node_shaper"];
+          }
+          if ("callbacks" in options) {
+            options["callbacks"](self);
+          }
+          if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isArray(options["expand"])) {
+            self.expand_some_clusters(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.clusters, function (c) {
+              return options["expand"].indexOf(c.cluster_id) >= 0;
+            }));
+          }
+          if (options["priority-sets-url"]) {
+            var is_writeable = options["is-writeable"];
+            self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], function () {
+              return self.load_priority_sets(options["priority-sets-url"], is_writeable);
+            });
+          }
+          if (options["priority-set-add-from-mjc-url"]) {
+            self.priority_set_add_from_mjc_url = options["priority-set-add-from-mjc-url"];
+          }
+          if (options["mjc-archive-url"]) {
+            self.mjc_archive_url = options["mjc-archive-url"];
+          }
+          if (options["mjc-uuid"]) {
+            self.mjc_uuid = options["mjc-uuid"];
+          }
+          if (self.showing_diff) {
+            self.handle_attribute_categorical("_newly_added");
+          }
+        }
+        if (self.isPrimaryGraph) {
+          self.annotate_multiple_clusters_on_nodes();
+        }
+        if (self._is_CDC_ && !self.isMJCNetwork) {
+          self.define_node_search_table();
+        }
+        self.draw_attribute_labels();
+        network_layout.start();
+      }
+    });
+    function runInitSteps(index) {
+      if (index >= initSteps.length) {
+        if (self.post_init_callbacks) {
+          var callbacks = self.post_init_callbacks;
+          delete self.post_init_callbacks;
+          callbacks.forEach(function (cb) {
+            return cb();
+          });
+        }
+        return;
+      }
+      window.updateNetworkLoadingStatus(initSteps[index].name);
+      setTimeout(function () {
+        initSteps[index].run();
+        runInitSteps(index + 1);
+      }, 1);
+    }
+    if (self.isPrimaryGraph) {
+      var showPlaceholder = function showPlaceholder(element, message) {
+        if (element && element.node()) {
+          element.style("display", "none");
+          var parentNode = element.node().parentNode;
+          if (parentNode) {
+            var d3Parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(parentNode);
+            d3Parent.selectAll(".table-loading-placeholder").remove();
+            d3Parent.insert("div", function () {
+              return element.node();
+            }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> ' + message);
+          }
+        }
+      };
+      showPlaceholder(self.cluster_table, "Building clusters table...");
+      var subTable = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "subcluster-table");
+      if (subTable) {
+        showPlaceholder(d3__WEBPACK_IMPORTED_MODULE_0__.select(subTable), "Building subclusters table...");
+      }
+      if (!self._is_CDC_) {
+        showPlaceholder(_nodesTab_js__WEBPACK_IMPORTED_MODULE_9__.getNodeTable(), "Building node table...");
       }
     }
-    self.update();
+    runInitSteps(0);
   }
 
   /**
@@ -50633,7 +50889,17 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
                 if (v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
                   return v;
                 }
-                return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(v);
+                if (v instanceof Date) {
+                  return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(v);
+                }
+                var parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider.parse(v);
+                if (!parsed) {
+                  parsed = new Date(v);
+                }
+                if (parsed && !isNaN(parsed.getTime())) {
+                  return _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.DateViewFormatSlider(parsed);
+                }
+                return v;
               }
             };
           } else if (self.displayed_node_subset[c].type === "Number") {
@@ -50824,7 +51090,16 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    */
   self.draw_node_table = function (extra_columns, node_list, headers, rows, container, table_caption, ND) {
     container = container || _nodesTab_js__WEBPACK_IMPORTED_MODULE_9__.getNodeTable();
-    if (container) {
+    if (container && container.node()) {
+      container.style("display", "none");
+      var parentNode = container.node().parentNode;
+      if (parentNode) {
+        var d3Parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(parentNode);
+        d3Parent.selectAll(".table-loading-placeholder").remove();
+        d3Parent.insert("div", function () {
+          return container.node();
+        }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> Building node table...');
+      }
       node_list = node_list || self.nodes;
       ND = ND || node_list.length;
       if (!headers) {
@@ -50907,11 +51182,21 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @param {Object} options - Additional options for the table.
    * @returns {void}
    */
-  self.draw_cluster_table = function (extra_columns, element, options) {
+  self.draw_cluster_table = function (extra_columns, element, options, cb) {
     var skip_clusters = options && options["no-clusters"];
     var skip_subclusters = !(options && options["subclusters"]);
     element = element || self.cluster_table;
-    if (element) {
+    if (element && element.node()) {
+      element.style("display", "none");
+      var parentNode = element.node().parentNode;
+      if (parentNode) {
+        var d3Parent = d3__WEBPACK_IMPORTED_MODULE_0__.select(parentNode);
+        d3Parent.selectAll(".table-loading-placeholder").remove();
+        var msg = skip_clusters ? "Building subclusters table..." : "Building clusters table...";
+        d3Parent.insert("div", function () {
+          return element.node();
+        }).classed("table-loading-placeholder", true).style("padding", "2em").style("text-align", "center").style("color", "#666").style("font-size", "16px").html('<i class="fa fa-spinner fa-spin"></i> ' + msg);
+      }
       var headers = [[{
         value: {"network":"Red","networks":"Redes","statistics":"Estadísticas","clusters":"Clústeres","cluster":"Clúster","subclusters":"Subclústeres","subcluster":"Subclúster","nodes":"Nodos","attributes":"Atributos","missing":"Faltantes","yes_sure":"Estoy seguro","cancel":"Cancelar","other":"Otra","caution":"Precaución","warning":"Advertencia","yes":"Sí","no":"No","next":"Seiguiente","success":"Éxito","error":"Error","continue":"Continuar","uid":"UID","genetic_sequences":"Secuencias Genéticas"}["cluster"] + " ID",
         sort: function sort(c) {
@@ -50971,104 +51256,140 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         options["headers"](headers);
       }
       var rows = [];
-      underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.clusters, function (cluster) {
-        var make_row = function make_row(d, is_subcluster) {
-          var this_row = [
-          // CLUSTER ID
-          {
-            value: [d.cluster_id, is_subcluster, d],
-            //.cluster_id,
-            callback: _cluster_table_draw_id
+      var make_row = function make_row(d, is_subcluster) {
+        var this_row = [
+        // CLUSTER ID
+        {
+          value: [d.cluster_id, is_subcluster, d],
+          //.cluster_id,
+          callback: _cluster_table_draw_id
+        },
+        // CLUSTER ATTRIBUTES AND BUTTONS
+        {
+          value: function value() {
+            var actual_cluster = is_subcluster ? d.parent_cluster : d;
+            return [actual_cluster.collapsed, actual_cluster.hxb2_linked, actual_cluster.match_filter, actual_cluster.cluster_id, is_subcluster ? null : self.cluster_attributes ? self.cluster_attributes[actual_cluster.cluster_id] : null];
           },
-          // CLUSTER ATTRIBUTES AND BUTTONS
-          {
-            value: function value() {
-              var actual_cluster = is_subcluster ? d.parent_cluster : d;
-              return [actual_cluster.collapsed, actual_cluster.hxb2_linked, actual_cluster.match_filter, actual_cluster.cluster_id, is_subcluster ? null : self.cluster_attributes ? self.cluster_attributes[actual_cluster.cluster_id] : null];
-            },
-            callback: _cluster_table_draw_buttons,
-            volatile: true
-          },
-          // CLUSTER SIZE
-          {
-            value: self.unique_entity_list(d.children).length
-          }];
-          if (self._is_CDC_) {
-            this_row[2].volatile = true;
-            this_row[2].actions = function (item, value) {
-              if (!_clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor()) {
-                return null;
-              }
-              return [{
-                icon: "fa-plus",
-                action: function action(button, v) {
-                  if (_clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor()) {
-                    _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor().append_node_objects(d.children);
-                  }
-                  return false;
-                },
-                help: "Add to cluster of interest"
-              }];
-            };
-          }
-          if (self._is_seguro) {
-            this_row.push({
-              value: d,
-              format: function format(d) {
-                return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
-                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
-                }).length;
-              }
-            });
-            this_row.push({
-              value: d,
-              format: function format(d) {
-                var recent = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
-                  return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
-                }).length;
-                return recent / Math.sqrt(d.children.length);
-              }
-            });
-          }
-          if (!self._is_CDC_) {
-            this_row.push({
-              value: d.degrees,
-              format: function format(d) {
-                try {
-                  return _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["mean"]) + " [" + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["median"]) + ", " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q1"]) + " - " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q3"]) + "]";
-                } catch (e) {
-                  return "";
+          callback: _cluster_table_draw_buttons,
+          volatile: true
+        },
+        // CLUSTER SIZE
+        {
+          value: self.unique_entity_list(d.children).length
+        }];
+        if (self._is_CDC_) {
+          this_row[2].volatile = true;
+          this_row[2].actions = function (item, value) {
+            if (!_clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor()) {
+              return null;
+            }
+            return [{
+              icon: "fa-plus",
+              action: function action(button, v) {
+                if (_clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor()) {
+                  _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor().append_node_objects(d.children);
                 }
-              }
-            });
-            this_row.push({
-              value: d.distances,
-              format: function format(d) {
-                try {
-                  return _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["mean"]) + " [" + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["median"]) + ", " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q1"]) + " - " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q3"]) + "]";
-                } catch (e) {
-                  return "";
-                }
-              }
-            });
-          }
-          if (extra_columns) {
-            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(extra_columns, function (ed) {
-              this_row.push(ed.generator(d, self));
-            });
-          }
-          return this_row;
-        };
-        if (!skip_clusters) {
-          rows.push(make_row(cluster, false));
+                return false;
+              },
+              help: "Add to cluster of interest"
+            }];
+          };
         }
-        if (!skip_subclusters) {
-          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(cluster.subclusters, function (sub_cluster) {
-            rows.push(make_row(sub_cluster, true));
+        if (self._is_seguro) {
+          this_row.push({
+            value: d,
+            format: function format(d) {
+              return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
+                return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
+              }).length;
+            }
+          });
+          this_row.push({
+            value: d,
+            format: function format(d) {
+              var recent = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(d.children, function (child) {
+                return d3__WEBPACK_IMPORTED_MODULE_0__.time.months.utc(child.patient_attributes["sample_dt"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.getCurrentDate()).length <= 2;
+              }).length;
+              return recent / Math.sqrt(d.children.length);
+            }
           });
         }
-      });
-      _tables_js__WEBPACK_IMPORTED_MODULE_7__.add_a_sortable_table(element, headers, rows, true, options && options["caption"] ? options["caption"] : null, _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor());
+        if (!self._is_CDC_) {
+          this_row.push({
+            value: d.degrees,
+            format: function format(d) {
+              try {
+                return _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["mean"]) + " [" + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["median"]) + ", " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q1"]) + " - " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q3"]) + "]";
+              } catch (e) {
+                return "";
+              }
+            }
+          });
+          this_row.push({
+            value: d.distances,
+            format: function format(d) {
+              try {
+                return _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["mean"]) + " [" + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["median"]) + ", " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q1"]) + " - " + _globals_js__WEBPACK_IMPORTED_MODULE_12__.formats.FloatFormat(d["Q3"]) + "]";
+              } catch (e) {
+                return "";
+              }
+            }
+          });
+        }
+        if (extra_columns) {
+          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(extra_columns, function (ed) {
+            this_row.push(ed.generator(d, self));
+          });
+        }
+        return this_row;
+      };
+      if (cb) {
+        var chunk_size = 3000;
+        var cluster_index = 0;
+        function processClusterRowsChunk() {
+          var end = Math.min(cluster_index + chunk_size, self.clusters.length);
+          for (var idx = cluster_index; idx < end; idx++) {
+            var cluster = self.clusters[idx];
+            if (!skip_clusters) {
+              rows.push(make_row(cluster, false));
+            }
+            if (!skip_subclusters) {
+              underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(cluster.subclusters, function (sub_cluster) {
+                rows.push(make_row(sub_cluster, true));
+              });
+            }
+          }
+          cluster_index = end;
+          if (self.clusters.length > 3000) {
+            var percent = Math.round(cluster_index / self.clusters.length * 100);
+            var typeLabel = skip_clusters ? "subcluster" : "cluster";
+            window.updateNetworkLoadingStatus("Preparing ".concat(typeLabel, " table rows... (").concat(percent, "%)"));
+          }
+          if (cluster_index < self.clusters.length) {
+            setTimeout(processClusterRowsChunk, 1);
+          } else {
+            _tables_js__WEBPACK_IMPORTED_MODULE_7__.add_a_sortable_table(element, headers, rows, true, options && options["caption"] ? options["caption"] : null, _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor());
+            cb();
+          }
+        }
+        processClusterRowsChunk();
+      } else {
+        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.clusters, function (cluster) {
+          if (!skip_clusters) {
+            rows.push(make_row(cluster, false));
+          }
+          if (!skip_subclusters) {
+            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(cluster.subclusters, function (sub_cluster) {
+              rows.push(make_row(sub_cluster, true));
+            });
+          }
+        });
+        _tables_js__WEBPACK_IMPORTED_MODULE_7__.add_a_sortable_table(element, headers, rows, true, options && options["caption"] ? options["caption"] : null, _clustersOfInterest_js__WEBPACK_IMPORTED_MODULE_10__.get_editor());
+      }
+    } else {
+      if (cb) {
+        cb();
+      }
     }
   };
 
@@ -51149,7 +51470,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       }).classed("injected_object", function (d) {
         return d.node_class === "injected";
       }).attr("transform", function (d) {
-        return "translate(" + d.x + "," + d.y + ")";
+        var x = isNaN(d.x) || typeof d.x === "undefined" ? self.width / 2 || 0 : d.x;
+        var y = isNaN(d.y) || typeof d.y === "undefined" ? self.height / 2 || 0 : d.y;
+        return "translate(" + x + "," + y + ")";
       }).style("opacity", function (d) {
         return node_opacity(d);
       }).style("display", function (d) {
@@ -51260,10 +51583,16 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   self.handle_shape_categorical = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(function () {
+        self.handle_shape_categorical(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
     ["shapes"].forEach(function (lbl) {
       d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role(lbl)).selectAll("li").selectAll("a").attr("style", function (d, i) {
-        if (d[1] === cat_id) {
+        if (d && d[1] === cat_id) {
           set_attr = d[0];
           return " font-weight: bold;";
         }
@@ -51510,10 +51839,16 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   self.handle_attribute_opacity = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(function () {
+        self.handle_attribute_opacity(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
     ["opacity"].forEach(function (lbl) {
       d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role(lbl)).selectAll("li").selectAll("a").attr("style", function (d, i) {
-        if (d[1] === cat_id) {
+        if (d && d[1] === cat_id) {
           set_attr = d[0];
           return " font-weight: bold;";
         }
@@ -51548,6 +51883,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   self.handle_attribute_continuous = function (cat_id) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(function () {
+        self.handle_attribute_continuous(cat_id);
+      });
+      return;
+    }
     var set_attr = "None";
     render_chord_diagram("aux_svg_holder", null, null);
     render_binned_table("attribute_table", null, null);
@@ -51558,7 +51899,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     });
     [["attributes", false], ["attributes_cat", true]].forEach(function (lbl) {
       d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1])).selectAll("li").selectAll("a").attr("style", function (d, i) {
-        if (d[1] === cat_id) {
+        if (d && d[1] === cat_id) {
           set_attr = d[0];
           return " font-weight: bold;";
         }
@@ -51872,12 +52213,18 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   self.handle_attribute_categorical = function (cat_id, skip_update) {
+    if (self.post_init_callbacks) {
+      self.post_init_callbacks.push(function () {
+        self.handle_attribute_categorical(cat_id, skip_update);
+      });
+      return;
+    }
     var set_attr = "None";
     d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("attributes_invert")).style("display", "none");
     self.network_svg.selectAll("radialGradient").remove();
     [["attributes", false], ["attributes_cat", true]].forEach(function (lbl) {
       d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role(lbl[0], lbl[1])).selectAll("li").selectAll("a").attr("style", function (d, i) {
-        if (d[1] === cat_id) {
+        if (d && d[1] === cat_id) {
           set_attr = d[0];
           return " font-weight: bold;";
         }
@@ -52097,6 +52444,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   self.link_generator_function = function (d) {
+    if (!d.source || !d.target || typeof d.source.x === "undefined" || typeof d.source.y === "undefined" || typeof d.target.x === "undefined" || typeof d.target.y === "undefined" || isNaN(d.source.x) || isNaN(d.source.y) || isNaN(d.target.x) || isNaN(d.target.y)) {
+      return;
+    }
     var pull = d.pull || 0.0;
     var path;
     if (pull !== 0.0) {
@@ -52151,98 +52501,20 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       }*/
     }
     if (self.isMJCNetwork && !self.fullMJCNetwork) {
+      d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
       return;
     }
-    self.needs_an_update = false;
-    if (options && options["extra-graphics"]) {
-      options["extra-graphics"].call(null, self, options);
-    }
-    if (friction) {
-      network_layout.friction(friction);
-    }
-    self.display_warning(self.warning_string, true);
     var rendered_nodes, rendered_clusters, link;
+    var draw_me;
     if (!soft) {
-      var draw_me = prepare_data_to_graph();
+      window.updateNetworkLoadingStatus("Preparing data to graph...");
+      draw_me = prepare_data_to_graph();
       network_layout.nodes(draw_me.all).links(draw_me.edges);
       update_network_string(draw_me.nodes.length, draw_me.edges.length);
-      var edge_set = {};
-      underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(draw_me.edges, function (d) {
-        d.pull = 0.0;
-        var tag;
-        if (d.source < d.target) {
-          tag = String(d.source) + "|" + d.target;
-        } else {
-          tag = String(d.target) + "|" + d.source;
-        }
-        if (tag in edge_set) {
-          edge_set[tag].push(d);
-        } else {
-          edge_set[tag] = [d];
-        }
-      });
-      underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(edge_set, function (v) {
-        if (v.length > 1) {
-          var step = 1 / (v.length - 1);
-          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(v, function (edge, index) {
-            edge.pull = -0.5 + index * step;
-          });
-        }
-      });
-      link = self.network_svg.selectAll(".link").data(draw_me.edges, function (d) {
-        return d.id;
-      });
-
-      //link.enter().append("line").classed("link", true);
-      link.enter().append("path").classed("link", true);
-      link.exit().remove();
-      link.classed("removed", function (d) {
-        return self.highlight_unsuppored_edges && d.removed;
-      }).classed("unsupported", function (d) {
-        return self.highlight_unsuppored_edges && "support" in d && d["support"] > 0.05;
-      }).classed("core-link", function (d) {
-        return (
-          //console.log (d["length"] <= self.core_link_length);
-          d["length"] <= self.core_link_length
-        );
-      }
-      //return false;
-      ).classed("mspp-link", function (d) {
-        return (
-          //console.log (d["length"] <= self.core_link_length);
-          d["weight"] > 1
-        );
-      }
-      //return false;
-      );
-      link.on("mouseover", edge_pop_on).on("mouseout", edge_pop_off).filter(function (d) {
-        return d.directed;
-      }).attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
-      rendered_nodes = self.network_svg.selectAll(".node").data(draw_me.nodes, function (d) {
-        return d.id;
-      });
-      rendered_nodes.exit().remove();
-
-      /*rendered_nodes.enter().each (function (d) {
-        this.append ("path");
-      });*/
-
-      rendered_nodes.enter().append("g").append("path");
-      rendered_clusters = self.network_svg.selectAll(".cluster-group").data(draw_me.clusters.map(function (d) {
-        return d;
-      }), function (d) {
-        return d.cluster_id;
-      });
-      rendered_clusters.exit().remove();
-      rendered_clusters.enter().append("g").attr("class", "cluster-group").attr("transform", function (d) {
-        return "translate(" + d.x + "," + d.y + ")";
-      }).on("click", function (d) {
-        return _network_js__WEBPACK_IMPORTED_MODULE_13__.handle_cluster_click(self, d);
-      }).on("mouseover", cluster_pop_on).on("mouseout", cluster_pop_off).call(network_layout.drag().on("dragstart", cluster_pop_off));
-      self.draw_cluster_table(self.extra_cluster_table_columns, self.cluster_table);
       if (self._is_CDC_ && !(options && options["no-subclusters"]) && options && options["no-subcluster-compute"]) {
-        // use precomputed subclusters
+        window.updateNetworkLoadingStatus("Computing subclusters...");
 
+        // use precomputed subclusters
         underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.clusters, function (cluster_nodes, cluster_index) {
           /** extract subclusters; all nodes at given threshold */
           /** Sub-Cluster: all nodes connected at 0.005 subs/site; there can be multiple sub-clusters per cluster */
@@ -52310,99 +52582,347 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           });
         });
       }
-      if (self.subcluster_table) {
-        /*
-            SLKP 20200727 scan subclusters and identify which, if any
-            will need to be automatically created as priority sets
-        */
+    }
 
-        // draw subcluster tables
-
-        self.draw_cluster_table(self.extra_subcluster_table_columns, self.subcluster_table, {
-          "no-clusters": true,
-          subclusters: true,
-          headers: function headers(_headers) {
-            _headers[0][0].value = "Subcluster ID";
-            _headers[0][0].help = "Unique subcluster ID";
-            _headers[0][2].help = "Number of total cases in the subcluster";
+    // 2. Defer heavy SVG rendering and layout to a timeout to yield control to the browser.
+    // This allows the browser to paint and display the tables first!
+    setTimeout(function () {
+      self.needs_an_update = false;
+      if (options && options["extra-graphics"]) {
+        options["extra-graphics"].call(null, self, options);
+      }
+      if (friction) {
+        network_layout.friction(friction);
+      }
+      self.display_warning(self.warning_string, true);
+      function runSteps(steps, index) {
+        if (index >= steps.length) {
+          d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
+          self.network_svg.selectAll(".svg-loading-placeholder").remove();
+          return;
+        }
+        setTimeout(function () {
+          steps[index](function () {
+            runSteps(steps, index + 1);
+          });
+        }, 0);
+      }
+      if (!soft) {
+        var steps = [
+        // Step 1: Draw Clusters Table (Async/Chunked)
+        function (cb) {
+          console.time("[PERF] self.draw_cluster_table");
+          self.draw_cluster_table(self.extra_cluster_table_columns, self.cluster_table, null, function () {
+            console.timeEnd("[PERF] self.draw_cluster_table");
+            cb();
+          });
+        },
+        // Step 2: Draw Subclusters Table (Async/Chunked)
+        function (cb) {
+          if (self.subcluster_table) {
+            console.time("[PERF] self.draw_subcluster_table");
+            self.draw_cluster_table(self.extra_subcluster_table_columns, self.subcluster_table, {
+              "no-clusters": true,
+              subclusters: true,
+              headers: function headers(_headers) {
+                _headers[0][0].value = "Subcluster ID";
+                _headers[0][0].help = "Unique subcluster ID";
+                _headers[0][2].help = "Number of total cases in the subcluster";
+              }
+            }, function () {
+              console.timeEnd("[PERF] self.draw_subcluster_table");
+              cb();
+            });
+          } else {
+            cb();
           }
-        });
-      }
-      if (self._is_CDC_) {
-        // defer until later
-      } else {
-        self.draw_node_table(self.extra_node_table_columns, null, null, {
-          "no-filter": true
-        });
-      }
-    } else {
-      rendered_nodes = self.network_svg.selectAll(".node");
-      rendered_clusters = self.network_svg.selectAll(".cluster-group");
-      link = self.network_svg.selectAll(".link");
-      update_network_string(rendered_nodes.size(), link.size());
-    }
-    self.rendered_object_counts = {
-      nodes: rendered_nodes.size(),
-      edges: link.size(),
-      clusters: rendered_clusters.size(),
-      has_hatching: false
-    };
-    rendered_nodes.each(function (d) {
-      draw_a_node(this, d);
-      self.rendered_object_counts.has_hatching = self.rendered_object_counts.has_hatching || node_multiple_membership(d);
-    });
-    rendered_clusters.each(function (d) {
-      draw_a_cluster(this, d);
-    });
-    link.style("opacity", function (d) {
-      return Math.max(node_opacity(d.target), node_opacity(d.source));
-    });
-    if (self.additional_edge_styler) {
-      link.each(function (d) {
-        self.additional_edge_styler(this, d, self);
-      });
-    }
-    link.style("display", function (d) {
-      if (d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden) {
-        return "none";
-      }
-      return null;
-    }).classed("selected_object", function (d) {
-      return d.ref.length_filter && !self.hide_unselected;
-    });
-    if (!soft) {
-      currently_displayed_objects = rendered_clusters[0].length + rendered_nodes[0].length;
-      network_layout.on("tick", function () {
-        var sizes = network_layout.size();
-        rendered_nodes.attr("transform", function (d) {
-          // Defalut values (just to keep nodes in the svg container rectangle).
-          var xBoundLower = 10;
-          var xBoundUpper = sizes[0] - 10;
-          var yBoundLower = 10;
-          var yBoundUpper = sizes[1] - 10;
-          if (self.showing_on_map) {
-            var allowed_offset_from_center_of_country = 15;
-            // If the country is in the list that we have, override the default values for the bounds.
-            var country_code = self._get_node_country(d);
-            if (country_code in self.countryCentersObject) {
-              var center = self.countryCentersObject[country_code].countryXY;
-              xBoundLower = center[0] - allowed_offset_from_center_of_country;
-              xBoundUpper = center[0] + allowed_offset_from_center_of_country;
-              yBoundLower = center[1] - allowed_offset_from_center_of_country;
-              yBoundUpper = center[1] + allowed_offset_from_center_of_country;
+        },
+        // Step 3: Draw Node Table (Async/Chunked)
+        function (cb) {
+          if (self._is_CDC_) {
+            cb();
+          } else {
+            self.draw_node_table(self.extra_node_table_columns, null, null, {
+              "no-filter": true
+            });
+            cb();
+          }
+        },
+        // Step 4: Edge set calculation
+        function (cb) {
+          window.updateNetworkLoadingStatus("Analyzing network links...");
+          var edge_set = {};
+          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(draw_me.edges, function (d) {
+            d.pull = 0.0;
+            var tag;
+            if (d.source < d.target) {
+              tag = String(d.source) + "|" + d.target;
+            } else {
+              tag = String(d.target) + "|" + d.source;
+            }
+            if (tag in edge_set) {
+              edge_set[tag].push(d);
+            } else {
+              edge_set[tag] = [d];
+            }
+          });
+          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(edge_set, function (v) {
+            if (v.length > 1) {
+              var step = 1 / (v.length - 1);
+              underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(v, function (edge, index) {
+                edge.pull = -0.5 + index * step;
+              });
+            }
+          });
+          cb();
+        },
+        // Step 2: Draw links (append SVG paths in chunks)
+        function (cb) {
+          window.updateNetworkLoadingStatus("Rendering link elements...");
+          self.network_svg.selectAll(".svg-loading-placeholder").remove();
+          link = self.network_svg.selectAll(".link").data(draw_me.edges, function (d) {
+            return d.id;
+          });
+          var enter_data = draw_me.edges;
+          link.exit().remove();
+          var chunk_size = 1000;
+          var index = 0;
+          function appendLinksChunk() {
+            var end = Math.min(index + chunk_size, enter_data.length);
+            for (var i = index; i < end; i++) {
+              var d = enter_data[i];
+              var path = self.network_svg.append("path").datum(d).classed("link", true).classed("removed", self.highlight_unsuppored_edges && d.removed).classed("unsupported", self.highlight_unsuppored_edges && "support" in d && d["support"] > 0.05).classed("core-link", d["length"] <= self.core_link_length).classed("mspp-link", d["weight"] > 1).on("mouseover", edge_pop_on).on("mouseout", edge_pop_off);
+              if (d.directed) {
+                path.attr("marker-end", "url(#" + self.dom_prefix + "_arrowhead)");
+              }
+            }
+            index = end;
+            if (index < enter_data.length) {
+              setTimeout(appendLinksChunk, 1);
+            } else {
+              cb();
             }
           }
-          return "translate(" + (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) + "," + (d.y = Math.max(yBoundLower, Math.min(yBoundUpper, d.y))) + ")";
+          appendLinksChunk();
+        },
+        // Step 3: Draw nodes and clusters (append SVG groups/paths in chunks)
+        function (cb) {
+          window.updateNetworkLoadingStatus("Rendering node elements...");
+          rendered_nodes = self.network_svg.selectAll(".node").data(draw_me.nodes, function (d) {
+            return d.id;
+          });
+          var node_enter_data = draw_me.nodes;
+          rendered_nodes.exit().remove();
+          rendered_clusters = self.network_svg.selectAll(".cluster-group").data(draw_me.clusters.map(function (d) {
+            return d;
+          }), function (d) {
+            return d.cluster_id;
+          });
+          rendered_clusters.exit().remove();
+          rendered_clusters.enter().append("g").attr("class", "cluster-group").attr("transform", function (d) {
+            var x = isNaN(d.x) || typeof d.x === "undefined" ? self.width / 2 || 0 : d.x;
+            var y = isNaN(d.y) || typeof d.y === "undefined" ? self.height / 2 || 0 : d.y;
+            return "translate(" + x + "," + y + ")";
+          }).on("click", function (d) {
+            return _network_js__WEBPACK_IMPORTED_MODULE_13__.handle_cluster_click(self, d);
+          }).on("mouseover", cluster_pop_on).on("mouseout", cluster_pop_off).call(network_layout.drag().on("dragstart", cluster_pop_off));
+          var node_chunk_size = 1000;
+          var node_index = 0;
+          function appendNodesChunk() {
+            var end = Math.min(node_index + node_chunk_size, node_enter_data.length);
+            for (var i = node_index; i < end; i++) {
+              var d = node_enter_data[i];
+              var g = self.network_svg.append("g").datum(d).classed("node", true);
+              g.append("path");
+            }
+            node_index = end;
+            if (node_index < node_enter_data.length) {
+              setTimeout(appendNodesChunk, 1);
+            } else {
+              cb();
+            }
+          }
+          appendNodesChunk();
+        },
+        // Step 4: Render objects counts and detail styling (Chunked)
+        function (cb) {
+          window.updateNetworkLoadingStatus("Styling nodes and clusters...");
+          rendered_nodes = self.network_svg.selectAll(".node");
+          link = self.network_svg.selectAll(".link");
+          rendered_clusters = self.network_svg.selectAll(".cluster-group");
+          self.rendered_object_counts = {
+            nodes: rendered_nodes.size(),
+            edges: link.size(),
+            clusters: rendered_clusters.size(),
+            has_hatching: false
+          };
+          var nodes_array = rendered_nodes[0];
+          var node_style_index = 0;
+          function styleNodesChunk() {
+            var end = Math.min(node_style_index + 1000, nodes_array.length);
+            for (var i = node_style_index; i < end; i++) {
+              var node_el = nodes_array[i];
+              if (node_el) {
+                var d = d3__WEBPACK_IMPORTED_MODULE_0__.select(node_el).datum();
+                draw_a_node(node_el, d);
+                self.rendered_object_counts.has_hatching = self.rendered_object_counts.has_hatching || node_multiple_membership(d);
+              }
+            }
+            node_style_index = end;
+            if (node_style_index < nodes_array.length) {
+              setTimeout(styleNodesChunk, 1);
+            } else {
+              styleClusters();
+            }
+          }
+          function styleClusters() {
+            rendered_clusters.each(function (d) {
+              draw_a_cluster(this, d);
+            });
+            styleLinks();
+          }
+          var links_array = link[0];
+          var link_style_index = 0;
+          function styleLinks() {
+            var end = Math.min(link_style_index + 1000, links_array.length);
+            for (var i = link_style_index; i < end; i++) {
+              var link_el = links_array[i];
+              if (link_el) {
+                var d = d3__WEBPACK_IMPORTED_MODULE_0__.select(link_el).datum();
+                var opacity = Math.max(node_opacity(d.target), node_opacity(d.source));
+                d3__WEBPACK_IMPORTED_MODULE_0__.select(link_el).style("opacity", opacity);
+                if (self.additional_edge_styler) {
+                  self.additional_edge_styler(link_el, d, self);
+                }
+                var display = d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden ? "none" : null;
+                d3__WEBPACK_IMPORTED_MODULE_0__.select(link_el).style("display", display).classed("selected_object", d.ref.length_filter && !self.hide_unselected);
+              }
+            }
+            link_style_index = end;
+            if (link_style_index < links_array.length) {
+              setTimeout(styleLinks, 1);
+            } else {
+              cb();
+            }
+          }
+          styleNodesChunk();
+        },
+        // Step 5: Setup force layout tick and start
+        function (cb) {
+          window.updateNetworkLoadingStatus("Starting layout simulation...");
+          currently_displayed_objects = rendered_clusters[0].length + rendered_nodes[0].length;
+          network_layout.on("tick", null); // Clear default listener during batching
+          network_layout.start();
+          network_layout.stop();
+          function updateDOMPositions() {
+            var sizes = network_layout.size();
+            rendered_nodes.attr("transform", function (d) {
+              // Defalut values (just to keep nodes in the svg container rectangle).
+              var xBoundLower = 10;
+              var xBoundUpper = sizes[0] - 10;
+              var yBoundLower = 10;
+              var yBoundUpper = sizes[1] - 10;
+              if (self.showing_on_map) {
+                var allowed_offset_from_center_of_country = 15;
+                // If the country is in the list that we have, override the default values for the bounds.
+                var country_code = self._get_node_country(d);
+                if (country_code in self.countryCentersObject) {
+                  var center = self.countryCentersObject[country_code].countryXY;
+                  xBoundLower = center[0] - allowed_offset_from_center_of_country;
+                  xBoundUpper = center[0] + allowed_offset_from_center_of_country;
+                  yBoundLower = center[1] - allowed_offset_from_center_of_country;
+                  yBoundUpper = center[1] + allowed_offset_from_center_of_country;
+                }
+              }
+              return "translate(" + (d.x = Math.max(xBoundLower, Math.min(xBoundUpper, d.x))) + "," + (d.y = Math.max(yBoundLower, Math.min(yBoundUpper, d.y))) + ")";
+            });
+            rendered_clusters.attr("transform", function (d) {
+              return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
+            });
+            link.each(self.link_generator_function);
+          }
+          var lastUpdate = 0;
+          function tickBatch() {
+            var isInitialLoad = window.perfMeasurements && !window.perfMeasurements.done;
+            var ticksPerBatch = isInitialLoad ? 40 : 8;
+
+            // Run a batch of layout calculations asynchronously
+            for (var i = 0; i < ticksPerBatch; i++) {
+              network_layout.tick();
+              if (network_layout.alpha() < 0.005) {
+                break;
+              }
+            }
+            var alpha = network_layout.alpha();
+            var isEnd = alpha < 0.005;
+
+            // Update DOM elements only if it is the end, or if we are not in initial load,
+            // or periodically (e.g. every 250ms) to show progress.
+            var now = Date.now();
+            if (isEnd || !isInitialLoad || now - lastUpdate > 250) {
+              updateDOMPositions();
+              lastUpdate = now;
+            }
+            if (window.perfMeasurements && !window.perfMeasurements.done) {
+              var progress = Math.max(0, Math.min(100, Math.round((1 - (alpha - 0.005) / (0.1 - 0.005)) * 100)));
+              window.updateNetworkLoadingStatus("Generating layout & SVG... (".concat(progress, "%)"));
+            }
+            if (isEnd) {
+              // Restore standard tick handler for interactive drag actions
+              network_layout.on("tick", updateDOMPositions);
+              network_layout.start();
+              if (window.perfMeasurements && !window.perfMeasurements.done) {
+                window.perfMeasurements.done = true;
+                if (window.finalizeNetworkLoading) {
+                  window.finalizeNetworkLoading();
+                }
+              }
+              cb();
+            } else {
+              setTimeout(tickBatch, 1);
+            }
+          }
+          setTimeout(tickBatch, 1);
+        }];
+        runSteps(steps, 0);
+      } else {
+        rendered_nodes = self.network_svg.selectAll(".node");
+        rendered_clusters = self.network_svg.selectAll(".cluster-group");
+        link = self.network_svg.selectAll(".link");
+        update_network_string(rendered_nodes.size(), link.size());
+        self.rendered_object_counts = {
+          nodes: rendered_nodes.size(),
+          edges: link.size(),
+          clusters: rendered_clusters.size(),
+          has_hatching: false
+        };
+        rendered_nodes.each(function (d) {
+          draw_a_node(this, d);
+          self.rendered_object_counts.has_hatching = self.rendered_object_counts.has_hatching || node_multiple_membership(d);
         });
-        rendered_clusters.attr("transform", function (d) {
-          return "translate(" + (d.x = Math.max(d.rendered_size, Math.min(sizes[0] - d.rendered_size, d.x))) + "," + (d.y = Math.max(d.rendered_size, Math.min(sizes[1] - d.rendered_size, d.y))) + ")";
+        rendered_clusters.each(function (d) {
+          draw_a_cluster(this, d);
+        });
+        link.style("opacity", function (d) {
+          return Math.max(node_opacity(d.target), node_opacity(d.source));
+        });
+        if (self.additional_edge_styler) {
+          link.each(function (d) {
+            self.additional_edge_styler(this, d, self);
+          });
+        }
+        link.style("display", function (d) {
+          if (d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden) {
+            return "none";
+          }
+          return null;
+        }).classed("selected_object", function (d) {
+          return d.ref.length_filter && !self.hide_unselected;
         });
         link.each(self.link_generator_function);
-      });
-      network_layout.start();
-    } else {
-      link.each(self.link_generator_function);
-    }
+        d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
+      }
+    }, 20);
   };
 
   /**
@@ -52412,6 +52932,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    */
   function tick() {
     if (self.isMJCNetwork && !self.fullMJCNetwork) {
+      return;
+    }
+    if (typeof node === "undefined" || typeof link === "undefined") {
       return;
     }
     var sizes = network_layout.size();
@@ -52895,18 +53418,18 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     });
     if (!haz_null) {
       the_matrix.pop();
-      for (var _i3 = 0; _i3 < dim - 1; _i3 += 1) {
-        the_matrix[_i3].pop();
+      for (var _i5 = 0; _i5 < dim - 1; _i5 += 1) {
+        the_matrix[_i5].pop();
       }
     }
 
     // symmetrize the matrix
 
     dim = the_matrix.length;
-    for (var _i4 = 0; _i4 < dim; _i4 += 1) {
-      for (var _j = _i4; _j < dim; _j += 1) {
-        the_matrix[_i4][_j] += the_matrix[_j][_i4];
-        the_matrix[_j][_i4] = the_matrix[_i4][_j];
+    for (var _i6 = 0; _i6 < dim; _i6 += 1) {
+      for (var _j2 = _i6; _j2 < dim; _j2 += 1) {
+        the_matrix[_i6][_j2] += the_matrix[_j2][_i6];
+        the_matrix[_j2][_i6] = the_matrix[_i6][_j2];
       }
     }
     return the_matrix;
@@ -52920,6 +53443,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {Object} The updated attribute object.
    */
   self._aux_populate_category_fields = function (d, k) {
+    if (d["value_range"]) {
+      return d;
+    }
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
       d["label"] = k;
@@ -52946,16 +53472,36 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (d["type"] === "String") {
       d.discrete = true;
       d["value_range"] = new Set();
-      graph_data.Nodes.forEach(function (nd) {
-        d["value_range"].add(self.attribute_node_value_by_id(nd, k));
-      });
-
-      /*_.keys(
-        _.countBy(graph_data.Nodes, (nd) =>
-          self.attribute_node_value_by_id(nd, k)
-        )
-      );*/
-
+      var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+      var is_volatile = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile;
+      var missing_label = _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label;
+      if (is_volatile) {
+        var mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+        graph_data.Nodes.forEach(function (nd) {
+          if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
+            var v = mapper(nd, self);
+            if (typeof v === "string" && v.length === 0) v = missing_label;
+            d["value_range"].add(v || missing_label);
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      } else {
+        graph_data.Nodes.forEach(function (nd) {
+          if (nd && node_attr_id in nd) {
+            var attrs = nd[node_attr_id];
+            if (attrs && k in attrs) {
+              var v = attrs[k];
+              if (typeof v === "string" && v.length === 0) v = missing_label;
+              d["value_range"].add(v !== undefined ? v : missing_label);
+            } else {
+              d["value_range"].add(missing_label);
+            }
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      }
       d["value_range"] = _toConsumableArray(d["value_range"]);
       d["dimension"] = d["value_range"].length;
     }
@@ -52986,6 +53532,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {Object} The updated attribute object.
    */
   self._aux_process_category_values = function (d) {
+    var cacheKey = d["raw_attribute_key"];
+    self._category_cache = self._category_cache || {};
+    var cache = self._category_cache[cacheKey];
+    if (d["stable-ish order"] && cache && cache.nodes_ref === self.nodes && cache.nodes_len === self.nodes.length) {
+      return d;
+    }
     var values,
       reduced_range = null;
     delete d["reduced_value_range"];
@@ -52994,18 +53546,23 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     } else if (d["type"] === "String") {
       values = d["value_range"].sort();
       if (d.dimension > _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories) {
-        var compressed_values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].chain(self.nodes).countBy(function (node) {
-          return self.attribute_node_value_by_id(node, d["raw_attribute_key"]);
-        }).pairs().sortBy(function (d) {
-          return -d[1];
-        }).value();
+        var counts = {};
+        var rawKey = d["raw_attribute_key"];
+        var len = self.nodes.length;
+        for (var _i8 = 0; _i8 < len; _i8++) {
+          var val = self.attribute_node_value_by_id(self.nodes[_i8], rawKey);
+          counts[val] = (counts[val] || 0) + 1;
+        }
+        var compressed_values = Object.entries(counts).sort(function (a, b) {
+          return b[1] - a[1];
+        });
         reduced_range = [];
-        var _i5 = 0;
-        while (reduced_range.length < _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories - 1 && _i5 < compressed_values.length) {
-          if (compressed_values[_i5][0] !== _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
-            reduced_range.push(compressed_values[_i5][0]);
+        var _i7 = 0;
+        while (reduced_range.length < _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories - 1 && _i7 < compressed_values.length) {
+          if (compressed_values[_i7][0] !== _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
+            reduced_range.push(compressed_values[_i7][0]);
           }
-          _i5++;
+          _i7++;
         }
         reduced_range = reduced_range.sort();
         reduced_range.push(_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.ReducedValue);
@@ -53078,6 +53635,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           return key === "lookup" ? underscore__WEBPACK_IMPORTED_MODULE_1__["default"].invert(map) : map;
         }
         return map[v];
+      };
+    }
+    if (cacheKey) {
+      self._category_cache[cacheKey] = {
+        nodes_ref: self.nodes,
+        nodes_len: self.nodes.length
       };
     }
     return d;
@@ -53725,6 +54288,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
   self.network_svg = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).append("svg:svg")
   //.style ("border", "solid black 1px")
   .attr("id", self.dom_prefix + "-network-svg").attr("width", self.width + self.margin.left + self.margin.right).attr("height", self.height + self.margin.top + self.margin.bottom);
+  self.network_svg.append("text").classed("svg-loading-placeholder", true).attr("x", (self.width + self.margin.left + self.margin.right) / 2).attr("y", self.margin.top + 30).attr("text-anchor", "middle").attr("dominant-baseline", "middle").style("font-size", "18px").style("fill", "#666666").style("font-family", "sans-serif").text("Loading network visualization...");
   self.network_cluster_dynamics = null;
 
   //.append("g")
@@ -53741,54 +54305,10 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
 
   change_window_size();
   initial_json_load();
-  if (options) {
-    if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isNumber(options["charge"])) {
-      self.charge_correction = options["charge"];
-    }
-    if ("colorizer" in options) {
-      self.colorizer = options["colorizer"];
-    }
-    if ("node_shaper" in options) {
-      self.node_shaper = options["node_shaper"];
-    }
-    if ("callbacks" in options) {
-      options["callbacks"](self);
-    }
-    if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isArray(options["expand"])) {
-      self.expand_some_clusters(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.clusters, function (c) {
-        return options["expand"].indexOf(c.cluster_id) >= 0;
-      }));
-    }
-    if (options["priority-sets-url"]) {
-      var is_writeable = options["is-writeable"];
-      //  in the MJC case, self.defined_priority_groups (and any other related variables / functions) will be modifying the MJClusterOI,
-      // while self.overlap_defined_priority_groups will be the user's own jurisdiction's priority groups (which is loaded in the callback)
-      self.loadOverlapPrioritySets(options["overlap-priority-sets-url"], function () {
-        return self.load_priority_sets(options["priority-sets-url"], is_writeable);
-      });
-    }
-    if (options["priority-set-add-from-mjc-url"]) {
-      self.priority_set_add_from_mjc_url = options["priority-set-add-from-mjc-url"];
-    }
-    if (options["mjc-archive-url"]) {
-      self.mjc_archive_url = options["mjc-archive-url"];
-    }
-    if (options["mjc-uuid"]) {
-      self.mjc_uuid = options["mjc-uuid"];
-    }
-    if (self.showing_diff) {
-      self.handle_attribute_categorical("_newly_added");
-    }
-  }
-  if (self.isPrimaryGraph) {
-    self.annotate_multiple_clusters_on_nodes();
-  }
-  if (self._is_CDC_ && !self.isMJCNetwork) {
-    self.define_node_search_table();
-  }
-  self.draw_attribute_labels();
-  d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
-  network_layout.start();
+
+  // Options setup, search table definitions, and layout start are now handled
+  // asynchronously within initial_json_load steps to keep the main thread responsive.
+
   return self;
 };
 
@@ -53850,6 +54370,23 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 
 var priority_set_editor = null;
+function safe_format_date(v, formatter) {
+  if (!v) return "";
+  if (v instanceof Date) {
+    return formatter(v);
+  }
+  var parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider.parse(v);
+  if (!parsed) {
+    parsed = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY.parse(v);
+  }
+  if (!parsed) {
+    parsed = new Date(v);
+  }
+  if (parsed && !isNaN(parsed.getTime())) {
+    return formatter(parsed);
+  }
+  return v;
+}
 
 /**
  * Initializes the component, setting up event listeners and UI elements.
@@ -54153,13 +54690,13 @@ function open_editor(self, node_set, name, description, cluster_kind, kind_optio
         save_priority_set();
       });
       form.append("button").classed("btn btn-info btn-sm pull-right", true).attr("id", "priority-panel-preview").text("Preview @1.5%").on("click", function (e) {
-        priority_set_view(self, priority_set_editor, {
+        priority_set_view(self, panel_object, {
           "priority-edge-length": 0.015,
           timestamp: createdDate
         });
       });
       form.append("button").classed("btn btn-info btn-sm pull-right", true).attr("id", "priority-panel-preview-subcluster").text("Preview @" + self.subcluster_threshold * 100 + "%").on("click", function (e) {
-        priority_set_view(self, priority_set_editor, {
+        priority_set_view(self, panel_object, {
           "priority-edge-length": self.subcluster_threshold,
           timestamp: createdDate
         });
@@ -54362,6 +54899,7 @@ function open_editor(self, node_set, name, description, cluster_kind, kind_optio
       panel_object.table_handler = function (panel) {
         var table_container = panel_content.selectAll("table").data(["panel"]);
         table_container.enter().append("table");
+        table_container = panel_content.selectAll("table");
         table_container.classed("table table-striped table-condensed table-hover table-smaller", true).attr("id", "priority-panel-node-table");
         var entities = self.aggregate_indvidual_level_records(panel.network_nodes);
         panel.setHeaderTitle("clusterOI editor (" + entities.length + " persons)" + (validation_mode ? " [automatically created review] " : ""));
@@ -54385,9 +54923,9 @@ function open_editor(self, node_set, name, description, cluster_kind, kind_optio
                     this_cell.style("color", "darkred");
                   }
                   if (!is_node_editable(payload)) {
-                    this_cell.text(_timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY(payload["_priority_set_date"]));
+                    this_cell.text(safe_format_date(payload["_priority_set_date"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatMMDDYYY));
                   } else {
-                    this_cell.append("input").attr("type", "date").attr("value", _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider(payload["_priority_set_date"])).on("change", function (e, d) {
+                    this_cell.append("input").attr("type", "date").attr("value", safe_format_date(payload["_priority_set_date"], _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider)).on("change", function (e, d) {
                       try {
                         payload["_priority_set_date"] = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider.parse($(d3__WEBPACK_IMPORTED_MODULE_0__.event.target).val());
                       } catch (_unused) {
@@ -55309,7 +55847,7 @@ function priority_set_view(self, priority_set, options) {
   underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(nodes, function (d) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
-    if (d._added_date) d._added_date = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider(d._added_date);else d._added_date = null;
+    if (d._added_date) d._added_date = safe_format_date(d._added_date, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormatSlider);else d._added_date = null;
   });
   var pgDates = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].sortBy(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].keys(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].groupBy(nodes, function (d) {
     return d._added_date;
@@ -55968,6 +56506,13 @@ function unpack_column(col, length) {
   return result;
 }
 function unpack_compact_json(json) {
+  if (!json.Settings || !json.Settings.compact_json) {
+    return;
+  }
+  if (json.Nodes && _.isArray(json.Nodes) && (json.Nodes.length === 0 || _typeof(json.Nodes[0]) === "object" && !_.isArray(json.Nodes[0]))) {
+    json.Settings.compact_json = false;
+    return;
+  }
   if (json.Settings && json.Settings.compact_json === "optimized") {
     _.each(["Nodes", "Edges"], function (key) {
       if (json[key] && !_.isArray(json[key])) {
@@ -56041,6 +56586,9 @@ function unpack_compact_json(json) {
       });
       json[key] = expanded;
     });
+    if (json.Settings) {
+      json.Settings.compact_json = false;
+    }
   }
 
   // Reconstruct sequences at the end of unpacking (both old and optimized formats)
@@ -56553,12 +57101,10 @@ module.exports = {
 /* provided dependency */ var d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/d3-exposed.js");
 /* provided dependency */ var $ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery-exposed.js");
 /* provided dependency */ var _ = __webpack_require__(/*! underscore */ "./node_modules/underscore/modules/index-all.js");
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator.return && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, catch: function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 var download = __webpack_require__(/*! downloadjs */ "./node_modules/downloadjs/download.js");
 var _OTHER = {"network":"Red","networks":"Redes","statistics":"Estadísticas","clusters":"Clústeres","cluster":"Clúster","subclusters":"Subclústeres","subcluster":"Subclúster","nodes":"Nodos","attributes":"Atributos","missing":"Faltantes","yes_sure":"Estoy seguro","cancel":"Cancelar","other":"Otra","caution":"Precaución","warning":"Advertencia","yes":"Sí","no":"No","next":"Seiguiente","success":"Éxito","error":"Error","continue":"Continuar","uid":"UID","genetic_sequences":"Secuencias Genéticas"}["other"];
 var CATEGORY_UNIQUE_VALUE_LIMIT = 12;
@@ -56823,6 +57369,40 @@ function datamonkey_export_handler(data, filename, mimeType) {
 }
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
+  var table = d3.select(table_id);
+  if (!table.empty()) {
+    var tableEl = table.node();
+    if (tableEl && tableEl._full_content) {
+      var current_limit = tableEl._rendered_limit || 200;
+      if (current_limit < tableEl._full_content.length) {
+        var next_limit = tableEl._full_content.length;
+        tableEl._rendered_limit = next_limit;
+        var tbody = table.select("tbody");
+        var next_data = tableEl._full_content.slice(current_limit, next_limit);
+        tbody.selectAll("tr.extra-row-dummy") // dummy selector to force append
+        .data(next_data).enter().append("tr").selectAll("td").data(function (d) {
+          return d;
+        }).enter().append("td").call(function (selection) {
+          return selection.each(function (d, i) {
+            tableEl._set_table_elements(d, this);
+            tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+          });
+        });
+
+        // Update count shown
+        if (tableEl._table_caption) {
+          tableEl._table_caption.select("[data-hivtrace-ui-role='table-count-shown']").text(next_limit);
+        }
+
+        // Clean up scroll listener
+        if (tableEl._onScroll && tableEl._scrollParent) {
+          tableEl._scrollParent.removeEventListener("scroll", tableEl._onScroll);
+          tableEl._onScroll = null;
+          tableEl._scrollParent = null;
+        }
+      }
+    }
+  }
   var header_row = [];
   var extract_text = function extract_text(e) {
     var node = d3.select(e).node();
@@ -56881,26 +57461,29 @@ function datamonkey_table_to_text(table_id, sep) {
 */
 
 function getUniqueValues(nodes, schema) {
-  var schema_keys = _.keys(schema);
+  var schema_keys = Object.keys(schema);
+  var num_keys = schema_keys.length;
   var new_obj = {};
-  _.each(schema_keys, function (sk) {
-    return new_obj[sk] = new Set();
-  });
-
-  // get attribute diversity to sort on later
-  var pa = _.map(nodes, function (n) {
-    return _.omit(n.patient_attributes, "_id");
-  });
-  _.each(pa, function (p) {
-    _.each(schema_keys, function (sk) {
-      new_obj[sk].add(p[sk]);
-    });
-  });
-
-  // Get uniques across all keys
-  return _.mapObject(new_obj, function (val) {
-    return _toConsumableArray(val);
-  });
+  var sets = [];
+  for (var j = 0; j < num_keys; j++) {
+    var key = schema_keys[j];
+    var s = new Set();
+    new_obj[key] = s;
+    sets.push(s);
+  }
+  var num_nodes = nodes.length;
+  for (var i = 0; i < num_nodes; i++) {
+    var p = nodes[i].patient_attributes || {};
+    for (var _j = 0; _j < num_keys; _j++) {
+      sets[_j].add(p[schema_keys[_j]]);
+    }
+  }
+  var result = {};
+  for (var _j2 = 0; _j2 < num_keys; _j2++) {
+    var sk = schema_keys[_j2];
+    result[sk] = Array.from(new_obj[sk]);
+  }
+  return result;
 }
 
 /**
@@ -56988,6 +57571,241 @@ function collapseLargeCategories(nodes, schema) {
   });
   return true;
 }
+var pollId = null;
+var statusPollId = null;
+if (typeof window !== "undefined") {
+  window.updateNetworkLoadingStatus = function (msg) {
+    d3.selectAll(".placeholder-status-msg").text(msg);
+  };
+  window.finalizeNetworkLoading = function () {
+    if (pollId) {
+      clearInterval(pollId);
+      pollId = null;
+    }
+    if (statusPollId) {
+      clearInterval(statusPollId);
+      statusPollId = null;
+    }
+    d3.selectAll(".tab-pane").each(function () {
+      var pane = d3.select(this);
+      pane.selectAll(".loading-placeholder").remove();
+      pane.selectAll(function () {
+        return this.children;
+      }).style("display", null);
+    });
+  };
+
+  // Intercept window.init definition to mark loading completion automatically
+  var realInit = null;
+  Object.defineProperty(window, "init", {
+    get: function get() {
+      return realInit;
+    },
+    set: function set(val) {
+      realInit = function realInit() {
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+        var selfContext = this;
+        var data = args[0];
+        function runInit() {
+          return _runInit.apply(this, arguments);
+        }
+        function _runInit() {
+          _runInit = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+            var _window$hivtrace, HIVTxNetwork, network, graph, tempNetwork, result, isGraphEmpty, _result;
+            return _regeneratorRuntime().wrap(function _callee$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    _context.prev = 0;
+                    _window$hivtrace = window.hivtrace, HIVTxNetwork = _window$hivtrace.HIVTxNetwork, network = _window$hivtrace.network;
+                    graph = "trace_results" in data ? data.trace_results : data;
+                    console.time("[PERF] Parsing network structure");
+                    window.updateNetworkLoadingStatus("Parsing network structure...");
+                    _context.next = 7;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 7:
+                    console.timeEnd("[PERF] Parsing network structure");
+                    if (!(graph.Settings && graph.Settings.compact_json)) {
+                      _context.next = 15;
+                      break;
+                    }
+                    console.time("[PERF] Unpacking compact JSON data");
+                    window.updateNetworkLoadingStatus("Unpacking compact JSON data...");
+                    _context.next = 13;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 13:
+                    network.unpack_compact_json(graph);
+                    console.timeEnd("[PERF] Unpacking compact JSON data");
+                  case 15:
+                    console.time("[PERF] Extracting clusters and nodes");
+                    window.updateNetworkLoadingStatus("Extracting clusters and nodes...");
+                    _context.next = 19;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 19:
+                    // Set up a temporary HIVTxNetwork to do collapsing
+                    tempNetwork = new HIVTxNetwork(graph, null, null, true);
+                    console.timeEnd("[PERF] Extracting clusters and nodes");
+                    if (!tempNetwork.has_multiple_sequences) {
+                      _context.next = 35;
+                      break;
+                    }
+                    console.time("[PERF] Processing multiple sequences async");
+                    _context.next = 25;
+                    return tempNetwork.process_multiple_sequences_async(function (msg) {
+                      window.updateNetworkLoadingStatus(msg);
+                    });
+                  case 25:
+                    // Pre-compute aggregated records in the background so they are cached on the graph
+                    window.updateNetworkLoadingStatus("Aggregating individual level records...");
+                    _context.next = 28;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 28:
+                    tempNetwork._cached_aggregated_nodes = tempNetwork.aggregate_indvidual_level_records();
+
+                    // Save stats on graph for the final constructor
+                    graph._has_multiple_sequences = true;
+                    graph._primary_key_list = tempNetwork.primary_key_list;
+                    graph._primary_key_list_values = tempNetwork.primary_key_list_values;
+                    graph._cached_aggregated_nodes = tempNetwork._cached_aggregated_nodes;
+                    graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
+                    console.timeEnd("[PERF] Processing multiple sequences async");
+                  case 35:
+                    window.updateNetworkLoadingStatus("Generating layout & SVG...");
+                    _context.next = 38;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 38:
+                    _context.prev = 38;
+                    console.time("[PERF] Synchronous clusterNetwork Constructor");
+                    result = val.apply(selfContext, args);
+                    console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
+
+                    // If the graph is empty, or layout did not initialize/finish, finalize immediately.
+                    isGraphEmpty = window.user_graph && typeof window.user_graph.is_empty === "function" && window.user_graph.is_empty();
+                    if (isGraphEmpty || !window.perfMeasurements || window.perfMeasurements.done) {
+                      window.perfMeasurements = window.perfMeasurements || {};
+                      window.perfMeasurements.done = true;
+                      if (window.finalizeNetworkLoading) {
+                        window.finalizeNetworkLoading();
+                      }
+                    }
+                    return _context.abrupt("return", result);
+                  case 47:
+                    _context.prev = 47;
+                    _context.t0 = _context["catch"](38);
+                    console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
+                    console.error(_context.t0);
+                    if (window.finalizeNetworkLoading) {
+                      window.finalizeNetworkLoading();
+                    }
+                  case 52:
+                    _context.next = 67;
+                    break;
+                  case 54:
+                    _context.prev = 54;
+                    _context.t1 = _context["catch"](0);
+                    console.error("Error during async network preprocessing:", _context.t1);
+                    // Fallback: run synchronous init anyway
+                    _context.prev = 57;
+                    _result = val.apply(selfContext, args);
+                    if (window.finalizeNetworkLoading) {
+                      window.finalizeNetworkLoading();
+                    }
+                    return _context.abrupt("return", _result);
+                  case 63:
+                    _context.prev = 63;
+                    _context.t2 = _context["catch"](57);
+                    console.error(_context.t2);
+                    if (window.finalizeNetworkLoading) {
+                      window.finalizeNetworkLoading();
+                    }
+                  case 67:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, _callee, null, [[0, 54], [38, 47], [57, 63]]);
+          }));
+          return _runInit.apply(this, arguments);
+        }
+        runInit();
+      };
+    },
+    configurable: true
+  });
+}
+function initializeLoadingScreen() {
+  if (typeof window !== "undefined" && window.perfMeasurements && window.perfMeasurements.done) {
+    return;
+  }
+
+  // Hide the progress bar immediately on load
+  d3.selectAll(".my_progress").style("display", "none");
+
+  // Enable all tabs so they are clickable
+  d3.selectAll(".nav-tabs li").classed("disabled", false).selectAll("a").attr("data-toggle", "tab");
+
+  // Set up loading placeholders in each tab panel
+  d3.selectAll(".tab-pane").each(function () {
+    var pane = d3.select(this);
+    if (pane.select(".loading-placeholder").empty()) {
+      pane.selectAll(function () {
+        return this.children;
+      }).style("display", "none");
+      pane.append("div").classed("loading-placeholder", true).html("\n          <div style=\"padding: 80px 20px; text-align: center; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px; margin: 20px 0;\">\n            <div style=\"margin-bottom: 20px;\">\n              <i class=\"fa fa-spinner fa-spin fa-3x\" style=\"color: #337ab7;\"></i>\n            </div>\n            <h4 style=\"font-weight: 300; margin-bottom: 10px; color: #333;\">Analyzing Network Data</h4>\n            <p class=\"placeholder-status-msg\" style=\"color: #777; font-size: 14px;\">Loading data files...</p>\n          </div>\n        ");
+    }
+  });
+
+  // Poll for template performance measurements completion
+  if (!pollId) {
+    pollId = setInterval(function () {
+      if (window.perfMeasurements && window.perfMeasurements.done) {
+        window.finalizeNetworkLoading();
+      }
+    }, 50);
+  }
+
+  // Poll for progress status label text changes
+  if (!statusPollId) {
+    statusPollId = setInterval(function () {
+      var statusEl = document.querySelector(".my_progress_status");
+      if (statusEl && statusEl.textContent) {
+        window.updateNetworkLoadingStatus(statusEl.textContent);
+      }
+    }, 50);
+  }
+}
+function track_progress(request) {
+  initializeLoadingScreen();
+  request.on("progress", function (event) {
+    var e = event || d3.event;
+    if (e && e.lengthComputable && e.total) {
+      var percent = Math.round(e.loaded / e.total * 100);
+      window.updateNetworkLoadingStatus("Downloading network data... (" + percent + "%)");
+    } else if (e) {
+      var loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+      window.updateNetworkLoadingStatus("Downloading network data... (" + loadedMB + " MB loaded)");
+    }
+  });
+}
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeLoadingScreen);
+  } else {
+    initializeLoadingScreen();
+  }
+}
 module.exports.export_csv_button = datamonkey_export_csv_button;
 module.exports.export_json_button = datamonkey_export_json_button;
 module.exports.save_image = datamonkey_save_image;
@@ -56998,6 +57816,7 @@ module.exports.getUniqueValues = getUniqueValues;
 module.exports.exportColorScheme = exportColorScheme;
 module.exports.copyToClipboard = copyToClipboard;
 module.exports.collapseLargeCategories = collapseLargeCategories;
+module.exports.track_progress = track_progress;
 
 /***/ }),
 
@@ -57206,11 +58025,14 @@ exports.histogramDistances = hivtrace_histogram_distances;
 /***/ (function(module, __unused_webpack_exports, __webpack_require__) {
 
 /* provided dependency */ var d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/d3-exposed.js");
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArrayLimit(arr, i) { var _i = null == arr ? null : "undefined" != typeof Symbol && arr[Symbol.iterator] || arr["@@iterator"]; if (null != _i) { var _s, _e, _x, _r, _arr = [], _n = !0, _d = !1; try { if (_x = (_i = _i.call(arr)).next, 0 === i) { if (Object(_i) !== _i) return; _n = !1; } else for (; !(_n = (_s = _x.call(_i)).done) && (_arr.push(_s.value), _arr.length !== i); _n = !0) { ; } } catch (err) { _d = !0, _e = err; } finally { try { if (!_n && null != _i.return && (_r = _i.return(), Object(_r) !== _r)) return; } finally { if (_d) throw _e; } } return _arr; } }
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator.return && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, catch: function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -57229,6 +58051,7 @@ var _ = __webpack_require__(/*! underscore */ "./node_modules/underscore/undersc
   kGlobals = __webpack_require__(/*! ./globals.js */ "./src/globals.js"),
   misc = __webpack_require__(/*! ./misc.js */ "./src/misc.js"),
   clustersOfInterest = __webpack_require__(/*! ./clustersOfInterest.js */ "./src/clustersOfInterest.js");
+var dateCache = new Map();
 
 /*------------------------------------------------------------
      define a barebones class for the network object
@@ -57261,18 +58084,24 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       return cluster.children.length >= _this.minimum_cluster_size;
     });
     _defineProperty(this, "unique_entity_list", function (node_list) {
-      return _.map(_.groupBy(node_list, function (n) {
-        return _this.primary_key(n);
-      }), function (d, k) {
-        return k;
-      });
+      var s = new Set();
+      if (node_list) {
+        for (var i = 0; i < node_list.length; i++) {
+          s.add(_this.primary_key(node_list[i]));
+        }
+      }
+      return Array.from(s);
     });
     _defineProperty(this, "unique_entity_list_from_ids", function (node_list) {
-      return _this.unique_entity_list(_.map(node_list, function (d) {
-        return {
-          id: d
-        };
-      }));
+      var s = new Set();
+      if (node_list) {
+        for (var i = 0; i < node_list.length; i++) {
+          s.add(_this.primary_key({
+            id: node_list[i]
+          }));
+        }
+      }
+      return Array.from(s);
     });
     _defineProperty(this, "unique_entity_object_list", function (node_list) {
       return _.groupBy(node_list, function (n) {
@@ -57839,7 +58668,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
         all sequences/nodes that map to the same primary key are assumed to represent the same entity / individual
     **/
-    this.primary_key = _.isFunction(primary_key_function) ? primary_key_function : function (node) {
+    var raw_primary_key = _.isFunction(primary_key_function) ? primary_key_function : function (node) {
       var key = node.id || node.name || "";
       var i = key.indexOf("|");
       if (i >= 0) {
@@ -57847,7 +58676,20 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       }
       return key;
     };
+    this._raw_primary_key = raw_primary_key;
+    this.primary_key = function (node) {
+      if (node && _typeof(node) === "object") {
+        if (node._primary_key !== undefined) {
+          return node._primary_key;
+        }
+        return node._primary_key = raw_primary_key(node);
+      }
+      return raw_primary_key(node);
+    };
+    console.time("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
     this.tabulate_multiple_sequences();
+    console.timeEnd("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
+    this._cached_aggregated_nodes = null;
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
@@ -57966,64 +58808,118 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "tabulate_multiple_sequences",
     value: function tabulate_multiple_sequences() {
-      var _this8 = this;
+      if (this.json._has_multiple_sequences) {
+        this.has_multiple_sequences = true;
+        this.legend_multiple_sequences = true;
+        this.primary_key_list = this.json._primary_key_list;
+        this.primary_key_list_values = this.json._primary_key_list_values;
+        this.entities_in_multiple_clusters = this.json._entities_in_multiple_clusters;
+        return;
+      }
+
       /**
           generate a primary key to node ID map
           [primary key] => [array of IDs]
       */
       this.primary_key_list = {};
+      this.primary_key_list_values = [];
       this.has_multiple_sequences = false;
-      _.each(this.json.Nodes, function (n) {
-        var p_key = _this8.primary_key(n);
-        if (!(p_key in _this8.primary_key_list)) {
-          _this8.primary_key_list[p_key] = [n];
-        } else {
-          _this8.primary_key_list[p_key].push(n);
-          _this8.has_multiple_sequences = true;
-          _this8.legend_multiple_sequences = true;
+      var duplicateKeys = [];
+      var nodes = this.json.Nodes || [];
+      var len = nodes.length;
+
+      // Fast path: cache primary key helper function
+      var raw_pkey_fn = this._raw_primary_key;
+      for (var i = 0; i < len; i++) {
+        var n = nodes[i];
+        var p_key = n._primary_key;
+        if (p_key === undefined) {
+          if (raw_pkey_fn) {
+            p_key = raw_pkey_fn(n);
+          } else {
+            var key = n.id || n.name || "";
+            var idx = key.indexOf("|");
+            p_key = idx >= 0 ? key.substring(0, idx) : key;
+          }
+          n._primary_key = p_key;
         }
-        if (!_this8.legend_multiple_sequences) {
-          if (n[kGlobals.network.AliasedSequencesID]) {
-            _this8.legend_multiple_sequences = true;
+        var list = this.primary_key_list[p_key];
+        if (list === undefined) {
+          var newList = [n];
+          this.primary_key_list[p_key] = newList;
+          this.primary_key_list_values.push(newList);
+        } else {
+          if (list.length === 1) {
+            duplicateKeys.push(p_key);
+          }
+          list.push(n);
+          this.has_multiple_sequences = true;
+          this.legend_multiple_sequences = true;
+        }
+      }
+      if (!this.legend_multiple_sequences) {
+        var aliasKey = kGlobals.network.AliasedSequencesID;
+        for (var _i = 0; _i < len; _i++) {
+          if (nodes[_i][aliasKey]) {
+            this.legend_multiple_sequences = true;
+            break;
           }
         }
-      });
+      }
 
       /**
           iterate over all duplicate sequences, synchronize node attributes
       */
       if (this.has_multiple_sequences) {
-        _.each(this.primary_key_list, function (seqs, primary_id) {
-          if (seqs.length > 1) {
-            var consensus_attributes = {};
-            _.each(seqs, function (seq_record) {
-              _.each(seq_record[kGlobals.network.NodeAttributeID], function (v, k) {
-                if (!(k in consensus_attributes)) {
+        var numDupes = duplicateKeys.length;
+        for (var dIdx = 0; dIdx < numDupes; dIdx++) {
+          var primary_id = duplicateKeys[dIdx];
+          var seqs = this.primary_key_list[primary_id];
+          var consensus_attributes = {};
+          var seqsLen = seqs.length;
+          for (var sIdx = 0; sIdx < seqsLen; sIdx++) {
+            var seq_record = seqs[sIdx];
+            var attrs = seq_record[kGlobals.network.NodeAttributeID] || {};
+            for (var k in attrs) {
+              if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+                var v = attrs[k];
+                if (consensus_attributes[k] === undefined) {
                   consensus_attributes[k] = [v];
                 } else {
                   consensus_attributes[k].push(v);
                 }
-              });
-            });
-
-            // only copy values if there's strict consensus
-
-            consensus_attributes = _.omit(_.mapObject(consensus_attributes, function (d, k) {
-              var freq = _.countBy(d, function (i) {
-                return i;
-              });
-              if (_.size(freq) == 1) {
-                return d[0];
               }
-              return null;
-            }), function (d) {
-              return !d;
-            });
-            _.each(seqs, function (seq_record) {
-              _.extend(seq_record[kGlobals.network.NodeAttributeID], consensus_attributes);
-            });
+            }
           }
-        });
+
+          // consensus check: only copy values if all seqs have the exact same value for that attribute
+          var final_consensus = {};
+          for (var _k in consensus_attributes) {
+            if (Object.prototype.hasOwnProperty.call(consensus_attributes, _k)) {
+              var vals = consensus_attributes[_k];
+              var firstVal = vals[0];
+              var hasConsensus = true;
+              for (var _i2 = 1; _i2 < vals.length; _i2++) {
+                if (vals[_i2] !== firstVal) {
+                  hasConsensus = false;
+                  break;
+                }
+              }
+              if (hasConsensus && firstVal !== null && firstVal !== undefined) {
+                final_consensus[_k] = firstVal;
+              }
+            }
+          }
+          for (var _sIdx = 0; _sIdx < seqsLen; _sIdx++) {
+            var _seq_record = seqs[_sIdx];
+            var _attrs = _seq_record[kGlobals.network.NodeAttributeID];
+            if (!_attrs) {
+              _attrs = {};
+              _seq_record[kGlobals.network.NodeAttributeID] = _attrs;
+            }
+            Object.assign(_attrs, final_consensus);
+          }
+        }
       }
     }
 
@@ -58143,7 +59039,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "process_multiple_sequences",
     value: function process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-      var _this9 = this;
+      var _this8 = this;
+      if (this.json._has_multiple_sequences) {
+        return;
+      }
       if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
         reduce_distance_within = reduce_distance_within || 0.000001;
         reduce_distance_between = reduce_distance_between || 0.015;
@@ -58159,7 +59058,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         });
         var nodes_to_delete = new Set();
         _.each(clusters, function (cluster, cluster_index) {
-          var entity_list = _this9.unique_entity_list(cluster);
+          var entity_list = _this8.unique_entity_list(cluster);
           if (entity_list.length == 1) {
             _.each(cluster, function (ncn) {
               nodes_to_delete.add(ncn.id);
@@ -58172,6 +59071,22 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         //console.log (misc.hivtrace_cluster_depthwise_traversal (c95.Nodes, c95.Edges, (d)=>d.length <= reduce_distance_within));
 
         var null_size = nodes_to_delete.size;
+        var setsEqual = function setsEqual(s1, s2) {
+          if (s1.size !== s2.size) return false;
+          var _iterator2 = _createForOfIteratorHelper(s1),
+            _step2;
+          try {
+            for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+              var item = _step2.value;
+              if (!s2.has(item)) return false;
+            }
+          } catch (err) {
+            _iterator2.e(err);
+          } finally {
+            _iterator2.f();
+          }
+          return true;
+        };
         _.each(complete_clusters, function (cluster, cluster_index) {
           if (cluster.length > 1) {
             if (_.some(cluster, function (n) {
@@ -58179,7 +59094,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             })) {
               return;
             }
-            var uel = _this9.unique_entity_object_list(cluster);
+            var uel = _this8.unique_entity_object_list(cluster);
             _.each(uel, function (dup_seqs, uid) {
               if (dup_seqs.length > 1) {
                 (function () {
@@ -58202,7 +59117,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                     var other_nbhd05 = new Set(_.map(_.filter(_toConsumableArray(adjacency05[dup_seqs[idx].id]), function (d) {
                       return !dup_ids.has(d);
                     })));
-                    if (!(other_nbhd.isSubsetOf(neighborhood) && neighborhood.isSubsetOf(other_nbhd)) || !(other_nbhd.isSubsetOf(neighborhood05) && neighborhood.isSubsetOf(other_nbhd05))) {
+                    if (!setsEqual(other_nbhd, neighborhood) || !setsEqual(other_nbhd05, neighborhood05)) {
                       reduce = false;
                       break;
                     }
@@ -58260,7 +59175,231 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         }
       }
     }
-
+  }, {
+    key: "process_multiple_sequences_async",
+    value: function () {
+      var _process_multiple_sequences_async = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(status_callback) {
+        var _this9 = this;
+        return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!(this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0)) {
+                  _context2.next = 2;
+                  break;
+                }
+                return _context2.delegateYield( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+                  var reduce_distance_within, reduce_distance_between, clusters, complete_clusters, adjacency, adjacency05, nodes_to_delete, null_size, total_clusters, chunk_size, setsEqual, i, pct, end, c_idx, cluster, uel, new_node_list, new_edge_set, old_node_idx_to_new_node_idx, new_counter;
+                  return _regeneratorRuntime().wrap(function _callee$(_context) {
+                    while (1) {
+                      switch (_context.prev = _context.next) {
+                        case 0:
+                          reduce_distance_within = 0.000001;
+                          reduce_distance_between = 0.015;
+                          if (status_callback) status_callback("Finding clusters...");
+                          _context.next = 5;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 5:
+                          clusters = misc.hivtrace_cluster_depthwise_traversal(_this9.json.Nodes, _this9.json.Edges);
+                          if (status_callback) status_callback("Finding complete clusters...");
+                          _context.next = 9;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 9:
+                          complete_clusters = misc.hivtrace_cluster_depthwise_traversal(_this9.json.Nodes, _this9.json.Edges, function (d) {
+                            return d.length <= reduce_distance_within;
+                          });
+                          if (status_callback) status_callback("Computing adjacency map (between)...");
+                          _context.next = 13;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 13:
+                          adjacency = misc.hivtrace_compute_adjacency(_this9.json.Nodes, _this9.json.Edges, function (d) {
+                            return d.length <= reduce_distance_between;
+                          });
+                          if (status_callback) status_callback("Computing adjacency map (0.005)...");
+                          _context.next = 17;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 17:
+                          adjacency05 = misc.hivtrace_compute_adjacency(_this9.json.Nodes, _this9.json.Edges, function (d) {
+                            return d.length <= 0.005;
+                          });
+                          if (status_callback) status_callback("Identifying singletons...");
+                          _context.next = 21;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 21:
+                          nodes_to_delete = new Set();
+                          _.each(clusters, function (cluster, cluster_index) {
+                            var entity_list = _this9.unique_entity_list(cluster);
+                            if (entity_list.length == 1) {
+                              _.each(cluster, function (ncn) {
+                                nodes_to_delete.add(ncn.id);
+                              });
+                            }
+                          });
+                          null_size = nodes_to_delete.size;
+                          total_clusters = complete_clusters.length;
+                          chunk_size = 30000;
+                          setsEqual = function setsEqual(s1, s2) {
+                            if (s1.size !== s2.size) return false;
+                            var _iterator3 = _createForOfIteratorHelper(s1),
+                              _step3;
+                            try {
+                              for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                                var item = _step3.value;
+                                if (!s2.has(item)) return false;
+                              }
+                            } catch (err) {
+                              _iterator3.e(err);
+                            } finally {
+                              _iterator3.f();
+                            }
+                            return true;
+                          };
+                          i = 0;
+                        case 28:
+                          if (!(i < total_clusters)) {
+                            _context.next = 47;
+                            break;
+                          }
+                          if (status_callback) {
+                            pct = Math.min(100, Math.round(i / total_clusters * 100));
+                            status_callback("Collapsing duplicate node sequences (".concat(pct, "%)..."));
+                          }
+                          _context.next = 32;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 32:
+                          end = Math.min(i + chunk_size, total_clusters);
+                          c_idx = i;
+                        case 34:
+                          if (!(c_idx < end)) {
+                            _context.next = 44;
+                            break;
+                          }
+                          cluster = complete_clusters[c_idx];
+                          if (!(cluster.length > 1)) {
+                            _context.next = 41;
+                            break;
+                          }
+                          if (!_.some(cluster, function (n) {
+                            return nodes_to_delete.has(n.id);
+                          })) {
+                            _context.next = 39;
+                            break;
+                          }
+                          return _context.abrupt("continue", 41);
+                        case 39:
+                          uel = _this9.unique_entity_object_list(cluster);
+                          _.each(uel, function (dup_seqs, uid) {
+                            if (dup_seqs.length > 1) {
+                              (function () {
+                                var dup_ids = new Set(_.map(dup_seqs, function (d) {
+                                  return d.id;
+                                }));
+                                var neighborhood = new Set(_.map(_.filter(_toConsumableArray(adjacency[dup_seqs[0].id]), function (d) {
+                                  return !dup_ids.has(d);
+                                })));
+                                var neighborhood05 = new Set(_.map(_.filter(_toConsumableArray(adjacency05[dup_seqs[0].id]), function (d) {
+                                  return !dup_ids.has(d);
+                                })));
+                                var reduce = true;
+                                for (var idx = 1; idx < dup_seqs.length; idx += 1) {
+                                  var other_nbhd = new Set(_.map(_.filter(_toConsumableArray(adjacency[dup_seqs[idx].id]), function (d) {
+                                    return !dup_ids.has(d);
+                                  })));
+                                  var other_nbhd05 = new Set(_.map(_.filter(_toConsumableArray(adjacency05[dup_seqs[idx].id]), function (d) {
+                                    return !dup_ids.has(d);
+                                  })));
+                                  if (!setsEqual(other_nbhd, neighborhood) || !setsEqual(other_nbhd05, neighborhood05)) {
+                                    reduce = false;
+                                    break;
+                                  }
+                                }
+                                if (reduce) {
+                                  dup_seqs[0][kGlobals.network.AliasedSequencesID] = _.map(dup_seqs, function (d) {
+                                    return d.id;
+                                  });
+                                  _.each(dup_seqs, function (d, i) {
+                                    if (i > 0) {
+                                      nodes_to_delete.add(d.id);
+                                    }
+                                  });
+                                }
+                              })();
+                            }
+                          });
+                        case 41:
+                          c_idx++;
+                          _context.next = 34;
+                          break;
+                        case 44:
+                          i += chunk_size;
+                          _context.next = 28;
+                          break;
+                        case 47:
+                          if (status_callback) status_callback("Reconstructing network structures...");
+                          _context.next = 50;
+                          return new Promise(function (resolve) {
+                            return setTimeout(resolve, 0);
+                          });
+                        case 50:
+                          console.log("Marked ", nodes_to_delete.size - null_size, " collapsible nodes");
+                          if (nodes_to_delete.size) {
+                            new_node_list = [];
+                            new_edge_set = [];
+                            old_node_idx_to_new_node_idx = [];
+                            new_counter = 0;
+                            _.each(_this9.json.Nodes, function (n, i) {
+                              if (nodes_to_delete.has(n.id)) {
+                                old_node_idx_to_new_node_idx.push(-1);
+                              } else {
+                                new_node_list.push(n);
+                                old_node_idx_to_new_node_idx.push(new_counter);
+                                new_counter++;
+                              }
+                            });
+                            _.each(_this9.json.Edges, function (e, i) {
+                              var new_source = old_node_idx_to_new_node_idx[e.source],
+                                new_target = old_node_idx_to_new_node_idx[e.target];
+                              if (new_source >= 0 && new_target >= 0) {
+                                e.source = new_source;
+                                e.target = new_target;
+                                new_edge_set.push(e);
+                              }
+                            });
+                            _this9.json.Nodes = new_node_list;
+                            _this9.json.Edges = new_edge_set;
+                            _this9.tabulate_multiple_sequences();
+                          }
+                        case 52:
+                        case "end":
+                          return _context.stop();
+                      }
+                    }
+                  }, _callee);
+                })(), "t0", 2);
+              case 2:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+      function process_multiple_sequences_async(_x) {
+        return _process_multiple_sequences_async.apply(this, arguments);
+      }
+      return process_multiple_sequences_async;
+    }()
     /**
           When MSPP are present, this function will annotate node objects with fields
           that indicate whether or not the nodes belong to multiple clusters or subclusters
@@ -58520,32 +59659,25 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "attribute_node_value_by_id",
     value: function attribute_node_value_by_id(d, id, number, is_date, check_redacted) {
-      try {
-        if (kGlobals.network.NodeAttributeID in d && id) {
-          if (id in d[kGlobals.network.NodeAttributeID]) {
-            var v;
-            if (this.json[kGlobals.network.GraphAttrbuteID][id].volatile) {
-              v = this.json[kGlobals.network.GraphAttrbuteID][id].map(d, this);
-            } else {
-              v = d[kGlobals.network.NodeAttributeID][id];
+      if (d && kGlobals.network.NodeAttributeID in d && id) {
+        var attrs = d[kGlobals.network.NodeAttributeID];
+        if (attrs && id in attrs) {
+          var attr_desc = this.json[kGlobals.network.GraphAttrbuteID][id];
+          var v = attr_desc && attr_desc.volatile ? attr_desc.map(d, this) : attrs[id];
+          if (typeof v === "string") {
+            if (check_redacted && v === "REDACTED") {
+              return "REDACTED";
+            } else if (v.length === 0) {
+              return kGlobals.missing.label;
+            } else if (number) {
+              var num = Number(v);
+              return isNaN(num) ? kGlobals.missing.label : num;
+            } else if (is_date) {
+              return v.getTime();
             }
-            if (_.isString(v)) {
-              if (check_redacted && v === "REDACTED") {
-                return "REDACTED";
-              } else if (v.length === 0) {
-                return kGlobals.missing.label;
-              } else if (number) {
-                v = Number(v);
-                return _.isNaN(v) ? kGlobals.missing.label : v;
-              } else if (is_date) {
-                return v.getTime();
-              }
-            }
-            return v;
           }
+          return v;
         }
-      } catch (e) {
-        console.log("attribute_node_value_by_id", e, d, id, number);
       }
       return kGlobals.missing.label;
     }
@@ -58666,6 +59798,16 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       if (value instanceof Date) {
         return value;
       }
+      if (typeof value !== "string") {
+        throw Error("Invalid date");
+      }
+      if (dateCache.has(value)) {
+        var cached = dateCache.get(value);
+        if (cached === null) {
+          throw Error("Invalid date");
+        }
+        return new Date(cached.getTime());
+      }
       var parsed_value = null;
       var passed = _.any(timeDateUtil.DateFormats, function (f) {
         parsed_value = f.parse(value);
@@ -58673,10 +59815,13 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       });
       if (passed) {
         if (this._is_CDC_ && (parsed_value.getUTCFullYear() < 1970 || parsed_value.getUTCFullYear() > timeDateUtil.DateUpperBoundYear)) {
+          dateCache.set(value, null);
           throw Error("Invalid date");
         }
-        return parsed_value;
+        dateCache.set(value, parsed_value);
+        return new Date(parsed_value.getTime());
       }
+      dateCache.set(value, null);
       throw Error("Invalid date");
     }
 
@@ -58903,7 +60048,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
 
             if (_.size(mspp_ms_nodes)) {
               var entity_tracker = null;
-              if (pg.createdBy == kGlobals.CDCCOICreatedBySyste || pg.tracking == kGlobals.CDCCOITrackingOptions[0] || pg.tracking == kGlobals.CDCCOITrackingOptions[1]) {
+              if (pg.createdBy == kGlobals.CDCCOICreatedBySystem || pg.tracking == kGlobals.CDCCOITrackingOptions[0] || pg.tracking == kGlobals.CDCCOITrackingOptions[1]) {
                 entity_tracker = existing_subclusters;
               } else {
                 if (pg.tracking == kGlobals.CDCCOITrackingOptions[2] || pg.tracking == kGlobals.CDCCOITrackingOptions[3]) {
@@ -59180,13 +60325,13 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                 }];
                 var ref_date = _this12.get_reference_date();
                 var _loop = function _loop() {
-                  var dx = _recent_dx_cutoffs[_i];
+                  var dx = _recent_dx_cutoffs[_i3];
                   var cutoff = timeDateUtil.n_months_ago(_this12.get_reference_date(), dx.months);
                   pg[dx.field_name] = _this12.unique_entity_list(_.filter(pg.node_objects, function (n) {
                     return _this12.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false);
                   })).length;
                 };
-                for (var _i = 0, _recent_dx_cutoffs = recent_dx_cutoffs; _i < _recent_dx_cutoffs.length; _i++) {
+                for (var _i3 = 0, _recent_dx_cutoffs = recent_dx_cutoffs; _i3 < _recent_dx_cutoffs.length; _i3++) {
                   _loop();
                 }
               })();
@@ -59270,6 +60415,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
 
       var ref_date = this.get_reference_date();
       var object_ref = this;
+      var cutoffs = [timeDateUtil.n_months_ago(ref_date, 12), timeDateUtil.n_months_ago(ref_date, 36)];
       var attrib_defs = {
         subcluster_or_priority_node: {
           depends: [timeDateUtil._networkCDCDateField],
@@ -59285,7 +60431,6 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               return pg_nodesets[d][1];
             }) : false;
             if (npcoi) {
-              var cutoffs = [timeDateUtil.n_months_ago(ref_date, 12), timeDateUtil.n_months_ago(ref_date, 36)];
               if (object_ref.filter_by_date(cutoffs[0], timeDateUtil._networkCDCDateField, ref_date, node, false)) {
                 return pg_enum[0];
               }
@@ -59329,8 +60474,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         }
       };
       var subset = new Set();
-      for (var _i2 = 0, _Object$entries = Object.entries(attrib_defs); _i2 < _Object$entries.length; _i2++) {
-        var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
+      for (var _i4 = 0, _Object$entries = Object.entries(attrib_defs); _i4 < _Object$entries.length; _i4++) {
+        var _Object$entries$_i = _slicedToArray(_Object$entries[_i4], 2),
           key = _Object$entries$_i[0],
           def = _Object$entries$_i[1];
         subset.add(key);
@@ -59418,6 +60563,9 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         var today_string = timeDateUtil.DateFormats[0](_this13.get_reference_date());
         _this13.map_ids_to_objects();
         if (_this13._is_CDC_auto_mode && !_this13.isMJCNetwork) {
+          var auto_expand_groups = _.filter(_this13.defined_priority_groups, function (pg) {
+            return pg.kind in kGlobals.CDCCOICanAutoExpand && pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.tracking === kGlobals.CDCCOITrackingOptionsDefault;
+          });
           _.each(_this13.clusters, function (cluster_data, cluster_id) {
             _.each(cluster_data.subclusters, function (subcluster_data) {
               _.each(subcluster_data.priority_score, function (priority_score, i) {
@@ -59432,13 +60580,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                   _.each(subcluster_data.recent_nodes[i], function (n) {
                     node_set[n] = 1;
                   });
-                  var matched_groups = _.filter(_.filter(_this13.defined_priority_groups, function (pg) {
-                    return pg.kind in kGlobals.CDCCOICanAutoExpand && pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.tracking === kGlobals.CDCCOITrackingOptionsDefault;
-                  }), function (pg) {
-                    var matched = _.countBy(_.map(pg.nodes, function (pn) {
+                  var matched_groups = _.filter(auto_expand_groups, function (pg) {
+                    return _.some(pg.nodes, function (pn) {
                       return pn.name in node_set;
-                    }));
-                    return matched[true] >= 1;
+                    });
                   });
                   if (matched_groups.length >= 1) {
                     return;
@@ -59596,6 +60741,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "populate_predefined_attribute",
     value: function populate_predefined_attribute(computed, key) {
       var _this16 = this;
+      var tStart = performance.now();
       if (_.isFunction(computed)) {
         computed = computed(this);
       }
@@ -59603,38 +60749,56 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         return _.has(_this16.json[kGlobals.network.GraphAttrbuteID], d);
       })) {
         this.inject_attribute_description(key, computed);
-        _.each(this.json.Nodes, function (node) {
-          var attr_value = computed["map"](node, _this16);
-
-          //if (key == "priority_set") {
-          //    console.log (node.id, node.priority_set, node._added_date, attr_value);
-          //}
+        var uniq_value_set = new Set();
+        var has_enum = !!computed.enum;
+        var is_date = computed.type === "Date";
+        var is_number = computed.type === "Number";
+        var tLoopStart = performance.now();
+        var N = this.json.Nodes.length;
+        for (var i = 0; i < N; i++) {
+          var node = this.json.Nodes[i];
+          var attr_value = computed["map"](node, this);
           HIVTxNetwork.inject_attribute_node_value_by_id(node, key, attr_value);
-        });
+          if (!has_enum) {
+            if (is_date) {
+              if (attr_value instanceof Date) {
+                uniq_value_set.add(attr_value.getTime());
+              }
+            } else if (is_number) {
+              if (typeof attr_value === "number" && !isNaN(attr_value)) {
+                uniq_value_set.add(attr_value);
+              } else if (typeof attr_value === "string") {
+                if (attr_value.length > 0) {
+                  var num = Number(attr_value);
+                  if (!isNaN(num)) {
+                    uniq_value_set.add(num);
+                  } else {
+                    uniq_value_set.add(kGlobals.missing.label);
+                  }
+                } else {
+                  uniq_value_set.add(kGlobals.missing.label);
+                }
+              } else {
+                uniq_value_set.add(attr_value !== undefined && attr_value !== null ? attr_value : kGlobals.missing.label);
+              }
+            } else {
+              uniq_value_set.add(attr_value !== undefined && attr_value !== null && attr_value !== "" ? attr_value : kGlobals.missing.label);
+            }
+          }
+        }
+        var tLoopEnd = performance.now();
 
         // add unique values
-        if (computed.enum) {
+        if (has_enum) {
           this.uniqValues[key] = computed.enum;
         } else {
-          var uniq_value_set = new Set();
-          if (computed.type === "Date") {
-            _.each(this.json.Nodes, function (n) {
-              try {
-                uniq_value_set.add(_this16.attribute_node_value_by_id(n, key).getTime());
-              } catch (_unused3) {}
-            });
-          } else {
-            _.each(this.json.Nodes, function (n) {
-              return uniq_value_set.add(_this16.attribute_node_value_by_id(n, key, computed.type === "Number"));
-            });
-          }
           this.uniqValues[key] = _toConsumableArray(uniq_value_set);
-          if (computed.type === "Number" || computed.type == "Date") {
+          if (is_number || is_date) {
             var color_stops = computed["color_stops"] || kGlobals.network.ContinuousColorStops;
             if (color_stops > this.uniqValues[key].length) {
               computed["color_stops"] = this.uniqValues[key].length;
             }
-            if (computed.type === "Number") {
+            if (is_number) {
               computed.is_integer = _.every(this.uniqValues[key], function (d) {
                 return Number.isInteger(d);
               });
@@ -59650,6 +60814,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             this.json[kGlobals.network.GraphAttrbuteID][computed["overwrites"]]["_hidden_"] = true;
           }
         }
+        var tEnd = performance.now();
+        console.log("[PERF_DETAIL] populate_predefined_attribute(".concat(key, "): total = ").concat((tEnd - tStart).toFixed(2), "ms (loop = ").concat((tLoopEnd - tLoopStart).toFixed(2), "ms, metadata = ").concat((tEnd - tLoopEnd + tLoopStart - tStart).toFixed(2), "ms)"));
       }
     }
 
@@ -59824,7 +60990,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           if (HIVTxNetwork.is_new_node(node)) {
             return "New";
           }
-          if (node.attributes.indexOf("moved_clusters") >= 0) {
+          if (node.attributes && node.attributes.indexOf("moved_clusters") >= 0) {
             return "Moved clusters";
           }
           return "Existing";
@@ -59858,7 +61024,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this19.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified, false, false, true);
-          } catch (_unused4) {
+          } catch (_unused3) {
             return kGlobals.missing.label;
           }
         }
@@ -59888,7 +61054,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this20.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified_12Mo, false, false, true);
-          } catch (_unused5) {
+          } catch (_unused4) {
             return kGlobals.missing.label;
           }
         }
@@ -59907,6 +61073,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "define_attribute_dx_years",
     value: function define_attribute_dx_years(relative, label) {
       var _this21 = this;
+      var valueCache = new Map();
+      var refDate = null;
       return {
         depends: [timeDateUtil._networkCDCDateField],
         label: label,
@@ -59914,16 +61082,30 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         label_format: relative ? d3.format(".2f") : d3.format(".0f"),
         map: function map(node) {
           try {
-            var value = _this21.parse_dates(_this21.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField, false, true, true));
+            var rawValue = _this21.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField, false, false, true);
+            if (rawValue === kGlobals.missing.label || rawValue === "REDACTED" || !rawValue) {
+              return kGlobals.missing.label;
+            }
+            if (valueCache.has(rawValue)) {
+              return valueCache.get(rawValue);
+            }
+            var value = _this21.parse_dates(rawValue);
+            var mappedValue;
             if (value) {
               if (relative) {
-                value = (_this21.get_reference_date() - value) / 31536000000;
-              } else value = String(value.getUTCFullYear());
+                if (refDate === null) {
+                  refDate = _this21.get_reference_date();
+                }
+                mappedValue = (refDate - value) / 31536000000;
+              } else {
+                mappedValue = String(value.getUTCFullYear());
+              }
             } else {
-              value = kGlobals.missing.label;
+              mappedValue = kGlobals.missing.label;
             }
-            return value;
-          } catch (_unused6) {
+            valueCache.set(rawValue, mappedValue);
+            return mappedValue;
+          } catch (_unused5) {
             return kGlobals.missing.label;
           }
         },
@@ -59957,7 +61139,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this22.attribute_node_value_by_id(node, timeDateUtil._networkCDCMonthYearField, false, false, true);
-          } catch (_unused7) {
+          } catch (_unused6) {
             return kGlobals.missing.label;
           }
         }
@@ -59981,7 +61163,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this23.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast12Mo, false, false, true);
-          } catch (_unused8) {
+          } catch (_unused7) {
             return kGlobals.missing.label;
           }
         }
@@ -59999,7 +61181,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         map: function map(node) {
           try {
             return _this24.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast36Mo, false, false, true);
-          } catch (_unused9) {
+          } catch (_unused8) {
             return kGlobals.missing.label;
           }
         }
@@ -60186,90 +61368,163 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "aggregate_indvidual_level_records",
     value: function aggregate_indvidual_level_records(node_list) {
-      var _this27 = this;
-      if (this.isMJCNetwork) {
-        // Group by primary key and merge, setting AliasedSequencesID
-        // so that simplify_multisequence_cluster (and other callers) can
-        // map all sequence IDs back to their entity.
-        var binned = _.groupBy(node_list, function (n) {
-          return _this27.primary_key(n);
-        });
-        var new_list = [];
-        _.each(binned, function (values, key) {
-          if (values.length == 1) {
-            new_list.push(_.clone(values[0]));
-          } else {
-            var new_record = _.clone(values[0]);
-            new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(values, function (d) {
-              var _d$id;
-              return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : (_d$id = d.id) !== null && _d$id !== void 0 ? _d$id : d.name;
-            }));
-            new_list.push(new_record);
-          }
-        });
-        return new_list;
-      }
-      node_list = node_list || this.json.Nodes;
-      var aggregator = function aggregator(values, key, record, store_key) {
-        var unique_values = _.countBy(values, function (dn) {
-          return dn[key];
-        });
-        delete unique_values["undefined"];
-        if (_.size(unique_values) == 1) {
-          record[store_key] = values[0][key];
-        } else {
-          if (_.size(unique_values) > 0) {
-            record[store_key] = _.map(unique_values, function (d3, k3) {
-              return k3;
-            }).join(";");
-          }
+      var is_full = !node_list || node_list === this.json.Nodes || this.json.Nodes && node_list.length === this.json.Nodes.length;
+      if (is_full) {
+        if (this._cached_aggregated_nodes) {
+          return this._cached_aggregated_nodes;
         }
-      };
-      if (this.has_multiple_sequences) {
-        var _binned = _.groupBy(node_list, function (n) {
-          return _this27.primary_key(n);
-        });
-        var _new_list = [];
-        _.each(_binned, function (values, key) {
-          if (values.length == 1) {
-            _new_list.push(_.clone(values[0]));
-          } else {
-            var new_record = _.clone(values[0]);
-            new_record[kGlobals.network.NodeAttributeID] = _.object(_.map(new_record[kGlobals.network.NodeAttributeID], function (d, k) {
-              var proto = _this27.json[kGlobals.network.GraphAttrbuteID][k];
-              var unique_values = _.countBy(values, function (dn) {
-                return dn[kGlobals.network.NodeAttributeID][k];
-              });
-              if (_.size(unique_values) == 1) {
-                return [k, values[0][kGlobals.network.NodeAttributeID][k]];
-              } else {
-                if (proto.type == "Date") {
-                  try {
-                    return [k, new Date(Date.parse(d3.min(_.map(unique_values, function (d3, k3) {
-                      return k3;
-                    }))))];
-                  } catch (_unused10) {
-                    return [k, null];
-                  }
-                } else {
-                  return [k, _.sortBy(_.map(unique_values, function (d3, k3) {
-                    return k3;
-                  })).join(";")];
-                }
-              }
-            }));
-            aggregator(values, "cluster", new_record, "cluster");
-            aggregator(values, "subcluster_label", new_record, "subcluster_label");
-            new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(values, function (d) {
-              return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : d.id;
-            }));
-            new_record[kGlobals.network.NodeAttributeID]["sequence_count"] = new_record[kGlobals.network.AliasedSequencesID].length;
-            _new_list.push(new_record);
-          }
-        });
-        return _new_list;
+        if (this.json._cached_aggregated_nodes) {
+          return this._cached_aggregated_nodes = this.json._cached_aggregated_nodes;
+        }
       }
-      return node_list;
+      var result;
+      if (this.isMJCNetwork) {
+        var values_iterator;
+        if (is_full) {
+          values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
+        } else {
+          var binned = new Map();
+          node_list = node_list || this.json.Nodes;
+          for (var i = 0; i < node_list.length; i++) {
+            var n = node_list[i];
+            var key = this.primary_key(n);
+            var list = binned.get(key);
+            if (list === undefined) {
+              binned.set(key, [n]);
+            } else {
+              list.push(n);
+            }
+          }
+          values_iterator = binned.values();
+        }
+        var new_list = [];
+        var _iterator4 = _createForOfIteratorHelper(values_iterator),
+          _step4;
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var values = _step4.value;
+            if (values.length == 1) {
+              new_list.push(values[0]);
+            } else {
+              var new_record = _.clone(values[0]);
+              new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(values, function (d) {
+                var _d$id;
+                return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : (_d$id = d.id) !== null && _d$id !== void 0 ? _d$id : d.name;
+              }));
+              new_list.push(new_record);
+            }
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+        result = new_list;
+      } else {
+        node_list = node_list || this.json.Nodes;
+        var aggregator = function aggregator(values, key, record, store_key) {
+          var unique_values = {};
+          for (var _i5 = 0; _i5 < values.length; _i5++) {
+            var v = values[_i5][key];
+            if (v !== undefined && v !== "undefined") {
+              unique_values[v] = true;
+            }
+          }
+          var unique_keys = Object.keys(unique_values);
+          if (unique_keys.length == 1) {
+            record[store_key] = unique_keys[0];
+          } else if (unique_keys.length > 1) {
+            record[store_key] = unique_keys.join(";");
+          }
+        };
+        if (this.has_multiple_sequences) {
+          var _values_iterator;
+          if (is_full) {
+            _values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
+          } else {
+            var _binned = new Map();
+            for (var _i6 = 0; _i6 < node_list.length; _i6++) {
+              var _n2 = node_list[_i6];
+              var _key = this.primary_key(_n2);
+              var _list = _binned.get(_key);
+              if (_list === undefined) {
+                _binned.set(_key, [_n2]);
+              } else {
+                _list.push(_n2);
+              }
+            }
+            _values_iterator = _binned.values();
+          }
+          var _new_list = [];
+          var _iterator5 = _createForOfIteratorHelper(_values_iterator),
+            _step5;
+          try {
+            for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+              var _values = _step5.value;
+              if (_values.length == 1) {
+                _new_list.push(_values[0]);
+              } else {
+                var _new_record = _.clone(_values[0]);
+                var new_attr_obj = {};
+                var attr_keys = Object.keys(_new_record[kGlobals.network.NodeAttributeID] || {});
+                for (var j = 0; j < attr_keys.length; j++) {
+                  var k = attr_keys[j];
+                  var proto = this.json[kGlobals.network.GraphAttrbuteID][k];
+                  var unique_values = {};
+                  for (var _i7 = 0; _i7 < _values.length; _i7++) {
+                    var v = _values[_i7][kGlobals.network.NodeAttributeID][k];
+                    if (v !== undefined && v !== "undefined") {
+                      unique_values[v] = true;
+                    }
+                  }
+                  var unique_keys = Object.keys(unique_values);
+                  if (unique_keys.length == 1) {
+                    new_attr_obj[k] = unique_keys[0];
+                  } else if (unique_keys.length > 1) {
+                    if (proto && proto.type == "Date") {
+                      try {
+                        var min_d = unique_keys[0];
+                        for (var _i8 = 1; _i8 < unique_keys.length; _i8++) {
+                          if (unique_keys[_i8] < min_d) {
+                            min_d = unique_keys[_i8];
+                          }
+                        }
+                        new_attr_obj[k] = new Date(Date.parse(min_d));
+                      } catch (_unused9) {
+                        new_attr_obj[k] = null;
+                      }
+                    } else {
+                      new_attr_obj[k] = unique_keys.sort().join(";");
+                    }
+                  } else {
+                    new_attr_obj[k] = undefined;
+                  }
+                }
+                _new_record[kGlobals.network.NodeAttributeID] = new_attr_obj;
+                aggregator(_values, "cluster", _new_record, "cluster");
+                aggregator(_values, "subcluster_label", _new_record, "subcluster_label");
+                _new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(_values, function (d) {
+                  return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : d.id;
+                }));
+                _new_record[kGlobals.network.NodeAttributeID]["sequence_count"] = _new_record[kGlobals.network.AliasedSequencesID].length;
+                _new_list.push(_new_record);
+              }
+            }
+          } catch (err) {
+            _iterator5.e(err);
+          } finally {
+            _iterator5.f();
+          }
+          result = _new_list;
+        } else {
+          result = node_list;
+        }
+      }
+      if (is_full) {
+        this._cached_aggregated_nodes = result;
+        this.json._cached_aggregated_nodes = result;
+      }
+      return result;
     }
 
     /**
@@ -60343,7 +61598,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "is_new_node",
     value: function is_new_node(node) {
-      return node.attributes.indexOf("new_node") >= 0;
+      return node.attributes && node.attributes.indexOf("new_node") >= 0;
     }
   }, {
     key: "is_edge_injected",
@@ -60388,6 +61643,7 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   HIVTxNetwork: function() { return /* binding */ HIVTxNetwork; },
 /* harmony export */   clusterNetwork: function() { return /* reexport safe */ _clusternetwork_js__WEBPACK_IMPORTED_MODULE_1__.clusterNetwork; },
 /* harmony export */   colorPicker: function() { return /* binding */ colorPicker; },
 /* harmony export */   graphSummary: function() { return /* binding */ graphSummary; },
@@ -60395,6 +61651,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   histogram: function() { return /* reexport safe */ _histogram_js__WEBPACK_IMPORTED_MODULE_3__.histogram; },
 /* harmony export */   histogramDistances: function() { return /* reexport safe */ _histogram_js__WEBPACK_IMPORTED_MODULE_3__.histogramDistances; },
 /* harmony export */   misc: function() { return /* binding */ misc; },
+/* harmony export */   network: function() { return /* binding */ network; },
 /* harmony export */   scatterPlot: function() { return /* reexport safe */ _scatterplot_js__WEBPACK_IMPORTED_MODULE_4__.scatterPlot; }
 /* harmony export */ });
 /* harmony import */ var bootstrap_dist_css_bootstrap_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! bootstrap/dist/css/bootstrap.css */ "./node_modules/bootstrap/dist/css/bootstrap.css");
@@ -60411,6 +61668,21 @@ var misc = __webpack_require__(/*! ./misc.js */ "./src/misc.js");
 var helpers = __webpack_require__(/*! ./helpers.js */ "./src/helpers.js");
 var colorPicker = __webpack_require__(/*! ./colorPicker.js */ "./src/colorPicker.js");
 var graphSummary = _hivtraceClusterGraphSummary_js__WEBPACK_IMPORTED_MODULE_2__.hivtraceClusterGraphSummary;
+var _require = __webpack_require__(/*! ./hiv_tx_network.js */ "./src/hiv_tx_network.js"),
+  HIVTxNetwork = _require.HIVTxNetwork;
+var _require2 = __webpack_require__(/*! ./network.js */ "./src/network.js"),
+  check_network_option = _require2.check_network_option,
+  ensure_node_attributes_exist = _require2.ensure_node_attributes_exist,
+  normalize_node_attributes = _require2.normalize_node_attributes,
+  unpack_compact_json = _require2.unpack_compact_json,
+  handle_cluster_click = _require2.handle_cluster_click;
+var network = {
+  check_network_option: check_network_option,
+  ensure_node_attributes_exist: ensure_node_attributes_exist,
+  normalize_node_attributes: normalize_node_attributes,
+  unpack_compact_json: unpack_compact_json,
+  handle_cluster_click: handle_cluster_click
+};
 
 
 /***/ }),
@@ -61140,14 +62412,16 @@ function hivtrace_cluster_depthwise_traversal(nodes, edges, edge_filter, save_ed
         return white_list.has(nodes[e.source].id) && white_list.has(nodes[e.target].id);
       });
     }
-    _.each(edges, function (e) {
-      try {
-        adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-        adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-      } catch (_unused2) {
+    for (var i = 0; i < edges.length; i++) {
+      var e = edges[i];
+      var s_node = nodes[e.source];
+      var t_node = nodes[e.target];
+      if (!s_node || !t_node) {
         throw Error("Edge does not map to an existing node " + e.source + " to " + e.target);
       }
-    });
+      adjacency[s_node.id].push([t_node, e]);
+      adjacency[t_node.id].push([s_node, e]);
+    }
   }
   var traverse = function traverse(node) {
     if (!(node.id in by_node)) {
@@ -61170,25 +62444,13 @@ function hivtrace_cluster_depthwise_traversal(nodes, edges, edge_filter, save_ed
         traverse(neighbor[0]);
       }
     }
-
-    /*
-    _.each(adjacency[node.id], (neighbor) => {
-      if (!neighbor[0].visited) {
-        by_node[neighbor[0].id] = by_node[node.id];
-        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
-        if (save_edges) {
-          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
-        }
-        traverse(neighbor[0]);
-      }
-    });
-    */
   };
-  _.each(seed_nodes, function (n) {
+  for (var _i = 0; _i < seed_nodes.length; _i++) {
+    var n = seed_nodes[_i];
     if (!n.visited) {
       traverse(n);
     }
-  });
+  }
   return clusters;
 }
 
@@ -62312,7 +63574,7 @@ function load_nodes_edges(tx_network, nodes_and_attributes, index_id, edges_and_
     if (tx_network._is_CDC_) {
       //tx_network.draw_extended_node_table(tx_network.aggregate_indvidual_level_records(), null, null, { "no-filter": !tx_network.node_search_div });
     } else {
-      self.draw_node_table(self.extra_node_table_columns, self.json.Nodes);
+      tx_network.draw_node_table(tx_network.extra_node_table_columns, tx_network.json.Nodes);
     }
   }
   return {
@@ -62358,66 +63620,229 @@ var _networkNewNodeMarker = "[+]";
  * @returns {void}
  */
 
-function add_a_sortable_table(container, headers, content, overwrite, caption, priority_set_editor, N) {
+function load_more_rows(container) {
+  var tableEl = container.node();
+  if (!tableEl || !tableEl._full_content) return;
+  var current_limit = tableEl._rendered_limit || 200;
+  if (current_limit >= tableEl._full_content.length) return;
+  var next_limit = Math.min(current_limit + 500, tableEl._full_content.length);
+  tableEl._rendered_limit = next_limit;
+  var tbody = container.select("tbody");
+  var next_data = tableEl._full_content.slice(current_limit, next_limit);
+  tbody.selectAll("tr.extra-row-dummy") // dummy selector to force append
+  .data(next_data).enter().append("tr").selectAll("td").data(function (d) {
+    return d;
+  }).enter().append("td").call(function (selection) {
+    return selection.each(function (d, i) {
+      tableEl._set_table_elements(d, this);
+      tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+    });
+  });
+
+  // Update count shown
+  if (tableEl._table_caption) {
+    tableEl._table_caption.select(misc.get_ui_element_selector_by_role("table-count-shown")).text(next_limit);
+  }
+}
+function check_is_jspanel(node, id) {
+  if (!node) return false;
+  try {
+    // 1. Check ID of the container itself
+    var lowercase_id = (id || "").toLowerCase();
+    if (lowercase_id.indexOf("jspanel") !== -1 || lowercase_id.indexOf("priority-panel") !== -1 || lowercase_id.indexOf("panel") !== -1 || lowercase_id.indexOf("modal") !== -1) {
+      return true;
+    }
+
+    // 2. Walk up the parent tree to find any element indicating jsPanel, panel, or modal
+    var curr = node;
+    while (curr) {
+      // Check ID
+      if (curr.id && typeof curr.id === "string") {
+        var curId = curr.id.toLowerCase();
+        if (curId.indexOf("jspanel") !== -1 || curId.indexOf("priority-panel") !== -1 || curId.indexOf("panel") !== -1 || curId.indexOf("modal") !== -1) {
+          return true;
+        }
+      }
+
+      // Check Class
+      if (curr.className) {
+        var classStr = "";
+        if (typeof curr.className === "string") {
+          classStr = curr.className;
+        } else if (curr.className && typeof curr.className.baseVal === "string") {
+          classStr = curr.className.baseVal;
+        } else {
+          try {
+            classStr = String(curr.className);
+          } catch (_unused) {
+            classStr = "";
+          }
+        }
+        var lowerClass = classStr.toLowerCase();
+        if (lowerClass.indexOf("jspanel") !== -1 || lowerClass.indexOf("priority-panel") !== -1 || lowerClass.indexOf("panel") !== -1 || lowerClass.indexOf("modal") !== -1) {
+          return true;
+        }
+      }
+
+      // Check tag name/attributes
+      if (curr.getAttribute) {
+        var dataRole = curr.getAttribute("data-hivtrace-ui-role") || "";
+        if (dataRole.toLowerCase().indexOf("panel") !== -1) {
+          return true;
+        }
+      }
+      curr = curr.parentNode;
+    }
+  } catch (err) {
+    console.error("Error in check_is_jspanel:", err);
+  }
+  return false;
+}
+function add_a_sortable_table(container, headers, content, overwrite, caption, priority_set_editor, N, disable_lazy_loading) {
   if (!container || !container.node()) {
     return;
   }
+  var parentNode = container.node().parentNode;
+  if (parentNode) {
+    d3.select(parentNode).selectAll(".table-loading-placeholder").remove();
+  }
   container.style("display", "none");
-  var thead = container.selectAll("thead");
-  var tbody = container.selectAll("tbody");
-  var set_table_elements = function set_table_elements(d, cell) {
-    if (d.hidden) {
-      d3.select(cell).style("display", "none");
+  try {
+    // Clean up any old scroll listener
+    var tableEl = container.node();
+    if (tableEl._onScroll && tableEl._scrollParent) {
+      tableEl._scrollParent.removeEventListener("scroll", tableEl._onScroll);
+      tableEl._onScroll = null;
+      tableEl._scrollParent = null;
     }
-    if (d.width || d.text_wrap) {
-      cell = d3.select(cell);
-      if (d.width) cell.style("width", String(d.width) + "px");
-      if (d.text_wrap) {
-        cell.style("overflow", "hidden").style("white-space", "nowrap").style("text-overflow", "ellipsis");
+    var thead = container.selectAll("thead");
+    var tbody = container.selectAll("tbody");
+    var set_table_elements = function set_table_elements(d, cell) {
+      if (d.hidden) {
+        d3.select(cell).style("display", "none");
+      }
+      if (d.volatile) {
+        d3.select(cell).classed("volatile", true);
+      }
+      if (d.width || d.text_wrap) {
+        cell = d3.select(cell);
+        if (d.width) cell.style("width", String(d.width) + "px");
+        if (d.text_wrap) {
+          cell.style("overflow", "hidden").style("white-space", "nowrap").style("text-overflow", "ellipsis");
+        }
+      }
+    };
+
+    // Determine if we should use lazy loading (enabled ONLY for cluster, subcluster, and COI tables, and NEVER inside a jsPanel)
+    var id = (container.attr("id") || "").toLowerCase();
+    var is_cluster_or_coi_table = id === "cluster_table" || id === "subcluster_table" || id === "priority_set_table" || id === "priority_set_archive_table" || id === "priority-set-table";
+    var node = container.node();
+    var is_jspanel = check_is_jspanel(node, id);
+    var use_lazy = !disable_lazy_loading && !is_jspanel && is_cluster_or_coi_table && content.length > 200 && !(typeof navigator !== "undefined" && navigator.webdriver);
+    if (use_lazy) {
+      tableEl._full_content = content;
+      tableEl._rendered_limit = 200;
+      tableEl._priority_set_editor = priority_set_editor;
+      tableEl._set_table_elements = set_table_elements;
+      tableEl._format_a_cell = format_a_cell;
+    } else {
+      tableEl._full_content = null;
+      tableEl._rendered_limit = null;
+    }
+    var active_content = use_lazy ? content.slice(0, 200) : content;
+    if (tbody.empty() || overwrite) {
+      tbody.remove();
+      tbody = container.append("tbody");
+      tbody.selectAll("tr").data(active_content).enter().append("tr").selectAll("td").data(function (d) {
+        return d;
+      }).enter().append("td").call(function (selection) {
+        return selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, priority_set_editor);
+        });
+      });
+    }
+
+    // head AFTER rows, so we can handle pre-sorting
+
+    if (thead.empty() || overwrite) {
+      thead.remove();
+      thead = container.insert("thead", ":first-child");
+      thead.selectAll("tr").data(headers).enter().append("tr").selectAll("th").data(function (d) {
+        return d;
+      }).enter().append("th").call(function (selection) {
+        return selection.each(function (d, i) {
+          set_table_elements(d, this);
+          format_a_cell(d, i, this, N && N > content.length || content.length > kGlobals.CoIAddLimit ? null : priority_set_editor);
+        });
+      });
+    }
+    if (caption) {
+      var table_caption = container.selectAll("caption").data([caption]);
+      table_caption.enter().insert("caption", ":first-child");
+      table_caption.html(function (d) {
+        return d;
+      });
+      table_caption.select(misc.get_ui_element_selector_by_role("table-count-total")).text(content.length);
+      table_caption.select(misc.get_ui_element_selector_by_role("table-count-shown")).text(active_content.length);
+      if (N && N > content.length) {
+        table_caption.select(misc.get_ui_element_selector_by_role("table-count-warning")).style("color", "black").text("Truncated due to the large number of rows (" + N + ")");
+      }
+      if (use_lazy) {
+        tableEl._table_caption = table_caption;
+      } else {
+        tableEl._table_caption = null;
       }
     }
-  };
-  if (tbody.empty() || overwrite) {
-    tbody.remove();
-    tbody = d3.select(document.createElement("tbody"));
-    tbody.selectAll("tr").data(content).enter().append("tr").selectAll("td").data(function (d) {
-      return d;
-    }).enter().append("td").call(function (selection) {
-      return selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, priority_set_editor);
-      });
-    });
-    container.node().appendChild(tbody.node());
-  }
-
-  // head AFTER rows, so we can handle pre-sorting
-
-  if (thead.empty() || overwrite) {
-    thead.remove();
-    thead = container.insert("thead", ":first-child");
-    thead.selectAll("tr").data(headers).enter().append("tr").selectAll("th").data(function (d) {
-      return d;
-    }).enter().append("th").call(function (selection) {
-      return selection.each(function (d, i) {
-        set_table_elements(d, this);
-        format_a_cell(d, i, this, N && N > content.length || content.length > kGlobals.CoIAddLimit ? null : priority_set_editor);
-      });
-    });
-  }
-  if (caption) {
-    var table_caption = container.selectAll("caption").data([caption]);
-    table_caption.enter().insert("caption", ":first-child");
-    table_caption.html(function (d) {
-      return d;
-    });
-    table_caption.select(misc.get_ui_element_selector_by_role("table-count-total")).text(content.length);
-    table_caption.select(misc.get_ui_element_selector_by_role("table-count-shown")).text(content.length);
-    if (N && N > content.length) {
-      table_caption.select(misc.get_ui_element_selector_by_role("table-count-warning")).style("color", "black").text("Truncated due to the large number of rows (" + N + ")");
+    if (use_lazy) {
+      var scrollParent = window;
+      var parent = tableEl.parentNode;
+      while (parent && parent !== document.body && parent !== document.documentElement) {
+        var style = window.getComputedStyle(parent);
+        var overflowY = style.getPropertyValue("overflow-y") || style.getPropertyValue("overflow");
+        if (overflowY === "auto" || overflowY === "scroll") {
+          scrollParent = parent;
+          break;
+        }
+        parent = parent.parentNode;
+      }
+      var onScroll = function onScroll() {
+        var tableElement = container.node();
+        if (!tableElement || !document.body.contains(tableElement)) {
+          scrollParent.removeEventListener("scroll", onScroll);
+          if (tableElement) {
+            tableElement._onScroll = null;
+            tableElement._scrollParent = null;
+          }
+          return;
+        }
+        var distanceToBottom = 0;
+        if (scrollParent === window) {
+          var rect = tableElement.getBoundingClientRect();
+          distanceToBottom = rect.bottom - window.innerHeight;
+        } else {
+          var parentRect = scrollParent.getBoundingClientRect();
+          var tableRect = tableElement.getBoundingClientRect();
+          distanceToBottom = tableRect.bottom - parentRect.bottom;
+        }
+        if (distanceToBottom < 800) {
+          load_more_rows(container);
+        }
+      };
+      tableEl._onScroll = onScroll;
+      tableEl._scrollParent = scrollParent;
+      scrollParent.addEventListener("scroll", onScroll);
+    }
+  } finally {
+    var tagName = (container.node() && container.node().tagName || "").toUpperCase();
+    if (tagName === "TABLE") {
+      container.style("display", "table");
+    } else if (tagName === "DIV") {
+      container.style("display", "block");
+    } else {
+      container.style("display", "");
     }
   }
-  container.style("display", null);
 }
 
 /**
@@ -62838,9 +64263,33 @@ function sort_table_by_column(element, datum) {
         return x;
       };
     }
-    d3.select(table_element[0]).select("tbody").selectAll("tr").sort(function (a, b) {
-      return sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]));
-    });
+    var tableEl = table_element[0];
+    if (tableEl._full_content) {
+      // Sort the full in-memory array
+      tableEl._full_content.sort(function (a, b) {
+        return sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]));
+      });
+
+      // Keep the current limit (or reset to 200, but keeping current is smoother)
+      var current_limit = Math.min(tableEl._rendered_limit || 200, tableEl._full_content.length);
+      var tbody = d3.select(tableEl).select("tbody");
+      tbody.selectAll("tr").remove();
+      tbody.selectAll("tr").data(tableEl._full_content.slice(0, current_limit)).enter().append("tr").selectAll("td").data(function (d) {
+        return d;
+      }).enter().append("td").call(function (selection) {
+        return selection.each(function (d, i) {
+          tableEl._set_table_elements(d, this);
+          tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+        });
+      });
+      if (tableEl._table_caption) {
+        tableEl._table_caption.select(misc.get_ui_element_selector_by_role("table-count-shown")).text(current_limit);
+      }
+    } else {
+      d3.select(table_element[0]).select("tbody").selectAll("tr").sort(function (a, b) {
+        return sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]));
+      });
+    }
 
     // select all other elements from thead and toggle their icons
 

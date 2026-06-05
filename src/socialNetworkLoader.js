@@ -584,7 +584,7 @@ export function load_nodes_edges(
     if (tx_network._is_CDC_) {
       //tx_network.draw_extended_node_table(tx_network.aggregate_indvidual_level_records(), null, null, { "no-filter": !tx_network.node_search_div });
     } else {
-      self.draw_node_table(self.extra_node_table_columns, self.json.Nodes);
+      tx_network.draw_node_table(tx_network.extra_node_table_columns, tx_network.json.Nodes);
     }
   }
 

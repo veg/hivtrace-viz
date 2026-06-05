@@ -11,6 +11,24 @@ import * as kGlobals from "./globals.js";
 
 let priority_set_editor = null;
 
+function safe_format_date(v, formatter) {
+  if (!v) return "";
+  if (v instanceof Date) {
+    return formatter(v);
+  }
+  var parsed = timeDateUtil.DateViewFormatSlider.parse(v);
+  if (!parsed) {
+    parsed = timeDateUtil.DateViewFormatMMDDYYY.parse(v);
+  }
+  if (!parsed) {
+    parsed = new Date(v);
+  }
+  if (parsed && !isNaN(parsed.getTime())) {
+    return formatter(parsed);
+  }
+  return v;
+}
+
 /**
  * Initializes the component, setting up event listeners and UI elements.
 
@@ -510,7 +528,7 @@ function open_editor(
         .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": 0.015,
             timestamp: createdDate,
           });
@@ -521,7 +539,7 @@ function open_editor(
         .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": self.subcluster_threshold,
             timestamp: createdDate,
           });
@@ -774,6 +792,7 @@ function open_editor(
       panel_object.table_handler = function (panel) {
         var table_container = panel_content.selectAll("table").data(["panel"]);
         table_container.enter().append("table");
+        table_container = panel_content.selectAll("table");
         table_container
           .classed(
             "table table-striped table-condensed table-hover table-smaller",
@@ -825,8 +844,9 @@ function open_editor(
                     }
                     if (!is_node_editable(payload)) {
                       this_cell.text(
-                        timeDateUtil.DateViewFormatMMDDYYY(
-                          payload["_priority_set_date"]
+                        safe_format_date(
+                          payload["_priority_set_date"],
+                          timeDateUtil.DateViewFormatMMDDYYY
                         )
                       );
                     } else {
@@ -835,8 +855,9 @@ function open_editor(
                         .attr("type", "date")
                         .attr(
                           "value",
-                          timeDateUtil.DateViewFormatSlider(
-                            payload["_priority_set_date"]
+                          safe_format_date(
+                            payload["_priority_set_date"],
+                            timeDateUtil.DateViewFormatSlider
                           )
                         )
                         .on("change", (e, d) => {
@@ -1421,7 +1442,10 @@ function _action_drop_down(self, pg) {
 // (admin/full-MJC view). Person-based: each person counts at most once per
 // jurisdiction whether they own a node primarily or via joint ownership.
 function _mjc_size_in_jurisdiction(self, pg) {
-  if (pg.size_in_jurisdiction !== undefined && pg.size_in_jurisdiction !== null) {
+  if (
+    pg.size_in_jurisdiction !== undefined &&
+    pg.size_in_jurisdiction !== null
+  ) {
     return pg.size_in_jurisdiction;
   }
   const jid = self.CDC_data && self.CDC_data.group_id;
@@ -1727,9 +1751,9 @@ function draw_priority_set_table(
           // disabled). Fall back to a frontend dedup by ehars_uid otherwise.
           value: [
             self.isMJCNetwork
-              ? (pg.size !== undefined && pg.size !== null
-                  ? pg.size
-                  : self.unique_entity_list(pg.nodes).length)
+              ? pg.size !== undefined && pg.size !== null
+                ? pg.size
+                : self.unique_entity_list(pg.nodes).length
               : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
@@ -1824,7 +1848,10 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                v[0] + " clusters; " + v[1] + " persons" +
+                v[0] +
+                " clusters; " +
+                v[1] +
+                " persons" +
                 (v[2].length
                   ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
                     v[2].join(", ") +
@@ -1887,7 +1914,10 @@ function draw_priority_set_table(
           format: function (v) {
             if (v) {
               return (
-                v[0] + " clusters; " + v[1] + " persons" +
+                v[0] +
+                " clusters; " +
+                v[1] +
+                " persons" +
                 (v[2].length
                   ? ' <span title="' +
                     (!self.isMJCNetwork ? "MJ " : "") +
@@ -2174,7 +2204,10 @@ function priority_set_view(self, priority_set, options) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
     if (d._added_date)
-      d._added_date = timeDateUtil.DateViewFormatSlider(d._added_date);
+      d._added_date = safe_format_date(
+        d._added_date,
+        timeDateUtil.DateViewFormatSlider
+      );
     else d._added_date = null;
   });
 

@@ -89,6 +89,19 @@ function unpack_column(col, length) {
 }
 
 function unpack_compact_json(json) {
+  if (!json.Settings || !json.Settings.compact_json) {
+    return;
+  }
+  if (
+    json.Nodes &&
+    _.isArray(json.Nodes) &&
+    (json.Nodes.length === 0 ||
+      (typeof json.Nodes[0] === "object" && !_.isArray(json.Nodes[0])))
+  ) {
+    json.Settings.compact_json = false;
+    return;
+  }
+
   if (json.Settings && json.Settings.compact_json === "optimized") {
     _.each(["Nodes", "Edges"], (key) => {
       if (json[key] && !_.isArray(json[key])) {
@@ -169,6 +182,9 @@ function unpack_compact_json(json) {
       });
       json[key] = expanded;
     });
+    if (json.Settings) {
+      json.Settings.compact_json = false;
+    }
   }
 
   // Reconstruct sequences at the end of unpacking (both old and optimized formats)
