@@ -686,6 +686,14 @@ if (typeof window !== "undefined") {
 }
 
 function initializeLoadingScreen() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  // Guardrail: Only initialize the loading screen if a network container is present in the document
+  if (!document.getElementById("network_tag") && !document.getElementById("lanl-network_tag")) {
+    return;
+  }
+
   if (
     typeof window !== "undefined" &&
     window.perfMeasurements &&
