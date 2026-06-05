@@ -7538,6 +7538,7 @@ var hivtrace_cluster_network_graph = function (
       function runSteps(steps, index) {
         if (index >= steps.length) {
           d3.select(self.container).selectAll(".my_progress").style("display", "none");
+          self.network_svg.selectAll(".svg-loading-placeholder").remove();
           return;
         }
         setTimeout(() => {
@@ -7633,6 +7634,7 @@ var hivtrace_cluster_network_graph = function (
           // Step 2: Draw links (append SVG paths in chunks)
           (cb) => {
             window.updateNetworkLoadingStatus("Rendering link elements...");
+            self.network_svg.selectAll(".svg-loading-placeholder").remove();
             link = self.network_svg
               .selectAll(".link")
               .data(draw_me.edges, (d) => d.id);
@@ -9669,6 +9671,17 @@ var hivtrace_cluster_network_graph = function (
     .attr("id", self.dom_prefix + "-network-svg")
     .attr("width", self.width + self.margin.left + self.margin.right)
     .attr("height", self.height + self.margin.top + self.margin.bottom);
+
+  self.network_svg.append("text")
+    .classed("svg-loading-placeholder", true)
+    .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
+    .attr("y", (self.height + self.margin.top + self.margin.bottom) / 2)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .style("font-size", "18px")
+    .style("fill", "#666666")
+    .style("font-family", "sans-serif")
+    .text("Loading network visualization...");
 
   self.network_cluster_dynamics = null;
 
