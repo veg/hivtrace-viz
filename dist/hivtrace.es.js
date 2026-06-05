@@ -49702,168 +49702,184 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         }
         self.update(false);
       }, 250));
-      if (self.fullMJCNetwork) {
-        self._mjc_filter_options = ["No filter", "Diagnosed within last 36 months", "Diagnosed within last 12 months", "Part of a site system clusterOI", "Part of a site clusterOI (system or manual)", "Part of a site clusterOI meeting national priority", "Not in a site clusterOI (system or manual)", "Not meeting national priority"];
-        self._mjc_active_filters = new Set();
-        var _collect_pg_node_ids = function _collect_pg_node_ids(pg_groups, pg_filter) {
-          var node_set = new Set();
-          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(pg_filter ? underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(pg_groups, pg_filter) : pg_groups, function (pg) {
-            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(pg.nodes, function (n) {
-              return node_set.add(n.name);
-            });
+      self._node_filter_options = ["No filter", "Diagnosed within last 36 months", "Diagnosed within last 12 months", "Part of a site system clusterOI", "Part of a site clusterOI (system or manual)", "Part of a site clusterOI meeting national priority", "Not in a site clusterOI (system or manual)", "Not meeting national priority"];
+      self._node_filter_active = new Set();
+      var _collect_pg_node_ids = function _collect_pg_node_ids(pg_groups, pg_filter) {
+        var node_set = new Set();
+        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(pg_filter ? underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(pg_groups, pg_filter) : pg_groups, function (pg) {
+          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(pg.nodes, function (n) {
+            return node_set.add(n.name);
           });
-          return node_set;
-        };
-        var _pg_filters = {
-          system: function system(pg) {
-            return pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_12__.CDCCOICreatedBySystem;
-          },
-          national_priority: function national_priority(pg) {
-            return pg.meets_priority_def;
-          }
-        };
-        self._compute_mjc_node_set = function (filter_index) {
-          var ref_date = self.get_reference_date();
-          var primary_instance = _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork._primaryInstance;
-          var pg_groups = primary_instance ? primary_instance.overlap_defined_priority_groups : null;
+        });
+        return node_set;
+      };
+      var _pg_filters = {
+        system: function system(pg) {
+          return pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_12__.CDCCOICreatedBySystem;
+        },
+        national_priority: function national_priority(pg) {
+          return pg.meets_priority_def;
+        }
+      };
+      self._compute_node_filter_set = function (filter_index) {
+        var ref_date = self.get_reference_date();
+        // Site clusterOIs live on the primary instance (sub-network instances
+        // have empty arrays). MJ view uses overlap groups, regular view uses
+        // defined_priority_groups.
+        var primary_instance = _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork._primaryInstance;
+        var pg_groups = self.isMJCNetwork ? primary_instance && primary_instance.overlap_defined_priority_groups : primary_instance && primary_instance.defined_priority_groups || self.defined_priority_groups;
 
-          // Diagnosed within last 36 months
-          if (filter_index === 1) {
-            var cutoff = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.n_months_ago(ref_date, 36);
-            return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
-              return self.filter_by_date(cutoff, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__._networkCDCDateField, ref_date, n, false);
-            }), function (n) {
-              return n.id;
-            }));
-          }
+        // Diagnosed within last 36 months
+        if (filter_index === 1) {
+          var cutoff = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.n_months_ago(ref_date, 36);
+          return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
+            return self.filter_by_date(cutoff, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__._networkCDCDateField, ref_date, n, false);
+          }), function (n) {
+            return n.id;
+          }));
+        }
 
-          // Diagnosed within last 12 months
-          if (filter_index === 2) {
-            var _cutoff = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.n_months_ago(ref_date, 12);
-            return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
-              return self.filter_by_date(_cutoff, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__._networkCDCDateField, ref_date, n, false);
-            }), function (n) {
-              return n.id;
-            }));
-          }
-          if (filter_index >= 3 && filter_index <= 7) {
-            if (!pg_groups || !pg_groups.length) {
-              alert("Site clusterOI data is not yet available for filtering.");
-              return null;
-            }
+        // Diagnosed within last 12 months
+        if (filter_index === 2) {
+          var _cutoff = _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__.n_months_ago(ref_date, 12);
+          return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
+            return self.filter_by_date(_cutoff, _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_8__._networkCDCDateField, ref_date, n, false);
+          }), function (n) {
+            return n.id;
+          }));
+        }
+        if (filter_index >= 3 && filter_index <= 7) {
+          // Defensive: click handler already gates on availability.
+          if (!pg_groups || !pg_groups.length) return null;
 
-            // TODO: meets_priority_def cannot be correctly computed on the MJC page because
-            // the site instance here has MJC-derived clusters, not the standalone site's clusters.
-            // As a workaround, read the latest history entry's national_priority value.
-            // A proper fix would be to either have the server include meets_priority_def in the
-            // overlap PG JSON response, or pass the site's cluster/subcluster priority_score data
-            // into the MJC page context.
+          // MJ overlap groups don't carry meets_priority_def; fall back to the
+          // latest history entry. Regular views already have the flag correct.
+          if (self.isMJCNetwork) {
             underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(pg_groups, function (pg) {
               if (pg.meets_priority_def === undefined && pg.history && pg.history.length) {
                 var latest = pg.history[pg.history.length - 1];
                 pg.meets_priority_def = !!latest.national_priority;
               }
             });
+          }
 
-            // Part of a site system clusterOI
-            if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);
-            // Part of a site clusterOI (system or manual)
-            if (filter_index === 4) return _collect_pg_node_ids(pg_groups, null);
-            // Part of a site clusterOI meeting national priority
-            if (filter_index === 5) return _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
+          // Part of a site system clusterOI
+          if (filter_index === 3) return _collect_pg_node_ids(pg_groups, _pg_filters.system);
+          // Part of a site clusterOI (system or manual)
+          if (filter_index === 4) return _collect_pg_node_ids(pg_groups, null);
+          // Part of a site clusterOI meeting national priority
+          if (filter_index === 5) return _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
 
-            // Not in a site clusterOI (system or manual)
-            if (filter_index === 6) {
-              var in_coi = _collect_pg_node_ids(pg_groups, null);
-              return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
-                return !in_coi.has(n.id);
-              }), function (n) {
-                return n.id;
+          // Not in a site clusterOI (system or manual)
+          if (filter_index === 6) {
+            var in_coi = _collect_pg_node_ids(pg_groups, null);
+            return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
+              return !in_coi.has(n.id);
+            }), function (n) {
+              return n.id;
+            }));
+          }
+          // Not meeting national priority
+          if (filter_index === 7) {
+            var in_priority = _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
+            return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
+              return !in_priority.has(n.id);
+            }), function (n) {
+              return n.id;
+            }));
+          }
+        }
+        return null; // No filter (index 0) or unrecognized
+      };
+      self.apply_node_filter = function () {
+        var node_set = null;
+        if (self._node_filter_active.size > 0) {
+          // Intersect all active filter sets
+          self._node_filter_active.forEach(function (filter_index) {
+            var filter_set = self._compute_node_filter_set(filter_index);
+            if (filter_set === null) return;
+            if (node_set === null) {
+              node_set = filter_set;
+            } else {
+              node_set = new Set(_toConsumableArray(node_set).filter(function (id) {
+                return filter_set.has(id);
               }));
             }
-            // Not meeting national priority
-            if (filter_index === 7) {
-              var in_priority = _collect_pg_node_ids(pg_groups, _pg_filters.national_priority);
-              return new Set(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.nodes, function (n) {
-                return !in_priority.has(n.id);
-              }), function (n) {
-                return n.id;
-              }));
-            }
-          }
-          return null; // No filter (index 0) or unrecognized
-        };
-        self.apply_mjc_node_filter = function () {
-          var node_set = null;
-          if (self._mjc_active_filters.size > 0) {
-            // Intersect all active filter sets
-            self._mjc_active_filters.forEach(function (filter_index) {
-              var filter_set = self._compute_mjc_node_set(filter_index);
-              if (filter_set === null) return;
-              if (node_set === null) {
-                node_set = filter_set;
-              } else {
-                node_set = new Set(_toConsumableArray(node_set).filter(function (id) {
-                  return filter_set.has(id);
-                }));
-              }
-            });
-          }
-          self.nodes.forEach(function (n) {
-            n.mjc_hidden = node_set !== null && !node_set.has(n.id);
           });
+        }
+
+        // Per-instance state (don't mutate shared node objects, otherwise
+        // other views rendering the same nodes get affected).
+        self._node_filter_visible_ids = node_set;
+        if (node_set !== null) {
+          self._node_filter_hidden_clusters = new Set();
           self.clusters.forEach(function (c) {
             var cluster_nodes = self.nodes_by_cluster[c.cluster_id] || [];
-            c.mjc_hidden = node_set !== null && cluster_nodes.length > 0 && cluster_nodes.every(function (n) {
-              return n.mjc_hidden;
-            });
+            if (cluster_nodes.length > 0 && cluster_nodes.every(function (n) {
+              return !node_set.has(n.id);
+            })) {
+              self._node_filter_hidden_clusters.add(c.cluster_id);
+            }
           });
-          self.update(true);
-        };
-        self._setup_mjc_filter_ui = function () {
-          var mjc_filter_container = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("mjc_node_filter"));
-          mjc_filter_container.selectAll("li").remove();
-          self._mjc_filter_options.forEach(function (label, index) {
-            var is_no_filter = index === 0;
-            mjc_filter_container.append("li").append("a").attr("href", "#").style("font-weight", is_no_filter ? "bold" : null).text(label).on("click", function () {
-              d3__WEBPACK_IMPORTED_MODULE_0__.event.preventDefault();
-              if (is_no_filter) {
-                // "No filter" clears all active filters
-                self._mjc_active_filters.clear();
-                mjc_filter_container.selectAll("a").style("font-weight", null);
-                d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", "bold");
-              } else {
-                // Toggle this filter on/off
-                if (self._mjc_active_filters.has(index)) {
-                  self._mjc_active_filters.delete(index);
-                  d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", null);
-                } else {
-                  self._mjc_active_filters.add(index);
-                  d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", "bold");
+        } else {
+          self._node_filter_hidden_clusters = null;
+        }
+        self.update(true);
+      };
+      self._setup_node_filter_ui = function () {
+        var filter_container = d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("node_filter_menu"));
+        if (filter_container.empty()) return;
+        filter_container.selectAll("li").remove();
+        self._node_filter_options.forEach(function (label, index) {
+          var is_no_filter = index === 0;
+          filter_container.append("li").append("a").attr("href", "#").style("font-weight", is_no_filter ? "bold" : null).text(label).on("click", function () {
+            d3__WEBPACK_IMPORTED_MODULE_0__.event.preventDefault();
+            if (is_no_filter) {
+              // "No filter" clears all active filters
+              self._node_filter_active.clear();
+              filter_container.selectAll("a").style("font-weight", null);
+              d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", "bold");
+            } else {
+              // Filters 3-7 need site clusterOI data; bail before toggling
+              // so the filter doesn't get stuck "on" with nothing to apply.
+              if (index >= 3 && index <= 7) {
+                var primary_instance = _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork._primaryInstance;
+                var pg_groups = self.isMJCNetwork ? primary_instance && primary_instance.overlap_defined_priority_groups : primary_instance && primary_instance.defined_priority_groups || self.defined_priority_groups;
+                if (!pg_groups || !pg_groups.length) {
+                  alert("Site clusterOI data is not yet available for filtering.");
+                  return;
                 }
-
-                // Un-bold "No filter" when any filter is active; re-bold it when none are
-                var no_filter_item = mjc_filter_container.select("a");
-                no_filter_item.style("font-weight", self._mjc_active_filters.size === 0 ? "bold" : null);
               }
-
-              // Update the dropdown label
-              var count = self._mjc_active_filters.size;
-              var label_text;
-              if (count === 0) {
-                label_text = "No filter";
-              } else if (count === 1) {
-                label_text = self._mjc_filter_options[self._mjc_active_filters.values().next().value];
+              // Toggle this filter on/off
+              if (self._node_filter_active.has(index)) {
+                self._node_filter_active.delete(index);
+                d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", null);
               } else {
-                label_text = count + " filters active";
+                self._node_filter_active.add(index);
+                d3__WEBPACK_IMPORTED_MODULE_0__.select(this).style("font-weight", "bold");
               }
-              d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("mjc_node_filter_label")).html("Show: " + label_text + ' <span class="caret"></span>');
-              self.apply_mjc_node_filter();
-            });
+
+              // Un-bold "No filter" when any filter is active; re-bold it when none are
+              var no_filter_item = filter_container.select("a");
+              no_filter_item.style("font-weight", self._node_filter_active.size === 0 ? "bold" : null);
+            }
+
+            // Update the dropdown label
+            var count = self._node_filter_active.size;
+            var label_text;
+            if (count === 0) {
+              label_text = "No filter";
+            } else if (count === 1) {
+              label_text = self._node_filter_options[self._node_filter_active.values().next().value];
+            } else {
+              label_text = count + " filters active";
+            }
+            d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("node_filter_label")).html("Show: " + label_text + ' <span class="caret"></span>');
+            self.apply_node_filter();
           });
-          d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("mjc_node_filter_enclosure")).style("display", null);
-        };
-      }
+        });
+        d3__WEBPACK_IMPORTED_MODULE_0__.select(self.get_ui_element_selector_by_role("node_filter_enclosure")).style("display", null);
+      };
       $(self.get_ui_element_selector_by_role("set_min_cluster_size")).off("change").on("change", underscore__WEBPACK_IMPORTED_MODULE_1__["default"].throttle(function (e) {
         self.minimum_cluster_size = e.target.value;
         self.update(false);
@@ -50316,8 +50332,8 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
             }
           });
         });
-        if (self._setup_mjc_filter_ui) {
-          self._setup_mjc_filter_ui();
+        if (self._setup_node_filter_ui) {
+          self._setup_node_filter_ui();
         }
         var tPopEnd = performance.now();
         console.log("[PERF_DETAIL] _aux_populate_category_menus: total = ".concat((tPopEnd - tPopStart).toFixed(2), "ms\n") + "  - valid_cats filter/fields = ".concat((t2 - t1).toFixed(2), "ms\n") + "  - _aux_process_category_values = ".concat((t3 - t2).toFixed(2), "ms\n") + "  - valid_scales & determine_scaling = ".concat((tScaleEnd - tScaleStart).toFixed(2), "ms\n") + "  - D3 UI Menu rendering = ".concat((tPopEnd - tScaleEnd).toFixed(2), "ms"));
@@ -51476,7 +51492,8 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       }).style("opacity", function (d) {
         return node_opacity(d);
       }).style("display", function (d) {
-        if (d.is_hidden || d.mjc_hidden) return "none";
+        if (d.is_hidden) return "none";
+        if (self._node_filter_visible_ids && !self._node_filter_visible_ids.has(d.id)) return "none";
         return null;
       }).call(network_layout.drag().on("dragstart", function (d) {
         d3__WEBPACK_IMPORTED_MODULE_0__.event.sourceEvent.stopPropagation();
@@ -51547,7 +51564,8 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     }).style("stroke-linejoin", function (d, i) {
       return draw_from.length > 1 ? "round" : "";
     }).style("display", function (d) {
-      if (the_cluster.is_hidden || the_cluster.mjc_hidden) return "none";
+      if (the_cluster.is_hidden) return "none";
+      if (self._node_filter_hidden_clusters && self._node_filter_hidden_clusters.has(the_cluster.cluster_id)) return "none";
       return null;
     });
   }
@@ -52794,7 +52812,14 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
                 if (self.additional_edge_styler) {
                   self.additional_edge_styler(link_el, d, self);
                 }
-                var display = d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden ? "none" : null;
+                var display;
+                if (d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden) {
+                  display = "none";
+                } else if (self._node_filter_visible_ids && (!self._node_filter_visible_ids.has(d.target.id) || !self._node_filter_visible_ids.has(d.source.id))) {
+                  display = "none";
+                } else {
+                  display = null;
+                }
                 d3__WEBPACK_IMPORTED_MODULE_0__.select(link_el).style("display", display).classed("selected_object", d.ref.length_filter && !self.hide_unselected);
               }
             }
@@ -52913,6 +52938,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         }
         link.style("display", function (d) {
           if (d.target.is_hidden || d.source.is_hidden || d.is_hidden || d.target.mjc_hidden || d.source.mjc_hidden) {
+            return "none";
+          }
+          if (self._node_filter_visible_ids && (!self._node_filter_visible_ids.has(d.target.id) || !self._node_filter_visible_ids.has(d.source.id))) {
             return "none";
           }
           return null;
@@ -55365,6 +55393,25 @@ function _action_drop_down(self, pg) {
   return dropdown;
 }
 
+// Size-in-jurisdiction for the viewing site. Falls back to a client-side
+// derivation from pg.nodes when the backend hasn't precomputed the field
+// (admin/full-MJC view). Person-based: each person counts at most once per
+// jurisdiction whether they own a node primarily or via joint ownership.
+function _mjc_size_in_jurisdiction(self, pg) {
+  if (pg.size_in_jurisdiction !== undefined && pg.size_in_jurisdiction !== null) {
+    return pg.size_in_jurisdiction;
+  }
+  var jid = self.CDC_data && self.CDC_data.group_id;
+  if (!jid) return null;
+  if (!pg.nodes) {
+    return (pg.jurisdiction_counts || {})[jid] || 0;
+  }
+  var relevantNodes = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(pg.nodes, function (nd) {
+    return nd.jurisdiction === jid || nd.joint_owners && nd.joint_owners.indexOf(jid) >= 0;
+  });
+  return self.unique_entity_list(relevantNodes).length;
+}
+
 /**
  * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
  * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
@@ -55442,7 +55489,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         }
         return 0;
       },
-      help: "Number of nodes in the " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI"
+      help: "Number of distinct persons in the " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI."
       // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
     }, {
       value: "My Size",
@@ -55453,11 +55500,8 @@ function draw_priority_set_table(self, container, priority_groups) {
         var n = Number(v);
         return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isNaN(n) ? 0 : n;
       },
-      help: "Number of nodes in this MJ clusterOI that are from my jurisdiction",
-      // Hidden in admin/full view because addJurisdictionSizes is only run
-      // for the per-jurisdiction site view. Flag-off redaction is surfaced
-      // as "REDACTED" in the cell, not by hiding the column.
-      hidden: !self.isMJCNetwork || self.fullMJCNetwork
+      help: "Number of distinct persons in this MJ clusterOI from my jurisdiction (counting both primary ownership and joint ownership).",
+      hidden: !self.isMJCNetwork
     }, {
       value: "Priority",
       width: 60,
@@ -55468,7 +55512,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       value: "DXs in last 12 mo.",
       width: 100,
       sort: "value",
-      help: "The number of cases in the cluster of interest diagnosed in the past 12 months"
+      help: "Number of distinct persons in the cluster of interest with a diagnosis date in the past 12 months. A person counts if any of their sequences has a recent diagnosis date."
       // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
     }, {
       value: "Overlap",
@@ -55492,7 +55536,7 @@ function draw_priority_set_table(self, container, priority_groups) {
         }
         return 0;
       },
-      help: self.isMJCNetwork ? "How many ClusterOI have overlapping nodes with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this MJ ClusterOI overlap with ANY ClusterOI?" : "How many MJ ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many nodes in this ClusterOI overlap with ANY MJ ClusterOI?",
+      help: self.isMJCNetwork ? "How many ClusterOI have overlapping persons with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many distinct persons in this MJ ClusterOI overlap with ANY ClusterOI?" : "How many MJ ClusterOI have overlapping persons with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many distinct persons in this ClusterOI overlap with ANY MJ ClusterOI?",
       hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups
     }
     /*,
@@ -55577,8 +55621,9 @@ function draw_priority_set_table(self, container, priority_groups) {
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
       }, {
         // size / new nodes
-        // For MJC networks, use pg.nodes.length since node_objects only contains local nodes
-        value: [self.isMJCNetwork ? pg.nodes.length : self.unique_entity_list(pg.node_objects).length, underscore__WEBPACK_IMPORTED_MODULE_1__["default"].chain(pg.nodes).groupBy(function (n) {
+        // Prefer pg.size (backend-computed, redaction-aware: "REDACTED" when
+        // disabled). Fall back to a frontend dedup by ehars_uid otherwise.
+        value: [self.isMJCNetwork ? pg.size !== undefined && pg.size !== null ? pg.size : self.unique_entity_list(pg.nodes).length : self.unique_entity_list(pg.node_objects).length, underscore__WEBPACK_IMPORTED_MODULE_1__["default"].chain(pg.nodes).groupBy(function (n) {
           return self.entity_id_from_string(n.name);
         }).mapObject(function (v) {
           return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].uniq(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(v, function (n) {
@@ -55596,10 +55641,9 @@ function draw_priority_set_table(self, container, priority_groups) {
         pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem && pg.pending, pg.meets_priority_def],
         width: 100,
         format: function format(v) {
-          if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false) {
+          if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false || v && v[0] === "REDACTED") {
             return "REDACTED";
           }
-          //console.log (pg);
           if (v) {
             return v[0] + (v[1] ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' + v[1] + " new</span>" : "");
           }
@@ -55608,11 +55652,8 @@ function draw_priority_set_table(self, container, priority_groups) {
         html: true
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
       }, {
-        // size in my jurisdiction — backend-computed at addJurisdictionSizes()
-        // in hivtrace-secure. Counts both primary-owned nodes and nodes jointly
-        // owned via city-state pairs. Redacted to "REDACTED" when
-        // mjcSizeInJurisdictionEnabled is off.
-        value: pg.size_in_jurisdiction,
+        // Redacted to "REDACTED" when mjcSizeInJurisdictionEnabled is off.
+        value: _mjc_size_in_jurisdiction(self, pg),
         width: 100,
         format: function format(v) {
           if (v === "REDACTED") return "REDACTED";
@@ -55620,7 +55661,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           return String(v);
         },
         html: true,
-        hidden: !self.isMJCNetwork || self.fullMJCNetwork
+        hidden: !self.isMJCNetwork
       }, {
         // meets priority definition
         width: 60,
