@@ -3629,9 +3629,7 @@ var hivtrace_cluster_network_graph = function (
 
         // sort values alphabetically for consistent coloring
 
-        _.each([valid_cats, valid_shapes], (list) => {
-          _.each(list, self._aux_process_category_values);
-        });
+        _.each(valid_cats, self._aux_process_category_values);
 
         /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
@@ -3668,6 +3666,7 @@ var hivtrace_cluster_network_graph = function (
                 if (vrnc < low_var) {
                   low_var = vrnc;
                   d["scale"] = scl;
+                  d["scale_color_stops"] = color_stops;
                 }
               });
             }
@@ -3675,25 +3674,59 @@ var hivtrace_cluster_network_graph = function (
             d["raw_attribute_key"] = k;
 
             if (d.type === "Number" || d.type === "Number-categories") {
+              if (d["scale"] && d["scale_color_stops"] === color_stops) {
+                return d;
+              }
               var values = [];
 
-              let N = self.json.Nodes.length;
-              while (N--) {
-                const v = self.attribute_node_value_by_id(
-                  self.json.Nodes[N],
-                  k,
-                  d.type === "Number"
-                );
-                if (_.isNumber(v)) {
-                  values.push(v);
+              const node_attr_id = kGlobals.network.NodeAttributeID;
+              const is_volatile = self.json[kGlobals.network.GraphAttrbuteID][k].volatile;
+              const is_number_type = d.type === "Number";
+
+              if (is_volatile) {
+                const mapper = self.json[kGlobals.network.GraphAttrbuteID][k].map;
+                let N = self.json.Nodes.length;
+                while (N--) {
+                  const nd = self.json.Nodes[N];
+                  if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
+                    let v = mapper(nd, self);
+                    if (typeof v === "string") {
+                      if (v.length === 0) continue;
+                      if (is_number_type) {
+                        v = Number(v);
+                        if (!isNaN(v)) values.push(v);
+                      }
+                    } else if (typeof v === "number" && !isNaN(v)) {
+                      values.push(v);
+                    }
+                  }
+                }
+              } else {
+                let N = self.json.Nodes.length;
+                while (N--) {
+                  const nd = self.json.Nodes[N];
+                  if (nd && node_attr_id in nd) {
+                    const attrs = nd[node_attr_id];
+                    if (attrs && k in attrs) {
+                      let v = attrs[k];
+                      if (typeof v === "string") {
+                        if (v.length === 0) continue;
+                        if (is_number_type) {
+                          v = Number(v);
+                          if (!isNaN(v)) values.push(v);
+                        }
+                      } else if (typeof v === "number" && !isNaN(v)) {
+                        values.push(v);
+                      }
+                    }
+                  }
                 }
               }
-              /*_.filter(
-                _.map(graph_data.Nodes, (nd) =>
-                  self.attribute_node_value_by_id(nd, k, d.type === "Number")
-                ),
-                (v) => _.isNumber(v)
-              );*/
+
+              if (values.length === 0) {
+                return {};
+              }
+
               // automatically determine the scale and see what spaces the values most evenly
               const range = d3.extent(values);
 
@@ -3713,18 +3746,29 @@ var hivtrace_cluster_network_graph = function (
               }
               determine_scaling(d, values, scales_to_consider);
             } else if (d.type === "Date") {
+              if (d["scale"] && d["scale_color_stops"] === color_stops) {
+                return d;
+              }
               values = _.filter(
                 _.map(graph_data.Nodes, (nd) => {
+                  var a_date = self.attribute_node_value_by_id(nd, k);
+                  if (a_date instanceof Date) {
+                    return a_date;
+                  }
+                  if (a_date === kGlobals.missing.label) {
+                    return null;
+                  }
+                  if (a_date === "REDACTED" && self.isMJCNetwork) {
+                    return "REDACTED";
+                  }
                   try {
-                    var a_date = self.attribute_node_value_by_id(nd, k);
-                    if (d.raw_attribute_key === "hiv_aids_dx_dt") {
-                      //console.log (nd, k, a_date);
-                    }
+                    var parsed = this.parse_dates(a_date);
                     HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
                       nd,
                       k,
-                      this.parse_dates(a_date)
+                      parsed
                     );
+                    return parsed;
                   } catch (err) {
                     if (a_date === "REDACTED" && self.isMJCNetwork) {
                       HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
@@ -3732,17 +3776,18 @@ var hivtrace_cluster_network_graph = function (
                         k,
                         "REDACTED"
                       );
+                      return "REDACTED";
                     } else {
                       HTX.HIVTxNetwork.inject_attribute_node_value_by_id(
                         nd,
                         k,
                         kGlobals.missing.label
                       );
+                      return null;
                     }
                   }
-                  return self.attribute_node_value_by_id(nd, k);
                 }),
-                (v) => (v === kGlobals.missing.label ? null : v)
+                (v) => (v === kGlobals.missing.label || v === "REDACTED" || !v ? null : v)
               );
               // automatically determine the scale and see what spaces the values most evenly
               if (values.length === 0) {
@@ -8575,6 +8620,9 @@ var hivtrace_cluster_network_graph = function (
    * @returns {Object} The updated attribute object.
    */
   self._aux_populate_category_fields = function (d, k) {
+    if (d["value_range"]) {
+      return d;
+    }
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
       d["label"] = k;
@@ -8607,15 +8655,37 @@ var hivtrace_cluster_network_graph = function (
       d.discrete = true;
       d["value_range"] = new Set();
 
-      graph_data.Nodes.forEach((nd) => {
-        d["value_range"].add(self.attribute_node_value_by_id(nd, k));
-      });
+      const node_attr_id = kGlobals.network.NodeAttributeID;
+      const is_volatile = self.json[kGlobals.network.GraphAttrbuteID][k].volatile;
+      const missing_label = kGlobals.missing.label;
 
-      /*_.keys(
-        _.countBy(graph_data.Nodes, (nd) =>
-          self.attribute_node_value_by_id(nd, k)
-        )
-      );*/
+      if (is_volatile) {
+        const mapper = self.json[kGlobals.network.GraphAttrbuteID][k].map;
+        graph_data.Nodes.forEach((nd) => {
+          if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
+            let v = mapper(nd, self);
+            if (typeof v === "string" && v.length === 0) v = missing_label;
+            d["value_range"].add(v || missing_label);
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      } else {
+        graph_data.Nodes.forEach((nd) => {
+          if (nd && node_attr_id in nd) {
+            const attrs = nd[node_attr_id];
+            if (attrs && k in attrs) {
+              let v = attrs[k];
+              if (typeof v === "string" && v.length === 0) v = missing_label;
+              d["value_range"].add(v !== undefined ? v : missing_label);
+            } else {
+              d["value_range"].add(missing_label);
+            }
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      }
 
       d["value_range"] = [...d["value_range"]];
       d["dimension"] = d["value_range"].length;

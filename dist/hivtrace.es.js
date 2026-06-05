@@ -49233,9 +49233,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
 
         // sort values alphabetically for consistent coloring
 
-        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each([valid_cats, valid_shapes], function (list) {
-          underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(list, self._aux_process_category_values);
-        });
+        underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(valid_cats, self._aux_process_category_values);
 
         /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
@@ -49264,25 +49262,62 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
               if (vrnc < low_var) {
                 low_var = vrnc;
                 d["scale"] = scl;
+                d["scale_color_stops"] = color_stops;
               }
             });
           }
           d["raw_attribute_key"] = k;
           if (d.type === "Number" || d.type === "Number-categories") {
+            if (d["scale"] && d["scale_color_stops"] === color_stops) {
+              return d;
+            }
             var values = [];
-            var N = self.json.Nodes.length;
-            while (N--) {
-              var v = self.attribute_node_value_by_id(self.json.Nodes[N], k, d.type === "Number");
-              if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isNumber(v)) {
-                values.push(v);
+            var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+            var is_volatile = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile;
+            var is_number_type = d.type === "Number";
+            if (is_volatile) {
+              var mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+              var N = self.json.Nodes.length;
+              while (N--) {
+                var nd = self.json.Nodes[N];
+                if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
+                  var v = mapper(nd, self);
+                  if (typeof v === "string") {
+                    if (v.length === 0) continue;
+                    if (is_number_type) {
+                      v = Number(v);
+                      if (!isNaN(v)) values.push(v);
+                    }
+                  } else if (typeof v === "number" && !isNaN(v)) {
+                    values.push(v);
+                  }
+                }
+              }
+            } else {
+              var _N = self.json.Nodes.length;
+              while (_N--) {
+                var _nd = self.json.Nodes[_N];
+                if (_nd && node_attr_id in _nd) {
+                  var attrs = _nd[node_attr_id];
+                  if (attrs && k in attrs) {
+                    var _v = attrs[k];
+                    if (typeof _v === "string") {
+                      if (_v.length === 0) continue;
+                      if (is_number_type) {
+                        _v = Number(_v);
+                        if (!isNaN(_v)) values.push(_v);
+                      }
+                    } else if (typeof _v === "number" && !isNaN(_v)) {
+                      values.push(_v);
+                    }
+                  }
+                }
               }
             }
-            /*_.filter(
-              _.map(graph_data.Nodes, (nd) =>
-                self.attribute_node_value_by_id(nd, k, d.type === "Number")
-              ),
-              (v) => _.isNumber(v)
-            );*/
+            if (values.length === 0) {
+              return {};
+            }
+
             // automatically determine the scale and see what spaces the values most evenly
             var range = d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
             var scales_to_consider = [d3__WEBPACK_IMPORTED_MODULE_0__.scale.linear()];
@@ -49300,23 +49335,35 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
             }
             determine_scaling(d, values, scales_to_consider);
           } else if (d.type === "Date") {
+            if (d["scale"] && d["scale_color_stops"] === color_stops) {
+              return d;
+            }
             values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data.Nodes, function (nd) {
+              var a_date = self.attribute_node_value_by_id(nd, k);
+              if (a_date instanceof Date) {
+                return a_date;
+              }
+              if (a_date === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
+                return null;
+              }
+              if (a_date === "REDACTED" && self.isMJCNetwork) {
+                return "REDACTED";
+              }
               try {
-                var a_date = self.attribute_node_value_by_id(nd, k);
-                if (d.raw_attribute_key === "hiv_aids_dx_dt") {
-                  //console.log (nd, k, a_date);
-                }
-                _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, _this3.parse_dates(a_date));
+                var parsed = _this3.parse_dates(a_date);
+                _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, parsed);
+                return parsed;
               } catch (err) {
                 if (a_date === "REDACTED" && self.isMJCNetwork) {
                   _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, "REDACTED");
+                  return "REDACTED";
                 } else {
                   _hiv_tx_network_js__WEBPACK_IMPORTED_MODULE_14__.HIVTxNetwork.inject_attribute_node_value_by_id(nd, k, _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label);
+                  return null;
                 }
               }
-              return self.attribute_node_value_by_id(nd, k);
             }), function (v) {
-              return v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label ? null : v;
+              return v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label || v === "REDACTED" || !v ? null : v;
             });
             // automatically determine the scale and see what spaces the values most evenly
             if (values.length === 0) {
@@ -52577,6 +52624,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {Object} The updated attribute object.
    */
   self._aux_populate_category_fields = function (d, k) {
+    if (d["value_range"]) {
+      return d;
+    }
     d["raw_attribute_key"] = k;
     if (!("label" in d)) {
       d["label"] = k;
@@ -52603,16 +52653,36 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (d["type"] === "String") {
       d.discrete = true;
       d["value_range"] = new Set();
-      graph_data.Nodes.forEach(function (nd) {
-        d["value_range"].add(self.attribute_node_value_by_id(nd, k));
-      });
-
-      /*_.keys(
-        _.countBy(graph_data.Nodes, (nd) =>
-          self.attribute_node_value_by_id(nd, k)
-        )
-      );*/
-
+      var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+      var is_volatile = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile;
+      var missing_label = _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label;
+      if (is_volatile) {
+        var mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+        graph_data.Nodes.forEach(function (nd) {
+          if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
+            var v = mapper(nd, self);
+            if (typeof v === "string" && v.length === 0) v = missing_label;
+            d["value_range"].add(v || missing_label);
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      } else {
+        graph_data.Nodes.forEach(function (nd) {
+          if (nd && node_attr_id in nd) {
+            var attrs = nd[node_attr_id];
+            if (attrs && k in attrs) {
+              var v = attrs[k];
+              if (typeof v === "string" && v.length === 0) v = missing_label;
+              d["value_range"].add(v !== undefined ? v : missing_label);
+            } else {
+              d["value_range"].add(missing_label);
+            }
+          } else {
+            d["value_range"].add(missing_label);
+          }
+        });
+      }
       d["value_range"] = _toConsumableArray(d["value_range"]);
       d["dimension"] = d["value_range"].length;
     }
