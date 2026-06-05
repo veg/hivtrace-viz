@@ -328,6 +328,51 @@ function datamonkey_export_handler(data, filename, mimeType) {
 
 function datamonkey_table_to_text(table_id, sep) {
   sep = sep || "\t";
+  var table = d3.select(table_id);
+  if (!table.empty()) {
+    var tableEl = table.node();
+    if (tableEl && tableEl._full_content) {
+      const current_limit = tableEl._rendered_limit || 200;
+      if (current_limit < tableEl._full_content.length) {
+        const next_limit = tableEl._full_content.length;
+        tableEl._rendered_limit = next_limit;
+
+        const tbody = table.select("tbody");
+        const next_data = tableEl._full_content.slice(current_limit, next_limit);
+
+        tbody
+          .selectAll("tr.extra-row-dummy") // dummy selector to force append
+          .data(next_data)
+          .enter()
+          .append("tr")
+          .selectAll("td")
+          .data((d) => d)
+          .enter()
+          .append("td")
+          .call((selection) =>
+            selection.each(function (d, i) {
+              tableEl._set_table_elements(d, this);
+              tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+            })
+          );
+
+        // Update count shown
+        if (tableEl._table_caption) {
+          tableEl._table_caption
+            .select("[data-hivtrace-ui-role='table-count-shown']")
+            .text(next_limit);
+        }
+
+        // Clean up scroll listener
+        if (tableEl._onScroll && tableEl._scrollParent) {
+          tableEl._scrollParent.removeEventListener("scroll", tableEl._onScroll);
+          tableEl._onScroll = null;
+          tableEl._scrollParent = null;
+        }
+      }
+    }
+  }
+
   var header_row = [];
   var extract_text = function (e) {
     const node = d3.select(e).node();
