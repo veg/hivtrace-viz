@@ -442,22 +442,32 @@ function datamonkey_table_to_text(table_id, sep) {
 */
 
 function getUniqueValues(nodes, schema) {
-  let schema_keys = _.keys(schema);
+  const schema_keys = Object.keys(schema);
+  const num_keys = schema_keys.length;
 
-  let new_obj = {};
-  _.each(schema_keys, (sk) => (new_obj[sk] = new Set()));
+  const new_obj = {};
+  const sets = [];
+  for (let j = 0; j < num_keys; j++) {
+    const key = schema_keys[j];
+    const s = new Set();
+    new_obj[key] = s;
+    sets.push(s);
+  }
 
-  // get attribute diversity to sort on later
-  let pa = _.map(nodes, (n) => _.omit(n.patient_attributes, "_id"));
+  const num_nodes = nodes.length;
+  for (let i = 0; i < num_nodes; i++) {
+    const p = nodes[i].patient_attributes || {};
+    for (let j = 0; j < num_keys; j++) {
+      sets[j].add(p[schema_keys[j]]);
+    }
+  }
 
-  _.each(pa, (p) => {
-    _.each(schema_keys, (sk) => {
-      new_obj[sk].add(p[sk]);
-    });
-  });
-
-  // Get uniques across all keys
-  return _.mapObject(new_obj, (val) => [...val]);
+  const result = {};
+  for (let j = 0; j < num_keys; j++) {
+    const sk = schema_keys[j];
+    result[sk] = Array.from(new_obj[sk]);
+  }
+  return result;
 }
 
 /**
@@ -611,9 +621,16 @@ if (typeof window !== "undefined") {
                 window.updateNetworkLoadingStatus(msg);
               });
 
+              // Pre-compute aggregated records in the background so they are cached on the graph
+              window.updateNetworkLoadingStatus("Aggregating individual level records...");
+              await new Promise((resolve) => setTimeout(resolve, 40));
+              tempNetwork._cached_aggregated_nodes = tempNetwork.aggregate_indvidual_level_records();
+
               // Save stats on graph for the final constructor
               graph._has_multiple_sequences = true;
               graph._primary_key_list = tempNetwork.primary_key_list;
+              graph._primary_key_list_values = tempNetwork.primary_key_list_values;
+              graph._cached_aggregated_nodes = tempNetwork._cached_aggregated_nodes;
               graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
               console.timeEnd("[PERF] Processing multiple sequences async");
             }

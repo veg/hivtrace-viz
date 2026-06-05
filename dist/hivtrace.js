@@ -49215,10 +49215,70 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     }
     self._aux_populate_category_menus = function (subset) {
       var _this3 = this;
+      var tPopStart = performance.now();
       if (button_bar_ui) {
         // decide if the variable can be considered categorical by examining its range
+        var t1 = performance.now();
 
-        //console.log ("self._aux_populate_category_menus");
+        // Single-pass optimization for String attributes
+        var stringAttrsToPopulate = [];
+        for (var _i2 = 0, _Object$entries = Object.entries(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID] || {}); _i2 < _Object$entries.length; _i2++) {
+          var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
+            k = _Object$entries$_i[0],
+            d = _Object$entries$_i[1];
+          if (!d["value_range"] && d["type"] === "String") {
+            d.discrete = true;
+            d["raw_attribute_key"] = k;
+            if (!("label" in d)) {
+              d["label"] = k;
+            }
+            d["value_range_set"] = new Set();
+            d.is_volatile = !!(self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k] && self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile);
+            if (d.is_volatile) {
+              d.mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
+            }
+            stringAttrsToPopulate.push(d);
+          }
+        }
+        if (stringAttrsToPopulate.length > 0) {
+          var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+          var missing_label = _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label;
+          var N = graph_data.Nodes.length;
+          for (var i = 0; i < N; i++) {
+            var nd = graph_data.Nodes[i];
+            var hasAttrs = nd && node_attr_id in nd;
+            var attrs = hasAttrs ? nd[node_attr_id] : null;
+            for (var j = 0; j < stringAttrsToPopulate.length; j++) {
+              var _d2 = stringAttrsToPopulate[j];
+              var _k = _d2["raw_attribute_key"];
+              if (_d2.is_volatile) {
+                if (hasAttrs && _k in attrs) {
+                  var v = _d2.mapper(nd, self);
+                  if (typeof v === "string" && v.length === 0) v = missing_label;
+                  _d2["value_range_set"].add(v || missing_label);
+                } else {
+                  _d2["value_range_set"].add(missing_label);
+                }
+              } else {
+                if (attrs && _k in attrs) {
+                  var _v = attrs[_k];
+                  if (typeof _v === "string" && _v.length === 0) _v = missing_label;
+                  _d2["value_range_set"].add(_v !== undefined ? _v : missing_label);
+                } else {
+                  _d2["value_range_set"].add(missing_label);
+                }
+              }
+            }
+          }
+          for (var _j = 0; _j < stringAttrsToPopulate.length; _j++) {
+            var _d3 = stringAttrsToPopulate[_j];
+            _d3["value_range"] = _toConsumableArray(_d3["value_range_set"]);
+            delete _d3["value_range_set"];
+            delete _d3["is_volatile"];
+            delete _d3["mapper"];
+            _d3["dimension"] = _d3["value_range"].length;
+          }
+        }
         var valid_cats = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID], self._aux_populate_category_fields), function (d, k)
         /*if (d.discrete) {
         console.log (d["value_range"].length);
@@ -49230,10 +49290,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         var valid_shapes = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(valid_cats, function (d) {
           return (!subset || subset.has(d["raw_attribute_key"])) && (d.discrete && d.dimension <= 7 || d["raw_attribute_key"] in self.networkShapeScheme && !d["_hidden_"]);
         });
+        var t2 = performance.now();
 
         // sort values alphabetically for consistent coloring
 
         underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(valid_cats, self._aux_process_category_values);
+        var t3 = performance.now();
 
         /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
@@ -49241,21 +49303,36 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           "color_stops",
         ];*/
 
+        var tScaleStart = performance.now();
         var valid_scales = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID], function (d, k) {
           var color_stops = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].get(self.json, [_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID, k, "color_stops"], _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.ContinuousColorStops);
-          function determine_scaling(d, values, scales) {
+          function determine_scaling(d, values, scales, trueRange) {
             var low_var = Infinity;
-            d["value_range"] = d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
+            d["value_range"] = trueRange || d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
+            var isLarge = values.length > 1000;
+            var sampleSize = isLarge ? 1000 : values.length;
+            var step = isLarge ? Math.floor(values.length / sampleSize) : 1;
             underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(scales, function (scl, i) {
               var bins = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].range(color_stops), function () {
                 return 0;
               });
               scl.range([0, color_stops - 1]).domain(d["value_range"]);
-              var N = values.length;
-              while (N--) {
-                bins[~~scl(values[N])]++; // truncate the value
+              if (isLarge) {
+                for (var _i3 = 0; _i3 < sampleSize; _i3++) {
+                  var val = values[_i3 * step];
+                  var binIdx = ~~scl(val);
+                  if (binIdx >= 0 && binIdx < color_stops) {
+                    bins[binIdx]++;
+                  }
+                }
+              } else {
+                var _N = values.length;
+                while (_N--) {
+                  bins[~~scl(values[_N])]++; // truncate the value
+                }
               }
-              var mean = values.length / color_stops;
+              var actualLen = isLarge ? sampleSize : values.length;
+              var mean = actualLen / color_stops;
               var vrnc = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].reduce(bins, function (p, c) {
                 return p + (c - mean) * (c - mean);
               });
@@ -49271,44 +49348,54 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
             if (d["scale"] && d["scale_color_stops"] === color_stops) {
               return d;
             }
+
+            // Get the true extent (min/max range) from the pre-computed unique values
+            var numericUniqs = (self.uniqValues[k] || []).map(Number).filter(function (v) {
+              return !isNaN(v);
+            });
+            var range = d3__WEBPACK_IMPORTED_MODULE_0__.extent(numericUniqs);
             var values = [];
-            var node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
+            var _node_attr_id = _globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID;
             var is_volatile = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].volatile;
             var is_number_type = d.type === "Number";
+            var nodes = self.json.Nodes || [];
+            var nodesLen = nodes.length;
+            var maxSampleNodes = 5000;
+            var isLargeNodes = nodesLen > maxSampleNodes;
+            var stepNodes = isLargeNodes ? Math.floor(nodesLen / maxSampleNodes) : 1;
+            var limitNodes = isLargeNodes ? maxSampleNodes : nodesLen;
             if (is_volatile) {
               var mapper = self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID][k].map;
-              var N = self.json.Nodes.length;
-              while (N--) {
-                var nd = self.json.Nodes[N];
-                if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
-                  var v = mapper(nd, self);
-                  if (typeof v === "string") {
-                    if (v.length === 0) continue;
+              for (var idx = 0; idx < limitNodes; idx++) {
+                var _nd = nodes[isLargeNodes ? idx * stepNodes : idx];
+                if (_nd && _node_attr_id in _nd && k in _nd[_node_attr_id]) {
+                  var _v2 = mapper(_nd, self);
+                  if (typeof _v2 === "string") {
+                    if (_v2.length === 0) continue;
                     if (is_number_type) {
-                      v = Number(v);
-                      if (!isNaN(v)) values.push(v);
+                      _v2 = Number(_v2);
+                      if (!isNaN(_v2)) values.push(_v2);
                     }
-                  } else if (typeof v === "number" && !isNaN(v)) {
-                    values.push(v);
+                  } else if (typeof _v2 === "number" && !isNaN(_v2)) {
+                    values.push(_v2);
                   }
                 }
               }
             } else {
-              var _N = self.json.Nodes.length;
-              while (_N--) {
-                var _nd = self.json.Nodes[_N];
-                if (_nd && node_attr_id in _nd) {
-                  var attrs = _nd[node_attr_id];
-                  if (attrs && k in attrs) {
-                    var _v = attrs[k];
-                    if (typeof _v === "string") {
-                      if (_v.length === 0) continue;
+              for (var _idx = 0; _idx < limitNodes; _idx++) {
+                var _nd2 = nodes[isLargeNodes ? _idx * stepNodes : _idx];
+                if (_nd2 && _node_attr_id in _nd2) {
+                  var _attrs = _nd2[_node_attr_id];
+                  if (_attrs && k in _attrs) {
+                    var _v3 = _attrs[k];
+                    if (typeof _v3 === "string") {
+                      if (_v3.length === 0) continue;
                       if (is_number_type) {
-                        _v = Number(_v);
-                        if (!isNaN(_v)) values.push(_v);
+                        _v3 = Number(_v3);
+                        if (!isNaN(_v3)) values.push(_v3);
                       }
-                    } else if (typeof _v === "number" && !isNaN(_v)) {
-                      values.push(_v);
+                    } else if (typeof _v3 === "number" && !isNaN(_v3)) {
+                      values.push(_v3);
                     }
                   }
                 }
@@ -49317,9 +49404,6 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
             if (values.length === 0) {
               return {};
             }
-
-            // automatically determine the scale and see what spaces the values most evenly
-            var range = d3__WEBPACK_IMPORTED_MODULE_0__.extent(values);
             var scales_to_consider = [d3__WEBPACK_IMPORTED_MODULE_0__.scale.linear()];
             if (!d.is_integer) {
               if (range[0] > 0) {
@@ -49333,12 +49417,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
                 scales_to_consider.push(d3__WEBPACK_IMPORTED_MODULE_0__.scale.pow().exponent(1 / 16));
               }
             }
-            determine_scaling(d, values, scales_to_consider);
+            determine_scaling(d, values, scales_to_consider, range);
           } else if (d.type === "Date") {
             if (d["scale"] && d["scale_color_stops"] === color_stops) {
               return d;
             }
-            values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data.Nodes, function (nd) {
+            var _values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(graph_data.Nodes, function (nd) {
               var a_date = self.attribute_node_value_by_id(nd, k);
               if (a_date instanceof Date) {
                 return a_date;
@@ -49366,16 +49450,17 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
               return v === _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label || v === "REDACTED" || !v ? null : v;
             });
             // automatically determine the scale and see what spaces the values most evenly
-            if (values.length === 0) {
+            if (_values.length === 0) {
               // invalid scale
               return {};
             }
-            determine_scaling(d, values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale.utc()]);
+            determine_scaling(d, _values, [d3__WEBPACK_IMPORTED_MODULE_0__.time.scale.utc()]);
           }
           return d;
         }), function (d) {
           return (d.type === "Number" || d.type === "Date" || d.type === "Number-categories") && !d["_hidden_"];
         });
+        var tScaleEnd = performance.now();
         var _menu_label_gen = function _menu_label_gen(d) {
           return (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
         };
@@ -49504,6 +49589,8 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         if (self._setup_mjc_filter_ui) {
           self._setup_mjc_filter_ui();
         }
+        var tPopEnd = performance.now();
+        console.log("[PERF_DETAIL] _aux_populate_category_menus: total = ".concat((tPopEnd - tPopStart).toFixed(2), "ms\n") + "  - valid_cats filter/fields = ".concat((t2 - t1).toFixed(2), "ms\n") + "  - _aux_process_category_values = ".concat((t3 - t2).toFixed(2), "ms\n") + "  - valid_scales & determine_scaling = ".concat((tScaleEnd - tScaleStart).toFixed(2), "ms\n") + "  - D3 UI Menu rendering = ".concat((tPopEnd - tScaleEnd).toFixed(2), "ms"));
       }
     };
     var initSteps = [];
@@ -49547,10 +49634,10 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         name: "Transforming predefined attributes...",
         run: function run() {
           console.time("[PERF] populate_predefined_attribute");
-          for (var _i2 = 0, _Object$entries = Object.entries(self._networkPredefinedAttributeTransforms); _i2 < _Object$entries.length; _i2++) {
-            var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
-              key = _Object$entries$_i[0],
-              def = _Object$entries$_i[1];
+          for (var _i4 = 0, _Object$entries2 = Object.entries(self._networkPredefinedAttributeTransforms); _i4 < _Object$entries2.length; _i4++) {
+            var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i4], 2),
+              key = _Object$entries2$_i[0],
+              def = _Object$entries2$_i[1];
             self.populate_predefined_attribute(def, key);
           }
           console.timeEnd("[PERF] populate_predefined_attribute");
@@ -52601,18 +52688,18 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     });
     if (!haz_null) {
       the_matrix.pop();
-      for (var _i3 = 0; _i3 < dim - 1; _i3 += 1) {
-        the_matrix[_i3].pop();
+      for (var _i5 = 0; _i5 < dim - 1; _i5 += 1) {
+        the_matrix[_i5].pop();
       }
     }
 
     // symmetrize the matrix
 
     dim = the_matrix.length;
-    for (var _i4 = 0; _i4 < dim; _i4 += 1) {
-      for (var _j = _i4; _j < dim; _j += 1) {
-        the_matrix[_i4][_j] += the_matrix[_j][_i4];
-        the_matrix[_j][_i4] = the_matrix[_i4][_j];
+    for (var _i6 = 0; _i6 < dim; _i6 += 1) {
+      for (var _j2 = _i6; _j2 < dim; _j2 += 1) {
+        the_matrix[_i6][_j2] += the_matrix[_j2][_i6];
+        the_matrix[_j2][_i6] = the_matrix[_i6][_j2];
       }
     }
     return the_matrix;
@@ -52715,6 +52802,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {Object} The updated attribute object.
    */
   self._aux_process_category_values = function (d) {
+    var cacheKey = d["raw_attribute_key"];
+    self._category_cache = self._category_cache || {};
+    var cache = self._category_cache[cacheKey];
+    if (d["stable-ish order"] && cache && cache.nodes_ref === self.nodes && cache.nodes_len === self.nodes.length) {
+      return d;
+    }
     var values,
       reduced_range = null;
     delete d["reduced_value_range"];
@@ -52723,18 +52816,23 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     } else if (d["type"] === "String") {
       values = d["value_range"].sort();
       if (d.dimension > _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories) {
-        var compressed_values = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].chain(self.nodes).countBy(function (node) {
-          return self.attribute_node_value_by_id(node, d["raw_attribute_key"]);
-        }).pairs().sortBy(function (d) {
-          return -d[1];
-        }).value();
+        var counts = {};
+        var rawKey = d["raw_attribute_key"];
+        var len = self.nodes.length;
+        for (var _i8 = 0; _i8 < len; _i8++) {
+          var val = self.attribute_node_value_by_id(self.nodes[_i8], rawKey);
+          counts[val] = (counts[val] || 0) + 1;
+        }
+        var compressed_values = Object.entries(counts).sort(function (a, b) {
+          return b[1] - a[1];
+        });
         reduced_range = [];
-        var _i5 = 0;
-        while (reduced_range.length < _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories - 1 && _i5 < compressed_values.length) {
-          if (compressed_values[_i5][0] !== _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
-            reduced_range.push(compressed_values[_i5][0]);
+        var _i7 = 0;
+        while (reduced_range.length < _globals_js__WEBPACK_IMPORTED_MODULE_12__.MaximumValuesInCategories - 1 && _i7 < compressed_values.length) {
+          if (compressed_values[_i7][0] !== _globals_js__WEBPACK_IMPORTED_MODULE_12__.missing.label) {
+            reduced_range.push(compressed_values[_i7][0]);
           }
-          _i5++;
+          _i7++;
         }
         reduced_range = reduced_range.sort();
         reduced_range.push(_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.ReducedValue);
@@ -52807,6 +52905,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           return key === "lookup" ? underscore__WEBPACK_IMPORTED_MODULE_1__["default"].invert(map) : map;
         }
         return map[v];
+      };
+    }
+    if (cacheKey) {
+      self._category_cache[cacheKey] = {
+        nodes_ref: self.nodes,
+        nodes_len: self.nodes.length
       };
     }
     return d;
@@ -56271,12 +56375,6 @@ function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" =
 function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator.return && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) { if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; } return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) { keys.push(key); } return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) { "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); } }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, catch: function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 var download = __webpack_require__(/*! downloadjs */ "./node_modules/downloadjs/download.js");
 var _OTHER = {"network":"Network","networks":"Networks","statistics":"Statistics","cluster":"Cluster","clusters":"Clusters","subclusters":"Sub-Clusters","subcluster":"Sub-Cluster","nodes":"Nodes","attributes":"Attributes","missing":"Missing","yes_sure":"Yes, I am sure","cancel":"Cancel","other":"Other","caution":"Caution","warning":"Warning","yes":"Yes","no":"No","next":"Next","success":"Success","error":"Error","continue":"Continue","uid":"UID","genetic_sequences":"Genetic Sequences"}["other"];
 var CATEGORY_UNIQUE_VALUE_LIMIT = 12;
@@ -56633,26 +56731,29 @@ function datamonkey_table_to_text(table_id, sep) {
 */
 
 function getUniqueValues(nodes, schema) {
-  var schema_keys = _.keys(schema);
+  var schema_keys = Object.keys(schema);
+  var num_keys = schema_keys.length;
   var new_obj = {};
-  _.each(schema_keys, function (sk) {
-    return new_obj[sk] = new Set();
-  });
-
-  // get attribute diversity to sort on later
-  var pa = _.map(nodes, function (n) {
-    return _.omit(n.patient_attributes, "_id");
-  });
-  _.each(pa, function (p) {
-    _.each(schema_keys, function (sk) {
-      new_obj[sk].add(p[sk]);
-    });
-  });
-
-  // Get uniques across all keys
-  return _.mapObject(new_obj, function (val) {
-    return _toConsumableArray(val);
-  });
+  var sets = [];
+  for (var j = 0; j < num_keys; j++) {
+    var key = schema_keys[j];
+    var s = new Set();
+    new_obj[key] = s;
+    sets.push(s);
+  }
+  var num_nodes = nodes.length;
+  for (var i = 0; i < num_nodes; i++) {
+    var p = nodes[i].patient_attributes || {};
+    for (var _j = 0; _j < num_keys; _j++) {
+      sets[_j].add(p[schema_keys[_j]]);
+    }
+  }
+  var result = {};
+  for (var _j2 = 0; _j2 < num_keys; _j2++) {
+    var sk = schema_keys[_j2];
+    result[sk] = Array.from(new_obj[sk]);
+  }
+  return result;
 }
 
 /**
@@ -56823,7 +56924,7 @@ if (typeof window !== "undefined") {
                     tempNetwork = new HIVTxNetwork(graph, null, null, true);
                     console.timeEnd("[PERF] Extracting clusters and nodes");
                     if (!tempNetwork.has_multiple_sequences) {
-                      _context.next = 29;
+                      _context.next = 35;
                       break;
                     }
                     console.time("[PERF] Processing multiple sequences async");
@@ -56832,19 +56933,30 @@ if (typeof window !== "undefined") {
                       window.updateNetworkLoadingStatus(msg);
                     });
                   case 25:
-                    // Save stats on graph for the final constructor
-                    graph._has_multiple_sequences = true;
-                    graph._primary_key_list = tempNetwork.primary_key_list;
-                    graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
-                    console.timeEnd("[PERF] Processing multiple sequences async");
-                  case 29:
-                    window.updateNetworkLoadingStatus("Generating layout & SVG...");
-                    _context.next = 32;
+                    // Pre-compute aggregated records in the background so they are cached on the graph
+                    window.updateNetworkLoadingStatus("Aggregating individual level records...");
+                    _context.next = 28;
                     return new Promise(function (resolve) {
                       return setTimeout(resolve, 40);
                     });
-                  case 32:
-                    _context.prev = 32;
+                  case 28:
+                    tempNetwork._cached_aggregated_nodes = tempNetwork.aggregate_indvidual_level_records();
+
+                    // Save stats on graph for the final constructor
+                    graph._has_multiple_sequences = true;
+                    graph._primary_key_list = tempNetwork.primary_key_list;
+                    graph._primary_key_list_values = tempNetwork.primary_key_list_values;
+                    graph._cached_aggregated_nodes = tempNetwork._cached_aggregated_nodes;
+                    graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
+                    console.timeEnd("[PERF] Processing multiple sequences async");
+                  case 35:
+                    window.updateNetworkLoadingStatus("Generating layout & SVG...");
+                    _context.next = 38;
+                    return new Promise(function (resolve) {
+                      return setTimeout(resolve, 40);
+                    });
+                  case 38:
+                    _context.prev = 38;
                     console.time("[PERF] Synchronous clusterNetwork Constructor");
                     result = val.apply(selfContext, args);
                     console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
@@ -56859,41 +56971,41 @@ if (typeof window !== "undefined") {
                       }
                     }
                     return _context.abrupt("return", result);
-                  case 41:
-                    _context.prev = 41;
-                    _context.t0 = _context["catch"](32);
+                  case 47:
+                    _context.prev = 47;
+                    _context.t0 = _context["catch"](38);
                     console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
                     console.error(_context.t0);
                     if (window.finalizeNetworkLoading) {
                       window.finalizeNetworkLoading();
                     }
-                  case 46:
-                    _context.next = 61;
+                  case 52:
+                    _context.next = 67;
                     break;
-                  case 48:
-                    _context.prev = 48;
+                  case 54:
+                    _context.prev = 54;
                     _context.t1 = _context["catch"](0);
                     console.error("Error during async network preprocessing:", _context.t1);
                     // Fallback: run synchronous init anyway
-                    _context.prev = 51;
+                    _context.prev = 57;
                     _result = val.apply(selfContext, args);
                     if (window.finalizeNetworkLoading) {
                       window.finalizeNetworkLoading();
                     }
                     return _context.abrupt("return", _result);
-                  case 57:
-                    _context.prev = 57;
-                    _context.t2 = _context["catch"](51);
+                  case 63:
+                    _context.prev = 63;
+                    _context.t2 = _context["catch"](57);
                     console.error(_context.t2);
                     if (window.finalizeNetworkLoading) {
                       window.finalizeNetworkLoading();
                     }
-                  case 61:
+                  case 67:
                   case "end":
                     return _context.stop();
                 }
               }
-            }, _callee, null, [[0, 48], [32, 41], [51, 57]]);
+            }, _callee, null, [[0, 54], [38, 47], [57, 63]]);
           }));
           return _runInit.apply(this, arguments);
         }
@@ -57834,6 +57946,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       }
       return key;
     };
+    this._raw_primary_key = raw_primary_key;
     this.primary_key = function (node) {
       if (node && _typeof(node) === "object") {
         if (node._primary_key !== undefined) {
@@ -57843,8 +57956,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       }
       return raw_primary_key(node);
     };
+    console.time("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
     this.tabulate_multiple_sequences();
-    this._cached_aggregated_nodes = this.aggregate_indvidual_level_records();
+    console.timeEnd("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
+    this._cached_aggregated_nodes = null;
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
@@ -57963,11 +58078,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "tabulate_multiple_sequences",
     value: function tabulate_multiple_sequences() {
-      var _this8 = this;
       if (this.json._has_multiple_sequences) {
         this.has_multiple_sequences = true;
         this.legend_multiple_sequences = true;
         this.primary_key_list = this.json._primary_key_list;
+        this.primary_key_list_values = this.json._primary_key_list_values;
         this.entities_in_multiple_clusters = this.json._entities_in_multiple_clusters;
         return;
       }
@@ -57977,58 +58092,104 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           [primary key] => [array of IDs]
       */
       this.primary_key_list = {};
+      this.primary_key_list_values = [];
       this.has_multiple_sequences = false;
-      _.each(this.json.Nodes, function (n) {
-        var p_key = _this8.primary_key(n);
-        if (!(p_key in _this8.primary_key_list)) {
-          _this8.primary_key_list[p_key] = [n];
-        } else {
-          _this8.primary_key_list[p_key].push(n);
-          _this8.has_multiple_sequences = true;
-          _this8.legend_multiple_sequences = true;
+      var duplicateKeys = [];
+      var nodes = this.json.Nodes || [];
+      var len = nodes.length;
+
+      // Fast path: cache primary key helper function
+      var raw_pkey_fn = this._raw_primary_key;
+      for (var i = 0; i < len; i++) {
+        var n = nodes[i];
+        var p_key = n._primary_key;
+        if (p_key === undefined) {
+          if (raw_pkey_fn) {
+            p_key = raw_pkey_fn(n);
+          } else {
+            var key = n.id || n.name || "";
+            var idx = key.indexOf("|");
+            p_key = idx >= 0 ? key.substring(0, idx) : key;
+          }
+          n._primary_key = p_key;
         }
-        if (!_this8.legend_multiple_sequences) {
-          if (n[kGlobals.network.AliasedSequencesID]) {
-            _this8.legend_multiple_sequences = true;
+        var list = this.primary_key_list[p_key];
+        if (list === undefined) {
+          var newList = [n];
+          this.primary_key_list[p_key] = newList;
+          this.primary_key_list_values.push(newList);
+        } else {
+          if (list.length === 1) {
+            duplicateKeys.push(p_key);
+          }
+          list.push(n);
+          this.has_multiple_sequences = true;
+          this.legend_multiple_sequences = true;
+        }
+      }
+      if (!this.legend_multiple_sequences) {
+        var aliasKey = kGlobals.network.AliasedSequencesID;
+        for (var _i = 0; _i < len; _i++) {
+          if (nodes[_i][aliasKey]) {
+            this.legend_multiple_sequences = true;
+            break;
           }
         }
-      });
+      }
 
       /**
           iterate over all duplicate sequences, synchronize node attributes
       */
       if (this.has_multiple_sequences) {
-        _.each(this.primary_key_list, function (seqs, primary_id) {
-          if (seqs.length > 1) {
-            var consensus_attributes = {};
-            _.each(seqs, function (seq_record) {
-              _.each(seq_record[kGlobals.network.NodeAttributeID], function (v, k) {
-                if (!(k in consensus_attributes)) {
+        var numDupes = duplicateKeys.length;
+        for (var dIdx = 0; dIdx < numDupes; dIdx++) {
+          var primary_id = duplicateKeys[dIdx];
+          var seqs = this.primary_key_list[primary_id];
+          var consensus_attributes = {};
+          var seqsLen = seqs.length;
+          for (var sIdx = 0; sIdx < seqsLen; sIdx++) {
+            var seq_record = seqs[sIdx];
+            var attrs = seq_record[kGlobals.network.NodeAttributeID] || {};
+            for (var k in attrs) {
+              if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+                var v = attrs[k];
+                if (consensus_attributes[k] === undefined) {
                   consensus_attributes[k] = [v];
                 } else {
                   consensus_attributes[k].push(v);
                 }
-              });
-            });
-
-            // only copy values if there's strict consensus
-
-            consensus_attributes = _.omit(_.mapObject(consensus_attributes, function (d, k) {
-              var freq = _.countBy(d, function (i) {
-                return i;
-              });
-              if (_.size(freq) == 1) {
-                return d[0];
               }
-              return null;
-            }), function (d) {
-              return !d;
-            });
-            _.each(seqs, function (seq_record) {
-              _.extend(seq_record[kGlobals.network.NodeAttributeID], consensus_attributes);
-            });
+            }
           }
-        });
+
+          // consensus check: only copy values if all seqs have the exact same value for that attribute
+          var final_consensus = {};
+          for (var _k in consensus_attributes) {
+            if (Object.prototype.hasOwnProperty.call(consensus_attributes, _k)) {
+              var vals = consensus_attributes[_k];
+              var firstVal = vals[0];
+              var hasConsensus = true;
+              for (var _i2 = 1; _i2 < vals.length; _i2++) {
+                if (vals[_i2] !== firstVal) {
+                  hasConsensus = false;
+                  break;
+                }
+              }
+              if (hasConsensus && firstVal !== null && firstVal !== undefined) {
+                final_consensus[_k] = firstVal;
+              }
+            }
+          }
+          for (var _sIdx = 0; _sIdx < seqsLen; _sIdx++) {
+            var _seq_record = seqs[_sIdx];
+            var _attrs = _seq_record[kGlobals.network.NodeAttributeID];
+            if (!_attrs) {
+              _attrs = {};
+              _seq_record[kGlobals.network.NodeAttributeID] = _attrs;
+            }
+            Object.assign(_attrs, final_consensus);
+          }
+        }
       }
     }
 
@@ -58148,7 +58309,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "process_multiple_sequences",
     value: function process_multiple_sequences(reduce_distance_within, reduce_distance_between) {
-      var _this9 = this;
+      var _this8 = this;
       if (this.json._has_multiple_sequences) {
         return;
       }
@@ -58167,7 +58328,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         });
         var nodes_to_delete = new Set();
         _.each(clusters, function (cluster, cluster_index) {
-          var entity_list = _this9.unique_entity_list(cluster);
+          var entity_list = _this8.unique_entity_list(cluster);
           if (entity_list.length == 1) {
             _.each(cluster, function (ncn) {
               nodes_to_delete.add(ncn.id);
@@ -58203,7 +58364,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             })) {
               return;
             }
-            var uel = _this9.unique_entity_object_list(cluster);
+            var uel = _this8.unique_entity_object_list(cluster);
             _.each(uel, function (dup_seqs, uid) {
               if (dup_seqs.length > 1) {
                 (function () {
@@ -58288,7 +58449,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "process_multiple_sequences_async",
     value: function () {
       var _process_multiple_sequences_async = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(status_callback) {
-        var _this10 = this;
+        var _this9 = this;
         return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
@@ -58311,14 +58472,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                             return setTimeout(resolve, 0);
                           });
                         case 5:
-                          clusters = misc.hivtrace_cluster_depthwise_traversal(_this10.json.Nodes, _this10.json.Edges);
+                          clusters = misc.hivtrace_cluster_depthwise_traversal(_this9.json.Nodes, _this9.json.Edges);
                           if (status_callback) status_callback("Finding complete clusters...");
                           _context.next = 9;
                           return new Promise(function (resolve) {
                             return setTimeout(resolve, 0);
                           });
                         case 9:
-                          complete_clusters = misc.hivtrace_cluster_depthwise_traversal(_this10.json.Nodes, _this10.json.Edges, function (d) {
+                          complete_clusters = misc.hivtrace_cluster_depthwise_traversal(_this9.json.Nodes, _this9.json.Edges, function (d) {
                             return d.length <= reduce_distance_within;
                           });
                           if (status_callback) status_callback("Computing adjacency map (between)...");
@@ -58327,7 +58488,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                             return setTimeout(resolve, 0);
                           });
                         case 13:
-                          adjacency = misc.hivtrace_compute_adjacency(_this10.json.Nodes, _this10.json.Edges, function (d) {
+                          adjacency = misc.hivtrace_compute_adjacency(_this9.json.Nodes, _this9.json.Edges, function (d) {
                             return d.length <= reduce_distance_between;
                           });
                           if (status_callback) status_callback("Computing adjacency map (0.005)...");
@@ -58336,7 +58497,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                             return setTimeout(resolve, 0);
                           });
                         case 17:
-                          adjacency05 = misc.hivtrace_compute_adjacency(_this10.json.Nodes, _this10.json.Edges, function (d) {
+                          adjacency05 = misc.hivtrace_compute_adjacency(_this9.json.Nodes, _this9.json.Edges, function (d) {
                             return d.length <= 0.005;
                           });
                           if (status_callback) status_callback("Identifying singletons...");
@@ -58347,7 +58508,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                         case 21:
                           nodes_to_delete = new Set();
                           _.each(clusters, function (cluster, cluster_index) {
-                            var entity_list = _this10.unique_entity_list(cluster);
+                            var entity_list = _this9.unique_entity_list(cluster);
                             if (entity_list.length == 1) {
                               _.each(cluster, function (ncn) {
                                 nodes_to_delete.add(ncn.id);
@@ -58408,7 +58569,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                           }
                           return _context.abrupt("continue", 41);
                         case 39:
-                          uel = _this10.unique_entity_object_list(cluster);
+                          uel = _this9.unique_entity_object_list(cluster);
                           _.each(uel, function (dup_seqs, uid) {
                             if (dup_seqs.length > 1) {
                               (function () {
@@ -58468,7 +58629,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                             new_edge_set = [];
                             old_node_idx_to_new_node_idx = [];
                             new_counter = 0;
-                            _.each(_this10.json.Nodes, function (n, i) {
+                            _.each(_this9.json.Nodes, function (n, i) {
                               if (nodes_to_delete.has(n.id)) {
                                 old_node_idx_to_new_node_idx.push(-1);
                               } else {
@@ -58477,7 +58638,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                                 new_counter++;
                               }
                             });
-                            _.each(_this10.json.Edges, function (e, i) {
+                            _.each(_this9.json.Edges, function (e, i) {
                               var new_source = old_node_idx_to_new_node_idx[e.source],
                                 new_target = old_node_idx_to_new_node_idx[e.target];
                               if (new_source >= 0 && new_target >= 0) {
@@ -58486,9 +58647,9 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                                 new_edge_set.push(e);
                               }
                             });
-                            _this10.json.Nodes = new_node_list;
-                            _this10.json.Edges = new_edge_set;
-                            _this10.tabulate_multiple_sequences();
+                            _this9.json.Nodes = new_node_list;
+                            _this9.json.Edges = new_edge_set;
+                            _this9.tabulate_multiple_sequences();
                           }
                         case 52:
                         case "end":
@@ -58578,7 +58739,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "simplify_multisequence_cluster",
     value: function simplify_multisequence_cluster(filtered_json) {
-      var _this11 = this;
+      var _this10 = this;
       /**
               20241030 SLKP
               Perform a greedy collapse of all the sequences that map to the same primary key
@@ -58586,7 +58747,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           */
 
       var reduced_nodes = _.pairs(_.mapObject(this.unique_entity_object_list(filtered_json.Nodes), function (v) {
-        return _this11.aggregate_indvidual_level_records(v)[0];
+        return _this10.aggregate_indvidual_level_records(v)[0];
       }));
       var uid_index = _.object(_.map(reduced_nodes, function (d, i) {
         return [d[0], i];
@@ -58749,11 +58910,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "map_ids_to_objects",
     value: /** create a map between node IDs and node objects */
     function map_ids_to_objects() {
-      var _this12 = this;
+      var _this11 = this;
       if (!this.node_id_to_object) {
         this.node_id_to_object = {};
         _.each(this.json.Nodes, function (n, i) {
-          _this12.node_id_to_object[n.id] = n;
+          _this11.node_id_to_object[n.id] = n;
         });
       }
     }
@@ -59000,7 +59161,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "priority_groups_validate",
     value: function priority_groups_validate(groups, auto_extend) {
-      var _this13 = this;
+      var _this12 = this;
       if (_.some(groups, function (g) {
         return !g.validated;
       })) {
@@ -59008,9 +59169,9 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         var priority_subclusters = _.chain(this.clusters).map("subclusters").flatten().filter(function (sc) {
           return sc.priority_score.length;
         }).map("priority_score").flatten(1).map(function (d) {
-          return _this13.unique_entity_list_from_ids(d);
+          return _this12.unique_entity_list_from_ids(d);
         }).filter(function (d) {
-          return d.length >= _this13.CDC_data["autocreate-priority-set-size"];
+          return d.length >= _this12.CDC_data["autocreate-priority-set-size"];
         }).map(function (d) {
           return new Set(d);
         }).value();
@@ -59099,8 +59260,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             var do_not_add_duplicates = new Set();
             _.each(pg.nodes, function (node) {
               var nodeid = node.name;
-              if (nodeid in _this13.node_id_to_object) {
-                var n = _this13.node_id_to_object[nodeid];
+              if (nodeid in _this12.node_id_to_object) {
+                var n = _this12.node_id_to_object[nodeid];
                 existing_subclusters.add(n.subcluster_label);
                 existing_clusters.add(n.cluster);
                 pg.node_objects.push(n);
@@ -59118,8 +59279,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                           the sequences belong
                       (3) they will be handled in the next step
                 */
-                if (_this13.has_multiple_sequences) {
-                  var entities = _this13.primary_key_list[nodeid];
+                if (_this12.has_multiple_sequences) {
+                  var entities = _this12.primary_key_list[nodeid];
                   if (entities) {
                     if (entities.length == 1) {
                       node.name = entities[0].id;
@@ -59272,7 +59433,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                 if (pair[0].length) {
                   var desc = {};
                   _.each(pair[0], function (n) {
-                    var k = _this13.primary_key("id" in n ? n : {
+                    var k = _this12.primary_key("id" in n ? n : {
                       id: n.name
                     });
                     if (!(k in desc)) {
@@ -59303,14 +59464,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             /** all the network nodes connected to the nodes in the CoI at 1.5%; directly or indirectly*/
 
             if (!traversal_cache) {
-              traversal_cache = [misc.hivtrace_compute_adjacency_with_edges(_this13.json["Nodes"], _this13.json["Edges"], function (e) {
+              traversal_cache = [misc.hivtrace_compute_adjacency_with_edges(_this12.json["Nodes"], _this12.json["Edges"], function (e) {
                 return e.length <= 0.015;
-              }), misc.hivtrace_compute_adjacency_with_edges(_this13.json["Nodes"], _this13.json["Edges"], function (e) {
-                return e.length <= _this13.subcluster_threshold;
+              }), misc.hivtrace_compute_adjacency_with_edges(_this12.json["Nodes"], _this12.json["Edges"], function (e) {
+                return e.length <= _this12.subcluster_threshold;
               })];
             }
             var saved_traversal_edges = [];
-            var node_set15 = _.flatten(misc.hivtrace_cluster_depthwise_traversal(_this13.json["Nodes"], _this13.json["Edges"], function (e) {
+            var node_set15 = _.flatten(misc.hivtrace_cluster_depthwise_traversal(_this12.json["Nodes"], _this12.json["Edges"], function (e) {
               return e.length <= 0.015;
             }, saved_traversal_edges, pg.node_objects, null, traversal_cache[0]));
             var saved_traversal_edges_sub = [];
@@ -59318,8 +59479,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             /** all the network nodes connected to the nodes in the subcluster threshold (0.5%);
                 also saves all the edges that have been taken if auto_extend is true  */
 
-            var node_set_subcluster = _.flatten(misc.hivtrace_cluster_depthwise_traversal(_this13.json["Nodes"], _this13.json["Edges"], function (e) {
-              return e.length <= _this13.subcluster_threshold;
+            var node_set_subcluster = _.flatten(misc.hivtrace_cluster_depthwise_traversal(_this12.json["Nodes"], _this12.json["Edges"], function (e) {
+              return e.length <= _this12.subcluster_threshold;
             }, saved_traversal_edges_sub, pg.node_objects, null, traversal_cache[1]));
 
             //console.log (saved_traversal_edges)
@@ -59328,8 +59489,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
 
             /** all the network nodes connected to the nodes in the CoI at 1.5%; only directly */
 
-            var json15 = _this13.extract_single_cluster(node_set15, function (e) {
-              return e.length <= 0.015 && (my_nodeset.has(_this13.json["Nodes"][e.target].id) || my_nodeset.has(_this13.json["Nodes"][e.source].id));
+            var json15 = _this12.extract_single_cluster(node_set15, function (e) {
+              return e.length <= 0.015 && (my_nodeset.has(_this12.json["Nodes"][e.target].id) || my_nodeset.has(_this12.json["Nodes"][e.source].id));
             },
             //null,
             true, saved_traversal_edges);
@@ -59343,11 +59504,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                 }
               });
             });
-            var current_time = _this13.get_reference_date();
+            var current_time = _this12.get_reference_date();
 
             /**  extract the 1.5% cluster network object */
-            var json_subcluster = _this13.extract_single_cluster(node_set_subcluster, function (e) {
-              return e.length <= _this13.subcluster_threshold && (my_nodeset.has(_this13.json["Nodes"][e.target].id) || my_nodeset.has(_this13.json["Nodes"][e.source].id));
+            var json_subcluster = _this12.extract_single_cluster(node_set_subcluster, function (e) {
+              return e.length <= _this12.subcluster_threshold && (my_nodeset.has(_this12.json["Nodes"][e.target].id) || my_nodeset.has(_this12.json["Nodes"][e.source].id));
             }, true, saved_traversal_edges_sub);
             var direct_subcluster = new Set();
             var direct_subcluster_new = new Set();
@@ -59359,7 +59520,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               _.each([e.source, e.target], function (nid) {
                 if (!my_nodeset.has(json_subcluster["Nodes"][nid].id)) {
                   direct_subcluster.add(json_subcluster["Nodes"][nid].id);
-                  if (_this13.filter_by_date(pg.modified || pg.created, timeDateUtil._networkCDCDateField, current_time, json_subcluster["Nodes"][nid], true)) {
+                  if (_this12.filter_by_date(pg.modified || pg.created, timeDateUtil._networkCDCDateField, current_time, json_subcluster["Nodes"][nid], true)) {
                     direct_subcluster_new.add(json_subcluster["Nodes"][nid].id);
                   }
                 }
@@ -59377,7 +59538,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               _.each(ns[0], function (n) {
                 if (my_nodeset.has(n.id)) return;
                 var key;
-                if (_this13.filter_by_date(pg.modified || pg.created, timeDateUtil._networkCDCDateField, current_time, n, true)) {
+                if (_this12.filter_by_date(pg.modified || pg.created, timeDateUtil._networkCDCDateField, current_time, n, true)) {
                   key = "new";
                 } else {
                   key = "existing";
@@ -59392,10 +59553,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               return nodesets;
             });
             if (auto_extend && pg.tracking !== kGlobals.CDCCOITrackingOptionsNone) {
-              var added_nodes = _this13.auto_expand_pg_handler(pg, nodeID2idx, edgesByNode);
+              var added_nodes = _this12.auto_expand_pg_handler(pg, nodeID2idx, edgesByNode);
               if (added_nodes.size) {
                 _.each(_toConsumableArray(added_nodes), function (nid) {
-                  var n = _this13.json.Nodes[nid];
+                  var n = _this12.json.Nodes[nid];
                   pg.nodes.push({
                     name: n.id,
                     added: current_time,
@@ -59408,16 +59569,16 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                 pg.autoexpanded = true;
                 pg.pending = true;
                 pg.expanded = added_nodes.size;
-                pg.modified = _this13.get_reference_date();
+                pg.modified = _this12.get_reference_date();
               }
             }
 
             /** check to see the CoI meets priority definitions */
 
             // MJC supplies these from the backend; the viz can't reproduce them.
-            if (!_this13.isMJCNetwork) {
+            if (!_this12.isMJCNetwork) {
               (function () {
-                var node_set = new Set(_this13.unique_entity_list_from_ids(_.map(pg.nodes, function (n) {
+                var node_set = new Set(_this12.unique_entity_list_from_ids(_.map(pg.nodes, function (n) {
                   return n.name;
                 })));
                 pg.meets_priority_def = _.some(priority_subclusters, function (ps) {
@@ -59432,15 +59593,15 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                   field_name: "cluster_dx_recent36_mo",
                   months: 36
                 }];
-                var ref_date = _this13.get_reference_date();
+                var ref_date = _this12.get_reference_date();
                 var _loop = function _loop() {
-                  var dx = _recent_dx_cutoffs[_i];
-                  var cutoff = timeDateUtil.n_months_ago(_this13.get_reference_date(), dx.months);
-                  pg[dx.field_name] = _this13.unique_entity_list(_.filter(pg.node_objects, function (n) {
-                    return _this13.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false);
+                  var dx = _recent_dx_cutoffs[_i3];
+                  var cutoff = timeDateUtil.n_months_ago(_this12.get_reference_date(), dx.months);
+                  pg[dx.field_name] = _this12.unique_entity_list(_.filter(pg.node_objects, function (n) {
+                    return _this12.filter_by_date(cutoff, timeDateUtil._networkCDCDateField, ref_date, n, false);
                   })).length;
                 };
-                for (var _i = 0, _recent_dx_cutoffs = recent_dx_cutoffs; _i < _recent_dx_cutoffs.length; _i++) {
+                for (var _i3 = 0, _recent_dx_cutoffs = recent_dx_cutoffs; _i3 < _recent_dx_cutoffs.length; _i3++) {
                   _loop();
                 }
               })();
@@ -59451,7 +59612,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             var currDate = timeDateUtil.getCurrentDate();
             var history_entry = {
               date: currDate,
-              size: _this13.priority_group_entity_count(pg),
+              size: _this12.priority_group_entity_count(pg),
               // TODO determine new nodes
               new_nodes: 0,
               national_priority: pg.meets_priority_def,
@@ -59583,8 +59744,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         }
       };
       var subset = new Set();
-      for (var _i2 = 0, _Object$entries = Object.entries(attrib_defs); _i2 < _Object$entries.length; _i2++) {
-        var _Object$entries$_i = _slicedToArray(_Object$entries[_i2], 2),
+      for (var _i4 = 0, _Object$entries = Object.entries(attrib_defs); _i4 < _Object$entries.length; _i4++) {
+        var _Object$entries$_i = _slicedToArray(_Object$entries[_i4], 2),
           key = _Object$entries$_i[0],
           def = _Object$entries$_i[1];
         subset.add(key);
@@ -59643,12 +59804,12 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "load_priority_sets",
     value: function load_priority_sets(url, is_writeable) {
-      var _this14 = this;
+      var _this13 = this;
       this.fetch_priority_sets(url, function (results) {
         var latest_date = new Date();
         latest_date.setUTCFullYear(1900);
-        _this14.defined_priority_groups = _this14.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
-        _.each(_this14.defined_priority_groups, function (pg) {
+        _this13.defined_priority_groups = _this13.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
+        _.each(_this13.defined_priority_groups, function (pg) {
           _.each(pg.nodes, function (n) {
             try {
               if (n.added === "REDACTED") {
@@ -59663,27 +59824,27 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             }
           });
         });
-        _this14.priority_set_table_writeable = is_writeable === "writeable";
-        _this14.priority_groups_validate(_this14.defined_priority_groups, _this14._is_CDC_auto_mode);
-        _this14.auto_create_priority_sets = [];
+        _this13.priority_set_table_writeable = is_writeable === "writeable";
+        _this13.priority_groups_validate(_this13.defined_priority_groups, _this13._is_CDC_auto_mode);
+        _this13.auto_create_priority_sets = [];
         /**
             check if the system needs to create/expand CoI
         */
-        var today_string = timeDateUtil.DateFormats[0](_this14.get_reference_date());
-        _this14.map_ids_to_objects();
-        if (_this14._is_CDC_auto_mode && !_this14.isMJCNetwork) {
-          var auto_expand_groups = _.filter(_this14.defined_priority_groups, function (pg) {
+        var today_string = timeDateUtil.DateFormats[0](_this13.get_reference_date());
+        _this13.map_ids_to_objects();
+        if (_this13._is_CDC_auto_mode && !_this13.isMJCNetwork) {
+          var auto_expand_groups = _.filter(_this13.defined_priority_groups, function (pg) {
             return pg.kind in kGlobals.CDCCOICanAutoExpand && pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.tracking === kGlobals.CDCCOITrackingOptionsDefault;
           });
-          _.each(_this14.clusters, function (cluster_data, cluster_id) {
+          _.each(_this13.clusters, function (cluster_data, cluster_id) {
             _.each(cluster_data.subclusters, function (subcluster_data) {
               _.each(subcluster_data.priority_score, function (priority_score, i) {
-                var priority_entities = _this14.unique_entity_list(_.map(priority_score, function (d) {
+                var priority_entities = _this13.unique_entity_list(_.map(priority_score, function (d) {
                   return {
                     id: d
                   };
                 }));
-                if (priority_entities.length >= _this14.CDC_data["autocreate-priority-set-size"]) {
+                if (priority_entities.length >= _this13.CDC_data["autocreate-priority-set-size"]) {
                   // only generate a new set if it doesn't match what is already there
                   var node_set = {};
                   _.each(subcluster_data.recent_nodes[i], function (n) {
@@ -59697,12 +59858,12 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                   if (matched_groups.length >= 1) {
                     return;
                   }
-                  var autoname = _this14.generateClusterOfInterestID(subcluster_data.cluster_id);
-                  _this14.auto_create_priority_sets.push({
+                  var autoname = _this13.generateClusterOfInterestID(subcluster_data.cluster_id);
+                  _this13.auto_create_priority_sets.push({
                     name: autoname,
                     description: "Automatically created cluster of interest " + autoname,
                     nodes: _.map(subcluster_data.recent_nodes[i], function (n) {
-                      return _this14.priority_group_node_record(n, _this14.get_reference_date());
+                      return _this13.priority_group_node_record(n, _this13.get_reference_date());
                     }),
                     created: today_string,
                     kind: kGlobals.CDCCOIKindAutomaticCreation,
@@ -59717,34 +59878,34 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             });
           });
         }
-        if (_this14.auto_create_priority_sets.length) {
-          var _this14$defined_prior;
+        if (_this13.auto_create_priority_sets.length) {
+          var _this13$defined_prior;
           // SLKP 20200727 now check to see if any of the priority sets
           // need to be auto-generated
           //console.log (this.auto_create_priority_sets);
-          (_this14$defined_prior = _this14.defined_priority_groups).push.apply(_this14$defined_prior, _toConsumableArray(_this14.auto_create_priority_sets));
+          (_this13$defined_prior = _this13.defined_priority_groups).push.apply(_this13$defined_prior, _toConsumableArray(_this13.auto_create_priority_sets));
         }
-        var autocreated = _this14.defined_priority_groups.filter(function (pg) {
+        var autocreated = _this13.defined_priority_groups.filter(function (pg) {
             return pg.autocreated;
           }).length,
-          autoexpanded = _this14.defined_priority_groups.filter(function (pg) {
+          autoexpanded = _this13.defined_priority_groups.filter(function (pg) {
             return pg.autoexpanded;
           }).length,
           automatic_action_taken = autocreated + autoexpanded > 0,
-          left_to_review = _this14.defined_priority_groups.filter(function (pg) {
+          left_to_review = _this13.defined_priority_groups.filter(function (pg) {
             return pg.pending;
           }).length;
         if (automatic_action_taken) {
-          _this14.warning_string += "<br/>Automatically created <b>" + autocreated + "</b> and expanded <b>" + autoexpanded + "</b> clusters of interest." + (left_to_review > 0 ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>" : "");
-          _this14.display_warning(_this14.warning_string, true);
+          _this13.warning_string += "<br/>Automatically created <b>" + autocreated + "</b> and expanded <b>" + autoexpanded + "</b> clusters of interest." + (left_to_review > 0 ? " <b>Please review <span id='banner_coi_counts'></span> clusters in the <code>Clusters of Interest</code> tab.</b><br>" : "");
+          _this13.display_warning(_this13.warning_string, true);
         }
-        var tab_pill = _this14.get_ui_element_selector_by_role("priority_set_counts", true);
+        var tab_pill = _this13.get_ui_element_selector_by_role("priority_set_counts", true);
 
         // Skip read-only warning for MJC networks (they are read-only by design)
-        if (!_this14.priority_set_table_writeable && !_this14.isMJCNetwork) {
+        if (!_this13.priority_set_table_writeable && !_this13.isMJCNetwork) {
           var rationale = is_writeable === "old" ? "the network is <b>older</b> than some of the Clusters of Interest" : "the network was ran in <b>standalone</b> mode so no data is stored";
-          _this14.warning_string += "<p class=\"alert alert-danger\"class=\"alert alert-danger\">READ-ONLY mode for Clusters of Interest is enabled because ".concat(rationale, ". None of the changes to clustersOI made during this session will be recorded.</p>");
-          _this14.display_warning(_this14.warning_string, true);
+          _this13.warning_string += "<p class=\"alert alert-danger\"class=\"alert alert-danger\">READ-ONLY mode for Clusters of Interest is enabled because ".concat(rationale, ". None of the changes to clustersOI made during this session will be recorded.</p>");
+          _this13.display_warning(_this13.warning_string, true);
           if (tab_pill) {
             d3.select(tab_pill).text("Read-only");
           }
@@ -59752,14 +59913,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           d3.select(tab_pill).text(left_to_review);
           d3.select("#banner_coi_counts").text(left_to_review);
         }
-        _this14.priority_groups_validate(_this14.defined_priority_groups);
+        _this13.priority_groups_validate(_this13.defined_priority_groups);
         // Write all defined CoIs back to the DB in a single batched upsert
         // (one request instead of N — server's upsertMany handles the array).
-        _this14.priority_groups_batch_upsert();
-        clustersOfInterest.draw_priority_set_table(_this14);
-        clustersOfInterest.draw_priority_set_table(_this14, null, null, true); // null just uses defaults (for archived MJ clusterOI)
-        if (_this14.showing_diff && _this14.has_network_attribute("subcluster_or_priority_node")) {
-          _this14.handle_attribute_categorical("subcluster_or_priority_node");
+        _this13.priority_groups_batch_upsert();
+        clustersOfInterest.draw_priority_set_table(_this13);
+        clustersOfInterest.draw_priority_set_table(_this13, null, null, true); // null just uses defaults (for archived MJ clusterOI)
+        if (_this13.showing_diff && _this13.has_network_attribute("subcluster_or_priority_node")) {
+          _this13.handle_attribute_categorical("subcluster_or_priority_node");
         }
         //this.update();
       });
@@ -59767,11 +59928,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "loadOverlapPrioritySets",
     value: function loadOverlapPrioritySets(overlap_priority_sets_url, callback) {
-      var _this15 = this;
+      var _this14 = this;
       if (overlap_priority_sets_url) {
         this.overlap_priority_set_url = overlap_priority_sets_url;
         this.fetch_priority_sets(this.overlap_priority_set_url, function (results) {
-          _this15.overlap_defined_priority_groups = results.clusters || results;
+          _this14.overlap_defined_priority_groups = results.clusters || results;
           callback();
         });
       } else {
@@ -59781,7 +59942,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "priority_groups_archive_mjc_set",
     value: function priority_groups_archive_mjc_set(name, archived) {
-      var _this16 = this;
+      var _this15 = this;
       // currently only for MJC networks
       if (!this.isMJCNetwork) {
         return;
@@ -59810,8 +59971,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         return response.json();
       }).then(function (data) {
         pg.archived = archived;
-        clustersOfInterest.draw_priority_set_table(_this16, null, null, false, true);
-        clustersOfInterest.draw_priority_set_table(_this16, null, null, true, true);
+        clustersOfInterest.draw_priority_set_table(_this15, null, null, false, true);
+        clustersOfInterest.draw_priority_set_table(_this15, null, null, true, true);
       }).catch(function (err) {
         alert("Failed to " + (archived ? "archive" : "unarchive") + " " + name + ": " + err.message);
       });
@@ -59849,13 +60010,13 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "populate_predefined_attribute",
     value: function populate_predefined_attribute(computed, key) {
-      var _this17 = this;
+      var _this16 = this;
       var tStart = performance.now();
       if (_.isFunction(computed)) {
         computed = computed(this);
       }
       if (!computed["depends"] || _.every(computed["depends"], function (d) {
-        return _.has(_this17.json[kGlobals.network.GraphAttrbuteID], d);
+        return _.has(_this16.json[kGlobals.network.GraphAttrbuteID], d);
       })) {
         this.inject_attribute_description(key, computed);
         var uniq_value_set = new Set();
@@ -60002,7 +60163,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_binned_vl",
     value: function define_attribute_binned_vl(field, title) {
-      var _this18 = this;
+      var _this17 = this;
       var vl_bins = ["<200", "200-10000", ">10000"];
       return {
         depends: [field],
@@ -60013,7 +60174,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           return d3.scale.ordinal().domain(vl_bins.concat([kGlobals.missing.label])).range(_.union(kGlobals.SequentialColor[3], [kGlobals.missing.color]));
         },
         map: function map(node) {
-          var vl_value = _this18.attribute_node_value_by_id(node, field, true);
+          var vl_value = _this17.attribute_node_value_by_id(node, field, true);
           if (vl_value !== kGlobals.missing.label) {
             if (vl_value <= 200) {
               return vl_bins[0];
@@ -60036,7 +60197,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_vl_interpretaion",
     value: function define_attribute_vl_interpretaion() {
-      var _this19 = this;
+      var _this18 = this;
       return {
         depends: ["vl_recent_value", "result_interpretation"],
         label: "Viral load result interpretation",
@@ -60062,8 +60223,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         },
         label_format: d3.format(",.0f"),
         map: function map(node) {
-          var vl_value = _this19.attribute_node_value_by_id(node, "vl_recent_value", true);
-          var result_interpretation = _this19.attribute_node_value_by_id(node, "result_interpretation");
+          var vl_value = _this18.attribute_node_value_by_id(node, "vl_recent_value", true);
+          var result_interpretation = _this18.attribute_node_value_by_id(node, "result_interpretation");
           if (vl_value !== kGlobals.missing.label || result_interpretation !== kGlobals.missing.label) {
             if (result_interpretation !== kGlobals.missing.label) {
               if (result_interpretation === "<") {
@@ -60125,14 +60286,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_mjc_date_identified",
     value: function define_attribute_mjc_date_identified(label) {
-      var _this20 = this;
+      var _this19 = this;
       return {
         depends: [],
         label: label,
         type: "Object",
         map: function map(node) {
           try {
-            return _this20.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified, false, false, true);
+            return _this19.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified, false, false, true);
           } catch (_unused3) {
             return kGlobals.missing.label;
           }
@@ -60155,14 +60316,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_mjc_date_identified_12mo",
     value: function define_attribute_mjc_date_identified_12mo(label) {
-      var _this21 = this;
+      var _this20 = this;
       return {
         depends: [],
         label: label,
         type: "Object",
         map: function map(node) {
           try {
-            return _this21.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified_12Mo, false, false, true);
+            return _this20.attribute_node_value_by_id(node, timeDateUtil._networkCDCIdentified_12Mo, false, false, true);
           } catch (_unused4) {
             return kGlobals.missing.label;
           }
@@ -60181,7 +60342,9 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_dx_years",
     value: function define_attribute_dx_years(relative, label) {
-      var _this22 = this;
+      var _this21 = this;
+      var valueCache = new Map();
+      var refDate = null;
       return {
         depends: [timeDateUtil._networkCDCDateField],
         label: label,
@@ -60189,15 +60352,29 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         label_format: relative ? d3.format(".2f") : d3.format(".0f"),
         map: function map(node) {
           try {
-            var value = _this22.parse_dates(_this22.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField, false, true, true));
+            var rawValue = _this21.attribute_node_value_by_id(node, timeDateUtil._networkCDCDateField, false, false, true);
+            if (rawValue === kGlobals.missing.label || rawValue === "REDACTED" || !rawValue) {
+              return kGlobals.missing.label;
+            }
+            if (valueCache.has(rawValue)) {
+              return valueCache.get(rawValue);
+            }
+            var value = _this21.parse_dates(rawValue);
+            var mappedValue;
             if (value) {
               if (relative) {
-                value = (_this22.get_reference_date() - value) / 31536000000;
-              } else value = String(value.getUTCFullYear());
+                if (refDate === null) {
+                  refDate = _this21.get_reference_date();
+                }
+                mappedValue = (refDate - value) / 31536000000;
+              } else {
+                mappedValue = String(value.getUTCFullYear());
+              }
             } else {
-              value = kGlobals.missing.label;
+              mappedValue = kGlobals.missing.label;
             }
-            return value;
+            valueCache.set(rawValue, mappedValue);
+            return mappedValue;
           } catch (_unused5) {
             return kGlobals.missing.label;
           }
@@ -60224,14 +60401,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_dx_month_year",
     value: function define_attribute_dx_month_year(label) {
-      var _this23 = this;
+      var _this22 = this;
       return {
         depends: [timeDateUtil._networkCDCMonthYearField],
         label: label,
         type: "String",
         map: function map(node) {
           try {
-            return _this23.attribute_node_value_by_id(node, timeDateUtil._networkCDCMonthYearField, false, false, true);
+            return _this22.attribute_node_value_by_id(node, timeDateUtil._networkCDCMonthYearField, false, false, true);
           } catch (_unused6) {
             return kGlobals.missing.label;
           }
@@ -60247,7 +60424,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_dx_12mo",
     value: function define_attribute_dx_12mo(label) {
-      var _this24 = this;
+      var _this23 = this;
       return {
         depends: [timeDateUtil._networkCDCLast12Mo],
         label: label,
@@ -60255,7 +60432,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         enum: ["Yes", "No"],
         map: function map(node) {
           try {
-            return _this24.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast12Mo, false, false, true);
+            return _this23.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast12Mo, false, false, true);
           } catch (_unused7) {
             return kGlobals.missing.label;
           }
@@ -60265,7 +60442,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_dx_36mo",
     value: function define_attribute_dx_36mo(label) {
-      var _this25 = this;
+      var _this24 = this;
       return {
         depends: [timeDateUtil._networkCDCLast36Mo],
         label: label,
@@ -60273,7 +60450,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         enum: ["Yes", "No"],
         map: function map(node) {
           try {
-            return _this25.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast36Mo, false, false, true);
+            return _this24.attribute_node_value_by_id(node, timeDateUtil._networkCDCLast36Mo, false, false, true);
           } catch (_unused8) {
             return kGlobals.missing.label;
           }
@@ -60316,7 +60493,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_sequence_count",
     value: function define_attribute_sequence_count(label) {
-      var _this26 = this;
+      var _this25 = this;
       return {
         depends: [],
         label: label,
@@ -60326,8 +60503,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           if (node[kGlobals.network.AliasedSequencesID]) {
             return node[kGlobals.network.AliasedSequencesID].length;
           }
-          if (_this26.has_multiple_sequences) {
-            return _this26.fetch_sequences_for_pid(_this26.primary_key(node)).length;
+          if (_this25.has_multiple_sequences) {
+            return _this25.fetch_sequences_for_pid(_this25.primary_key(node)).length;
           }
           return 1;
         },
@@ -60351,7 +60528,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
   }, {
     key: "define_attribute_age_dx",
     value: function define_attribute_age_dx() {
-      var _this27 = this;
+      var _this26 = this;
       return {
         depends: ["age_dx"],
         overwrites: "age_dx",
@@ -60362,7 +60539,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
           return d3.scale.ordinal().domain(["<13", "13-19", "20-29", "30-39", "40-49", "50-59", "�60", kGlobals.missing.label]).range(["#b10026", "#e31a1c", "#fc4e2a", "#fd8d3c", "#feb24c", "#fed976", "#ffffb2", "#636363"]);
         },
         map: function map(node) {
-          var vl_value = _this27.attribute_node_value_by_id(node, "age_dx");
+          var vl_value = _this26.attribute_node_value_by_id(node, "age_dx");
           if (vl_value === ">=60") {
             return "�60";
           }
@@ -60462,14 +60639,19 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     key: "aggregate_indvidual_level_records",
     value: function aggregate_indvidual_level_records(node_list) {
       var is_full = !node_list || node_list === this.json.Nodes || this.json.Nodes && node_list.length === this.json.Nodes.length;
-      if (is_full && this._cached_aggregated_nodes) {
-        return this._cached_aggregated_nodes;
+      if (is_full) {
+        if (this._cached_aggregated_nodes) {
+          return this._cached_aggregated_nodes;
+        }
+        if (this.json._cached_aggregated_nodes) {
+          return this._cached_aggregated_nodes = this.json._cached_aggregated_nodes;
+        }
       }
       var result;
       if (this.isMJCNetwork) {
         var values_iterator;
         if (is_full) {
-          values_iterator = Object.values(this.primary_key_list);
+          values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
         } else {
           var binned = new Map();
           node_list = node_list || this.json.Nodes;
@@ -60512,8 +60694,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         node_list = node_list || this.json.Nodes;
         var aggregator = function aggregator(values, key, record, store_key) {
           var unique_values = {};
-          for (var _i3 = 0; _i3 < values.length; _i3++) {
-            var v = values[_i3][key];
+          for (var _i5 = 0; _i5 < values.length; _i5++) {
+            var v = values[_i5][key];
             if (v !== undefined && v !== "undefined") {
               unique_values[v] = true;
             }
@@ -60528,11 +60710,11 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         if (this.has_multiple_sequences) {
           var _values_iterator;
           if (is_full) {
-            _values_iterator = Object.values(this.primary_key_list);
+            _values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
           } else {
             var _binned = new Map();
-            for (var _i4 = 0; _i4 < node_list.length; _i4++) {
-              var _n2 = node_list[_i4];
+            for (var _i6 = 0; _i6 < node_list.length; _i6++) {
+              var _n2 = node_list[_i6];
               var _key = this.primary_key(_n2);
               var _list = _binned.get(_key);
               if (_list === undefined) {
@@ -60559,8 +60741,8 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                   var k = attr_keys[j];
                   var proto = this.json[kGlobals.network.GraphAttrbuteID][k];
                   var unique_values = {};
-                  for (var _i5 = 0; _i5 < _values.length; _i5++) {
-                    var v = _values[_i5][kGlobals.network.NodeAttributeID][k];
+                  for (var _i7 = 0; _i7 < _values.length; _i7++) {
+                    var v = _values[_i7][kGlobals.network.NodeAttributeID][k];
                     if (v !== undefined && v !== "undefined") {
                       unique_values[v] = true;
                     }
@@ -60572,9 +60754,9 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                     if (proto && proto.type == "Date") {
                       try {
                         var min_d = unique_keys[0];
-                        for (var _i6 = 1; _i6 < unique_keys.length; _i6++) {
-                          if (unique_keys[_i6] < min_d) {
-                            min_d = unique_keys[_i6];
+                        for (var _i8 = 1; _i8 < unique_keys.length; _i8++) {
+                          if (unique_keys[_i8] < min_d) {
+                            min_d = unique_keys[_i8];
                           }
                         }
                         new_attr_obj[k] = new Date(Date.parse(min_d));
@@ -60610,6 +60792,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       }
       if (is_full) {
         this._cached_aggregated_nodes = result;
+        this.json._cached_aggregated_nodes = result;
       }
       return result;
     }

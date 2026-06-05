@@ -3596,10 +3596,73 @@ var hivtrace_cluster_network_graph = function (
     }
 
     self._aux_populate_category_menus = function (subset) {
+      const tPopStart = performance.now();
       if (button_bar_ui) {
         // decide if the variable can be considered categorical by examining its range
+        const t1 = performance.now();
 
-        //console.log ("self._aux_populate_category_menus");
+        // Single-pass optimization for String attributes
+        const stringAttrsToPopulate = [];
+        for (const [k, d] of Object.entries(graph_data[kGlobals.network.GraphAttrbuteID] || {})) {
+          if (!d["value_range"] && d["type"] === "String") {
+            d.discrete = true;
+            d["raw_attribute_key"] = k;
+            if (!("label" in d)) {
+              d["label"] = k;
+            }
+            d["value_range_set"] = new Set();
+            d.is_volatile = !!(self.json[kGlobals.network.GraphAttrbuteID][k] && self.json[kGlobals.network.GraphAttrbuteID][k].volatile);
+            if (d.is_volatile) {
+              d.mapper = self.json[kGlobals.network.GraphAttrbuteID][k].map;
+            }
+            stringAttrsToPopulate.push(d);
+          }
+        }
+
+        if (stringAttrsToPopulate.length > 0) {
+          const node_attr_id = kGlobals.network.NodeAttributeID;
+          const missing_label = kGlobals.missing.label;
+          const N = graph_data.Nodes.length;
+
+          for (let i = 0; i < N; i++) {
+            const nd = graph_data.Nodes[i];
+            const hasAttrs = nd && node_attr_id in nd;
+            const attrs = hasAttrs ? nd[node_attr_id] : null;
+
+            for (let j = 0; j < stringAttrsToPopulate.length; j++) {
+              const d = stringAttrsToPopulate[j];
+              const k = d["raw_attribute_key"];
+
+              if (d.is_volatile) {
+                if (hasAttrs && k in attrs) {
+                  let v = d.mapper(nd, self);
+                  if (typeof v === "string" && v.length === 0) v = missing_label;
+                  d["value_range_set"].add(v || missing_label);
+                } else {
+                  d["value_range_set"].add(missing_label);
+                }
+              } else {
+                if (attrs && k in attrs) {
+                  let v = attrs[k];
+                  if (typeof v === "string" && v.length === 0) v = missing_label;
+                  d["value_range_set"].add(v !== undefined ? v : missing_label);
+                } else {
+                  d["value_range_set"].add(missing_label);
+                }
+              }
+            }
+          }
+
+          for (let j = 0; j < stringAttrsToPopulate.length; j++) {
+            const d = stringAttrsToPopulate[j];
+            d["value_range"] = [...d["value_range_set"]];
+            delete d["value_range_set"];
+            delete d["is_volatile"];
+            delete d["mapper"];
+            d["dimension"] = d["value_range"].length;
+          }
+        }
+
         var valid_cats = _.filter(
           _.map(
             graph_data[kGlobals.network.GraphAttrbuteID],
@@ -3626,10 +3689,12 @@ var hivtrace_cluster_network_graph = function (
               (d["raw_attribute_key"] in self.networkShapeScheme &&
                 !d["_hidden_"]))
         );
+        const t2 = performance.now();
 
         // sort values alphabetically for consistent coloring
 
         _.each(valid_cats, self._aux_process_category_values);
+        const t3 = performance.now();
 
         /*const colorStopsPath = [
           kGlobals.network.GraphAttrbuteID,
@@ -3637,6 +3702,7 @@ var hivtrace_cluster_network_graph = function (
           "color_stops",
         ];*/
 
+        const tScaleStart = performance.now();
         var valid_scales = _.filter(
           _.map(graph_data[kGlobals.network.GraphAttrbuteID], (d, k) => {
             let color_stops = _.get(
@@ -3645,19 +3711,35 @@ var hivtrace_cluster_network_graph = function (
               kGlobals.network.ContinuousColorStops
             );
 
-            function determine_scaling(d, values, scales) {
+            function determine_scaling(d, values, scales, trueRange) {
               var low_var = Infinity;
-              d["value_range"] = d3.extent(values);
+              d["value_range"] = trueRange || d3.extent(values);
+
+              const isLarge = values.length > 1000;
+              const sampleSize = isLarge ? 1000 : values.length;
+              const step = isLarge ? Math.floor(values.length / sampleSize) : 1;
+
               _.each(scales, (scl, i) => {
                 var bins = _.map(_.range(color_stops), () => 0);
                 scl.range([0, color_stops - 1]).domain(d["value_range"]);
 
-                let N = values.length;
-                while (N--) {
-                  bins[~~scl(values[N])]++; // truncate the value
+                if (isLarge) {
+                  for (let i = 0; i < sampleSize; i++) {
+                    const val = values[i * step];
+                    const binIdx = ~~scl(val);
+                    if (binIdx >= 0 && binIdx < color_stops) {
+                      bins[binIdx]++;
+                    }
+                  }
+                } else {
+                  let N = values.length;
+                  while (N--) {
+                    bins[~~scl(values[N])]++; // truncate the value
+                  }
                 }
 
-                var mean = values.length / color_stops;
+                var actualLen = isLarge ? sampleSize : values.length;
+                var mean = actualLen / color_stops;
                 var vrnc = _.reduce(
                   bins,
                   (p, c) => p + (c - mean) * (c - mean)
@@ -3677,17 +3759,29 @@ var hivtrace_cluster_network_graph = function (
               if (d["scale"] && d["scale_color_stops"] === color_stops) {
                 return d;
               }
-              var values = [];
 
+              // Get the true extent (min/max range) from the pre-computed unique values
+              const numericUniqs = (self.uniqValues[k] || [])
+                .map(Number)
+                .filter((v) => !isNaN(v));
+              const range = d3.extent(numericUniqs);
+
+              const values = [];
               const node_attr_id = kGlobals.network.NodeAttributeID;
               const is_volatile = self.json[kGlobals.network.GraphAttrbuteID][k].volatile;
               const is_number_type = d.type === "Number";
 
+              const nodes = self.json.Nodes || [];
+              const nodesLen = nodes.length;
+              const maxSampleNodes = 5000;
+              const isLargeNodes = nodesLen > maxSampleNodes;
+              const stepNodes = isLargeNodes ? Math.floor(nodesLen / maxSampleNodes) : 1;
+              const limitNodes = isLargeNodes ? maxSampleNodes : nodesLen;
+
               if (is_volatile) {
                 const mapper = self.json[kGlobals.network.GraphAttrbuteID][k].map;
-                let N = self.json.Nodes.length;
-                while (N--) {
-                  const nd = self.json.Nodes[N];
+                for (let idx = 0; idx < limitNodes; idx++) {
+                  const nd = nodes[isLargeNodes ? idx * stepNodes : idx];
                   if (nd && node_attr_id in nd && k in nd[node_attr_id]) {
                     let v = mapper(nd, self);
                     if (typeof v === "string") {
@@ -3702,9 +3796,8 @@ var hivtrace_cluster_network_graph = function (
                   }
                 }
               } else {
-                let N = self.json.Nodes.length;
-                while (N--) {
-                  const nd = self.json.Nodes[N];
+                for (let idx = 0; idx < limitNodes; idx++) {
+                  const nd = nodes[isLargeNodes ? idx * stepNodes : idx];
                   if (nd && node_attr_id in nd) {
                     const attrs = nd[node_attr_id];
                     if (attrs && k in attrs) {
@@ -3727,9 +3820,6 @@ var hivtrace_cluster_network_graph = function (
                 return {};
               }
 
-              // automatically determine the scale and see what spaces the values most evenly
-              const range = d3.extent(values);
-
               const scales_to_consider = [d3.scale.linear()];
 
               if (!d.is_integer) {
@@ -3744,12 +3834,12 @@ var hivtrace_cluster_network_graph = function (
                   scales_to_consider.push(d3.scale.pow().exponent(1 / 16));
                 }
               }
-              determine_scaling(d, values, scales_to_consider);
+              determine_scaling(d, values, scales_to_consider, range);
             } else if (d.type === "Date") {
               if (d["scale"] && d["scale_color_stops"] === color_stops) {
                 return d;
               }
-              values = _.filter(
+              const values = _.filter(
                 _.map(graph_data.Nodes, (nd) => {
                   var a_date = self.attribute_node_value_by_id(nd, k);
                   if (a_date instanceof Date) {
@@ -3805,6 +3895,7 @@ var hivtrace_cluster_network_graph = function (
               d.type === "Number-categories") &&
             !d["_hidden_"]
         );
+        const tScaleEnd = performance.now();
 
         const _menu_label_gen = (d) =>
           (d["annotation"] ? "[" + d["annotation"] + "] " : "") + d["label"];
@@ -4081,6 +4172,14 @@ var hivtrace_cluster_network_graph = function (
         if (self._setup_mjc_filter_ui) {
           self._setup_mjc_filter_ui();
         }
+        const tPopEnd = performance.now();
+        console.log(
+          `[PERF_DETAIL] _aux_populate_category_menus: total = ${(tPopEnd - tPopStart).toFixed(2)}ms\n` +
+          `  - valid_cats filter/fields = ${(t2 - t1).toFixed(2)}ms\n` +
+          `  - _aux_process_category_values = ${(t3 - t2).toFixed(2)}ms\n` +
+          `  - valid_scales & determine_scaling = ${(tScaleEnd - tScaleStart).toFixed(2)}ms\n` +
+          `  - D3 UI Menu rendering = ${(tPopEnd - tScaleEnd).toFixed(2)}ms`
+        );
       }
     };
 
@@ -8719,6 +8818,13 @@ var hivtrace_cluster_network_graph = function (
    * @returns {Object} The updated attribute object.
    */
   self._aux_process_category_values = function (d) {
+    const cacheKey = d["raw_attribute_key"];
+    self._category_cache = self._category_cache || {};
+    const cache = self._category_cache[cacheKey];
+    if (d["stable-ish order"] && cache && cache.nodes_ref === self.nodes && cache.nodes_len === self.nodes.length) {
+      return d;
+    }
+
     var values,
       reduced_range = null;
 
@@ -8729,13 +8835,14 @@ var hivtrace_cluster_network_graph = function (
       values = d["value_range"].sort();
 
       if (d.dimension > kGlobals.MaximumValuesInCategories) {
-        const compressed_values = _.chain(self.nodes)
-          .countBy((node) =>
-            self.attribute_node_value_by_id(node, d["raw_attribute_key"])
-          )
-          .pairs()
-          .sortBy((d) => -d[1])
-          .value();
+        const counts = {};
+        const rawKey = d["raw_attribute_key"];
+        const len = self.nodes.length;
+        for (let i = 0; i < len; i++) {
+          const val = self.attribute_node_value_by_id(self.nodes[i], rawKey);
+          counts[val] = (counts[val] || 0) + 1;
+        }
+        const compressed_values = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 
         reduced_range = [];
         let i = 0;
@@ -8836,6 +8943,12 @@ var hivtrace_cluster_network_graph = function (
       };
     }
 
+    if (cacheKey) {
+      self._category_cache[cacheKey] = {
+        nodes_ref: self.nodes,
+        nodes_len: self.nodes.length
+      };
+    }
     return d;
   };
 

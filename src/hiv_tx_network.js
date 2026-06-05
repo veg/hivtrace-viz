@@ -50,6 +50,7 @@ class HIVTxNetwork {
           return key;
         };
 
+    this._raw_primary_key = raw_primary_key;
     this.primary_key = (node) => {
       if (node && typeof node === "object") {
         if (node._primary_key !== undefined) {
@@ -60,8 +61,11 @@ class HIVTxNetwork {
       return raw_primary_key(node);
     };
 
+    console.time("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
     this.tabulate_multiple_sequences();
-    this._cached_aggregated_nodes = this.aggregate_indvidual_level_records();
+    console.timeEnd("[PERF_DETAIL] constructor: tabulate_multiple_sequences");
+
+    this._cached_aggregated_nodes = null;
 
     /** initialize UI/UX elements */
     this.initialize_ui_ux_elements();
@@ -194,6 +198,7 @@ class HIVTxNetwork {
       this.has_multiple_sequences = true;
       this.legend_multiple_sequences = true;
       this.primary_key_list = this.json._primary_key_list;
+      this.primary_key_list_values = this.json._primary_key_list_values;
       this.entities_in_multiple_clusters = this.json._entities_in_multiple_clusters;
       return;
     }
@@ -203,62 +208,110 @@ class HIVTxNetwork {
         [primary key] => [array of IDs]
     */
     this.primary_key_list = {};
+    this.primary_key_list_values = [];
     this.has_multiple_sequences = false;
-    _.each(this.json.Nodes, (n) => {
-      const p_key = this.primary_key(n);
-      if (!(p_key in this.primary_key_list)) {
-        this.primary_key_list[p_key] = [n];
+    
+    const duplicateKeys = [];
+    const nodes = this.json.Nodes || [];
+    const len = nodes.length;
+
+    // Fast path: cache primary key helper function
+    const raw_pkey_fn = this._raw_primary_key;
+
+    for (let i = 0; i < len; i++) {
+      const n = nodes[i];
+      let p_key = n._primary_key;
+      if (p_key === undefined) {
+        if (raw_pkey_fn) {
+          p_key = raw_pkey_fn(n);
+        } else {
+          const key = n.id || n.name || "";
+          const idx = key.indexOf("|");
+          p_key = idx >= 0 ? key.substring(0, idx) : key;
+        }
+        n._primary_key = p_key;
+      }
+
+      const list = this.primary_key_list[p_key];
+      if (list === undefined) {
+        const newList = [n];
+        this.primary_key_list[p_key] = newList;
+        this.primary_key_list_values.push(newList);
       } else {
-        this.primary_key_list[p_key].push(n);
+        if (list.length === 1) {
+          duplicateKeys.push(p_key);
+        }
+        list.push(n);
         this.has_multiple_sequences = true;
         this.legend_multiple_sequences = true;
       }
-      if (!this.legend_multiple_sequences) {
-        if (n[kGlobals.network.AliasedSequencesID]) {
+    }
+
+    if (!this.legend_multiple_sequences) {
+      const aliasKey = kGlobals.network.AliasedSequencesID;
+      for (let i = 0; i < len; i++) {
+        if (nodes[i][aliasKey]) {
           this.legend_multiple_sequences = true;
+          break;
         }
       }
-    });
+    }
 
     /**
         iterate over all duplicate sequences, synchronize node attributes
     */
     if (this.has_multiple_sequences) {
-      _.each(this.primary_key_list, (seqs, primary_id) => {
-        if (seqs.length > 1) {
-          let consensus_attributes = {};
+      const numDupes = duplicateKeys.length;
+      for (let dIdx = 0; dIdx < numDupes; dIdx++) {
+        const primary_id = duplicateKeys[dIdx];
+        const seqs = this.primary_key_list[primary_id];
 
-          _.each(seqs, (seq_record) => {
-            _.each(seq_record[kGlobals.network.NodeAttributeID], (v, k) => {
-              if (!(k in consensus_attributes)) {
+        let consensus_attributes = {};
+        const seqsLen = seqs.length;
+        for (let sIdx = 0; sIdx < seqsLen; sIdx++) {
+          const seq_record = seqs[sIdx];
+          const attrs = seq_record[kGlobals.network.NodeAttributeID] || {};
+          for (const k in attrs) {
+            if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+              const v = attrs[k];
+              if (consensus_attributes[k] === undefined) {
                 consensus_attributes[k] = [v];
               } else {
                 consensus_attributes[k].push(v);
               }
-            });
-          });
-
-          // only copy values if there's strict consensus
-
-          consensus_attributes = _.omit(
-            _.mapObject(consensus_attributes, (d, k) => {
-              let freq = _.countBy(d, (i) => i);
-              if (_.size(freq) == 1) {
-                return d[0];
-              }
-              return null;
-            }),
-            (d) => !d
-          );
-
-          _.each(seqs, (seq_record) => {
-            _.extend(
-              seq_record[kGlobals.network.NodeAttributeID],
-              consensus_attributes
-            );
-          });
+            }
+          }
         }
-      });
+
+        // consensus check: only copy values if all seqs have the exact same value for that attribute
+        const final_consensus = {};
+        for (const k in consensus_attributes) {
+          if (Object.prototype.hasOwnProperty.call(consensus_attributes, k)) {
+            const vals = consensus_attributes[k];
+            const firstVal = vals[0];
+            let hasConsensus = true;
+            for (let i = 1; i < vals.length; i++) {
+              if (vals[i] !== firstVal) {
+                hasConsensus = false;
+                break;
+              }
+            }
+            if (hasConsensus && firstVal !== null && firstVal !== undefined) {
+              final_consensus[k] = firstVal;
+            }
+          }
+        }
+
+        for (let sIdx = 0; sIdx < seqsLen; sIdx++) {
+          const seq_record = seqs[sIdx];
+          let attrs = seq_record[kGlobals.network.NodeAttributeID];
+          if (!attrs) {
+            attrs = {};
+            seq_record[kGlobals.network.NodeAttributeID] = attrs;
+          }
+          Object.assign(attrs, final_consensus);
+        }
+      }
     }
   }
 
@@ -3433,6 +3486,8 @@ class HIVTxNetwork {
       */
 
   define_attribute_dx_years(relative, label) {
+    const valueCache = new Map();
+    let refDate = null;
     return {
       depends: [timeDateUtil._networkCDCDateField],
       label: label,
@@ -3440,25 +3495,40 @@ class HIVTxNetwork {
       label_format: relative ? d3.format(".2f") : d3.format(".0f"),
       map: (node) => {
         try {
-          var value = this.parse_dates(
-            this.attribute_node_value_by_id(
-              node,
-              timeDateUtil._networkCDCDateField,
-              false,
-              true,
-              true
-            )
+          var rawValue = this.attribute_node_value_by_id(
+            node,
+            timeDateUtil._networkCDCDateField,
+            false,
+            false,
+            true
           );
+
+          if (rawValue === kGlobals.missing.label || rawValue === "REDACTED" || !rawValue) {
+            return kGlobals.missing.label;
+          }
+
+          if (valueCache.has(rawValue)) {
+            return valueCache.get(rawValue);
+          }
+
+          var value = this.parse_dates(rawValue);
+          var mappedValue;
 
           if (value) {
             if (relative) {
-              value = (this.get_reference_date() - value) / 31536000000;
-            } else value = String(value.getUTCFullYear());
+              if (refDate === null) {
+                refDate = this.get_reference_date();
+              }
+              mappedValue = (refDate - value) / 31536000000;
+            } else {
+              mappedValue = String(value.getUTCFullYear());
+            }
           } else {
-            value = kGlobals.missing.label;
+            mappedValue = kGlobals.missing.label;
           }
 
-          return value;
+          valueCache.set(rawValue, mappedValue);
+          return mappedValue;
         } catch {
           return kGlobals.missing.label;
         }
@@ -3859,15 +3929,20 @@ class HIVTxNetwork {
 
   aggregate_indvidual_level_records(node_list) {
     const is_full = !node_list || node_list === this.json.Nodes || (this.json.Nodes && node_list.length === this.json.Nodes.length);
-    if (is_full && this._cached_aggregated_nodes) {
-      return this._cached_aggregated_nodes;
+    if (is_full) {
+      if (this._cached_aggregated_nodes) {
+        return this._cached_aggregated_nodes;
+      }
+      if (this.json._cached_aggregated_nodes) {
+        return (this._cached_aggregated_nodes = this.json._cached_aggregated_nodes);
+      }
     }
 
     let result;
     if (this.isMJCNetwork) {
       let values_iterator;
       if (is_full) {
-        values_iterator = Object.values(this.primary_key_list);
+        values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
       } else {
         const binned = new Map();
         node_list = node_list || this.json.Nodes;
@@ -3924,7 +3999,7 @@ class HIVTxNetwork {
       if (this.has_multiple_sequences) {
         let values_iterator;
         if (is_full) {
-          values_iterator = Object.values(this.primary_key_list);
+          values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
         } else {
           const binned = new Map();
           for (let i = 0; i < node_list.length; i++) {
@@ -4012,6 +4087,7 @@ class HIVTxNetwork {
 
     if (is_full) {
       this._cached_aggregated_nodes = result;
+      this.json._cached_aggregated_nodes = result;
     }
     return result;
   }
