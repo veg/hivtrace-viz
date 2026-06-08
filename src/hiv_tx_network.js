@@ -1828,6 +1828,18 @@ class HIVTxNetwork {
             }),
             (gn) => {
               const eid = this.entity_id(gn);
+              const rep = (entity_to_g_records[eid] || [])[0];
+              // #5: per-person MJC attributes (join arrays e.g. joint_owners).
+              const mjc_attr = (key) => {
+                const v = this.attribute_node_value_by_id(
+                  rep,
+                  key,
+                  false,
+                  false,
+                  true
+                );
+                return Array.isArray(v) ? v.join("; ") : v;
+              };
               return {
                 eHARS_uid: this.cleanRedacted(eid),
                 cluster_uid: this.cleanRedacted(g.name),
@@ -1871,6 +1883,36 @@ class HIVTxNetwork {
                 SequenceID: this.list_of_aliased_sequences(gn)
                   .map((seq) => this.cleanRedacted(seq.split("|")[1]))
                   .join(";"),
+                // #5: individual-level MJC variables (concept doc). MJC only —
+                // these attributes don't exist on regular site networks. Values
+                // arrive pre-redacted from the backend per the MJC-variables config.
+                ...(this.isMJCNetwork
+                  ? {
+                      jurisdiction: mjc_attr("jurisdiction"),
+                      joint_owners: mjc_attr("joint_owners"),
+                      cur_state_cd: mjc_attr("cur_state_cd"),
+                      rsd_state_cd: mjc_attr("rsd_state_cd"),
+                      selected_mjc_date_identified:
+                        this.mjc_selected_for_cluster(
+                          rep,
+                          "mjc_date_identified",
+                          g.name,
+                          true
+                        ),
+                      selected_mjc_date_identified_12mo:
+                        this.mjc_selected_for_cluster(
+                          rep,
+                          "mjc_date_identified_12mo",
+                          g.name,
+                          false
+                        ),
+                      hiv_aids_dx_dt_month_year: mjc_attr(
+                        "hiv_aids_dx_dt_month_year"
+                      ),
+                      hiv_aids_dx_dt_12mo: mjc_attr("hiv_aids_dx_dt_12mo"),
+                      hiv_aids_dx_dt_36mo: mjc_attr("hiv_aids_dx_dt_36mo"),
+                    }
+                  : {}),
               };
             }
           );
@@ -4166,6 +4208,23 @@ class HIVTxNetwork {
       return "REDACTED";
     }
     return id;
+  }
+
+  /**
+   * A node's `mjc_date_identified[_12mo]` value for one cluster. These maps are
+   * keyed by cluster name; pull the entry for `cluster_name`. `format_date`
+   * formats the value as a date. Mirrors the injection in
+   * clusternetwork._extract_mjc_attributes for use outside the node-list view. (#5)
+   */
+  mjc_selected_for_cluster(node, attr_key, cluster_name, format_date) {
+    const attrs = node && node[kGlobals.network.NodeAttributeID];
+    if (!attrs || !(attr_key in attrs)) return kGlobals.missing.label;
+    const v = attrs[attr_key];
+    if (typeof v !== "object" || v === null) return v; // scalar or "REDACTED"
+    if (!Object.hasOwn(v, cluster_name)) return kGlobals.missing.label;
+    return format_date
+      ? timeDateUtil.DateViewFormatExport(this.parse_dates(new Date(v[cluster_name])))
+      : v[cluster_name];
   }
 
   /**
