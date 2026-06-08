@@ -338,7 +338,10 @@ function datamonkey_table_to_text(table_id, sep) {
         tableEl._rendered_limit = next_limit;
 
         const tbody = table.select("tbody");
-        const next_data = tableEl._full_content.slice(current_limit, next_limit);
+        const next_data = tableEl._full_content.slice(
+          current_limit,
+          next_limit
+        );
 
         tbody
           .selectAll("tr.extra-row-dummy") // dummy selector to force append
@@ -365,7 +368,10 @@ function datamonkey_table_to_text(table_id, sep) {
 
         // Clean up scroll listener
         if (tableEl._onScroll && tableEl._scrollParent) {
-          tableEl._scrollParent.removeEventListener("scroll", tableEl._onScroll);
+          tableEl._scrollParent.removeEventListener(
+            "scroll",
+            tableEl._onScroll
+          );
           tableEl._onScroll = null;
           tableEl._scrollParent = null;
         }
@@ -573,9 +579,11 @@ if (typeof window !== "undefined") {
     d3.selectAll(".tab-pane").each(function () {
       const pane = d3.select(this);
       pane.selectAll(".loading-placeholder").remove();
-      pane.selectAll(function () {
-        return this.children;
-      }).style("display", null);
+      pane
+        .selectAll(function () {
+          return this.children;
+        })
+        .style("display", null);
     });
   };
 
@@ -601,14 +609,18 @@ if (typeof window !== "undefined") {
 
             if (graph.Settings && graph.Settings.compact_json) {
               console.time("[PERF] Unpacking compact JSON data");
-              window.updateNetworkLoadingStatus("Unpacking compact JSON data...");
+              window.updateNetworkLoadingStatus(
+                "Unpacking compact JSON data..."
+              );
               await new Promise((resolve) => setTimeout(resolve, 40));
               network.unpack_compact_json(graph);
               console.timeEnd("[PERF] Unpacking compact JSON data");
             }
 
             console.time("[PERF] Extracting clusters and nodes");
-            window.updateNetworkLoadingStatus("Extracting clusters and nodes...");
+            window.updateNetworkLoadingStatus(
+              "Extracting clusters and nodes..."
+            );
             await new Promise((resolve) => setTimeout(resolve, 40));
 
             // Set up a temporary HIVTxNetwork to do collapsing
@@ -622,16 +634,22 @@ if (typeof window !== "undefined") {
               });
 
               // Pre-compute aggregated records in the background so they are cached on the graph
-              window.updateNetworkLoadingStatus("Aggregating individual level records...");
+              window.updateNetworkLoadingStatus(
+                "Aggregating individual level records..."
+              );
               await new Promise((resolve) => setTimeout(resolve, 40));
-              tempNetwork._cached_aggregated_nodes = tempNetwork.aggregate_indvidual_level_records();
+              tempNetwork._cached_aggregated_nodes =
+                tempNetwork.aggregate_indvidual_level_records();
 
               // Save stats on graph for the final constructor
               graph._has_multiple_sequences = true;
               graph._primary_key_list = tempNetwork.primary_key_list;
-              graph._primary_key_list_values = tempNetwork.primary_key_list_values;
-              graph._cached_aggregated_nodes = tempNetwork._cached_aggregated_nodes;
-              graph._entities_in_multiple_clusters = tempNetwork.entities_in_multiple_clusters;
+              graph._primary_key_list_values =
+                tempNetwork.primary_key_list_values;
+              graph._cached_aggregated_nodes =
+                tempNetwork._cached_aggregated_nodes;
+              graph._entities_in_multiple_clusters =
+                tempNetwork.entities_in_multiple_clusters;
               console.timeEnd("[PERF] Processing multiple sequences async");
             }
 
@@ -644,8 +662,15 @@ if (typeof window !== "undefined") {
               console.timeEnd("[PERF] Synchronous clusterNetwork Constructor");
 
               // If the graph is empty, or layout did not initialize/finish, finalize immediately.
-              const isGraphEmpty = window.user_graph && (typeof window.user_graph.is_empty === "function" && window.user_graph.is_empty());
-              if (isGraphEmpty || !window.perfMeasurements || window.perfMeasurements.done) {
+              const isGraphEmpty =
+                window.user_graph &&
+                typeof window.user_graph.is_empty === "function" &&
+                window.user_graph.is_empty();
+              if (
+                isGraphEmpty ||
+                !window.perfMeasurements ||
+                window.perfMeasurements.done
+              ) {
                 window.perfMeasurements = window.perfMeasurements || {};
                 window.perfMeasurements.done = true;
                 if (window.finalizeNetworkLoading) {
@@ -690,7 +715,10 @@ function initializeLoadingScreen() {
     return;
   }
   // Guardrail: Only initialize the loading screen if a network container is present in the document
-  if (!document.getElementById("network_tag") && !document.getElementById("lanl-network_tag")) {
+  if (
+    !document.getElementById("network_tag") &&
+    !document.getElementById("lanl-network_tag")
+  ) {
     return;
   }
 
@@ -715,12 +743,12 @@ function initializeLoadingScreen() {
   d3.selectAll(".tab-pane").each(function () {
     const pane = d3.select(this);
     if (pane.select(".loading-placeholder").empty()) {
-      pane.selectAll(function () {
-        return this.children;
-      }).style("display", "none");
-      pane.append("div")
-        .classed("loading-placeholder", true)
-        .html(`
+      pane
+        .selectAll(function () {
+          return this.children;
+        })
+        .style("display", "none");
+      pane.append("div").classed("loading-placeholder", true).html(`
           <div style="padding: 80px 20px; text-align: center; background: #fafafa; border: 1px dashed #ddd; border-radius: 6px; margin: 20px 0;">
             <div style="margin-bottom: 20px;">
               <i class="fa fa-spinner fa-spin fa-3x" style="color: #337ab7;"></i>

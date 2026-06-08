@@ -1548,7 +1548,7 @@ function draw_priority_set_table(
         },
         {
           value: "Size",
-          width: 100,
+          width: 120,
           presort: "desc",
           sort: function (c) {
             c = c.value;
@@ -1667,21 +1667,25 @@ function draw_priority_set_table(
           html: true,
           width: 50,
           format: (value) => {
+            let icon_html = "";
             if (self.isMJCNetwork) {
-              return "<i class='fa fa-2x fa-globe' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+              icon_html =
+                "<i class='fa fa-lg fa-fw fa-globe' style='color: #777;' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+            } else {
+              icon_html =
+                pg.createdBy === kGlobals.CDCCOICreatedBySystem
+                  ? '<i class="fa fa-lg fa-fw fa-desktop" style="color: #777;" title="' +
+                    kGlobals.CDCCOICreatedBySystem +
+                    '" data-text-export="' +
+                    kGlobals.CDCCOICreatedBySystem +
+                    '"></i>'
+                  : '<i class="fa fa-lg fa-fw fa-user" style="color: #777;" title="' +
+                    kGlobals.CDCCOICreatedManually +
+                    '" data-text-export="' +
+                    kGlobals.CDCCOICreatedManually +
+                    '"></i>';
             }
-
-            return pg.createdBy === kGlobals.CDCCOICreatedBySystem
-              ? '<i class="fa fa-2x fa-desktop" title="' +
-                  kGlobals.CDCCOICreatedBySystem +
-                  '" data-text-export=' +
-                  kGlobals.CDCCOICreatedBySystem +
-                  "></i>"
-              : '<i class="fa fa-2x fa-user" title="' +
-                  kGlobals.CDCCOICreatedManually +
-                  '" data-text-export=' +
-                  kGlobals.CDCCOICreatedManually +
-                  "></i>";
+            return `<div style="text-align: center; width: 100%; padding-top: 6px;">${icon_html}</div>`;
           },
         },
         {
@@ -1713,6 +1717,7 @@ function draw_priority_set_table(
                 "</span>") +
             "</div>",
           html: true,
+          vertical_actions: true,
           actions: [],
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
@@ -1726,10 +1731,14 @@ function draw_priority_set_table(
             );
 
             if (vs[0] !== vs[1]) {
-              return vs[0] + " / " + vs[1];
+              return `<div style="line-height: 1.2;">
+                <div>${vs[0]}</div>
+                <div style="font-size: 85%; color: #777;" title="Date created">Created: ${vs[1]}</div>
+              </div>`;
             }
             return vs[0];
           },
+          html: true,
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
@@ -1741,8 +1750,17 @@ function draw_priority_set_table(
             if (value === "REDACTED") {
               return "REDACTED";
             }
-            return kGlobals.CDCCOIConciseTrackingOptions[value];
+            const raw = kGlobals.CDCCOIConciseTrackingOptions[value] || value;
+            if (raw && raw.indexOf(",") > 0) {
+              const parts = raw.split(",");
+              return `<div style="line-height: 1.2;">
+                <div>${parts[0].trim()}</div>
+                <div style="font-size: 85%; color: #777;">${parts[1].trim()}</div>
+              </div>`;
+            }
+            return raw;
           },
+          html: true,
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
         },
         {
@@ -1771,8 +1789,9 @@ function draw_priority_set_table(
             ).length,*/
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,
+            pg.node_objects,
           ],
-          width: 100,
+          width: 120,
           format: function (v) {
             if (
               (self.isMJCNetwork &&
@@ -1783,14 +1802,69 @@ function draw_priority_set_table(
               return "REDACTED";
             }
             if (v) {
-              return (
-                v[0] +
-                (v[1]
-                  ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' +
-                    v[1] +
-                    " new</span>"
-                  : "")
-              );
+              const nodes_by_entity = {};
+              _.each(v[4] || [], (n) => {
+                const entity_id = self.primary_key(n);
+                if (!nodes_by_entity[entity_id]) {
+                  nodes_by_entity[entity_id] = [];
+                }
+                nodes_by_entity[entity_id].push(n);
+              });
+
+              let with_seq = 0;
+              let poor_seq = 0;
+              let no_seq = 0;
+              _.each(nodes_by_entity, (nodes) => {
+                const has_seq = _.some(nodes, (n) => {
+                  const has_no_seq =
+                    (n.patient_attributes &&
+                      n.patient_attributes.has_sequence === false) ||
+                    (n.patient_attributes &&
+                      n.patient_attributes.sequence_status === "none");
+                  return !has_no_seq;
+                });
+                if (has_seq) {
+                  with_seq++;
+                } else {
+                  const has_poor = _.some(nodes, (n) => {
+                    return n.patient_attributes && n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+                  });
+                  if (has_poor) {
+                    poor_seq++;
+                  } else {
+                    no_seq++;
+                  }
+                }
+              });
+
+              const total_size = v[0];
+              const new_nodes = v[1];
+
+              let html = `<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1.1; padding: 2px 0;">`;
+              html += `<span style="font-weight: bold;">${total_size}</span>`;
+
+              if (no_seq > 0 || poor_seq > 0) {
+                let parts = [`${with_seq}`];
+                let tooltip_parts = [`Nodes with sequence data: ${with_seq}`];
+                if (poor_seq > 0) {
+                  parts.push(`${poor_seq} (poor seq)`);
+                  tooltip_parts.push(`Nodes with poor/unusable sequence: ${poor_seq}`);
+                }
+                if (no_seq > 0) {
+                  parts.push(`${no_seq} (no seq)`);
+                  tooltip_parts.push(`Nodes without sequence data: ${no_seq}`);
+                }
+                const parts_str = parts.join(" + ");
+                const title_str = tooltip_parts.join(", ");
+                html += `<span class="label label-info" style="font-size: 85%; font-weight: normal; white-space: nowrap;" title="${title_str}">${parts_str}</span>`;
+              }
+
+              if (new_nodes) {
+                html += `<span title="Number of nodes added by the system since the last network update" class="label label-default" style="font-size: 85%; font-weight: normal; white-space: nowrap;">${new_nodes} new</span>`;
+              }
+
+              html += `</div>`;
+              return html;
             }
             return "N/A";
           },
@@ -1820,7 +1894,10 @@ function draw_priority_set_table(
             ) {
               return "<span title='REDACTED'>RED.</span>";
             }
-            return v ? "Yes" : "No";
+            if (v) {
+              return `<span style="color: #d9534f; font-weight: bold;">Yes</span>`;
+            }
+            return `<span style="color: #999;">No</span>`;
           },
           value: pg.meets_priority_def,
           html: true,
@@ -1835,6 +1912,14 @@ function draw_priority_set_table(
             self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false
               ? "REDACTED"
               : pg.cluster_dx_recent12_mo,
+          format: function (v) {
+            if (v === "REDACTED") return "REDACTED";
+            if (v === undefined || v === null || v === 0) {
+              return `<span style="color: #bbb;">0</span>`;
+            }
+            return `<span style="font-weight: bold; color: #e67e22;">${v}</span>`;
+          },
+          html: true,
           // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
@@ -1847,26 +1932,29 @@ function draw_priority_set_table(
           ],
           format: function (v) {
             if (v) {
-              return (
-                v[0] +
-                " clusters; " +
-                v[1] +
-                " persons" +
-                (v[2].length
-                  ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
-                    v[2].join(", ") +
-                    '" class="label label-danger pull-right">' +
-                    v[2].length +
-                    " duplicate clusterOI</span>"
-                  : "") +
-                (v[3].length
-                  ? ' <span title="clusterOIs which contain this clusterOI: ' +
-                    v[3].join(", ") +
-                    '" class="label label-warning pull-right">Fully contained in ' +
-                    v[3].length +
-                    " clusterOI</span>"
-                  : "")
-              );
+              if (v[0] === 0 && v[1] === 0) {
+                return `<span style="color: #bbb;">—</span>`;
+              }
+              let html = `<div style="line-height: 1.2;">
+                <div>${v[0]} clusters</div>
+                <div style="font-size: 85%; color: #777;">${v[1]} persons</div>`;
+
+              if (v[2].length) {
+                html += `<div style="margin-top: 3px;"><span title="clusterOIs which are exact duplicates of this clusterOI: ${v[2].join(
+                  ", "
+                )}" class="label label-danger" style="font-size: 80%; display: inline-block;">${
+                  v[2].length
+                } duplicate</span></div>`;
+              }
+              if (v[3].length) {
+                html += `<div style="margin-top: 3px;"><span title="clusterOIs which contain this clusterOI: ${v[3].join(
+                  ", "
+                )}" class="label label-warning" style="font-size: 80%; display: inline-block;">Contained in ${
+                  v[3].length
+                }</span></div>`;
+              }
+              html += `</div>`;
+              return html;
             }
             return "N/A";
           },
@@ -1913,38 +2001,37 @@ function draw_priority_set_table(
           ],
           format: function (v) {
             if (v) {
-              return (
-                v[0] +
-                " clusters; " +
-                v[1] +
-                " persons" +
-                (v[2].length
-                  ? ' <span title="' +
-                    (!self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOIs which are exact duplicates of this " +
-                    (self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOI: " +
-                    v[2].join(", ") +
-                    '" class="label label-danger pull-right">' +
-                    v[2].length +
-                    " duplicate " +
-                    (!self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOI</span>"
-                  : "") +
-                (v[3].length
-                  ? ' <span title="' +
-                    (!self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOIs which contain this " +
-                    (self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOI: " +
-                    v[3].join(", ") +
-                    '" class="label label-warning pull-right">Fully contained in ' +
-                    v[3].length +
-                    " " +
-                    (!self.isMJCNetwork ? "MJ " : "") +
-                    "clusterOI</span>"
-                  : "")
-              );
+              if (v[0] === 0 && v[1] === 0) {
+                return `<span style="color: #bbb;">—</span>`;
+              }
+              let html = `<div style="line-height: 1.2;">
+                <div>${v[0]} clusters</div>
+                <div style="font-size: 85%; color: #777;">${v[1]} persons</div>`;
+
+              if (v[2].length) {
+                html += `<div style="margin-top: 3px;"><span title="${
+                  !self.isMJCNetwork ? "MJ " : ""
+                }clusterOIs which are exact duplicates of this ${
+                  self.isMJCNetwork ? "MJ " : ""
+                }clusterOI: ${v[2].join(
+                  ", "
+                )}" class="label label-danger" style="font-size: 80%; display: inline-block;">${
+                  v[2].length
+                } duplicate</span></div>`;
+              }
+              if (v[3].length) {
+                html += `<div style="margin-top: 3px;"><span title="${
+                  !self.isMJCNetwork ? "MJ " : ""
+                }clusterOIs which contain this ${
+                  self.isMJCNetwork ? "MJ " : ""
+                }clusterOI: ${v[3].join(
+                  ", "
+                )}" class="label label-warning" style="font-size: 80%; display: inline-block;">Contained in ${
+                  v[3].length
+                }</span></div>`;
+              }
+              html += `</div>`;
+              return html;
             }
             return "N/A";
           },
@@ -2024,10 +2111,7 @@ function draw_priority_set_table(
           },
         ];
       } else {
-        this_row[1].actions = [_.clone(this_row[1].actions)];
-        this_row[1].actions[this_row[1].actions.length - 1].splice(
-          -1,
-          0,
+        this_row[1].actions = [
           {
             icon: "fa-info-circle",
             classed: { "view-edit-cluster": true },
@@ -2048,30 +2132,22 @@ function draw_priority_set_table(
                 }
               );
             },
-          }
-        );
-        this_row[1].actions[this_row[1].actions.length - 1].splice(
-          -1,
-          0,
-          (button_group, value) => {
-            if (get_editor()) {
-              return {
-                icon: "fa-plus",
-                help: "Add nodes in this cluster of interest to the new cluster of interest",
-                action: function (button, value) {
-                  let nodeset = self.priority_groups_find_by_name(value);
-                  if (nodeset) {
-                    get_editor().append_node_objects(nodeset.node_objects);
-                  }
-                },
-              };
-            }
-            return null;
-          }
-        );
+          },
+        ];
+        if (get_editor()) {
+          this_row[1].actions.push({
+            icon: "fa-plus",
+            help: "Add nodes in this cluster of interest to the new cluster of interest",
+            action: function (button, value) {
+              let nodeset = self.priority_groups_find_by_name(value);
+              if (nodeset) {
+                get_editor().append_node_objects(nodeset.node_objects);
+              }
+            },
+          });
+        }
       }
-      this_row[1].actions = _.flatten(this_row[1].actions);
-      //console.log (this_row[0]);
+
       if (pg.not_in_network && pg.not_in_network.length) {
         this_row[2]["actions"] = [
           {

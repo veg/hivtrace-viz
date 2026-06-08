@@ -388,31 +388,47 @@ export function load_nodes_edges(
             value: cluster, // payload for the callback will be this subcluster object
             callback: function (element, payload) {
               var this_cell = d3.select(element);
-              this_cell
-                .append("button")
-                .classed("btn btn-primary btn-xs pull-right", true)
-                .style("margin-left", "1em")
-                .text("Complete " + annotation)
-                .on("click", (e_event) =>
-                  injected_column_subcluster_button_handler_internal(
-                    tx_network,
-                    payload,
-                    null,
-                    null,
-                    annotation
-                  )
-                );
+              this_cell.html("");
+
+              var flex_container = this_cell
+                .append("div")
+                .style("display", "flex")
+                .style("justify-content", "flex-start")
+                .style("align-items", "center")
+                .style("width", "100%")
+                .style("gap", "6px");
 
               var node_ids = {};
               _.each(payload.children, (n) => {
                 node_ids[n.id] = 1;
               });
 
-              this_cell
+              var btn_group = flex_container
+                .append("div")
+                .classed("btn-group", true);
+
+              var action_btn = btn_group
                 .append("button")
-                .classed("btn btn-primary btn-xs pull-right", true)
-                .text("Directly linked " + annotation)
-                .on("click", (e_event) =>
+                .classed("btn btn-default btn-xs dropdown-toggle", true)
+                .attr("type", "button")
+                .attr("data-toggle", "dropdown")
+                .attr("aria-haspopup", "true")
+                .attr("aria-expanded", "false")
+                .attr("title", "Actions");
+
+              action_btn.append("span").classed("fa fa-cog", true);
+
+              var dropdown_menu = btn_group
+                .append("ul")
+                .classed("dropdown-menu", true);
+
+              dropdown_menu
+                .append("li")
+                .append("a")
+                .attr("href", "#")
+                .text("View directly linked " + annotation + " nodes")
+                .on("click", (e_event) => {
+                  d3.event.preventDefault();
                   injected_column_subcluster_button_handler_internal(
                     tx_network,
                     payload,
@@ -422,11 +438,27 @@ export function load_nodes_edges(
                     (id) =>
                       "Subcluster " +
                       payload.cluster_id +
-                      "[+ direct  " +
+                      " [+ direct " +
                       annotation +
                       "]"
-                  )
-                );
+                  );
+                });
+
+              dropdown_menu
+                .append("li")
+                .append("a")
+                .attr("href", "#")
+                .text("View complete " + annotation + " subnetwork")
+                .on("click", (e_event) => {
+                  d3.event.preventDefault();
+                  injected_column_subcluster_button_handler_internal(
+                    tx_network,
+                    payload,
+                    null,
+                    null,
+                    annotation
+                  );
+                });
             },
           };
         },
@@ -438,7 +470,7 @@ export function load_nodes_edges(
         description: {
           value: annotation + " network",
           sort: function (c) {
-            return c.value[0];
+            return c.value[0] || 0;
           },
           help: "Nodes added and clusters merged through " + annotation,
         },
@@ -446,100 +478,150 @@ export function load_nodes_edges(
           // cluster here is a main cluster object from tx_network.clusters
           return {
             value: [
-              cluster.injected ? cluster.injected[annotation] : 0,
+              (cluster.injected && cluster.injected[annotation]) || 0,
               cluster.linked_clusters,
               cluster.cluster_id,
             ],
             callback: function (element, payload) {
               var this_cell = d3.select(element);
-              this_cell.text(
-                Number(payload[0]) + " " + annotation + " nodes. "
-              );
+              this_cell.html("");
+
+              var flex_container = this_cell
+                .append("div")
+                .style("display", "flex")
+                .style("justify-content", "flex-start")
+                .style("align-items", "center")
+                .style("width", "100%")
+                .style("gap", "8px");
+
               var other_clusters = [];
               if (payload[1]) {
                 other_clusters = _.without(_.keys(payload[1]), payload[2]);
-                if (other_clusters.length) {
-                  other_clusters.sort();
-                  this_cell
-                    .append("span")
-                    .classed("label label-info", true)
-                    .text("Bridges to " + other_clusters.length + " clusters")
-                    .attr("title", other_clusters.join(", "));
-                }
               }
 
-              var labeled_links = _.clone(
-                edge_types_by_cluster_sorted[payload[2]] || []
-              );
+              if (payload[0] === 0 && other_clusters.length === 0) {
+                flex_container
+                  .append("span")
+                  .classed("text-muted", true)
+                  .style("font-size", "85%")
+                  .style("font-style", "italic")
+                  .text("None");
+              } else {
+                var labeled_links = _.clone(
+                  edge_types_by_cluster_sorted[payload[2]] || []
+                );
 
-              if (
-                payload[0] > 0 ||
-                other_clusters.length ||
-                (edge_types_by_cluster_sorted[payload[2]] &&
-                  labeled_links.length)
-              ) {
-                labeled_links.push("");
-
-                var shown_types = {};
-                _.each(labeled_links, (t) => {
-                  shown_types[t] = 1;
-                });
-
-                this_cell
-                  .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
-                  .text("Directly linked " + annotation)
-                  .style("margin-left", "1em")
-                  .on("click", (e_event) => {
-                    var directly_linked_ids = {};
-                    var node_ids = {};
-
-                    _.each(cluster.children, (n) => {
-                      // Use the 'cluster' from the generator's scope
-                      node_ids[n.id] = 1;
-                    });
-
-                    var direct_links_only =
-                      misc.hivtrace_cluster_depthwise_traversal(
-                        tx_network.json.Nodes,
-                        tx_network.json.Edges,
-                        (edge) =>
-                          tx_network.json.Nodes[edge.target].id in node_ids ||
-                          tx_network.json.Nodes[edge.source].id in node_ids,
-                        false,
-                        cluster.children // Use the 'cluster' from the generator's scope
-                      );
-
-                    _.each(direct_links_only[0], (n) => {
-                      directly_linked_ids[n.id] = true;
-                    });
-
-                    social_view_handler_internal(
-                      tx_network,
-                      payload[2], // cluster_id
-                      (n) => n.id in directly_linked_ids,
-                      labeled_links,
-                      shown_types,
-                      (id) => "Cluster " + id + "[+ direct " + annotation + "]"
-                    );
+                if (
+                  payload[0] > 0 ||
+                  other_clusters.length ||
+                  (edge_types_by_cluster_sorted[payload[2]] &&
+                    labeled_links.length)
+                ) {
+                  labeled_links.push("");
+                  var shown_types = {};
+                  _.each(labeled_links, (t) => {
+                    shown_types[t] = 1;
                   });
 
-                this_cell
-                  .append("button")
-                  .classed("btn btn-primary btn-xs pull-right", true)
-                  .text("Complete " + annotation)
-                  .on("click", (e_event) =>
-                    social_view_handler_internal(
-                      tx_network,
-                      payload[2], // cluster_id
-                      (n) =>
-                        n.extended_cluster && payload[2] in n.extended_cluster,
-                      labeled_links,
-                      shown_types,
-                      (id) => "Cluster " + id + "[+ " + annotation + "]",
-                      annotation
-                    )
-                  );
+                  var btn_group = flex_container
+                    .append("div")
+                    .classed("btn-group", true);
+
+                  var action_btn = btn_group
+                    .append("button")
+                    .classed("btn btn-default btn-xs dropdown-toggle", true)
+                    .attr("type", "button")
+                    .attr("data-toggle", "dropdown")
+                    .attr("aria-haspopup", "true")
+                    .attr("aria-expanded", "false")
+                    .attr("title", "Actions");
+
+                  action_btn.append("span").classed("fa fa-cog", true);
+
+                  var dropdown_menu = btn_group
+                    .append("ul")
+                    .classed("dropdown-menu", true);
+
+                  dropdown_menu
+                    .append("li")
+                    .append("a")
+                    .attr("href", "#")
+                    .text("View directly linked " + annotation + " nodes")
+                    .on("click", (e_event) => {
+                      d3.event.preventDefault();
+                      var directly_linked_ids = {};
+                      var node_ids = {};
+
+                      _.each(cluster.children, (n) => {
+                        node_ids[n.id] = 1;
+                      });
+
+                      var direct_links_only =
+                        misc.hivtrace_cluster_depthwise_traversal(
+                          tx_network.json.Nodes,
+                          tx_network.json.Edges,
+                          (edge) =>
+                            tx_network.json.Nodes[edge.target].id in node_ids ||
+                            tx_network.json.Nodes[edge.source].id in node_ids,
+                          false,
+                          cluster.children
+                        );
+
+                      _.each(direct_links_only[0], (n) => {
+                        directly_linked_ids[n.id] = true;
+                      });
+
+                      social_view_handler_internal(
+                        tx_network,
+                        payload[2], // cluster_id
+                        (n) => n.id in directly_linked_ids,
+                        labeled_links,
+                        shown_types,
+                        (id) => "Cluster " + id + " [+ direct " + annotation + "]"
+                      );
+                    });
+
+                  dropdown_menu
+                    .append("li")
+                    .append("a")
+                    .attr("href", "#")
+                    .text("View complete " + annotation + " subnetwork")
+                    .on("click", (e_event) => {
+                      d3.event.preventDefault();
+                      social_view_handler_internal(
+                        tx_network,
+                        payload[2], // cluster_id
+                        (n) =>
+                          n.extended_cluster && payload[2] in n.extended_cluster,
+                        labeled_links,
+                        shown_types,
+                        (id) => "Cluster " + id + " [+ " + annotation + "]",
+                        annotation
+                      );
+                    });
+                }
+
+                if (payload[0] > 0) {
+                  flex_container
+                    .append("span")
+                    .classed("label label-primary", true)
+                    .style("font-size", "85%")
+                    .style("padding", "3px 6px")
+                    .style("border-radius", "4px")
+                    .text(payload[0] + " " + annotation + " node" + (payload[0] > 1 ? "s" : ""));
+                }
+                if (other_clusters.length) {
+                  other_clusters.sort();
+                  flex_container
+                    .append("span")
+                    .classed("label label-info", true)
+                    .style("font-size", "85%")
+                    .style("padding", "3px 6px")
+                    .style("border-radius", "4px")
+                    .style("cursor", "help")
+                    .text("Bridges: " + other_clusters.length)
+                    .attr("title", "Bridges to clusters: " + other_clusters.join(", "));
+                }
               }
             },
           };
@@ -584,7 +666,10 @@ export function load_nodes_edges(
     if (tx_network._is_CDC_) {
       //tx_network.draw_extended_node_table(tx_network.aggregate_indvidual_level_records(), null, null, { "no-filter": !tx_network.node_search_div });
     } else {
-      tx_network.draw_node_table(tx_network.extra_node_table_columns, tx_network.json.Nodes);
+      tx_network.draw_node_table(
+        tx_network.extra_node_table_columns,
+        tx_network.json.Nodes
+      );
     }
   }
 

@@ -32,7 +32,10 @@ function load_more_rows(container) {
   const current_limit = tableEl._rendered_limit || 200;
   if (current_limit >= tableEl._full_content.length) return;
 
-  const next_limit = Math.min(current_limit + 500, tableEl._full_content.length);
+  const next_limit = Math.min(
+    current_limit + 500,
+    tableEl._full_content.length
+  );
   tableEl._rendered_limit = next_limit;
 
   const tbody = container.select("tbody");
@@ -98,7 +101,10 @@ function check_is_jspanel(node, id) {
         let classStr = "";
         if (typeof curr.className === "string") {
           classStr = curr.className;
-        } else if (curr.className && typeof curr.className.baseVal === "string") {
+        } else if (
+          curr.className &&
+          typeof curr.className.baseVal === "string"
+        ) {
           classStr = curr.className.baseVal;
         } else {
           try {
@@ -295,9 +301,15 @@ function add_a_sortable_table(
     if (use_lazy) {
       let scrollParent = window;
       let parent = tableEl.parentNode;
-      while (parent && parent !== document.body && parent !== document.documentElement) {
+      while (
+        parent &&
+        parent !== document.body &&
+        parent !== document.documentElement
+      ) {
         const style = window.getComputedStyle(parent);
-        const overflowY = style.getPropertyValue("overflow-y") || style.getPropertyValue("overflow");
+        const overflowY =
+          style.getPropertyValue("overflow-y") ||
+          style.getPropertyValue("overflow");
         if (overflowY === "auto" || overflowY === "scroll") {
           scrollParent = parent;
           break;
@@ -336,7 +348,10 @@ function add_a_sortable_table(
       scrollParent.addEventListener("scroll", onScroll);
     }
   } finally {
-    const tagName = (container.node() && container.node().tagName || "").toUpperCase();
+    const tagName = (
+      (container.node() && container.node().tagName) ||
+      ""
+    ).toUpperCase();
     if (tagName === "TABLE") {
       container.style("display", "table");
     } else if (tagName === "DIV") {
@@ -579,10 +594,19 @@ function format_a_cell(data, index, item, priority_set_editor) {
     }
 
     _.each(by_group, (bgrp) => {
-      let button_group = handle_sort
-        .append("div")
-        .classed("btn-group btn-group-xs", true)
-        .attr("style", "padding-left:0.5em");
+      let button_group = handle_sort.append("div");
+      if (data.vertical_actions) {
+        button_group
+          .classed("btn-group btn-group-xs", true)
+          .attr(
+            "style",
+            "margin-top: 4px; display: inline-flex !important; flex-direction: row; gap: 4px;"
+          );
+      } else {
+        button_group
+          .classed("btn-group btn-group-xs", true)
+          .attr("style", "padding-left:0.5em");
+      }
       _.each(
         _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,
         (b) => {
@@ -601,7 +625,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .classed("btn btn-default btn-xs dropdown-toggle", true)
                 .attr("data-toggle", "dropdown");
 
-              if (b.force_line_break) {
+              if (b.force_line_break && !data.vertical_actions) {
                 button_group.attr("style", "display: block;");
               }
 
@@ -928,7 +952,10 @@ function sort_table_by_column(element, datum) {
       );
 
       // Keep the current limit (or reset to 200, but keeping current is smoother)
-      const current_limit = Math.min(tableEl._rendered_limit || 200, tableEl._full_content.length);
+      const current_limit = Math.min(
+        tableEl._rendered_limit || 200,
+        tableEl._full_content.length
+      );
 
       const tbody = d3.select(tableEl).select("tbody");
       tbody.selectAll("tr").remove();

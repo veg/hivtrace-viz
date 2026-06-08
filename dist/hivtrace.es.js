@@ -47031,6 +47031,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     */
   self.extra_cluster_table_columns = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "cluster-table-columns", null);
   self.parent_graph_object = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "parent_graph", null);
+  self.legend_multiple_sequences = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "legend_multiple_sequences", self.parent_graph_object ? self.parent_graph_object.legend_multiple_sequences : self.legend_multiple_sequences);
 
   /** set the TODAY date for the network*/
 
@@ -47053,7 +47054,8 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
 
     /** these are the default columns selected in the "nodes" table */
 
-    self.displayed_node_subset = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "node-attributes", [_tables_js__WEBPACK_IMPORTED_MODULE_7__._networkNodeIDField, "sex_trans", "race_cat", "hiv_aids_dx_dt", "cur_city_name"]);
+    var default_node_attributes = [_tables_js__WEBPACK_IMPORTED_MODULE_7__._networkNodeIDField, "sex_trans", "race_cat", "hiv_aids_dx_dt", "cur_city_name"];
+    self.displayed_node_subset = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "node-attributes", default_node_attributes);
 
     /** retrieve the target DOM ID for placing the "subcluster" table into */
     self.subcluster_table = _network_js__WEBPACK_IMPORTED_MODULE_13__.check_network_option(options, "subcluster-table", null, d3__WEBPACK_IMPORTED_MODULE_0__.select(options["subcluster-table"]));
@@ -47514,6 +47516,15 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (self.exclude_cluster_ids) {
       mapped_clusters = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].omit(mapped_clusters, self.exclude_cluster_ids);
     }
+
+    // Filter out unclustered/None/null/undefined groups and clusters of size <= 1
+    var filtered_mapped_clusters = {};
+    underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(mapped_clusters, function (value, key) {
+      if (key !== "null" && key !== "undefined" && key !== "None" && key !== "" && value.length > 1) {
+        filtered_mapped_clusters[key] = value;
+      }
+    });
+    mapped_clusters = filtered_mapped_clusters;
     var all_clusters = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].map(mapped_clusters, function (value, key) {
       return {
         cluster_id: key,
@@ -48287,12 +48298,14 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     self.cluster_sizes_in_entities = {};
     var cluster_set = new Set();
     graph_data.Nodes.forEach(function (d) {
-      if (typeof self.cluster_sizes[d.cluster - 1] === "undefined") {
-        self.cluster_sizes[d.cluster - 1] = 1;
-      } else {
-        self.cluster_sizes[d.cluster - 1]++;
+      if (d.cluster) {
+        if (typeof self.cluster_sizes[d.cluster - 1] === "undefined") {
+          self.cluster_sizes[d.cluster - 1] = 1;
+        } else {
+          self.cluster_sizes[d.cluster - 1]++;
+        }
+        cluster_set.add(d.cluster);
       }
-      cluster_set.add(d.cluster);
       if ("is_lanl" in d) {
         d.is_lanl = d.is_lanl === "true";
       }
@@ -48307,24 +48320,35 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (self.has_multiple_sequences) {
       var entity_count = 0;
       self.apply_to_entities(function (entity_id, nodes) {
-        if (self.cluster_sizes_in_entities[nodes[0].cluster]) {
-          self.cluster_sizes_in_entities[nodes[0].cluster]++;
-        } else {
-          self.cluster_sizes_in_entities[nodes[0].cluster] = 1;
+        var cluster_id = nodes[0].cluster;
+        if (cluster_id) {
+          if (self.cluster_sizes_in_entities[cluster_id]) {
+            self.cluster_sizes_in_entities[cluster_id]++;
+          } else {
+            self.cluster_sizes_in_entities[cluster_id] = 1;
+          }
         }
         entity_count++;
       });
       if (self.json["Network Summary"]) {
         self.json["Network Summary"]["Nodes"] = entity_count;
-        self.json["Network Summary"]["Clusters"] = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].size(self.cluster_sizes_in_entities);
+        self.json["Network Summary"]["Clusters"] = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.cluster_sizes_in_entities, function (d, c) {
+          return c !== "null" && c !== "undefined" && d > 1;
+        }).length;
         self.json["Cluster sizes"] = [];
         underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.cluster_sizes_in_entities, function (d, c) {
-          self.json["Cluster sizes"].push(d);
+          if (c !== "null" && c !== "undefined" && d > 1) {
+            self.json["Cluster sizes"].push(d);
+          }
         });
       }
     } else {
       if (self.json["Network Summary"]) {
-        self.json["Network Summary"]["Clusters"] = cluster_set.size;
+        var valid_clusters = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.cluster_sizes, function (size) {
+          return size > 1;
+        });
+        self.json["Network Summary"]["Clusters"] = valid_clusters.length;
+        self.json["Cluster sizes"] = valid_clusters;
       }
     }
 
@@ -48401,10 +48425,32 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           }
         }];
       }
+      var has_seq_attributes = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].some(self.json.Nodes, function (n) {
+        return n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID] && (n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].has_sequence !== undefined || n[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].poor_quality !== undefined);
+      });
+      if (has_seq_attributes) {
+        return_array.push({
+          raw_attribute_key: "sequence_status",
+          type: "String",
+          label: "Sequence Status",
+          enum: ["Sequenced", "Poor Quality", "Unsequenced"],
+          format: function format() {
+            return "Sequence Status";
+          }
+        });
+      }
       return_array.push(underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(self.json[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.GraphAttrbuteID], function (d) {
         return d.type in allowed_types;
       }));
-      return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].flatten(return_array, true);
+      var flattened = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].flatten(return_array, true);
+      var seen = {};
+      return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].filter(flattened, function (d) {
+        if (d.raw_attribute_key in seen) {
+          return false;
+        }
+        seen[d.raw_attribute_key] = true;
+        return true;
+      });
     };
 
     /**
@@ -49689,7 +49735,13 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         }
         console.time("[PERF] cluster distances calculations");
         self.edges.forEach(function (e, i) {
-          self.clusters[self.cluster_mapping[self.nodes[e.target].cluster]].distances.push(e.length);
+          var cid = self.nodes[e.target].cluster;
+          if (cid !== null && cid !== undefined) {
+            var cidx = self.cluster_mapping[cid];
+            if (cidx !== undefined && self.clusters[cidx]) {
+              self.clusters[cidx].distances.push(e.length);
+            }
+          }
         });
         self.clusters.forEach(function (d, i) {
           d.distances = _helpers_js__WEBPACK_IMPORTED_MODULE_4__.describe_vector(d.distances);
@@ -49756,6 +49808,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         }
         self.draw_attribute_labels();
         network_layout.start();
+        if (window.hivtrace && window.hivtrace.graphSummary && self.graph_summary_tag) {
+          window.hivtrace.graphSummary(self, self.graph_summary_tag, self.graph_summary_not_CDC);
+        }
       }
     });
     function runInitSteps(index) {
@@ -49977,10 +50032,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     var this_cell = d3__WEBPACK_IMPORTED_MODULE_0__.select(element);
     var labels;
     if (payload.length === 1) {
-      if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isString(payload[0])) {
+      if (payload[0] === null) {
+        labels = [];
+      } else if (underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isString(payload[0])) {
         labels = [[payload[0], 1, "btn-warning"]];
       } else {
-        labels = ["can't be shown", 1];
+        labels = [["can't be shown", 1]];
       }
     } else {
       labels = [[payload[0] ? "hide" : "show", 0]];
@@ -50191,7 +50248,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           } else if (self.displayed_node_subset[c].type === "Number") {
             cell_definition = {
               value: cell,
-              format: d3__WEBPACK_IMPORTED_MODULE_0__.format(".2f")
+              format: self.displayed_node_subset[c].label_format || d3__WEBPACK_IMPORTED_MODULE_0__.format(".2f")
             };
           }
           if (!cell_definition) {
@@ -50421,6 +50478,9 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           }, {
             value: function value() {
               if (n.node_class !== "injected") {
+                if (n.cluster === null || n.cluster === undefined || n.cluster === "None" || self.cluster_mapping[n.cluster] === undefined) {
+                  return [null];
+                }
                 try {
                   if (self.exclude_cluster_ids[n.cluster]) {
                     // parent cluster can't be rendered
@@ -50727,6 +50787,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       //var path_component = containter.selectAll ("path");
 
       var symbol_type;
+      var has_seq = node.patient_attributes && node.patient_attributes.has_sequence !== undefined ? node.patient_attributes.has_sequence : node.patient_attributes && node.patient_attributes.sequence_status !== "none";
       if (node.hxb2_linked && !node.is_lanl) {
         symbol_type = "cross";
       } else if (node.is_lanl) {
@@ -50737,6 +50798,47 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
       node.rendered_size = Math.sqrt(node_size(node)) / 2 + 2;
       container.selectAll("path").attr("d", _misc__WEBPACK_IMPORTED_MODULE_11__.symbol(symbol_type).size(node_size(node))).style("fill", function (d) {
         return node_color(d);
+      }).style("fill-opacity", function (d) {
+        var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+        if (d_has_seq === false) {
+          var d_is_poor = d.patient_attributes && d.patient_attributes.poor_quality !== undefined && d.patient_attributes.poor_quality !== null;
+          return d_is_poor ? 0.20 : 0.08;
+        }
+        return 1.0;
+      }).style("stroke-width", function (d) {
+        if (d.match_filter && !self.hide_unselected) {
+          return "5px";
+        }
+        var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+        if (d_has_seq === false) return "2.5px";
+        return "0.5px";
+      }).style("stroke-dasharray", function (d) {
+        if (d.match_filter && !self.hide_unselected) {
+          return "none";
+        }
+        var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+        if (d_has_seq === false) {
+          var d_is_poor = d.patient_attributes && d.patient_attributes.poor_quality !== undefined && d.patient_attributes.poor_quality !== null;
+          return d_is_poor ? "1,3" : "3,3";
+        }
+        return "none";
+      }).style("stroke", function (d) {
+        if (d.match_filter && !self.hide_unselected) {
+          return "#000";
+        }
+        var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+        if (d_has_seq === false) {
+          var d_is_poor = d.patient_attributes && d.patient_attributes.poor_quality !== undefined && d.patient_attributes.poor_quality !== null;
+          if (d_is_poor) {
+            return "#d9534f";
+          }
+          var c = node_color(d);
+          if (c.indexOf("url(#") === 0) {
+            return "#777";
+          }
+          return d3__WEBPACK_IMPORTED_MODULE_0__.rgb(c).darker(1.2).toString();
+        }
+        return "#000";
       }).classed("multi_sequence", function (d) {
         return underscore__WEBPACK_IMPORTED_MODULE_1__["default"].isArray(d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.AliasedSequencesID]) && d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.AliasedSequencesID].length > 1;
       });
@@ -51008,6 +51110,22 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
     if (self.legend_multiple_sequences && self.rendered_object_counts && self.rendered_object_counts["nodes"] > 0) {
       self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(3," + (offset + 5) + ")").append("circle").attr("cx", "6").attr("cy", "-4").attr("r", "6").classed("multi_sequence", true).style("fill", "none");
       self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + (offset + 5) + ")").append("text").text("Represents >1 sequence");
+      offset += 24;
+    }
+    var has_unsequenced = self.rendered_object_counts && self.rendered_object_counts["nodes"] > 0 && self.nodes.some(function (n) {
+      return n.patient_attributes && (n.patient_attributes.has_sequence === false || n.patient_attributes.sequence_status === "none") && (n.patient_attributes.poor_quality === undefined || n.patient_attributes.poor_quality === null);
+    });
+    var has_poor_seq = self.rendered_object_counts && self.rendered_object_counts["nodes"] > 0 && self.nodes.some(function (n) {
+      return n.patient_attributes && (n.patient_attributes.has_sequence === false || n.patient_attributes.sequence_status === "none") && n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+    });
+    if (has_unsequenced) {
+      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(3," + (offset + 5) + ")").append("circle").attr("cx", "6").attr("cy", "-4").attr("r", "6").style("fill", "rgba(0,0,0,0.08)").style("stroke", "#777").style("stroke-width", "2px").style("stroke-dasharray", "3,3");
+      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + (offset + 5) + ")").append("text").text("Unlinked node without sequence data");
+      offset += 24;
+    }
+    if (has_poor_seq) {
+      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(3," + (offset + 5) + ")").append("circle").attr("cx", "6").attr("cy", "-4").attr("r", "6").style("fill", "rgba(0,0,0,0.20)").style("stroke", "#d9534f").style("stroke-width", "2px").style("stroke-dasharray", "1,3");
+      self.legend_svg.append("g").classed("hiv-trace-legend", true).attr("transform", "translate(20," + (offset + 5) + ")").append("text").text("Unlinked node with poor/unusable sequence");
       offset += 24;
     }
     if (self.rendered_object_counts && self.rendered_object_counts.has_hatching) {
@@ -51387,7 +51505,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           case "integer":
           case "double":
             {
-              if (!value) return false;
+              if (value === null || value === undefined || value === "" || typeof value === "number" && isNaN(value)) return false;
               switch (condition.operator) {
                 case "equal":
                   return value == condition.value;
@@ -51699,8 +51817,11 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         n.match_filter = did_match;
         anything_changed = true;
       }
-      if (n.match_filter && n.parent) {
-        n.parent.match_filter += 1;
+      if (n.match_filter) {
+        var parent_cluster = self.cluster_mapping && self.cluster_mapping[n.cluster] !== undefined ? self.clusters[self.cluster_mapping[n.cluster]] : null;
+        if (parent_cluster) {
+          parent_cluster.match_filter += 1;
+        }
       }
     });
     if (anything_changed && self.handle_inline_charts) {
@@ -51887,6 +52008,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         if (index >= steps.length) {
           d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
           self.network_svg.selectAll(".svg-loading-placeholder").remove();
+          self.draw_attribute_labels();
           return;
         }
         setTimeout(function () {
@@ -52219,6 +52341,7 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
         });
         link.each(self.link_generator_function);
         d3__WEBPACK_IMPORTED_MODULE_0__.select(self.container).selectAll(".my_progress").style("display", "none");
+        self.draw_attribute_labels();
       }
     }, 20);
   };
@@ -52271,6 +52394,22 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
   }
   self.attribute_node_value_by_id = function (d, id, number) {
     try {
+      if (id === "sequence_status") {
+        var status = "Sequenced";
+        if (d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID]) {
+          var has_seq = d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].has_sequence !== undefined ? d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].has_sequence : d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].sequence_status !== "none";
+          var poor_val = d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID].poor_quality;
+          var is_poor = poor_val === 1 || poor_val === "1" || poor_val === true || typeof poor_val === "string" && poor_val.toLowerCase() === "yes";
+          if (is_poor) {
+            status = "Poor Quality";
+          } else if (has_seq) {
+            status = "Sequenced";
+          } else {
+            status = "Unsequenced";
+          }
+        }
+        return status;
+      }
       if (_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID in d && id) {
         if (id in d[_globals_js__WEBPACK_IMPORTED_MODULE_12__.network.NodeAttributeID]) {
           var v;
@@ -53048,7 +53187,11 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    */
   function show_sequences_in_cluster(d) {
     var sequences = {};
-    underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.extract_single_cluster(self.clusters[self.cluster_mapping[d.cluster]].children, null, true).Edges, function (e) {
+    var cidx = self.cluster_mapping[d.cluster];
+    if (cidx === undefined || !self.clusters[cidx]) {
+      return;
+    }
+    underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(self.extract_single_cluster(self.clusters[cidx].children, null, true).Edges, function (e) {
       underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(e.sequences, function (s) {
         if (!(s in sequences)) {
           sequences[s] = 1;
@@ -53092,9 +53235,12 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
    * @returns {void}
    */
   function collapse_cluster_handler(d, do_update) {
-    collapse_cluster(self.clusters[self.cluster_mapping[d.cluster]]);
-    if (do_update) {
-      self.update(false, 0.4);
+    var cidx = self.cluster_mapping[d.cluster];
+    if (cidx !== undefined && self.clusters[cidx]) {
+      collapse_cluster(self.clusters[cidx]);
+      if (do_update) {
+        self.update(false, 0.4);
+      }
     }
   }
 
@@ -53480,15 +53626,19 @@ var hivtrace_cluster_network_graph = function hivtrace_cluster_network_graph(jso
           }
         });
         underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(cluster_ids, function (c, k) {
-          var existing_cluster = self.clusters[self.cluster_mapping[k]];
-          if (!existing_cluster.injected) {
-            existing_cluster.injected = {};
-          }
-          existing_cluster.injected[annotation] = injected_count;
-          if ("linked_clusters" in existing_cluster) {
-            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].extend(existing_cluster["linked_clusters"], cluster_ids);
-          } else {
-            existing_cluster["linked_clusters"] = cluster_ids;
+          if (self.cluster_mapping[k] !== undefined) {
+            var existing_cluster = self.clusters[self.cluster_mapping[k]];
+            if (existing_cluster) {
+              if (!existing_cluster.injected) {
+                existing_cluster.injected = {};
+              }
+              existing_cluster.injected[annotation] = injected_count;
+              if ("linked_clusters" in existing_cluster) {
+                underscore__WEBPACK_IMPORTED_MODULE_1__["default"].extend(existing_cluster["linked_clusters"], cluster_ids);
+              } else {
+                existing_cluster["linked_clusters"] = cluster_ids;
+              }
+            }
           }
         });
       });
@@ -54750,7 +54900,7 @@ function draw_priority_set_table(self, container, priority_groups) {
       //text_wrap: true
     }, {
       value: "Size",
-      width: 100,
+      width: 120,
       presort: "desc",
       sort: function sort(c) {
         c = c.value;
@@ -54846,10 +54996,13 @@ function draw_priority_set_table(self, container, priority_groups) {
         html: true,
         width: 50,
         format: function format(value) {
+          var icon_html = "";
           if (self.isMJCNetwork) {
-            return "<i class='fa fa-2x fa-globe' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+            icon_html = "<i class='fa fa-lg fa-fw fa-globe' style='color: #777;' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+          } else {
+            icon_html = pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem ? '<i class="fa fa-lg fa-fw fa-desktop" style="color: #777;" title="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem + '" data-text-export="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem + '"></i>' : '<i class="fa fa-lg fa-fw fa-user" style="color: #777;" title="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedManually + '" data-text-export="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedManually + '"></i>';
           }
-          return pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem ? '<i class="fa fa-2x fa-desktop" title="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem + '" data-text-export=' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem + "></i>" : '<i class="fa fa-2x fa-user" title="' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedManually + '" data-text-export=' + _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedManually + "></i>";
+          return "<div style=\"text-align: center; width: 100%; padding-top: 6px;\">".concat(icon_html, "</div>");
         }
       }, {
         // name
@@ -54861,6 +55014,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           return "<div style = 'white-space: nowrap; overflow: hidden; text-overflow : ellipsis;'>" + (pg.autocreated || pg.autoexpanded ? (pg.autoexpanded ? '<span class="label label-default">Grew</span>' : '<span class="label label-danger">New</span>') + "&nbsp;<span style = 'font-weight: 900;' data-text-export = '" + value + "'>" + value + "</span>" : '<span data-text-export = "' + value + '">' + value + "</span>") + "</div>";
         },
         html: true,
+        vertical_actions: true,
         actions: []
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
       }, {
@@ -54872,10 +55026,11 @@ function draw_priority_set_table(self, container, priority_groups) {
             return v === "REDACTED" ? v : _timeDateUtil_js__WEBPACK_IMPORTED_MODULE_4__.DateViewFormat(v);
           });
           if (vs[0] !== vs[1]) {
-            return vs[0] + " / " + vs[1];
+            return "<div style=\"line-height: 1.2;\">\n                <div>".concat(vs[0], "</div>\n                <div style=\"font-size: 85%; color: #777;\" title=\"Date created\">Created: ").concat(vs[1], "</div>\n              </div>");
           }
           return vs[0];
-        }
+        },
+        html: true
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
       }, {
         // tracking mode
@@ -54886,8 +55041,14 @@ function draw_priority_set_table(self, container, priority_groups) {
           if (value === "REDACTED") {
             return "REDACTED";
           }
-          return _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOIConciseTrackingOptions[value];
-        }
+          var raw = _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOIConciseTrackingOptions[value] || value;
+          if (raw && raw.indexOf(",") > 0) {
+            var parts = raw.split(",");
+            return "<div style=\"line-height: 1.2;\">\n                <div>".concat(parts[0].trim(), "</div>\n                <div style=\"font-size: 85%; color: #777;\">").concat(parts[1].trim(), "</div>\n              </div>");
+          }
+          return raw;
+        },
+        html: true
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
       }, {
         // size / new nodes
@@ -54908,14 +55069,66 @@ function draw_priority_set_table(self, container, priority_groups) {
             (d) => d.name
           )
         ).length,*/
-        pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem && pg.pending, pg.meets_priority_def],
-        width: 100,
+        pg.createdBy === _globals_js__WEBPACK_IMPORTED_MODULE_8__.CDCCOICreatedBySystem && pg.pending, pg.meets_priority_def, pg.node_objects],
+        width: 120,
         format: function format(v) {
           if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false || v && v[0] === "REDACTED") {
             return "REDACTED";
           }
           if (v) {
-            return v[0] + (v[1] ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' + v[1] + " new</span>" : "");
+            var nodes_by_entity = {};
+            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(v[4] || [], function (n) {
+              var entity_id = self.primary_key(n);
+              if (!nodes_by_entity[entity_id]) {
+                nodes_by_entity[entity_id] = [];
+              }
+              nodes_by_entity[entity_id].push(n);
+            });
+            var with_seq = 0;
+            var poor_seq = 0;
+            var no_seq = 0;
+            underscore__WEBPACK_IMPORTED_MODULE_1__["default"].each(nodes_by_entity, function (nodes) {
+              var has_seq = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].some(nodes, function (n) {
+                var has_no_seq = n.patient_attributes && n.patient_attributes.has_sequence === false || n.patient_attributes && n.patient_attributes.sequence_status === "none";
+                return !has_no_seq;
+              });
+              if (has_seq) {
+                with_seq++;
+              } else {
+                var has_poor = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].some(nodes, function (n) {
+                  return n.patient_attributes && n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+                });
+                if (has_poor) {
+                  poor_seq++;
+                } else {
+                  no_seq++;
+                }
+              }
+            });
+            var total_size = v[0];
+            var new_nodes = v[1];
+            var html = "<div style=\"display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1.1; padding: 2px 0;\">";
+            html += "<span style=\"font-weight: bold;\">".concat(total_size, "</span>");
+            if (no_seq > 0 || poor_seq > 0) {
+              var parts = ["".concat(with_seq)];
+              var tooltip_parts = ["Nodes with sequence data: ".concat(with_seq)];
+              if (poor_seq > 0) {
+                parts.push("".concat(poor_seq, " (poor seq)"));
+                tooltip_parts.push("Nodes with poor/unusable sequence: ".concat(poor_seq));
+              }
+              if (no_seq > 0) {
+                parts.push("".concat(no_seq, " (no seq)"));
+                tooltip_parts.push("Nodes without sequence data: ".concat(no_seq));
+              }
+              var parts_str = parts.join(" + ");
+              var title_str = tooltip_parts.join(", ");
+              html += "<span class=\"label label-info\" style=\"font-size: 85%; font-weight: normal; white-space: nowrap;\" title=\"".concat(title_str, "\">").concat(parts_str, "</span>");
+            }
+            if (new_nodes) {
+              html += "<span title=\"Number of nodes added by the system since the last network update\" class=\"label label-default\" style=\"font-size: 85%; font-weight: normal; white-space: nowrap;\">".concat(new_nodes, " new</span>");
+            }
+            html += "</div>";
+            return html;
           }
           return "N/A";
         },
@@ -54939,7 +55152,10 @@ function draw_priority_set_table(self, container, priority_groups) {
           if (self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false) {
             return "<span title='REDACTED'>RED.</span>";
           }
-          return v ? "Yes" : "No";
+          if (v) {
+            return "<span style=\"color: #d9534f; font-weight: bold;\">Yes</span>";
+          }
+          return "<span style=\"color: #999;\">No</span>";
         },
         value: pg.meets_priority_def,
         html: true
@@ -54947,14 +55163,33 @@ function draw_priority_set_table(self, container, priority_groups) {
       }, {
         width: 100,
         // TODO: actually redact the data on the backend
-        value: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false ? "REDACTED" : pg.cluster_dx_recent12_mo
+        value: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false ? "REDACTED" : pg.cluster_dx_recent12_mo,
+        format: function format(v) {
+          if (v === "REDACTED") return "REDACTED";
+          if (v === undefined || v === null || v === 0) {
+            return "<span style=\"color: #bbb;\">0</span>";
+          }
+          return "<span style=\"font-weight: bold; color: #e67e22;\">".concat(v, "</span>");
+        },
+        html: true
         // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
       }, {
         width: 140,
         value: [pg.overlap.sets, pg.overlap.nodes, pg.overlap.duplicate, pg.overlap.superset],
         format: function format(v) {
           if (v) {
-            return v[0] + " clusters; " + v[1] + " persons" + (v[2].length ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' + v[2].join(", ") + '" class="label label-danger pull-right">' + v[2].length + " duplicate clusterOI</span>" : "") + (v[3].length ? ' <span title="clusterOIs which contain this clusterOI: ' + v[3].join(", ") + '" class="label label-warning pull-right">Fully contained in ' + v[3].length + " clusterOI</span>" : "");
+            if (v[0] === 0 && v[1] === 0) {
+              return "<span style=\"color: #bbb;\">\u2014</span>";
+            }
+            var html = "<div style=\"line-height: 1.2;\">\n                <div>".concat(v[0], " clusters</div>\n                <div style=\"font-size: 85%; color: #777;\">").concat(v[1], " persons</div>");
+            if (v[2].length) {
+              html += "<div style=\"margin-top: 3px;\"><span title=\"clusterOIs which are exact duplicates of this clusterOI: ".concat(v[2].join(", "), "\" class=\"label label-danger\" style=\"font-size: 80%; display: inline-block;\">").concat(v[2].length, " duplicate</span></div>");
+            }
+            if (v[3].length) {
+              html += "<div style=\"margin-top: 3px;\"><span title=\"clusterOIs which contain this clusterOI: ".concat(v[3].join(", "), "\" class=\"label label-warning\" style=\"font-size: 80%; display: inline-block;\">Contained in ").concat(v[3].length, "</span></div>");
+            }
+            html += "</div>";
+            return html;
           }
           return "N/A";
         },
@@ -54982,7 +55217,18 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: [overlap.sets, overlap.nodes, overlap.duplicate, overlap.superset],
           format: function format(v) {
             if (v) {
-              return v[0] + " clusters; " + v[1] + " persons" + (v[2].length ? ' <span title="' + (!self.isMJCNetwork ? "MJ " : "") + "clusterOIs which are exact duplicates of this " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI: " + v[2].join(", ") + '" class="label label-danger pull-right">' + v[2].length + " duplicate " + (!self.isMJCNetwork ? "MJ " : "") + "clusterOI</span>" : "") + (v[3].length ? ' <span title="' + (!self.isMJCNetwork ? "MJ " : "") + "clusterOIs which contain this " + (self.isMJCNetwork ? "MJ " : "") + "clusterOI: " + v[3].join(", ") + '" class="label label-warning pull-right">Fully contained in ' + v[3].length + " " + (!self.isMJCNetwork ? "MJ " : "") + "clusterOI</span>" : "");
+              if (v[0] === 0 && v[1] === 0) {
+                return "<span style=\"color: #bbb;\">\u2014</span>";
+              }
+              var html = "<div style=\"line-height: 1.2;\">\n                <div>".concat(v[0], " clusters</div>\n                <div style=\"font-size: 85%; color: #777;\">").concat(v[1], " persons</div>");
+              if (v[2].length) {
+                html += "<div style=\"margin-top: 3px;\"><span title=\"".concat(!self.isMJCNetwork ? "MJ " : "", "clusterOIs which are exact duplicates of this ").concat(self.isMJCNetwork ? "MJ " : "", "clusterOI: ").concat(v[2].join(", "), "\" class=\"label label-danger\" style=\"font-size: 80%; display: inline-block;\">").concat(v[2].length, " duplicate</span></div>");
+              }
+              if (v[3].length) {
+                html += "<div style=\"margin-top: 3px;\"><span title=\"".concat(!self.isMJCNetwork ? "MJ " : "", "clusterOIs which contain this ").concat(self.isMJCNetwork ? "MJ " : "", "clusterOI: ").concat(v[3].join(", "), "\" class=\"label label-warning\" style=\"font-size: 80%; display: inline-block;\">Contained in ").concat(v[3].length, "</span></div>");
+              }
+              html += "</div>";
+              return html;
             }
             return "N/A";
           },
@@ -55035,8 +55281,7 @@ function draw_priority_set_table(self, container, priority_groups) {
           }
         }];
       } else {
-        this_row[1].actions = [underscore__WEBPACK_IMPORTED_MODULE_1__["default"].clone(this_row[1].actions)];
-        this_row[1].actions[this_row[1].actions.length - 1].splice(-1, 0, {
+        this_row[1].actions = [{
           icon: "fa-info-circle",
           classed: {
             "view-edit-cluster": true
@@ -55054,25 +55299,20 @@ function draw_priority_set_table(self, container, priority_groups) {
               self.priority_groups_edit_set_description(pg.name, d, true);
             });
           }
-        });
-        this_row[1].actions[this_row[1].actions.length - 1].splice(-1, 0, function (button_group, value) {
-          if (get_editor()) {
-            return {
-              icon: "fa-plus",
-              help: "Add nodes in this cluster of interest to the new cluster of interest",
-              action: function action(button, value) {
-                var nodeset = self.priority_groups_find_by_name(value);
-                if (nodeset) {
-                  get_editor().append_node_objects(nodeset.node_objects);
-                }
+        }];
+        if (get_editor()) {
+          this_row[1].actions.push({
+            icon: "fa-plus",
+            help: "Add nodes in this cluster of interest to the new cluster of interest",
+            action: function action(button, value) {
+              var nodeset = self.priority_groups_find_by_name(value);
+              if (nodeset) {
+                get_editor().append_node_objects(nodeset.node_objects);
               }
-            };
-          }
-          return null;
-        });
+            }
+          });
+        }
       }
-      this_row[1].actions = underscore__WEBPACK_IMPORTED_MODULE_1__["default"].flatten(this_row[1].actions);
-      //console.log (this_row[0]);
       if (pg.not_in_network && pg.not_in_network.length) {
         this_row[2]["actions"] = [{
           text: String(pg.not_in_network.length) + " removed",
@@ -59735,6 +59975,17 @@ var HIVTxNetwork = /*#__PURE__*/function () {
       var object_ref = this;
       var cutoffs = [timeDateUtil.n_months_ago(ref_date, 12), timeDateUtil.n_months_ago(ref_date, 36)];
       var attrib_defs = {
+        CLUSTER_ID: {
+          depends: [],
+          label: "Cluster ID",
+          type: "String",
+          map: function map(node) {
+            if (node && node.cluster) {
+              return String(node.cluster);
+            }
+            return "None";
+          }
+        },
         subcluster_or_priority_node: {
           depends: [timeDateUtil._networkCDCDateField],
           label: kGlobals.CDCNPMember,
@@ -60132,6 +60383,46 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             this.json[kGlobals.network.GraphAttrbuteID][computed["overwrites"]]["_hidden_"] = true;
           }
         }
+
+        // If we have aggregated nodes (cached or in json), populate/aggregate the predefined attribute on them as well
+        var cached_nodes = this._cached_aggregated_nodes || this.json._cached_aggregated_nodes;
+        if (cached_nodes) {
+          this._cached_aggregated_nodes = cached_nodes;
+          var grouped_seqs = _.groupBy(this.json.Nodes, function (n) {
+            return _this16.primary_key(n);
+          });
+          var attr_id = kGlobals.network.NodeAttributeID;
+          _.each(cached_nodes, function (agg_node) {
+            var pkey = _this16.primary_key(agg_node);
+            var seqs = grouped_seqs[pkey] || [];
+            var unique_vals = {};
+            _.each(seqs, function (s) {
+              var val = (s[attr_id] || {})[key];
+              if (val !== undefined && val !== null && val !== "None" && val !== "") {
+                unique_vals[val] = 1;
+              }
+            });
+            var unique_keys = Object.keys(unique_vals);
+            if (key === "CLUSTER_ID" && unique_keys.length > 1) {
+              var filtered = unique_keys.filter(function (x) {
+                return x !== "None";
+              });
+              if (filtered.length > 0) {
+                unique_keys = filtered;
+              }
+            }
+            var final_val = "None";
+            if (unique_keys.length === 1) {
+              final_val = unique_keys[0];
+            } else if (unique_keys.length > 1) {
+              final_val = unique_keys.sort().join(";");
+            }
+            if (!agg_node[attr_id]) {
+              agg_node[attr_id] = {};
+            }
+            agg_node[attr_id][key] = final_val;
+          });
+        }
         var tEnd = performance.now();
         console.log("[PERF_DETAIL] populate_predefined_attribute(".concat(key, "): total = ").concat((tEnd - tStart).toFixed(2), "ms (loop = ").concat((tLoopEnd - tLoopStart).toFixed(2), "ms, metadata = ").concat((tEnd - tLoopEnd + tLoopStart - tStart).toFixed(2), "ms)"));
       }
@@ -60442,7 +60733,7 @@ var HIVTxNetwork = /*#__PURE__*/function () {
 
     /**
      * Define an attribute generator for month/year at diagnosis
-     * 
+     *
      * @param {*} label : use this label
      * @returns attribute definition dict
      */
@@ -60527,6 +60818,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
     value: function fetch_sequences_for_pid(pid) {
       if (this.has_multiple_sequences) {
         return _.flatten(_.map(this.primary_key_list[pid], function (d) {
+          var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+          if (d_has_seq === false) {
+            return [];
+          }
           return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : d.id;
         }));
       }
@@ -60548,6 +60843,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
         type: "Number",
         label_format: d3.format("d"),
         map: function map(node) {
+          var has_seq = node.patient_attributes && node.patient_attributes.has_sequence !== undefined ? node.patient_attributes.has_sequence : node.patient_attributes && node.patient_attributes.sequence_status !== "none";
+          if (has_seq === false) {
+            return 0;
+          }
           if (node[kGlobals.network.AliasedSequencesID]) {
             return node[kGlobals.network.AliasedSequencesID].length;
           }
@@ -60727,6 +61026,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
               var new_record = _.clone(values[0]);
               new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(values, function (d) {
                 var _d$id;
+                var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+                if (d_has_seq === false) {
+                  return [];
+                }
                 return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : (_d$id = d.id) !== null && _d$id !== void 0 ? _d$id : d.name;
               }));
               new_list.push(new_record);
@@ -60749,10 +61052,18 @@ var HIVTxNetwork = /*#__PURE__*/function () {
             }
           }
           var unique_keys = Object.keys(unique_values);
+          if (store_key === "CLUSTER_ID" && unique_keys.length > 1) {
+            var filtered = unique_keys.filter(function (x) {
+              return x !== "None";
+            });
+            if (filtered.length > 0) {
+              unique_keys = filtered;
+            }
+          }
           if (unique_keys.length == 1) {
             record[store_key] = unique_keys[0];
           } else if (unique_keys.length > 1) {
-            record[store_key] = unique_keys.join(";");
+            record[store_key] = unique_keys.sort().join(";");
           }
         };
         if (this.has_multiple_sequences) {
@@ -60796,6 +61107,14 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                     }
                   }
                   var unique_keys = Object.keys(unique_values);
+                  if (k === "CLUSTER_ID" && unique_keys.length > 1) {
+                    var filtered = unique_keys.filter(function (x) {
+                      return x !== "None";
+                    });
+                    if (filtered.length > 0) {
+                      unique_keys = filtered;
+                    }
+                  }
                   if (unique_keys.length == 1) {
                     new_attr_obj[k] = unique_keys[0];
                   } else if (unique_keys.length > 1) {
@@ -60822,6 +61141,10 @@ var HIVTxNetwork = /*#__PURE__*/function () {
                 aggregator(_values, "cluster", _new_record, "cluster");
                 aggregator(_values, "subcluster_label", _new_record, "subcluster_label");
                 _new_record[kGlobals.network.AliasedSequencesID] = _.flatten(_.map(_values, function (d) {
+                  var d_has_seq = d.patient_attributes && d.patient_attributes.has_sequence !== undefined ? d.patient_attributes.has_sequence : d.patient_attributes && d.patient_attributes.sequence_status !== "none";
+                  if (d_has_seq === false) {
+                    return [];
+                  }
                   return d[kGlobals.network.AliasedSequencesID] ? d[kGlobals.network.AliasedSequencesID] : d.id;
                 }));
                 _new_record[kGlobals.network.NodeAttributeID]["sequence_count"] = _new_record[kGlobals.network.AliasedSequencesID].length;
@@ -61034,6 +61357,10 @@ None
 */
 
 function hivtraceClusterGraphSummary(network, tag, not_CDC) {
+  // Store the container tag and not_CDC setting on the network object so it can re-render itself when async load completes.
+  network.graph_summary_tag = tag;
+  network.graph_summary_not_CDC = not_CDC;
+
   // Select the target element for appending the summary table
   var summary_table = d3.select(tag).select("tbody");
 
@@ -61059,6 +61386,44 @@ function hivtraceClusterGraphSummary(network, tag, not_CDC) {
         table_data.push([{"network_statistics":"Estadísticas de la Red","singletons":"Singletons","sequences_used_to_make_links":"Secuencias que forman enlaces","clusters":"Clústeres","nodes":"Nodos","edges":"Enlaces","links_per_node":"Enlaces por nodo","mean":"Media","median":"Mediana","range":"Rango","interquartile_range":"Rango intercuartílico","cluster_sizes":"Tamaño de Clústeres","genetic_distances_among_linked_nodes":"Distancias Genéticas entre Nodos Enlazados","miscellaneous":"Miscelánea","hxb2_alignment":"Alineamiento HXB2","tn93_distance_file":"Archivo distancias TN93"}[key.replace(/ /g, "_").toLowerCase()], value]);
       }
     });
+
+    // Show breakdown of unlinked nodes (singletons) if they exist
+    var unlinked_nodes = graph.Nodes.filter(function (n) {
+      return n.cluster === null || n.cluster === undefined;
+    });
+    if (unlinked_nodes.length > 0) {
+      var unlinked_with_seq = 0;
+      var unlinked_poor_seq = 0;
+      var unlinked_no_seq = 0;
+      unlinked_nodes.forEach(function (n) {
+        var has_seq = true; // Default
+        var is_poor = false;
+        if (n.patient_attributes) {
+          if (n.patient_attributes.has_sequence !== undefined) {
+            has_seq = !!n.patient_attributes.has_sequence;
+          } else if (n.patient_attributes.sequence_status !== undefined) {
+            has_seq = n.patient_attributes.sequence_status !== "none";
+          }
+          is_poor = n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+        }
+        if (has_seq) {
+          unlinked_with_seq++;
+        } else if (is_poor) {
+          unlinked_poor_seq++;
+        } else {
+          unlinked_no_seq++;
+        }
+      });
+      if (unlinked_poor_seq > 0 || unlinked_no_seq > 0) {
+        table_data.push(["Unlinked nodes (with sequences)", unlinked_with_seq]);
+        if (unlinked_poor_seq > 0) {
+          table_data.push(["Unlinked nodes (with poor quality sequences)", unlinked_poor_seq]);
+        }
+        if (unlinked_no_seq > 0) {
+          table_data.push(["Unlinked nodes (without sequences)", unlinked_no_seq]);
+        }
+      }
+    }
   }
 
   // Extract degrees from graph and calculate statistics
@@ -62784,19 +63149,27 @@ function load_nodes_edges(tx_network, nodes_and_attributes, index_id, edges_and_
           // payload for the callback will be this subcluster object
           callback: function callback(element, payload) {
             var this_cell = d3__WEBPACK_IMPORTED_MODULE_1__.select(element);
-            this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).style("margin-left", "1em").text("Complete " + annotation).on("click", function (e_event) {
-              return injected_column_subcluster_button_handler_internal(tx_network, payload, null, null, annotation);
-            });
+            this_cell.html("");
+            var flex_container = this_cell.append("div").style("display", "flex").style("justify-content", "flex-start").style("align-items", "center").style("width", "100%").style("gap", "6px");
             var node_ids = {};
             underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(payload.children, function (n) {
               node_ids[n.id] = 1;
             });
-            this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Directly linked " + annotation).on("click", function (e_event) {
-              return injected_column_subcluster_button_handler_internal(tx_network, payload, function (edge) {
+            var btn_group = flex_container.append("div").classed("btn-group", true);
+            var action_btn = btn_group.append("button").classed("btn btn-default btn-xs dropdown-toggle", true).attr("type", "button").attr("data-toggle", "dropdown").attr("aria-haspopup", "true").attr("aria-expanded", "false").attr("title", "Actions");
+            action_btn.append("span").classed("fa fa-cog", true);
+            var dropdown_menu = btn_group.append("ul").classed("dropdown-menu", true);
+            dropdown_menu.append("li").append("a").attr("href", "#").text("View directly linked " + annotation + " nodes").on("click", function (e_event) {
+              d3__WEBPACK_IMPORTED_MODULE_1__.event.preventDefault();
+              injected_column_subcluster_button_handler_internal(tx_network, payload, function (edge) {
                 return tx_network.json.Nodes[edge.target].id in node_ids || tx_network.json.Nodes[edge.source].id in node_ids;
               }, function (id) {
-                return "Subcluster " + payload.cluster_id + "[+ direct  " + annotation + "]";
+                return "Subcluster " + payload.cluster_id + " [+ direct " + annotation + "]";
               });
+            });
+            dropdown_menu.append("li").append("a").attr("href", "#").text("View complete " + annotation + " subnetwork").on("click", function (e_event) {
+              d3__WEBPACK_IMPORTED_MODULE_1__.event.preventDefault();
+              injected_column_subcluster_button_handler_internal(tx_network, payload, null, null, annotation);
             });
           }
         };
@@ -62806,63 +63179,75 @@ function load_nodes_edges(tx_network, nodes_and_attributes, index_id, edges_and_
       description: {
         value: annotation + " network",
         sort: function sort(c) {
-          return c.value[0];
+          return c.value[0] || 0;
         },
         help: "Nodes added and clusters merged through " + annotation
       },
       generator: function generator(cluster) {
         // cluster here is a main cluster object from tx_network.clusters
         return {
-          value: [cluster.injected ? cluster.injected[annotation] : 0, cluster.linked_clusters, cluster.cluster_id],
+          value: [cluster.injected && cluster.injected[annotation] || 0, cluster.linked_clusters, cluster.cluster_id],
           callback: function callback(element, payload) {
             var this_cell = d3__WEBPACK_IMPORTED_MODULE_1__.select(element);
-            this_cell.text(Number(payload[0]) + " " + annotation + " nodes. ");
+            this_cell.html("");
+            var flex_container = this_cell.append("div").style("display", "flex").style("justify-content", "flex-start").style("align-items", "center").style("width", "100%").style("gap", "8px");
             var other_clusters = [];
             if (payload[1]) {
               other_clusters = underscore__WEBPACK_IMPORTED_MODULE_0__["default"].without(underscore__WEBPACK_IMPORTED_MODULE_0__["default"].keys(payload[1]), payload[2]);
+            }
+            if (payload[0] === 0 && other_clusters.length === 0) {
+              flex_container.append("span").classed("text-muted", true).style("font-size", "85%").style("font-style", "italic").text("None");
+            } else {
+              var labeled_links = underscore__WEBPACK_IMPORTED_MODULE_0__["default"].clone(edge_types_by_cluster_sorted[payload[2]] || []);
+              if (payload[0] > 0 || other_clusters.length || edge_types_by_cluster_sorted[payload[2]] && labeled_links.length) {
+                labeled_links.push("");
+                var shown_types = {};
+                underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(labeled_links, function (t) {
+                  shown_types[t] = 1;
+                });
+                var btn_group = flex_container.append("div").classed("btn-group", true);
+                var action_btn = btn_group.append("button").classed("btn btn-default btn-xs dropdown-toggle", true).attr("type", "button").attr("data-toggle", "dropdown").attr("aria-haspopup", "true").attr("aria-expanded", "false").attr("title", "Actions");
+                action_btn.append("span").classed("fa fa-cog", true);
+                var dropdown_menu = btn_group.append("ul").classed("dropdown-menu", true);
+                dropdown_menu.append("li").append("a").attr("href", "#").text("View directly linked " + annotation + " nodes").on("click", function (e_event) {
+                  d3__WEBPACK_IMPORTED_MODULE_1__.event.preventDefault();
+                  var directly_linked_ids = {};
+                  var node_ids = {};
+                  underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(cluster.children, function (n) {
+                    node_ids[n.id] = 1;
+                  });
+                  var direct_links_only = _misc_js__WEBPACK_IMPORTED_MODULE_4__.hivtrace_cluster_depthwise_traversal(tx_network.json.Nodes, tx_network.json.Edges, function (edge) {
+                    return tx_network.json.Nodes[edge.target].id in node_ids || tx_network.json.Nodes[edge.source].id in node_ids;
+                  }, false, cluster.children);
+                  underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(direct_links_only[0], function (n) {
+                    directly_linked_ids[n.id] = true;
+                  });
+                  social_view_handler_internal(tx_network, payload[2],
+                  // cluster_id
+                  function (n) {
+                    return n.id in directly_linked_ids;
+                  }, labeled_links, shown_types, function (id) {
+                    return "Cluster " + id + " [+ direct " + annotation + "]";
+                  });
+                });
+                dropdown_menu.append("li").append("a").attr("href", "#").text("View complete " + annotation + " subnetwork").on("click", function (e_event) {
+                  d3__WEBPACK_IMPORTED_MODULE_1__.event.preventDefault();
+                  social_view_handler_internal(tx_network, payload[2],
+                  // cluster_id
+                  function (n) {
+                    return n.extended_cluster && payload[2] in n.extended_cluster;
+                  }, labeled_links, shown_types, function (id) {
+                    return "Cluster " + id + " [+ " + annotation + "]";
+                  }, annotation);
+                });
+              }
+              if (payload[0] > 0) {
+                flex_container.append("span").classed("label label-primary", true).style("font-size", "85%").style("padding", "3px 6px").style("border-radius", "4px").text(payload[0] + " " + annotation + " node" + (payload[0] > 1 ? "s" : ""));
+              }
               if (other_clusters.length) {
                 other_clusters.sort();
-                this_cell.append("span").classed("label label-info", true).text("Bridges to " + other_clusters.length + " clusters").attr("title", other_clusters.join(", "));
+                flex_container.append("span").classed("label label-info", true).style("font-size", "85%").style("padding", "3px 6px").style("border-radius", "4px").style("cursor", "help").text("Bridges: " + other_clusters.length).attr("title", "Bridges to clusters: " + other_clusters.join(", "));
               }
-            }
-            var labeled_links = underscore__WEBPACK_IMPORTED_MODULE_0__["default"].clone(edge_types_by_cluster_sorted[payload[2]] || []);
-            if (payload[0] > 0 || other_clusters.length || edge_types_by_cluster_sorted[payload[2]] && labeled_links.length) {
-              labeled_links.push("");
-              var shown_types = {};
-              underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(labeled_links, function (t) {
-                shown_types[t] = 1;
-              });
-              this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Directly linked " + annotation).style("margin-left", "1em").on("click", function (e_event) {
-                var directly_linked_ids = {};
-                var node_ids = {};
-                underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(cluster.children, function (n) {
-                  // Use the 'cluster' from the generator's scope
-                  node_ids[n.id] = 1;
-                });
-                var direct_links_only = _misc_js__WEBPACK_IMPORTED_MODULE_4__.hivtrace_cluster_depthwise_traversal(tx_network.json.Nodes, tx_network.json.Edges, function (edge) {
-                  return tx_network.json.Nodes[edge.target].id in node_ids || tx_network.json.Nodes[edge.source].id in node_ids;
-                }, false, cluster.children // Use the 'cluster' from the generator's scope
-                );
-                underscore__WEBPACK_IMPORTED_MODULE_0__["default"].each(direct_links_only[0], function (n) {
-                  directly_linked_ids[n.id] = true;
-                });
-                social_view_handler_internal(tx_network, payload[2],
-                // cluster_id
-                function (n) {
-                  return n.id in directly_linked_ids;
-                }, labeled_links, shown_types, function (id) {
-                  return "Cluster " + id + "[+ direct " + annotation + "]";
-                });
-              });
-              this_cell.append("button").classed("btn btn-primary btn-xs pull-right", true).text("Complete " + annotation).on("click", function (e_event) {
-                return social_view_handler_internal(tx_network, payload[2],
-                // cluster_id
-                function (n) {
-                  return n.extended_cluster && payload[2] in n.extended_cluster;
-                }, labeled_links, shown_types, function (id) {
-                  return "Cluster " + id + "[+ " + annotation + "]";
-                }, annotation);
-              });
             }
           }
         };
@@ -63304,7 +63689,12 @@ function format_a_cell(data, index, item, priority_set_editor) {
       by_group = [data.actions];
     }
     _.each(by_group, function (bgrp) {
-      var button_group = handle_sort.append("div").classed("btn-group btn-group-xs", true).attr("style", "padding-left:0.5em");
+      var button_group = handle_sort.append("div");
+      if (data.vertical_actions) {
+        button_group.classed("btn-group btn-group-xs", true).attr("style", "margin-top: 4px; display: inline-flex !important; flex-direction: row; gap: 4px;");
+      } else {
+        button_group.classed("btn-group btn-group-xs", true).attr("style", "padding-left:0.5em");
+      }
       _.each(_.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp, function (b) {
         if (_.isFunction(b)) {
           b = b(button_group, current_value);
@@ -63314,7 +63704,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
           if (_.isArray(b.dropdown)) {
             var button_group_dropdown = button_group.append("div").classed("btn-group btn-group-xs", true);
             this_button = button_group_dropdown.append("button").classed("btn btn-default btn-xs dropdown-toggle", true).attr("data-toggle", "dropdown");
-            if (b.force_line_break) {
+            if (b.force_line_break && !data.vertical_actions) {
               button_group.attr("style", "display: block;");
             }
             var dropdown_list = button_group_dropdown.append("ul").classed("dropdown-menu", true);
