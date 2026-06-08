@@ -1,6 +1,6 @@
 {
   "name": "hivtrace-viz",
-  "version": "1.4.0-beta.7",
+  "version": "1.4.0-beta.8",
   "description": "Visualization for the popular HIV-TRACE package",
   "engines": {
     "node": ">=18 || >20"
