@@ -1270,6 +1270,7 @@ class HIVTxNetwork {
         nodes: overlap.nodes,
         // sets = number of distinct overlap_groups that share nodes with this mjc_group
         sets: overlap.sets.size,
+        set_names: Array.from(overlap.sets),
         superset: overlap.supersets,
         duplicate: overlap.duplicates,
       };
@@ -1786,14 +1787,26 @@ class HIVTxNetwork {
 
           let entities = this.aggregate_indvidual_level_records(g.node_objects);
 
-          cluster_detect_size = this.unique_entity_list_from_ids(
-            _.map(
-              _.filter(g.nodes, (node) => {
-                return node.added <= g.created;
-              }),
-              (node) => node.name
-            )
-          ).length;
+          if (this.isMJCNetwork && g.cluster_detect_size != null) {
+            // The client-side count below undercounts once other jurisdictions'
+            // `added` dates are redacted; use the backend's all-sites value (#14).
+            cluster_detect_size = g.cluster_detect_size;
+          } else {
+            cluster_detect_size = this.unique_entity_list_from_ids(
+              _.map(
+                _.filter(g.nodes, (node) => {
+                  return node.added <= g.created;
+                }),
+                (node) => node.name
+              )
+            ).length;
+          }
+
+          // #21 MJ_and_site_clusterOI_overlap: overlap between MJ and site
+          // clusterOI. In the MJC view that's `g.overlap`; in the site view the
+          // MJ overlap lives in `g.overlap_mjc` (`g.overlap` is site-to-site).
+          const mj_site_overlap =
+            (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
 
           const entity_to_pg_records = _.groupBy(
             _.filter(g.nodes, (nr) => !exclude_nodes.has(nr.name)),
@@ -1848,11 +1861,15 @@ class HIVTxNetwork {
                 national_priority: g.meets_priority_def,
                 cluster_current_size: entities.length,
                 cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-                cluster_overlap: g.overlap.sets,
+                ...(this.isMJCNetwork
+                  ? {}
+                  : { cluster_overlap: (g.overlap || {}).sets }),
+                MJ_and_site_clusterOI_overlap: (
+                  mj_site_overlap.set_names || []
+                ).join(";"),
+                MJ_and_site_clusterOI_overlap_count: mj_site_overlap.sets || 0,
                 SequenceID: this.list_of_aliased_sequences(gn)
-                  .map((seq) => {
-                    return seq.split("|")[1];
-                  })
+                  .map((seq) => this.cleanRedacted(seq.split("|")[1]))
                   .join(";"),
               };
             }
@@ -1871,25 +1888,36 @@ class HIVTxNetwork {
     return _.flatten(
       _.map(
         _.filter(this.defined_priority_groups, (g) => g.validated),
-        (g) => ({
-          cluster_type: g.createdBy,
-          cluster_uid: this.cleanRedacted(g.name),
-          cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.modified
-          ),
-          cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.created
-          ),
-          cluster_ident_method: g.kind,
-          cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-          cluster_current_size: this.aggregate_indvidual_level_records(
-            g.node_objects
-          ).length,
-          national_priority: g.meets_priority_def,
-          cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-          cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
-          cluster_overlap: g.overlap.sets,
-        })
+        (g) => {
+          // See priority_groups_export_nodes for the MJ_and_site overlap source. (#21)
+          const mj_site_overlap =
+            (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
+          return {
+            cluster_type: g.createdBy,
+            cluster_uid: this.cleanRedacted(g.name),
+            cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+              g.modified
+            ),
+            cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+              g.created
+            ),
+            cluster_ident_method: g.kind,
+            cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
+            cluster_current_size: this.aggregate_indvidual_level_records(
+              g.node_objects
+            ).length,
+            national_priority: g.meets_priority_def,
+            cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+            cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
+            ...(this.isMJCNetwork
+              ? {}
+              : { cluster_overlap: (g.overlap || {}).sets }),
+            MJ_and_site_clusterOI_overlap: (
+              mj_site_overlap.set_names || []
+            ).join(";"),
+            MJ_and_site_clusterOI_overlap_count: mj_site_overlap.sets || 0,
+          };
+        }
       )
     );
   };
@@ -2072,6 +2100,23 @@ class HIVTxNetwork {
       let traversal_cache = null;
 
       _.each(groups, (pg) => {
+        // All MJ clusterOI are S-TRACE state/local analyses tracked at "3 years,
+        // 0.5% distance" (#8, #16/#18); normalize unless the backend redacted it.
+        if (this.isMJCNetwork) {
+          if (pg.kind !== "REDACTED") {
+            pg.kind = kGlobals.CDCCOIKind[0];
+          }
+          if (pg.tracking !== "REDACTED") {
+            pg.tracking = kGlobals.CDCCOITrackingOptions[0];
+          }
+          // person_ident_method is the node `kind`; all MJ members are
+          // S-TRACE auto-identified → "01 through analysis/notification" (#9).
+          _.each(pg.nodes, (n) => {
+            if (n.kind !== "REDACTED") {
+              n.kind = kGlobals.CDCCOINodeKindDefault;
+            }
+          });
+        }
         if (!pg.validated) {
           pg.node_objects = [];
           pg.not_in_network = [];
@@ -4117,7 +4162,7 @@ class HIVTxNetwork {
   }
 
   cleanRedacted(id) {
-    if (id.startsWith("REDACTED_")) {
+    if (typeof id === "string" && id.startsWith("REDACTED_")) {
       return "REDACTED";
     }
     return id;
