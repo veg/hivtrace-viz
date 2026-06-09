@@ -1789,7 +1789,7 @@ class HIVTxNetwork {
 
           if (this.isMJCNetwork && g.cluster_detect_size != null) {
             // The client-side count below undercounts once other jurisdictions'
-            // `added` dates are redacted; use the backend's all-sites value (#14).
+            // `added` dates are redacted; use the backend's all-sites value.
             cluster_detect_size = g.cluster_detect_size;
           } else {
             cluster_detect_size = this.unique_entity_list_from_ids(
@@ -1802,9 +1802,9 @@ class HIVTxNetwork {
             ).length;
           }
 
-          // #21 MJ_and_site_clusterOI_overlap: overlap between MJ and site
-          // clusterOI. In the MJC view that's `g.overlap`; in the site view the
-          // MJ overlap lives in `g.overlap_mjc` (`g.overlap` is site-to-site).
+          // Overlap between MJ and site clusterOI. In the MJC view that's
+          // `g.overlap`; in the site view the MJ overlap lives in
+          // `g.overlap_mjc` (there `g.overlap` is site-to-site).
           const mj_site_overlap =
             (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
 
@@ -1829,7 +1829,7 @@ class HIVTxNetwork {
             (gn) => {
               const eid = this.entity_id(gn);
               const rep = (entity_to_g_records[eid] || [])[0];
-              // #5: per-person MJC attributes (join arrays e.g. joint_owners).
+              // Per-person MJC attributes (join arrays e.g. joint_owners).
               const mjc_attr = (key) => {
                 const v = this.attribute_node_value_by_id(
                   rep,
@@ -1883,9 +1883,9 @@ class HIVTxNetwork {
                 SequenceID: this.list_of_aliased_sequences(gn)
                   .map((seq) => this.cleanRedacted(seq.split("|")[1]))
                   .join(";"),
-                // #5: individual-level MJC variables (concept doc). MJC only —
-                // these attributes don't exist on regular site networks. Values
-                // arrive pre-redacted from the backend per the MJC-variables config.
+                // Individual-level MJC variables. MJC only — these attributes
+                // don't exist on regular site networks; values arrive
+                // pre-redacted from the backend per the sharing config.
                 ...(this.isMJCNetwork
                   ? {
                       jurisdiction: mjc_attr("jurisdiction"),
@@ -1931,7 +1931,7 @@ class HIVTxNetwork {
       _.map(
         _.filter(this.defined_priority_groups, (g) => g.validated),
         (g) => {
-          // See priority_groups_export_nodes for the MJ_and_site overlap source. (#21)
+          // MJ↔site overlap: g.overlap in the MJC view, g.overlap_mjc otherwise.
           const mj_site_overlap =
             (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
           return {
@@ -2143,7 +2143,7 @@ class HIVTxNetwork {
 
       _.each(groups, (pg) => {
         // All MJ clusterOI are S-TRACE state/local analyses tracked at "3 years,
-        // 0.5% distance" (#8, #16/#18); normalize unless the backend redacted it.
+        // 0.5% distance"; normalize unless the backend redacted these fields.
         if (this.isMJCNetwork) {
           if (pg.kind !== "REDACTED") {
             pg.kind = kGlobals.CDCCOIKind[0];
@@ -2152,7 +2152,7 @@ class HIVTxNetwork {
             pg.tracking = kGlobals.CDCCOITrackingOptions[0];
           }
           // person_ident_method is the node `kind`; all MJ members are
-          // S-TRACE auto-identified → "01 through analysis/notification" (#9).
+          // S-TRACE auto-identified → "01 through analysis/notification".
           _.each(pg.nodes, (n) => {
             if (n.kind !== "REDACTED") {
               n.kind = kGlobals.CDCCOINodeKindDefault;
@@ -4213,8 +4213,7 @@ class HIVTxNetwork {
   /**
    * A node's `mjc_date_identified[_12mo]` value for one cluster. These maps are
    * keyed by cluster name; pull the entry for `cluster_name`. `format_date`
-   * formats the value as a date. Mirrors the injection in
-   * clusternetwork._extract_mjc_attributes for use outside the node-list view. (#5)
+   * formats the value as a date.
    */
   mjc_selected_for_cluster(node, attr_key, cluster_name, format_date) {
     const attrs = node && node[kGlobals.network.NodeAttributeID];
