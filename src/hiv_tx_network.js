@@ -2591,6 +2591,7 @@ class HIVTxNetwork {
 
           if (
             auto_extend &&
+            !this.isMJCNetwork &&
             pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
           ) {
             const added_nodes = this.auto_expand_pg_handler(
