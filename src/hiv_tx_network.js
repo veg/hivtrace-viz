@@ -199,7 +199,8 @@ class HIVTxNetwork {
       this.legend_multiple_sequences = true;
       this.primary_key_list = this.json._primary_key_list;
       this.primary_key_list_values = this.json._primary_key_list_values;
-      this.entities_in_multiple_clusters = this.json._entities_in_multiple_clusters;
+      this.entities_in_multiple_clusters =
+        this.json._entities_in_multiple_clusters;
       return;
     }
 
@@ -210,7 +211,7 @@ class HIVTxNetwork {
     this.primary_key_list = {};
     this.primary_key_list_values = [];
     this.has_multiple_sequences = false;
-    
+
     const duplicateKeys = [];
     const nodes = this.json.Nodes || [];
     const len = nodes.length;
@@ -504,7 +505,11 @@ class HIVTxNetwork {
     if (this.json._has_multiple_sequences) {
       return;
     }
-    if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
+    if (
+      this.has_multiple_sequences &&
+      this.isPrimaryGraph &&
+      this.json.Edges.length > 0
+    ) {
       reduce_distance_within = reduce_distance_within || 0.000001;
       reduce_distance_between = reduce_distance_between || 0.015;
 
@@ -676,35 +681,41 @@ class HIVTxNetwork {
   }
 
   async process_multiple_sequences_async(status_callback) {
-    if (this.has_multiple_sequences && this.isPrimaryGraph && this.json.Edges.length > 0) {
+    if (
+      this.has_multiple_sequences &&
+      this.isPrimaryGraph &&
+      this.json.Edges.length > 0
+    ) {
       const reduce_distance_within = 0.000001;
       const reduce_distance_between = 0.015;
 
       if (status_callback) status_callback("Finding clusters...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       let clusters = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
         this.json.Edges
       );
 
       if (status_callback) status_callback("Finding complete clusters...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       let complete_clusters = misc.hivtrace_cluster_depthwise_traversal(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_within
       );
 
-      if (status_callback) status_callback("Computing adjacency map (between)...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      if (status_callback)
+        status_callback("Computing adjacency map (between)...");
+      await new Promise((resolve) => setTimeout(resolve, 0));
       let adjacency = misc.hivtrace_compute_adjacency(
         this.json.Nodes,
         this.json.Edges,
         (d) => d.length <= reduce_distance_between
       );
 
-      if (status_callback) status_callback("Computing adjacency map (0.005)...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      if (status_callback)
+        status_callback("Computing adjacency map (0.005)...");
+      await new Promise((resolve) => setTimeout(resolve, 0));
       let adjacency05 = misc.hivtrace_compute_adjacency(
         this.json.Nodes,
         this.json.Edges,
@@ -712,7 +723,7 @@ class HIVTxNetwork {
       );
 
       if (status_callback) status_callback("Identifying singletons...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
       let nodes_to_delete = new Set();
 
       _.each(clusters, (cluster, cluster_index) => {
@@ -742,7 +753,7 @@ class HIVTxNetwork {
           const pct = Math.min(100, Math.round((i / total_clusters) * 100));
           status_callback(`Collapsing duplicate node sequences (${pct}%)...`);
         }
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
 
         const end = Math.min(i + chunk_size, total_clusters);
         for (let c_idx = i; c_idx < end; c_idx++) {
@@ -819,8 +830,9 @@ class HIVTxNetwork {
         }
       }
 
-      if (status_callback) status_callback("Reconstructing network structures...");
-      await new Promise(resolve => setTimeout(resolve, 0));
+      if (status_callback)
+        status_callback("Reconstructing network structures...");
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       console.log(
         "Marked ",
@@ -1331,9 +1343,8 @@ class HIVTxNetwork {
       const attrs = d[kGlobals.network.NodeAttributeID];
       if (attrs && id in attrs) {
         const attr_desc = this.json[kGlobals.network.GraphAttrbuteID][id];
-        let v = (attr_desc && attr_desc.volatile)
-          ? attr_desc.map(d, this)
-          : attrs[id];
+        let v =
+          attr_desc && attr_desc.volatile ? attr_desc.map(d, this) : attrs[id];
 
         if (typeof v === "string") {
           if (check_redacted && v === "REDACTED") {
@@ -2685,6 +2696,17 @@ class HIVTxNetwork {
     ];
 
     const attrib_defs = {
+      CLUSTER_ID: {
+        depends: [],
+        label: "Cluster ID",
+        type: "String",
+        map: function (node) {
+          if (node && node.cluster) {
+            return String(node.cluster);
+          }
+          return "None";
+        },
+      },
       subcluster_or_priority_node: {
         depends: [timeDateUtil._networkCDCDateField],
         label: kGlobals.CDCNPMember,
@@ -2835,7 +2857,10 @@ class HIVTxNetwork {
     this.fetch_priority_sets(url, (results) => {
       let latest_date = new Date();
       latest_date.setUTCFullYear(1900);
-      this.defined_priority_groups = this.isMJCNetwork && results.clusters ? _.clone(results.clusters) : _.clone(results);
+      this.defined_priority_groups =
+        this.isMJCNetwork && results.clusters
+          ? _.clone(results.clusters)
+          : _.clone(results);
       _.each(this.defined_priority_groups, (pg) => {
         _.each(pg.nodes, (n) => {
           try {
@@ -2893,9 +2918,8 @@ class HIVTxNetwork {
                   node_set[n] = 1;
                 });
 
-                const matched_groups = _.filter(
-                  auto_expand_groups,
-                  (pg) => _.some(pg.nodes, (pn) => pn.name in node_set)
+                const matched_groups = _.filter(auto_expand_groups, (pg) =>
+                  _.some(pg.nodes, (pn) => pn.name in node_set)
                 );
 
                 if (matched_groups.length >= 1) {
@@ -3040,11 +3064,30 @@ class HIVTxNetwork {
       })
       .then((data) => {
         pg.archived = archived;
-        clustersOfInterest.draw_priority_set_table(this, null, null, false, true);
-        clustersOfInterest.draw_priority_set_table(this, null, null, true, true);
+        clustersOfInterest.draw_priority_set_table(
+          this,
+          null,
+          null,
+          false,
+          true
+        );
+        clustersOfInterest.draw_priority_set_table(
+          this,
+          null,
+          null,
+          true,
+          true
+        );
       })
       .catch((err) => {
-        alert("Failed to " + (archived ? "archive" : "unarchive") + " " + name + ": " + err.message);
+        alert(
+          "Failed to " +
+            (archived ? "archive" : "unarchive") +
+            " " +
+            name +
+            ": " +
+            err.message
+        );
       });
   }
 
@@ -3123,10 +3166,20 @@ class HIVTxNetwork {
                 uniq_value_set.add(kGlobals.missing.label);
               }
             } else {
-              uniq_value_set.add(attr_value !== undefined && attr_value !== null ? attr_value : kGlobals.missing.label);
+              uniq_value_set.add(
+                attr_value !== undefined && attr_value !== null
+                  ? attr_value
+                  : kGlobals.missing.label
+              );
             }
           } else {
-            uniq_value_set.add(attr_value !== undefined && attr_value !== null && attr_value !== "" ? attr_value : kGlobals.missing.label);
+            uniq_value_set.add(
+              attr_value !== undefined &&
+                attr_value !== null &&
+                attr_value !== ""
+                ? attr_value
+                : kGlobals.missing.label
+            );
           }
         }
       }
@@ -3171,9 +3224,57 @@ class HIVTxNetwork {
           ] = true;
         }
       }
+
+      // If we have aggregated nodes (cached or in json), populate/aggregate the predefined attribute on them as well
+      const cached_nodes = this._cached_aggregated_nodes || this.json._cached_aggregated_nodes;
+      if (cached_nodes) {
+        this._cached_aggregated_nodes = cached_nodes;
+        const grouped_seqs = _.groupBy(this.json.Nodes, (n) => this.primary_key(n));
+        const attr_id = kGlobals.network.NodeAttributeID;
+
+        _.each(cached_nodes, (agg_node) => {
+          const pkey = this.primary_key(agg_node);
+          const seqs = grouped_seqs[pkey] || [];
+          const unique_vals = {};
+
+          _.each(seqs, (s) => {
+            const val = (s[attr_id] || {})[key];
+            if (val !== undefined && val !== null && val !== "None" && val !== "") {
+              unique_vals[val] = 1;
+            }
+          });
+
+          let unique_keys = Object.keys(unique_vals);
+          if (key === "CLUSTER_ID" && unique_keys.length > 1) {
+            const filtered = unique_keys.filter((x) => x !== "None");
+            if (filtered.length > 0) {
+              unique_keys = filtered;
+            }
+          }
+
+          let final_val = "None";
+          if (unique_keys.length === 1) {
+            final_val = unique_keys[0];
+          } else if (unique_keys.length > 1) {
+            final_val = unique_keys.sort().join(";");
+          }
+
+          if (!agg_node[attr_id]) {
+            agg_node[attr_id] = {};
+          }
+          agg_node[attr_id][key] = final_val;
+        });
+      }
+
       const tEnd = performance.now();
       console.log(
-        `[PERF_DETAIL] populate_predefined_attribute(${key}): total = ${(tEnd - tStart).toFixed(2)}ms (loop = ${(tLoopEnd - tLoopStart).toFixed(2)}ms, metadata = ${(tEnd - tLoopEnd + tLoopStart - tStart).toFixed(2)}ms)`
+        `[PERF_DETAIL] populate_predefined_attribute(${key}): total = ${(
+          tEnd - tStart
+        ).toFixed(2)}ms (loop = ${(tLoopEnd - tLoopStart).toFixed(
+          2
+        )}ms, metadata = ${(tEnd - tLoopEnd + tLoopStart - tStart).toFixed(
+          2
+        )}ms)`
       );
     }
   }
@@ -3503,7 +3604,11 @@ class HIVTxNetwork {
             true
           );
 
-          if (rawValue === kGlobals.missing.label || rawValue === "REDACTED" || !rawValue) {
+          if (
+            rawValue === kGlobals.missing.label ||
+            rawValue === "REDACTED" ||
+            !rawValue
+          ) {
             return kGlobals.missing.label;
           }
 
@@ -3560,7 +3665,7 @@ class HIVTxNetwork {
 
   /**
    * Define an attribute generator for month/year at diagnosis
-   * 
+   *
    * @param {*} label : use this label
    * @returns attribute definition dict
    */
@@ -3578,14 +3683,13 @@ class HIVTxNetwork {
             false,
             true
           );
-        }
-        catch {
+        } catch {
           return kGlobals.missing.label;
         }
-      }
+      },
     };
   }
-  
+
   /**
    * Define an attribute generator for boolean value of dx in last year
    * @param {*} label : use this label
@@ -3656,11 +3760,20 @@ class HIVTxNetwork {
   fetch_sequences_for_pid(pid) {
     if (this.has_multiple_sequences) {
       return _.flatten(
-        _.map(this.primary_key_list[pid], (d) =>
-          d[kGlobals.network.AliasedSequencesID]
+        _.map(this.primary_key_list[pid], (d) => {
+          const d_has_seq =
+            d.patient_attributes &&
+            d.patient_attributes.has_sequence !== undefined
+              ? d.patient_attributes.has_sequence
+              : d.patient_attributes &&
+                d.patient_attributes.sequence_status !== "none";
+          if (d_has_seq === false) {
+            return [];
+          }
+          return d[kGlobals.network.AliasedSequencesID]
             ? d[kGlobals.network.AliasedSequencesID]
-            : d.id
-        )
+            : d.id;
+        })
       );
     }
     return this.primary_key_list[pid];
@@ -3679,6 +3792,15 @@ class HIVTxNetwork {
       type: "Number",
       label_format: d3.format("d"),
       map: (node) => {
+        const has_seq =
+          node.patient_attributes &&
+          node.patient_attributes.has_sequence !== undefined
+            ? node.patient_attributes.has_sequence
+            : node.patient_attributes &&
+              node.patient_attributes.sequence_status !== "none";
+        if (has_seq === false) {
+          return 0;
+        }
         if (node[kGlobals.network.AliasedSequencesID]) {
           return node[kGlobals.network.AliasedSequencesID].length;
         }
@@ -3928,13 +4050,17 @@ class HIVTxNetwork {
     */
 
   aggregate_indvidual_level_records(node_list) {
-    const is_full = !node_list || node_list === this.json.Nodes || (this.json.Nodes && node_list.length === this.json.Nodes.length);
+    const is_full =
+      !node_list ||
+      node_list === this.json.Nodes ||
+      (this.json.Nodes && node_list.length === this.json.Nodes.length);
     if (is_full) {
       if (this._cached_aggregated_nodes) {
         return this._cached_aggregated_nodes;
       }
       if (this.json._cached_aggregated_nodes) {
-        return (this._cached_aggregated_nodes = this.json._cached_aggregated_nodes);
+        return (this._cached_aggregated_nodes =
+          this.json._cached_aggregated_nodes);
       }
     }
 
@@ -3942,7 +4068,8 @@ class HIVTxNetwork {
     if (this.isMJCNetwork) {
       let values_iterator;
       if (is_full) {
-        values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
+        values_iterator =
+          this.primary_key_list_values || Object.values(this.primary_key_list);
       } else {
         const binned = new Map();
         node_list = node_list || this.json.Nodes;
@@ -3966,11 +4093,20 @@ class HIVTxNetwork {
         } else {
           let new_record = _.clone(values[0]);
           new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
-            _.map(values, (d) =>
-              d[kGlobals.network.AliasedSequencesID]
+            _.map(values, (d) => {
+              const d_has_seq =
+                d.patient_attributes &&
+                d.patient_attributes.has_sequence !== undefined
+                  ? d.patient_attributes.has_sequence
+                  : d.patient_attributes &&
+                    d.patient_attributes.sequence_status !== "none";
+              if (d_has_seq === false) {
+                return [];
+              }
+              return d[kGlobals.network.AliasedSequencesID]
                 ? d[kGlobals.network.AliasedSequencesID]
-                : d.id ?? d.name
-            )
+                : d.id ?? d.name;
+            })
           );
           new_list.push(new_record);
         }
@@ -3988,18 +4124,26 @@ class HIVTxNetwork {
           }
         }
 
-        const unique_keys = Object.keys(unique_values);
+        let unique_keys = Object.keys(unique_values);
+        if (store_key === "CLUSTER_ID" && unique_keys.length > 1) {
+          const filtered = unique_keys.filter((x) => x !== "None");
+          if (filtered.length > 0) {
+            unique_keys = filtered;
+          }
+        }
         if (unique_keys.length == 1) {
           record[store_key] = unique_keys[0];
         } else if (unique_keys.length > 1) {
-          record[store_key] = unique_keys.join(";");
+          record[store_key] = unique_keys.sort().join(";");
         }
       };
 
       if (this.has_multiple_sequences) {
         let values_iterator;
         if (is_full) {
-          values_iterator = this.primary_key_list_values || Object.values(this.primary_key_list);
+          values_iterator =
+            this.primary_key_list_values ||
+            Object.values(this.primary_key_list);
         } else {
           const binned = new Map();
           for (let i = 0; i < node_list.length; i++) {
@@ -4022,7 +4166,9 @@ class HIVTxNetwork {
           } else {
             let new_record = _.clone(values[0]);
             const new_attr_obj = {};
-            const attr_keys = Object.keys(new_record[kGlobals.network.NodeAttributeID] || {});
+            const attr_keys = Object.keys(
+              new_record[kGlobals.network.NodeAttributeID] || {}
+            );
             for (let j = 0; j < attr_keys.length; j++) {
               const k = attr_keys[j];
               const proto = this.json[kGlobals.network.GraphAttrbuteID][k];
@@ -4034,7 +4180,13 @@ class HIVTxNetwork {
                 }
               }
 
-              const unique_keys = Object.keys(unique_values);
+              let unique_keys = Object.keys(unique_values);
+              if (k === "CLUSTER_ID" && unique_keys.length > 1) {
+                const filtered = unique_keys.filter((x) => x !== "None");
+                if (filtered.length > 0) {
+                  unique_keys = filtered;
+                }
+              }
               if (unique_keys.length == 1) {
                 new_attr_obj[k] = unique_keys[0];
               } else if (unique_keys.length > 1) {
@@ -4068,11 +4220,20 @@ class HIVTxNetwork {
             );
 
             new_record[kGlobals.network.AliasedSequencesID] = _.flatten(
-              _.map(values, (d) =>
-                d[kGlobals.network.AliasedSequencesID]
+              _.map(values, (d) => {
+                const d_has_seq =
+                  d.patient_attributes &&
+                  d.patient_attributes.has_sequence !== undefined
+                    ? d.patient_attributes.has_sequence
+                    : d.patient_attributes &&
+                      d.patient_attributes.sequence_status !== "none";
+                if (d_has_seq === false) {
+                  return [];
+                }
+                return d[kGlobals.network.AliasedSequencesID]
                   ? d[kGlobals.network.AliasedSequencesID]
-                  : d.id
-              )
+                  : d.id;
+              })
             );
             new_record[kGlobals.network.NodeAttributeID]["sequence_count"] =
               new_record[kGlobals.network.AliasedSequencesID].length;
