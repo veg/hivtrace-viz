@@ -1387,7 +1387,7 @@ function _action_drop_down(self, pg) {
               site_pg_name,
               copied_node_objects,
               "A copy of " + pg.name + " that contains site sequences only.",
-              "02 national molecular cluster analysis",
+              "01 state/local molecular cluster analysis",
               pg.tracking
             );
           }
@@ -2214,13 +2214,15 @@ function draw_priority_set_table(
     ).on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_nodes(),
-        "clusters-of-interest"
+        self.isMJCNetwork ? "MJ_clusters-of-interest" : "clusters-of-interest"
       );
     });
     d3.select("#priority_set_table_download").on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_sets(),
-        "clusters_of_interest_table"
+        self.isMJCNetwork
+          ? "MJ_clusters_of_interest_table"
+          : "clusters_of_interest_table"
       );
     });
 

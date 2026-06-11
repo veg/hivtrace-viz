@@ -1282,6 +1282,7 @@ class HIVTxNetwork {
         nodes: overlap.nodes,
         // sets = number of distinct overlap_groups that share nodes with this mjc_group
         sets: overlap.sets.size,
+        set_names: Array.from(overlap.sets),
         superset: overlap.supersets,
         duplicate: overlap.duplicates,
       };
@@ -1797,14 +1798,26 @@ class HIVTxNetwork {
 
           let entities = this.aggregate_indvidual_level_records(g.node_objects);
 
-          cluster_detect_size = this.unique_entity_list_from_ids(
-            _.map(
-              _.filter(g.nodes, (node) => {
-                return node.added <= g.created;
-              }),
-              (node) => node.name
-            )
-          ).length;
+          if (this.isMJCNetwork && g.cluster_detect_size != null) {
+            // The client-side count below undercounts once other jurisdictions'
+            // `added` dates are redacted; use the backend's all-sites value.
+            cluster_detect_size = g.cluster_detect_size;
+          } else {
+            cluster_detect_size = this.unique_entity_list_from_ids(
+              _.map(
+                _.filter(g.nodes, (node) => {
+                  return node.added <= g.created;
+                }),
+                (node) => node.name
+              )
+            ).length;
+          }
+
+          // Overlap between MJ and site clusterOI. In the MJC view that's
+          // `g.overlap`; in the site view the MJ overlap lives in
+          // `g.overlap_mjc` (there `g.overlap` is site-to-site).
+          const mj_site_overlap =
+            (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
 
           const entity_to_pg_records = _.groupBy(
             _.filter(g.nodes, (nr) => !exclude_nodes.has(nr.name)),
@@ -1826,6 +1839,18 @@ class HIVTxNetwork {
             }),
             (gn) => {
               const eid = this.entity_id(gn);
+              const rep = (entity_to_g_records[eid] || [])[0];
+              // Per-person MJC attributes (join arrays e.g. joint_owners).
+              const mjc_attr = (key) => {
+                const v = this.attribute_node_value_by_id(
+                  rep,
+                  key,
+                  false,
+                  false,
+                  true
+                );
+                return Array.isArray(v) ? v.join("; ") : v;
+              };
               return {
                 eHARS_uid: this.cleanRedacted(eid),
                 cluster_uid: this.cleanRedacted(g.name),
@@ -1859,12 +1884,46 @@ class HIVTxNetwork {
                 national_priority: g.meets_priority_def,
                 cluster_current_size: entities.length,
                 cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-                cluster_overlap: g.overlap.sets,
+                ...(this.isMJCNetwork
+                  ? {}
+                  : { cluster_overlap: (g.overlap || {}).sets }),
+                MJ_and_site_clusterOI_overlap: (
+                  mj_site_overlap.set_names || []
+                ).join(";"),
+                MJ_and_site_clusterOI_overlap_count: mj_site_overlap.sets || 0,
                 SequenceID: this.list_of_aliased_sequences(gn)
-                  .map((seq) => {
-                    return seq.split("|")[1];
-                  })
+                  .map((seq) => this.cleanRedacted(seq.split("|")[1]))
                   .join(";"),
+                // Individual-level MJC variables. MJC only — these attributes
+                // don't exist on regular site networks; values arrive
+                // pre-redacted from the backend per the sharing config.
+                ...(this.isMJCNetwork
+                  ? {
+                      jurisdiction: mjc_attr("jurisdiction"),
+                      joint_owners: mjc_attr("joint_owners"),
+                      cur_state_cd: mjc_attr("cur_state_cd"),
+                      rsd_state_cd: mjc_attr("rsd_state_cd"),
+                      selected_mjc_date_identified:
+                        this.mjc_selected_for_cluster(
+                          rep,
+                          "mjc_date_identified",
+                          g.name,
+                          true
+                        ),
+                      selected_mjc_date_identified_12mo:
+                        this.mjc_selected_for_cluster(
+                          rep,
+                          "mjc_date_identified_12mo",
+                          g.name,
+                          false
+                        ),
+                      hiv_aids_dx_dt_month_year: mjc_attr(
+                        "hiv_aids_dx_dt_month_year"
+                      ),
+                      hiv_aids_dx_dt_12mo: mjc_attr("hiv_aids_dx_dt_12mo"),
+                      hiv_aids_dx_dt_36mo: mjc_attr("hiv_aids_dx_dt_36mo"),
+                    }
+                  : {}),
               };
             }
           );
@@ -1882,25 +1941,36 @@ class HIVTxNetwork {
     return _.flatten(
       _.map(
         _.filter(this.defined_priority_groups, (g) => g.validated),
-        (g) => ({
-          cluster_type: g.createdBy,
-          cluster_uid: this.cleanRedacted(g.name),
-          cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.modified
-          ),
-          cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
-            g.created
-          ),
-          cluster_ident_method: g.kind,
-          cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
-          cluster_current_size: this.aggregate_indvidual_level_records(
-            g.node_objects
-          ).length,
-          national_priority: g.meets_priority_def,
-          cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
-          cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
-          cluster_overlap: g.overlap.sets,
-        })
+        (g) => {
+          // MJ↔site overlap: g.overlap in the MJC view, g.overlap_mjc otherwise.
+          const mj_site_overlap =
+            (this.isMJCNetwork ? g.overlap : g.overlap_mjc) || {};
+          return {
+            cluster_type: g.createdBy,
+            cluster_uid: this.cleanRedacted(g.name),
+            cluster_modified_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+              g.modified
+            ),
+            cluster_created_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
+              g.created
+            ),
+            cluster_ident_method: g.kind,
+            cluster_growth: kGlobals.CDCCOIConciseTrackingOptions[g.tracking],
+            cluster_current_size: this.aggregate_indvidual_level_records(
+              g.node_objects
+            ).length,
+            national_priority: g.meets_priority_def,
+            cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+            cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
+            ...(this.isMJCNetwork
+              ? {}
+              : { cluster_overlap: (g.overlap || {}).sets }),
+            MJ_and_site_clusterOI_overlap: (
+              mj_site_overlap.set_names || []
+            ).join(";"),
+            MJ_and_site_clusterOI_overlap_count: mj_site_overlap.sets || 0,
+          };
+        }
       )
     );
   };
@@ -2083,6 +2153,23 @@ class HIVTxNetwork {
       let traversal_cache = null;
 
       _.each(groups, (pg) => {
+        // All MJ clusterOI are S-TRACE state/local analyses tracked at "3 years,
+        // 0.5% distance"; normalize unless the backend redacted these fields.
+        if (this.isMJCNetwork) {
+          if (pg.kind !== "REDACTED") {
+            pg.kind = kGlobals.CDCCOIKind[0];
+          }
+          if (pg.tracking !== "REDACTED") {
+            pg.tracking = kGlobals.CDCCOITrackingOptions[0];
+          }
+          // person_ident_method is the node `kind`; all MJ members are
+          // S-TRACE auto-identified → "01 through analysis/notification".
+          _.each(pg.nodes, (n) => {
+            if (n.kind !== "REDACTED") {
+              n.kind = kGlobals.CDCCOINodeKindDefault;
+            }
+          });
+        }
         if (!pg.validated) {
           pg.node_objects = [];
           pg.not_in_network = [];
@@ -2515,6 +2602,7 @@ class HIVTxNetwork {
 
           if (
             auto_extend &&
+            !this.isMJCNetwork &&
             pg.tracking !== kGlobals.CDCCOITrackingOptionsNone
           ) {
             const added_nodes = this.auto_expand_pg_handler(
@@ -4278,10 +4366,26 @@ class HIVTxNetwork {
   }
 
   cleanRedacted(id) {
-    if (id.startsWith("REDACTED_")) {
+    if (typeof id === "string" && id.startsWith("REDACTED_")) {
       return "REDACTED";
     }
     return id;
+  }
+
+  /**
+   * A node's `mjc_date_identified[_12mo]` value for one cluster. These maps are
+   * keyed by cluster name; pull the entry for `cluster_name`. `format_date`
+   * formats the value as a date.
+   */
+  mjc_selected_for_cluster(node, attr_key, cluster_name, format_date) {
+    const attrs = node && node[kGlobals.network.NodeAttributeID];
+    if (!attrs || !(attr_key in attrs)) return kGlobals.missing.label;
+    const v = attrs[attr_key];
+    if (typeof v !== "object" || v === null) return v; // scalar or "REDACTED"
+    if (!Object.hasOwn(v, cluster_name)) return kGlobals.missing.label;
+    return format_date
+      ? timeDateUtil.DateViewFormatExport(this.parse_dates(new Date(v[cluster_name])))
+      : v[cluster_name];
   }
 
   /**

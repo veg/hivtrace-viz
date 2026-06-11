@@ -2377,7 +2377,8 @@ var hivtrace_cluster_network_graph = function (
           alert(kGlobals.network.WarnExecutiveMode);
         } else {
           helpers.export_csv_button(
-            self._extract_attributes_for_nodes(cluster_nodes, column_ids)
+            self._extract_attributes_for_nodes(cluster_nodes, column_ids),
+            self.isMJCNetwork ? "MJ_export" : undefined
           );
         }
       });
