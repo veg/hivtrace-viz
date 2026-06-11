@@ -10,10 +10,27 @@ test.beforeEach(async ({ page }) => {
       errors.push(msg.text());
     }
   });
+  page.on("response", (response) => {
+    if (response.status() === 404) {
+      console.log(`404 NOT FOUND: ${response.url()}`);
+      errors.push(`404 NOT FOUND: ${response.url()}`);
+    }
+  });
+  page.on("pageerror", (err) => {
+    console.log("PAGE ERROR:", err.message);
+    errors.push(err.message);
+  });
+
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", {
+      get: () => undefined,
+    });
+  });
 
   await page.goto(
     "http://127.0.0.1:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json"
   );
+  await expect(page.locator("#network_tag .my_progress")).toBeHidden();
 });
 
 test.afterEach(async ({ page }) => {
@@ -41,8 +58,7 @@ const openEditor = async (page) => {
   await page.locator("#priority-set-tab").click();
 
   // jspanel should not be visible
-  let jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(0);
+  await expect(page.locator(".jsPanel")).toHaveCount(0);
 
   await expect(page.locator("#trace-priority-sets")).toBeVisible();
   await expect(
@@ -50,8 +66,7 @@ const openEditor = async (page) => {
   ).toBeVisible();
   await page.getByText("Create A Cluster of Interest", { exact: true }).click();
 
-  jsPanels = await page.locator(".jsPanel").all();
-  await expect(jsPanels).toHaveLength(1);
+  await expect(page.locator(".jsPanel")).toHaveCount(1);
 };
 
 const createCluster = async (page, nodes, editorOpen = false) => {
@@ -135,6 +150,7 @@ test("preview cluster and then open clusterOI editor", async ({ page }) => {
   await page.goto(
     "http://127.0.0.1:8080/html/priority-sets-args.html?network=../ui-tests/data/network.json"
   );
+  await expect(page.locator("#network_tag .my_progress")).toBeHidden();
 
   await page.locator(".cluster-group").first().click();
   await page
@@ -206,29 +222,32 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
       .filter({ has: page.getByText("Cluster 2") })
   ).toBeVisible();
 
-  // delete all clusters, accept confirmation dialog
-  await page.locator(".view-edit-cluster").first().click();
+  // delete Cluster 1; accept confirmation dialog
+  await page
+    .locator("#priority_set_table tbody tr")
+    .filter({ hasText: "Cluster 1" })
+    .locator(".view-edit-cluster")
+    .click();
   const acceptDialog = getAcceptDialogFunction(
     "This action cannot be undone. Proceed?"
   );
   await page.on("dialog", acceptDialog);
   await page
+    .locator(".btn-group.open")
     .getByText("Delete this cluster of interest", { exact: true })
-    .first()
     .click();
   await page.off("dialog", acceptDialog);
 
   await expect(
-    await page
-      .locator("#priority_set_table")
-      .filter({ has: page.getByText("Cluster 1") })
-      .filter({ has: page.getByText("Cluster 2") })
+    page
+      .locator("#priority_set_table tbody tr")
+      .filter({ hasText: "Cluster 1" })
   ).toHaveCount(0);
 
   await expect(
-    await page
-      .locator("#priority_set_table")
-      .filter({ has: page.getByText("Cluster 2") })
+    page
+      .locator("#priority_set_table tbody tr")
+      .filter({ hasText: "Cluster 2" })
   ).toHaveCount(1);
 
   // delete the last cluster
@@ -238,8 +257,8 @@ test("add nodes via graph to clusterOI editor, save, clone clusterOI, save, and 
   );
   await page.on("dialog", acceptDialog2);
   await page
+    .locator(".btn-group.open")
     .getByText("Delete this cluster of interest", { exact: true })
-    .first()
     .click();
   await page.off("dialog", acceptDialog2);
 

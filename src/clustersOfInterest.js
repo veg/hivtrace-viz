@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import _ from "underscore";
+import _, { drop } from "underscore";
 import { jsPanel } from "jspanel4";
 import autocomplete from "autocomplete.js";
 import * as timeDateUtil from "./timeDateUtil.js";
@@ -10,6 +10,24 @@ import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as kGlobals from "./globals.js";
 
 let priority_set_editor = null;
+
+function safe_format_date(v, formatter) {
+  if (!v) return "";
+  if (v instanceof Date) {
+    return formatter(v);
+  }
+  var parsed = timeDateUtil.DateViewFormatSlider.parse(v);
+  if (!parsed) {
+    parsed = timeDateUtil.DateViewFormatMMDDYYY.parse(v);
+  }
+  if (!parsed) {
+    parsed = new Date(v);
+  }
+  if (parsed && !isNaN(parsed.getTime())) {
+    return formatter(parsed);
+  }
+  return v;
+}
 
 /**
  * Initializes the component, setting up event listeners and UI elements.
@@ -426,6 +444,7 @@ function open_editor(
               autocreated: existing_set ? existing_set.autocreated : false,
               autoexpanded: existing_set ? existing_set.autoexpanded : false,
               pending: false,
+              history: existing_set ? existing_set.history : [],
             };
 
             if (tracking !== kGlobals.CDCCOITrackingOptionsNone) {
@@ -509,7 +528,7 @@ function open_editor(
         .attr("id", "priority-panel-preview")
         .text("Preview @1.5%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": 0.015,
             timestamp: createdDate,
           });
@@ -520,7 +539,7 @@ function open_editor(
         .attr("id", "priority-panel-preview-subcluster")
         .text("Preview @" + self.subcluster_threshold * 100 + "%")
         .on("click", (e) => {
-          priority_set_view(self, priority_set_editor, {
+          priority_set_view(self, panel_object, {
             "priority-edge-length": self.subcluster_threshold,
             timestamp: createdDate,
           });
@@ -625,7 +644,6 @@ function open_editor(
       };
 
       panel_object._append_node = function (node) {
-        console.log(node, modifiedDate, createdDate);
         if (!("_priority_set_date" in node)) {
           node["_priority_set_date"] = modifiedDate || createdDate;
         }
@@ -719,8 +737,6 @@ function open_editor(
             panel_object._append_node(valid_ids[n.id]);
             existing_ids[n.id] = 1;
             need_update = true;
-          } else {
-            console.log("***", n);
           }
         });
 
@@ -776,6 +792,7 @@ function open_editor(
       panel_object.table_handler = function (panel) {
         var table_container = panel_content.selectAll("table").data(["panel"]);
         table_container.enter().append("table");
+        table_container = panel_content.selectAll("table");
         table_container
           .classed(
             "table table-striped table-condensed table-hover table-smaller",
@@ -827,8 +844,9 @@ function open_editor(
                     }
                     if (!is_node_editable(payload)) {
                       this_cell.text(
-                        timeDateUtil.DateViewFormatMMDDYYY(
-                          payload["_priority_set_date"]
+                        safe_format_date(
+                          payload["_priority_set_date"],
+                          timeDateUtil.DateViewFormatMMDDYYY
                         )
                       );
                     } else {
@@ -837,8 +855,9 @@ function open_editor(
                         .attr("type", "date")
                         .attr(
                           "value",
-                          timeDateUtil.DateViewFormatSlider(
-                            payload["_priority_set_date"]
+                          safe_format_date(
+                            payload["_priority_set_date"],
+                            timeDateUtil.DateViewFormatSlider
                           )
                         )
                         .on("change", (e, d) => {
@@ -1049,6 +1068,7 @@ function open_editor(
     onclosed: function () {
       priority_set_editor = null;
       self.redraw_tables();
+      window.reinitializeDropdown && window.reinitializeDropdown();
     },
   });
 }
@@ -1066,50 +1086,83 @@ function open_editor(
 function handle_inline_confirm(this_button, generator, text, action, disabled) {
   this_button = $(this_button.node());
   if (this_button.data("popover_shown") !== "shown") {
-    const popover = this_button
-      .popover({
-        sanitize: false,
-        placement: "right",
-        container: "body",
-        html: true,
-        content: generator,
-        trigger: "manual",
-      })
-      .on("shown.bs.popover", function (e) {
-        var clicked_object = d3.select(this);
-        var popover_div = d3.select(
-          "#" + clicked_object.attr("aria-describedby")
-        );
-        var textarea_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-form")
-        );
-        var button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-save")
-        );
-        textarea_element.text(text);
-        if (disabled) textarea_element.attr("disabled", true);
-        button_element.on("click", (d) => {
-          action($(textarea_element.node()).val());
-          d3.event.preventDefault();
-          this_button.click();
+    try {
+      const popover = this_button
+        .popover({
+          sanitize: false,
+          placement: "right",
+          container: "body",
+          html: true,
+          content: generator,
+          trigger: "manual",
+        })
+        .on("shown.bs.popover", function (e) {
+          var clicked_object = d3.select(this);
+          var popover_div = d3.select(
+            "#" + clicked_object.attr("aria-describedby")
+          );
+          var textarea_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-form")
+          );
+          var button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-save")
+          );
+          textarea_element.text(text);
+          if (disabled) textarea_element.attr("disabled", true);
+          button_element.on("click", (d) => {
+            action($(textarea_element.node()).val());
+            d3.event.preventDefault();
+            this_button.click();
+          });
+          button_element = popover_div.selectAll(
+            misc.get_ui_element_selector_by_role("priority-description-dismiss")
+          );
+          button_element.on("click", (d) => {
+            d3.event.preventDefault();
+            this_button.click();
+          });
         });
-        button_element = popover_div.selectAll(
-          misc.get_ui_element_selector_by_role("priority-description-dismiss")
-        );
-        button_element.on("click", (d) => {
-          d3.event.preventDefault();
-          this_button.click();
-        });
-      });
 
-    popover.popover("show");
-    this_button.data("popover_shown", "shown");
-    this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
-      $(this).data("popover_shown", "hidden");
-    });
+      popover.popover("show");
+      this_button.data("popover_shown", "shown");
+
+      // Fix popover visibility (Bootstrap fade transition workaround)
+      setTimeout(() => {
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          var popoverEl = $("#" + popoverId);
+          popoverEl.removeClass("fade").addClass("show in");
+          popoverEl.css({
+            "z-index": "99999",
+            opacity: "1",
+            display: "block",
+          });
+        }
+      }, 50);
+
+      this_button.off("hidden.bs.popover").on("hidden.bs.popover", function () {
+        $(this).data("popover_shown", "hidden");
+      });
+    } catch (e) {
+      console.error("Error creating/showing popover:", e);
+    }
   } else {
     this_button.data("popover_shown", "hidden");
-    this_button.popover("destroy");
+    // Bootstrap 3 uses "destroy", Bootstrap 4/5 uses "dispose"
+    try {
+      this_button.popover("destroy");
+    } catch (e) {
+      try {
+        this_button.popover("dispose");
+      } catch (e2) {
+        // If neither works, try to hide and remove manually
+        this_button.popover("hide");
+        var popoverId = this_button.attr("aria-describedby");
+        if (popoverId) {
+          $("#" + popoverId).remove();
+        }
+      }
+    }
   }
 }
 
@@ -1122,113 +1175,246 @@ function handle_inline_confirm(this_button, generator, text, action, disabled) {
 */
 
 function _action_drop_down(self, pg) {
-  let dropdown = _.flatten([
-    _.map([self.subcluster_threshold, 0.015], (threshold) => {
-      let items = [
-        {
-          label:
-            "View this cluster of interest at link distance of " +
-            kGlobals.formats.PercentFormatShort(threshold),
-          action: function (button, value) {
-            priority_set_view(self, pg, {
-              timestamp: pg.modified || pg.created,
-              priority_set: pg,
-              "priority-edge-length": threshold,
-              title: pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
-            });
+  let dropdown = [];
+
+  if (!self.isMJCNetwork || self.fullMJCNetwork) {
+    const viewClusterOptions = _.flatten([
+      _.map([self.subcluster_threshold, 0.015], (threshold) => {
+        let items = [
+          {
+            label:
+              "View this cluster of interest at link distance of " +
+              kGlobals.formats.PercentFormatShort(threshold),
+            action: function (button, value) {
+              priority_set_view(self, pg, {
+                timestamp: pg.modified || pg.created,
+                priority_set: pg,
+                "priority-edge-length": threshold,
+                title:
+                  pg.name + " @" + kGlobals.formats.PercentFormat(threshold),
+              });
+              window.reinitializeDropdown && window.reinitializeDropdown();
+            },
           },
+        ];
+        if (self.has_multiple_sequences) {
+          items.push({
+            label:
+              "View this cluster of interest at link distance of " +
+              kGlobals.formats.PercentFormatShort(threshold) +
+              " (sequence level)",
+            action: function (button, value) {
+              priority_set_view(self, pg, {
+                timestamp: pg.modified || pg.created,
+                priority_set: pg,
+                "priority-edge-length": threshold,
+                title:
+                  pg.name +
+                  " @" +
+                  kGlobals.formats.PercentFormat(threshold) +
+                  " (sequence level)",
+                raw_mspp: true,
+              });
+              window.reinitializeDropdown && window.reinitializeDropdown();
+            },
+          });
+        }
+        return items;
+      }),
+    ]);
+
+    dropdown.push(...viewClusterOptions);
+  }
+
+  if (!self._is_CDC_executive_mode) {
+    if (!self.isMJCNetwork) {
+      dropdown.push({
+        label: "Clone this cluster of interest in a new editor panel",
+        action: function (button, value) {
+          let ref_set = self.priority_groups_find_by_name(pg.name);
+          let copied_node_objects = _.clone(ref_set.node_objects);
+          priority_set_inject_node_attibutes(
+            self,
+            copied_node_objects,
+            pg.nodes
+          );
+          open_editor(
+            self,
+            copied_node_objects,
+            "",
+            "Clone of " + pg.name,
+            ref_set.kind
+          );
+          self.redraw_tables();
         },
-      ];
-      if (self.has_multiple_sequences) {
-        items.push({
-          label:
-            "View this cluster of interest at link distance of " +
-            kGlobals.formats.PercentFormatShort(threshold) +
-            " (sequence level)",
+      });
+      if (pg.createdBy !== "System") {
+        dropdown.push({
+          label: "Delete this cluster of interest",
           action: function (button, value) {
-            priority_set_view(self, pg, {
-              timestamp: pg.modified || pg.created,
-              priority_set: pg,
-              "priority-edge-length": threshold,
-              title:
-                pg.name +
-                " @" +
-                kGlobals.formats.PercentFormat(threshold) +
-                " (sequence level)",
-              raw_mspp: true,
-            });
+            if (confirm("This action cannot be undone. Proceed?")) {
+              self.priority_groups_remove_set(pg.name, true);
+            }
           },
         });
       }
-      return items;
-    }),
-  ]);
-
-  if (!self._is_CDC_executive_mode) {
-    dropdown.push({
-      label: "Clone this cluster of interest in a new editor panel",
-      action: function (button, value) {
-        let ref_set = self.priority_groups_find_by_name(pg.name);
-        let copied_node_objects = _.clone(ref_set.node_objects);
-        priority_set_inject_node_attibutes(self, copied_node_objects, pg.nodes);
-        open_editor(
-          self,
-          copied_node_objects,
-          "",
-          "Clone of " + pg.name,
-          ref_set.kind
-        );
-        self.redraw_tables();
-      },
-    });
-    if (pg.createdBy !== "System") {
-      dropdown.push({
-        label: "Delete this cluster of interest",
-        action: function (button, value) {
-          if (confirm("This action cannot be undone. Proceed?")) {
-            self.priority_groups_remove_set(pg.name, true);
-          }
-        },
-      });
     }
     dropdown.push({
       label: "View nodes in this cluster of interest",
-      data: {
-        toggle: "modal",
-        target: misc.get_ui_element_selector_by_role("cluster_list"),
-        priority_set: pg.name,
+      action: function (button, value) {
+        const modalSelector = misc.get_ui_element_selector_by_role(
+          "cluster_list",
+          true
+        );
+        const $modal = $(modalSelector);
+
+        // Store priority set name for the modal handler to use
+        $modal.data("priority_set_trigger", pg.name);
+
+        // Manually trigger the show.bs.modal event and show the modal
+        // This is a workaround for Bootstrap modal not working
+        $modal.trigger("show.bs.modal");
+
+        // Manually add Bootstrap 3 modal classes and styles
+        $modal
+          .addClass("in")
+          .css("display", "block")
+          .attr("aria-hidden", "false");
+
+        // Add backdrop
+        if (!$(".modal-backdrop").length) {
+          $("body").append('<div class="modal-backdrop fade in"></div>');
+          $("body").addClass("modal-open");
+        }
+
+        // Helper function to close modal
+        const closeModal = function () {
+          $modal
+            .removeClass("in")
+            .css("display", "none")
+            .attr("aria-hidden", "true");
+          $(".modal-backdrop").remove();
+          $("body").removeClass("modal-open");
+          $modal.trigger("hidden.bs.modal");
+        };
+
+        // Bind close handlers (unbind first to prevent duplicates)
+        $modal
+          .find('[data-dismiss="modal"]')
+          .off("click.mjcmodal")
+          .on("click.mjcmodal", closeModal);
+
+        // Also close on backdrop click
+        $modal.off("click.mjcmodal").on("click.mjcmodal", function (e) {
+          if ($(e.target).is($modal)) {
+            closeModal();
+          }
+        });
+
+        // Close on escape key
+        $(document)
+          .off("keydown.mjcmodal")
+          .on("keydown.mjcmodal", function (e) {
+            if (e.keyCode === 27) {
+              // Escape
+              closeModal();
+              $(document).off("keydown.mjcmodal");
+            }
+          });
       },
     });
   }
-  dropdown.push({
-    label: "Modify this cluster of interest",
-    action: function (button, value) {
-      let ref_set = self.priority_groups_find_by_name(pg.name);
 
-      if (ref_set) {
-        /*if (ref_set.modified.getTime() > self.today.getTime()) {
-          if (
-            !confirm(
-              "Editing priority sets modified after the point at which this network was created is not recommended."
+  if (!self.isMJCNetwork) {
+    dropdown.push({
+      label: "Modify this cluster of interest",
+      action: function (button, value) {
+        let ref_set = self.priority_groups_find_by_name(pg.name);
+
+        if (ref_set) {
+          /*if (ref_set.modified.getTime() > self.today.getTime()) {
+            if (
+              !confirm(
+                "Editing priority sets modified after the point at which this network was created is not recommended."
+              )
             )
+              return;
+          }*/
+          open_editor(
+            self,
+            ref_set.node_objects,
+            ref_set.name,
+            ref_set.description,
+            ref_set.kind,
+            null,
+            "update",
+            ref_set,
+            ref_set.tracking
+          );
+          self.redraw_tables();
+        }
+      },
+    });
+  } else {
+    dropdown.push({
+      label: "Create site ClusterOI from this MJ ClusterOI",
+      action: function (button, value) {
+        const site_pg_name = "SITE_COPY_" + pg.name;
+        if (
+          confirm(
+            "Creating new cluster of interest '" +
+              site_pg_name +
+              "' for this MJ ClusterOI. Proceed?"
           )
+        ) {
+          let existing_pg = self.overlap_defined_priority_groups.find(
+            (pg) => pg.name === site_pg_name
+          );
+          if (existing_pg) {
+            alert(
+              "A cluster of interest with the name '" +
+                site_pg_name +
+                "' already exists in the jurisdiction's ClusterOI. Please rename that clusterOI before creating a new one with the same name."
+            );
             return;
-        }*/
-        open_editor(
-          self,
-          ref_set.node_objects,
-          ref_set.name,
-          ref_set.description,
-          ref_set.kind,
-          null,
-          "update",
-          ref_set,
-          ref_set.tracking
-        );
-        self.redraw_tables();
-      }
-    },
-  });
+          }
+          let ref_set = self.priority_groups_find_by_name(pg.name);
+          if (ref_set) {
+            let copied_node_objects = _.clone(ref_set.node_objects)
+              .filter((n) => self.isMine(n))
+              .map((n) => n.id);
+            self.priority_groups_add_from_mjc(
+              site_pg_name,
+              copied_node_objects,
+              "A copy of " + pg.name + " that contains site sequences only.",
+              "01 state/local molecular cluster analysis",
+              pg.tracking
+            );
+          }
+        }
+      },
+    });
+    dropdown.push({
+      label: pg.archived
+        ? "Unarchive this MJ cluster of interest"
+        : "Archive this MJ cluster of interest",
+      action: function (button, value) {
+        let ref_set = self.priority_groups_find_by_name(pg.name);
+        if (
+          confirm(
+            "Are you sure you want to " +
+              (pg.archived ? "unarchive" : "archive") +
+              " MJ cluster of interest '" +
+              pg.name +
+              "'?"
+          )
+        ) {
+          self.priority_groups_archive_mjc_set(ref_set.name, !pg.archived);
+          window.reinitializeDropdown && window.reinitializeDropdown();
+        }
+      },
+    });
+  }
 
   /**dropdown.push({
     label: "View history over time",
@@ -1251,20 +1437,79 @@ function _action_drop_down(self, pg) {
   return dropdown;
 }
 
-/**
- * Draws a table of priority sets (clusters of interest).
+// Size-in-jurisdiction for the viewing site. Falls back to a client-side
+// derivation from pg.nodes when the backend hasn't precomputed the field
+// (admin/full-MJC view). Person-based: each person counts at most once per
+// jurisdiction whether they own a node primarily or via joint ownership.
+function _mjc_size_in_jurisdiction(self, pg) {
+  if (
+    pg.size_in_jurisdiction !== undefined &&
+    pg.size_in_jurisdiction !== null
+  ) {
+    return pg.size_in_jurisdiction;
+  }
+  const jid = self.CDC_data && self.CDC_data.group_id;
+  if (!jid) return null;
+  if (!pg.nodes) {
+    return (pg.jurisdiction_counts || {})[jid] || 0;
+  }
+  const relevantNodes = _.filter(
+    pg.nodes,
+    (nd) =>
+      nd.jurisdiction === jid ||
+      (nd.joint_owners && nd.joint_owners.indexOf(jid) >= 0)
+  );
+  return self.unique_entity_list(relevantNodes).length;
+}
 
+/**
+ * Draws a table of priority sets (clusters of interest for regular site views, MJ ClusterOI for MJC views).
+ * For the case of MJ ClusterOI, we assume that self.defined_priority_groups is the MJ ClusterOI and self.overlap_defined_priority_groups is the jurisdiction's ClusterOI.
+ * For the case of ClusterOI, we assume that self.defined_priority_groups is regular ClusterOI and self.overlap_defined_priority_groups is MJ ClusterOI (if any).
  * @param {Object} self - The main network visualization object.
  * @param {HTMLElement} container - The HTML element where the table will be displayed (optional).
  * @param {Array} priority_groups - An array of objects representing the priority sets (optional).
-*/
+ * @param {boolean} archive_table - A flag indicating whether the table is for archived clusters of interest (optional).
+ */
 
-function draw_priority_set_table(self, container, priority_groups) {
-  container = container || self.priority_set_table;
+function draw_priority_set_table(
+  self,
+  container,
+  priority_groups,
+  archive_table = false,
+  skip_recompute = false
+) {
+  container =
+    container ||
+    (archive_table ? self.priority_set_archive_table : self.priority_set_table);
   if (container) {
     priority_groups = priority_groups || self.defined_priority_groups;
-    self.priority_groups_compute_node_membership();
-    self.priority_groups_compute_overlap(priority_groups);
+    if (archive_table) {
+      priority_groups = _.filter(priority_groups, (pg) => pg.archived);
+    } else {
+      priority_groups = _.filter(priority_groups, (pg) => !pg.archived);
+    }
+    if (!skip_recompute) {
+      self.priority_groups_compute_node_membership();
+      if (self.isMJCNetwork) {
+        // When computing overlap for MJ ClusterOI views, we need to compare the MJ ClusterOI (self.defined_priority_groups) against the jurisdiction's ClusterOI (self.overlap_defined_priority_groups)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap",
+          "overlap"
+        );
+      } else {
+        // swapped since for the regular case, defined_priority_groups is the actual pg and overlap_defined_priority_groups is the MJ ClusterOI (if any)
+        self.priority_groups_compute_overlap_mjc(
+          priority_groups,
+          self.overlap_defined_priority_groups,
+          "priority_node_overlap_mjc",
+          "overlap_mjc"
+        );
+        self.priority_groups_compute_overlap(priority_groups);
+      }
+    }
     var headers = [
       [
         {
@@ -1279,9 +1524,10 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: "Name",
           sort: "value",
           filter: true,
-          width: 325,
+          width: 200,
           text_wrap: true,
           help: "Cluster of interest name",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           value: "Modified/created",
@@ -1290,38 +1536,58 @@ function draw_priority_set_table(self, container, priority_groups) {
             return c.value[0];
           },
           help: "When was the cluster of interest created/last modified",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           value: "Growth",
           sort: "value",
           help: "How growth is handled",
           width: 100,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
           //text_wrap: true
         },
         {
           value: "Size",
-          width: 100,
+          width: 120,
           presort: "desc",
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1] + (c[2] ? 1e10 : 0) + (c[3] ? 1e5 : 0);
+              return c[0];
             }
             return 0;
           },
-          help: "Number of nodes in the cluster of interest",
+          help:
+            "Number of distinct persons in the " +
+            (self.isMJCNetwork ? "MJ " : "") +
+            "clusterOI.",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
+        },
+        {
+          value: "My Size",
+          width: 100,
+          sort: function (c) {
+            const v = c.value;
+            if (v === "REDACTED" || v === null || v === undefined) return 0;
+            const n = Number(v);
+            return _.isNaN(n) ? 0 : n;
+          },
+          help: "Number of distinct persons in this MJ clusterOI from my jurisdiction (counting both primary ownership and joint ownership).",
+          hidden: !self.isMJCNetwork,
         },
         {
           value: "Priority",
           width: 60,
           sort: "value",
           help: "Does the cluster of interest continue to meet priority criteria?",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
           value: "DXs in last 12 mo.",
-          width: 50,
+          width: 100,
           sort: "value",
-          help: "The number of cases in the cluster of interest diagnosed in the past 12 months",
+          help: "Number of distinct persons in the cluster of interest with a diagnosis date in the past 12 months. A person counts if any of their sequences has a recent diagnosis date.",
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           value: "Overlap",
@@ -1329,11 +1595,29 @@ function draw_priority_set_table(self, container, priority_groups) {
           sort: function (c) {
             c = c.value;
             if (c) {
-              return c[1];
+              return c[0] * 1e6 + c[1];
             }
             return 0;
           },
           help: "How many other ClusterOI have overlapping nodes with this ClusterOI, and (if overlapping ClusterOI exist) how many nodes in this ClusterOI overlap with ANY other ClusterOI?",
+          hidden: self.isMJCNetwork,
+        },
+        {
+          value: self.isMJCNetwork
+            ? "My ClusterOI Overlap Count"
+            : "MJ ClusterOI Overlap Count",
+          width: 140,
+          sort: function (c) {
+            c = c.value;
+            if (c) {
+              return c[0] * 1e6 + c[1];
+            }
+            return 0;
+          },
+          help: self.isMJCNetwork
+            ? "How many ClusterOI have overlapping persons with this MJ ClusterOI, and (if overlapping ClusterOI exist) how many distinct persons in this MJ ClusterOI overlap with ANY ClusterOI?"
+            : "How many MJ ClusterOI have overlapping persons with this ClusterOI, and (if overlapping MJ ClusterOI exist) how many distinct persons in this ClusterOI overlap with ANY MJ ClusterOI?",
+          hidden: !self.isMJCNetwork && !self.overlap_defined_priority_groups,
         },
         /*,
           {
@@ -1346,12 +1630,15 @@ function draw_priority_set_table(self, container, priority_groups) {
 
     if (self._is_CDC_auto_mode) {
       headers[0].splice(3, 0, {
-        value: "clusterOI identification method",
+        value: `${
+          self.isMJCNetwork ? "MJ " : ""
+        }clusterOI identification method`,
         width: 100,
         sort: function (c) {
           return c.value;
         },
         help: "Method of cluster identification",
+        // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
       });
     }
 
@@ -1369,29 +1656,42 @@ function draw_priority_set_table(self, container, priority_groups) {
 
     var rows = [];
     _.each(priority_groups, (pg) => {
+      // Ensure overlap object exists with default values
+      if (!pg.overlap) {
+        pg.overlap = { sets: 0, nodes: 0, duplicate: [], superset: [] };
+      }
       var this_row = [
         {
           // created by icon
           value: pg.createdBy,
           html: true,
           width: 50,
-          format: (value) =>
-            pg.createdBy === kGlobals.CDCCOICreatedBySystem
-              ? '<i class="fa fa-2x fa-desktop" title="' +
-                kGlobals.CDCCOICreatedBySystem +
-                '" data-text-export=' +
-                kGlobals.CDCCOICreatedBySystem +
-                "></i>"
-              : '<i class="fa fa-2x fa-user" title="' +
-                kGlobals.CDCCOICreatedManually +
-                '" data-text-export=' +
-                kGlobals.CDCCOICreatedManually +
-                "></i>",
+          format: (value) => {
+            let icon_html = "";
+            if (self.isMJCNetwork) {
+              icon_html =
+                "<i class='fa fa-lg fa-fw fa-globe' style='color: #777;' title='MJ ClusterOI' data-text-export='MJ ClusterOI'></i>";
+            } else {
+              icon_html =
+                pg.createdBy === kGlobals.CDCCOICreatedBySystem
+                  ? '<i class="fa fa-lg fa-fw fa-desktop" style="color: #777;" title="' +
+                    kGlobals.CDCCOICreatedBySystem +
+                    '" data-text-export="' +
+                    kGlobals.CDCCOICreatedBySystem +
+                    '"></i>'
+                  : '<i class="fa fa-lg fa-fw fa-user" style="color: #777;" title="' +
+                    kGlobals.CDCCOICreatedManually +
+                    '" data-text-export="' +
+                    kGlobals.CDCCOICreatedManually +
+                    '"></i>';
+            }
+            return `<div style="text-align: center; width: 100%; padding-top: 6px;">${icon_html}</div>`;
+          },
         },
         {
           // name
-          value: pg.name,
-          width: 325,
+          value: self.cleanRedacted(pg.name),
+          width: 200,
           help:
             pg.description +
             (pg.pending ? " (new, pending confirmation)" : "") +
@@ -1417,20 +1717,29 @@ function draw_priority_set_table(self, container, priority_groups) {
                 "</span>") +
             "</div>",
           html: true,
+          vertical_actions: true,
           actions: [],
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcClusterIdEnabled === false,
         },
         {
           // modification / creation date
           width: 180,
           value: [pg.modified, pg.created],
           format: function (value) {
-            let vs = _.map(value, (v) => timeDateUtil.DateViewFormat(v));
+            let vs = _.map(value, (v) =>
+              v === "REDACTED" ? v : timeDateUtil.DateViewFormat(v)
+            );
 
             if (vs[0] !== vs[1]) {
-              return vs[0] + " / " + vs[1];
+              return `<div style="line-height: 1.2;">
+                <div>${vs[0]}</div>
+                <div style="font-size: 85%; color: #777;" title="Date created">Created: ${vs[1]}</div>
+              </div>`;
             }
             return vs[0];
           },
+          html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcModifiedDateEnabled === false,
         },
         {
           // tracking mode
@@ -1438,13 +1747,32 @@ function draw_priority_set_table(self, container, priority_groups) {
           //text_wrap: true,
           value: pg.tracking,
           format: function (value) {
-            return kGlobals.CDCCOIConciseTrackingOptions[value];
+            if (value === "REDACTED") {
+              return "REDACTED";
+            }
+            const raw = kGlobals.CDCCOIConciseTrackingOptions[value] || value;
+            if (raw && raw.indexOf(",") > 0) {
+              const parts = raw.split(",");
+              return `<div style="line-height: 1.2;">
+                <div>${parts[0].trim()}</div>
+                <div style="font-size: 85%; color: #777;">${parts[1].trim()}</div>
+              </div>`;
+            }
+            return raw;
           },
+          html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcGrowthCriteriaEnabled === false,
         },
         {
           // size / new nodes
+          // Prefer pg.size (backend-computed, redaction-aware: "REDACTED" when
+          // disabled). Fall back to a frontend dedup by ehars_uid otherwise.
           value: [
-            self.unique_entity_list(pg.node_objects).length,
+            self.isMJCNetwork
+              ? pg.size !== undefined && pg.size !== null
+                ? pg.size
+                : self.unique_entity_list(pg.nodes).length
+              : self.unique_entity_list(pg.node_objects).length,
             _.chain(pg.nodes)
               .groupBy((n) => self.entity_id_from_string(n.name))
               .mapObject((v) =>
@@ -1461,32 +1789,138 @@ function draw_priority_set_table(self, container, priority_groups) {
             ).length,*/
             pg.createdBy === kGlobals.CDCCOICreatedBySystem && pg.pending,
             pg.meets_priority_def,
+            pg.node_objects,
           ],
-          width: 100,
+          width: 120,
           format: function (v) {
-            //console.log (pg);
+            if (
+              (self.isMJCNetwork &&
+                !self.fullMJCNetwork &&
+                self.MJCVariables.mjcCurrentSizeEnabled === false) ||
+              (v && v[0] === "REDACTED")
+            ) {
+              return "REDACTED";
+            }
             if (v) {
-              return (
-                v[0] +
-                (v[1]
-                  ? ' <span title="Number of nodes added by the system since the last network update" class="label label-default">' +
-                    v[1] +
-                    " new</span>"
-                  : "")
-              );
+              const nodes_by_entity = {};
+              _.each(v[4] || [], (n) => {
+                const entity_id = self.primary_key(n);
+                if (!nodes_by_entity[entity_id]) {
+                  nodes_by_entity[entity_id] = [];
+                }
+                nodes_by_entity[entity_id].push(n);
+              });
+
+              let with_seq = 0;
+              let poor_seq = 0;
+              let no_seq = 0;
+              _.each(nodes_by_entity, (nodes) => {
+                const has_seq = _.some(nodes, (n) => {
+                  const has_no_seq =
+                    (n.patient_attributes &&
+                      n.patient_attributes.has_sequence === false) ||
+                    (n.patient_attributes &&
+                      n.patient_attributes.sequence_status === "none");
+                  return !has_no_seq;
+                });
+                if (has_seq) {
+                  with_seq++;
+                } else {
+                  const has_poor = _.some(nodes, (n) => {
+                    return n.patient_attributes && n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+                  });
+                  if (has_poor) {
+                    poor_seq++;
+                  } else {
+                    no_seq++;
+                  }
+                }
+              });
+
+              const total_size = v[0];
+              const new_nodes = v[1];
+
+              let html = `<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 3px; line-height: 1.1; padding: 2px 0;">`;
+              html += `<span style="font-weight: bold;">${total_size}</span>`;
+
+              if (no_seq > 0 || poor_seq > 0) {
+                let parts = [`${with_seq}`];
+                let tooltip_parts = [`Nodes with sequence data: ${with_seq}`];
+                if (poor_seq > 0) {
+                  parts.push(`${poor_seq} (poor seq)`);
+                  tooltip_parts.push(`Nodes with poor/unusable sequence: ${poor_seq}`);
+                }
+                if (no_seq > 0) {
+                  parts.push(`${no_seq} (no seq)`);
+                  tooltip_parts.push(`Nodes without sequence data: ${no_seq}`);
+                }
+                const parts_str = parts.join(" + ");
+                const title_str = tooltip_parts.join(", ");
+                html += `<span class="label label-info" style="font-size: 85%; font-weight: normal; white-space: nowrap;" title="${title_str}">${parts_str}</span>`;
+              }
+
+              if (new_nodes) {
+                html += `<span title="Number of nodes added by the system since the last network update" class="label label-default" style="font-size: 85%; font-weight: normal; white-space: nowrap;">${new_nodes} new</span>`;
+              }
+
+              html += `</div>`;
+              return html;
             }
             return "N/A";
           },
           html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentSizeEnabled === false,
+        },
+        {
+          // Redacted to "REDACTED" when mjcSizeInJurisdictionEnabled is off.
+          value: _mjc_size_in_jurisdiction(self, pg),
+          width: 100,
+          format: function (v) {
+            if (v === "REDACTED") return "REDACTED";
+            if (v === undefined || v === null) return "N/A";
+            return String(v);
+          },
+          html: true,
+          hidden: !self.isMJCNetwork,
         },
         {
           // meets priority definition
           width: 60,
-          value: pg.meets_priority_def ? "Yes" : "No",
+          format: function (v) {
+            if (
+              self.isMJCNetwork &&
+              !self.fullMJCNetwork &&
+              self.MJCVariables.mjcCurrentPriorityEnabled === false
+            ) {
+              return "<span title='REDACTED'>RED.</span>";
+            }
+            if (v) {
+              return `<span style="color: #d9534f; font-weight: bold;">Yes</span>`;
+            }
+            return `<span style="color: #999;">No</span>`;
+          },
+          value: pg.meets_priority_def,
+          html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcCurrentPriorityEnabled === false,
         },
         {
-          width: 50,
-          value: pg.cluster_dx_recent12_mo,
+          width: 100,
+          // TODO: actually redact the data on the backend
+          value:
+            self.isMJCNetwork &&
+            !self.fullMJCNetwork &&
+            self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false
+              ? "REDACTED"
+              : pg.cluster_dx_recent12_mo,
+          format: function (v) {
+            if (v === "REDACTED") return "REDACTED";
+            if (v === undefined || v === null || v === 0) {
+              return `<span style="color: #bbb;">0</span>`;
+            }
+            return `<span style="font-weight: bold; color: #e67e22;">${v}</span>`;
+          },
+          html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcDiagnosesLast12MonthsEnabled === false,
         },
         {
           width: 140,
@@ -1498,28 +1932,29 @@ function draw_priority_set_table(self, container, priority_groups) {
           ],
           format: function (v) {
             if (v) {
-              return (
-                String(v[0]) +
-                (v[1]
-                  ? ' <span title="Number of persons in the overlap" class="label label-default pull-right">' +
-                    v[1] +
-                    " persons</span>"
-                  : "") +
-                (v[2].length
-                  ? ' <span title="clusterOIs which are exact duplicates of this clusterOI: ' +
-                    v[2].join(", ") +
-                    '" class="label label-danger pull-right">' +
-                    v[2].length +
-                    " duplicate clusterOI</span>"
-                  : "") +
-                (v[3].length
-                  ? ' <span title="clusterOIs which contain this clusterOI: ' +
-                    v[3].join(", ") +
-                    '" class="label label-warning pull-right">Fully contained in ' +
-                    v[3].length +
-                    " clusterOI</span>"
-                  : "")
-              );
+              if (v[0] === 0 && v[1] === 0) {
+                return `<span style="color: #bbb;">—</span>`;
+              }
+              let html = `<div style="line-height: 1.2;">
+                <div>${v[0]} clusters</div>
+                <div style="font-size: 85%; color: #777;">${v[1]} persons</div>`;
+
+              if (v[2].length) {
+                html += `<div style="margin-top: 3px;"><span title="clusterOIs which are exact duplicates of this clusterOI: ${v[2].join(
+                  ", "
+                )}" class="label label-danger" style="font-size: 80%; display: inline-block;">${
+                  v[2].length
+                } duplicate</span></div>`;
+              }
+              if (v[3].length) {
+                html += `<div style="margin-top: 3px;"><span title="clusterOIs which contain this clusterOI: ${v[3].join(
+                  ", "
+                )}" class="label label-warning" style="font-size: 80%; display: inline-block;">Contained in ${
+                  v[3].length
+                }</span></div>`;
+              }
+              html += `</div>`;
+              return html;
             }
             return "N/A";
           },
@@ -1530,6 +1965,7 @@ function draw_priority_set_table(self, container, priority_groups) {
               : [
                   {
                     icon: "fa-eye",
+                    force_line_break: true,
                     dropdown: [
                       {
                         label: "List overlaps",
@@ -1545,8 +1981,86 @@ function draw_priority_set_table(self, container, priority_groups) {
                     ],
                   },
                 ],
+          hidden: self.isMJCNetwork,
         },
       ];
+
+      // MJC Overlap column
+      if (
+        self.isMJCNetwork ||
+        (!self.isMJCNetwork && self.overlap_defined_priority_groups)
+      ) {
+        const overlap = self.isMJCNetwork ? pg.overlap : pg.overlap_mjc;
+        this_row.push({
+          width: 140,
+          value: [
+            overlap.sets,
+            overlap.nodes,
+            overlap.duplicate,
+            overlap.superset,
+          ],
+          format: function (v) {
+            if (v) {
+              if (v[0] === 0 && v[1] === 0) {
+                return `<span style="color: #bbb;">—</span>`;
+              }
+              let html = `<div style="line-height: 1.2;">
+                <div>${v[0]} clusters</div>
+                <div style="font-size: 85%; color: #777;">${v[1]} persons</div>`;
+
+              if (v[2].length) {
+                html += `<div style="margin-top: 3px;"><span title="${
+                  !self.isMJCNetwork ? "MJ " : ""
+                }clusterOIs which are exact duplicates of this ${
+                  self.isMJCNetwork ? "MJ " : ""
+                }clusterOI: ${v[2].join(
+                  ", "
+                )}" class="label label-danger" style="font-size: 80%; display: inline-block;">${
+                  v[2].length
+                } duplicate</span></div>`;
+              }
+              if (v[3].length) {
+                html += `<div style="margin-top: 3px;"><span title="${
+                  !self.isMJCNetwork ? "MJ " : ""
+                }clusterOIs which contain this ${
+                  self.isMJCNetwork ? "MJ " : ""
+                }clusterOI: ${v[3].join(
+                  ", "
+                )}" class="label label-warning" style="font-size: 80%; display: inline-block;">Contained in ${
+                  v[3].length
+                }</span></div>`;
+              }
+              html += `</div>`;
+              return html;
+            }
+            return "N/A";
+          },
+          html: true,
+          actions:
+            overlap.sets === 0
+              ? []
+              : [
+                  {
+                    icon: "fa-eye",
+                    force_line_break: true,
+                    dropdown: [
+                      {
+                        label: "List overlaps",
+                        data: {
+                          toggle: "modal",
+                          target:
+                            misc.get_ui_element_selector_by_role(
+                              "overlap_list"
+                            ),
+                          priority_set: pg.name,
+                          use_mjc_overlap_list: !self.isMJCNetwork, // for MJ ClusterOI table, show the ClusterOI overlap list; for regular ClusterOI table, show the MJ ClusterOI overlap list
+                        },
+                      },
+                    ],
+                  },
+                ],
+        });
+      }
 
       if (self._is_CDC_auto_mode) {
         this_row.splice(3, 0, {
@@ -1560,10 +2074,11 @@ function draw_priority_set_table(self, container, priority_groups) {
             return "N/A";
           },
           html: true,
+          // hidden: self.isMJCNetwork && !self.fullMJCNetwork && self.MJCVariables.mjcIdMethodEnabled === false,
         });
       }
 
-      if (pg.pending) {
+      if (pg.pending && !self.isMJCNetwork) {
         // pending user review
         this_row[1].actions = [
           {
@@ -1596,18 +2111,12 @@ function draw_priority_set_table(self, container, priority_groups) {
           },
         ];
       } else {
-        this_row[1].actions = [_.clone(this_row[1].actions)];
-        this_row[1].actions[this_row[1].actions.length - 1].splice(
-          -1,
-          0,
+        this_row[1].actions = [
           {
             icon: "fa-info-circle",
             classed: { "view-edit-cluster": true },
             help: "View/edit this cluster of interest",
             dropdown: _action_drop_down(self, pg),
-            /*action: function (button, menu_value) {
-                console.log (menu_value);
-            }*/
           },
           {
             icon: "fa-edit",
@@ -1623,31 +2132,23 @@ function draw_priority_set_table(self, container, priority_groups) {
                 }
               );
             },
-          }
-        );
-        this_row[1].actions[this_row[1].actions.length - 1].splice(
-          -1,
-          0,
-          (button_group, value) => {
-            if (get_editor()) {
-              return {
-                icon: "fa-plus",
-                help: "Add nodes in this cluster of interest to the new cluster of interest",
-                action: function (button, value) {
-                  let nodeset = self.priority_groups_find_by_name(value);
-                  if (nodeset) {
-                    get_editor().append_node_objects(nodeset.node_objects);
-                  }
-                },
-              };
-            }
-            return null;
-          }
-        );
+          },
+        ];
+        if (get_editor()) {
+          this_row[1].actions.push({
+            icon: "fa-plus",
+            help: "Add nodes in this cluster of interest to the new cluster of interest",
+            action: function (button, value) {
+              let nodeset = self.priority_groups_find_by_name(value);
+              if (nodeset) {
+                get_editor().append_node_objects(nodeset.node_objects);
+              }
+            },
+          });
+        }
       }
-      this_row[1].actions = _.flatten(this_row[1].actions);
-      //console.log (this_row[0]);
-      if (pg.not_in_network.length) {
+
+      if (pg.not_in_network && pg.not_in_network.length) {
         this_row[2]["actions"] = [
           {
             text: String(pg.not_in_network.length) + " removed",
@@ -1688,9 +2189,15 @@ function draw_priority_set_table(self, container, priority_groups) {
       rows,
       true,
       has_required_actions +
-        `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> clusters of interest.
-          <button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>
-          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv">Export to CSV</button>`,
+        `Showing <span class="badge" data-hivtrace-ui-role="table-count-shown">--</span>/<span class="badge" data-hivtrace-ui-role="table-count-total">--</span> ${
+          archive_table ? "archived " : ""
+        }${self.isMJCNetwork ? "MJ " : ""}clusters of interest.
+          ${
+            self.isMJCNetwork
+              ? ""
+              : '<button class = "btn btn-sm btn-warning pull-right" data-hivtrace-ui-role="priority-subclusters-export">Export to JSON</button>'
+          }
+          <button class = "btn btn-sm btn-primary pull-right" data-hivtrace-ui-role="priority-subclusters-export-csv" title="Export ClusterOI Node List to CSV">Export to CSV</button>`,
       get_editor()
     );
 
@@ -1707,15 +2214,29 @@ function draw_priority_set_table(self, container, priority_groups) {
     ).on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_nodes(),
-        "clusters-of-interest"
+        self.isMJCNetwork ? "MJ_clusters-of-interest" : "clusters-of-interest"
       );
     });
     d3.select("#priority_set_table_download").on("click", (d) => {
       helpers.export_csv_button(
         self.priority_groups_export_sets(),
-        "clusters_of_interest_table"
+        self.isMJCNetwork
+          ? "MJ_clusters_of_interest_table"
+          : "clusters_of_interest_table"
       );
     });
+
+    var tab_count_role = archive_table
+      ? "priority_set_archive_tab_count"
+      : "priority_set_tab_count";
+    var tab_count_el = d3.select(
+      misc.get_ui_element_selector_by_role(tab_count_role, true)
+    );
+    if (!tab_count_el.empty()) {
+      tab_count_el.text(priority_groups.length);
+    }
+
+    window.reinitializeDropdown && window.reinitializeDropdown();
   }
 }
 
@@ -1761,7 +2282,10 @@ function priority_set_view(self, priority_set, options) {
     d.priority_set = 1;
     d._added_date = d.id in nodeDates ? nodeDates[d.id] : d._priority_set_date;
     if (d._added_date)
-      d._added_date = timeDateUtil.DateViewFormatSlider(d._added_date);
+      d._added_date = safe_format_date(
+        d._added_date,
+        timeDateUtil.DateViewFormatSlider
+      );
     else d._added_date = null;
   });
 

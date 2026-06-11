@@ -1,34 +1,40 @@
 var d3 = require("d3");
 
 const _networkCDCDateField = "hiv_aids_dx_dt";
+const _networkCDCLast12Mo = "hiv_aids_dx_dt_12mo";
+const _networkCDCLast36Mo = "hiv_aids_dx_dt_36mo";
+const _networkCDCMonthYearField = "hiv_aids_dx_dt_month_year";
+const _networkCDCIdentified = "mjc_date_identified";
+const _networkCDCIdentified_12Mo = "mjc_date_identified_12mo";
+
 const _networkTimeQuery = /([0-9]{8}):([0-9]{8})/i;
 
 const DateViewFormatExport = d3.time.format.utc("%m/%d/%Y");
 
-const DateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
+const DateViewFormatMMDDYYY = d3.time.format.utc("%m%d%Y");
 /** this is currently used to display node addition dates to COI */
 
-const DateViewFormatShort = d3.time.format("%B %Y");
+const DateViewFormatShort = d3.time.format.utc("%B %Y");
 /** Used to generate legend labels for date-valued attributes for network displayes*/
 
-const DateViewFormat = d3.time.format("%b %d, %Y");
+const DateViewFormat = d3.time.format.utc("%b %d, %Y");
 /** Used to generate pop-over labels for node displays, and COI views*/
 
 /** SLKP 20241029; add another acceptable data time format */
 
-const DateFormats = [d3.time.format.iso, d3.time.format("%Y%m%d")];
+const DateFormats = [d3.time.format.iso, d3.time.format.utc("%Y%m%d")];
 /** List of accepted time formats for attribute values*/
 
-const DateViewFormatSlider = d3.time.format("%Y-%m-%d");
+const DateViewFormatSlider = d3.time.format.utc("%Y-%m-%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
-const DateViewNodeSearch = d3.time.format("%Y/%m/%d");
+const DateViewNodeSearch = d3.time.format.utc("%Y/%m/%d");
 /** Used in many places where alpha-numerically sorted dates are desired*/
 
-const DateUpperBoundYear = new Date().getFullYear();
+const DateUpperBoundYear = new Date().getUTCFullYear();
 /** Maximum year value (no future dates)*/
 
-const DateViewFormatClusterCreate = d3.time.format("%Y%m");
+const DateViewFormatClusterCreate = d3.time.format.utc("%Y%m");
 /** used as a part of auto-named COI, e.g. NC_202105_44.1 */
 
 let cluster_time_scale;
@@ -51,7 +57,7 @@ function getCurrentDate() {
 }
 
 function getAncientDate() {
-  return new Date(1900, 0, 1);
+  return new Date(Date.UTC(1900, 0, 1));
 }
 
 /**
@@ -69,7 +75,7 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
     try {
       return formatter(date);
     } catch {
-      console.log(date);
+      // Invalid date format
     }
   }
   return "N/A";
@@ -86,25 +92,30 @@ function hivtrace_date_or_na_if_missing(date, formatter) {
 
 function n_months_ago(reference_date, months) {
   var past_date = new Date(reference_date);
-  var past_months = past_date.getMonth();
+  var past_months = past_date.getUTCMonth();
   var diff_year = Math.floor(months / 12);
   var left_over = months - diff_year * 12;
 
   if (left_over > past_months) {
-    past_date.setFullYear(past_date.getFullYear() - diff_year - 1);
-    past_date.setMonth(12 - (left_over - past_months));
+    past_date.setUTCFullYear(past_date.getUTCFullYear() - diff_year - 1);
+    past_date.setUTCMonth(12 - (left_over - past_months));
   } else {
-    past_date.setFullYear(past_date.getFullYear() - diff_year);
-    past_date.setMonth(past_months - left_over);
+    past_date.setUTCFullYear(past_date.getUTCFullYear() - diff_year);
+    past_date.setUTCMonth(past_months - left_over);
   }
-  past_date.setDate(past_date.getDate() + 1); // exclusive
-  past_date.setUTCHours(0, 0, 0);
+  past_date.setUTCDate(past_date.getUTCDate() + 1); // exclusive
+  past_date.setUTCHours(0, 0, 0, 0);
   return past_date;
 }
 
 module.exports = {
   hivtrace_date_or_na_if_missing,
   _networkCDCDateField,
+  _networkCDCLast12Mo,
+  _networkCDCLast36Mo,
+  _networkCDCMonthYearField,
+  _networkCDCIdentified,
+  _networkCDCIdentified_12Mo,
   _networkTimeQuery,
   getClusterTimeScale,
   getCurrentDate,

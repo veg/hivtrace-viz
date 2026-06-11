@@ -26,6 +26,121 @@ const _networkNewNodeMarker = "[+]";
  * @returns {void}
  */
 
+function load_more_rows(container) {
+  const tableEl = container.node();
+  if (!tableEl || !tableEl._full_content) return;
+  const current_limit = tableEl._rendered_limit || 200;
+  if (current_limit >= tableEl._full_content.length) return;
+
+  const next_limit = Math.min(
+    current_limit + 500,
+    tableEl._full_content.length
+  );
+  tableEl._rendered_limit = next_limit;
+
+  const tbody = container.select("tbody");
+  const next_data = tableEl._full_content.slice(current_limit, next_limit);
+
+  tbody
+    .selectAll("tr.extra-row-dummy") // dummy selector to force append
+    .data(next_data)
+    .enter()
+    .append("tr")
+    .selectAll("td")
+    .data((d) => d)
+    .enter()
+    .append("td")
+    .call((selection) =>
+      selection.each(function (d, i) {
+        tableEl._set_table_elements(d, this);
+        tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+      })
+    );
+
+  // Update count shown
+  if (tableEl._table_caption) {
+    tableEl._table_caption
+      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+      .text(next_limit);
+  }
+}
+
+function check_is_jspanel(node, id) {
+  if (!node) return false;
+
+  try {
+    // 1. Check ID of the container itself
+    const lowercase_id = (id || "").toLowerCase();
+    if (
+      lowercase_id.indexOf("jspanel") !== -1 ||
+      lowercase_id.indexOf("priority-panel") !== -1 ||
+      lowercase_id.indexOf("panel") !== -1 ||
+      lowercase_id.indexOf("modal") !== -1
+    ) {
+      return true;
+    }
+
+    // 2. Walk up the parent tree to find any element indicating jsPanel, panel, or modal
+    let curr = node;
+    while (curr) {
+      // Check ID
+      if (curr.id && typeof curr.id === "string") {
+        const curId = curr.id.toLowerCase();
+        if (
+          curId.indexOf("jspanel") !== -1 ||
+          curId.indexOf("priority-panel") !== -1 ||
+          curId.indexOf("panel") !== -1 ||
+          curId.indexOf("modal") !== -1
+        ) {
+          return true;
+        }
+      }
+
+      // Check Class
+      if (curr.className) {
+        let classStr = "";
+        if (typeof curr.className === "string") {
+          classStr = curr.className;
+        } else if (
+          curr.className &&
+          typeof curr.className.baseVal === "string"
+        ) {
+          classStr = curr.className.baseVal;
+        } else {
+          try {
+            classStr = String(curr.className);
+          } catch {
+            classStr = "";
+          }
+        }
+        const lowerClass = classStr.toLowerCase();
+        if (
+          lowerClass.indexOf("jspanel") !== -1 ||
+          lowerClass.indexOf("priority-panel") !== -1 ||
+          lowerClass.indexOf("panel") !== -1 ||
+          lowerClass.indexOf("modal") !== -1
+        ) {
+          return true;
+        }
+      }
+
+      // Check tag name/attributes
+      if (curr.getAttribute) {
+        const dataRole = curr.getAttribute("data-hivtrace-ui-role") || "";
+        if (dataRole.toLowerCase().indexOf("panel") !== -1) {
+          return true;
+        }
+      }
+
+      curr = curr.parentNode;
+    }
+  } catch (err) {
+    console.error("Error in check_is_jspanel:", err);
+  }
+
+  return false;
+}
+
 function add_a_sortable_table(
   container,
   headers,
@@ -33,99 +148,218 @@ function add_a_sortable_table(
   overwrite,
   caption,
   priority_set_editor,
-  N
+  N,
+  disable_lazy_loading
 ) {
   if (!container || !container.node()) {
     return;
   }
 
+  const parentNode = container.node().parentNode;
+  if (parentNode) {
+    d3.select(parentNode).selectAll(".table-loading-placeholder").remove();
+  }
+
   container.style("display", "none");
 
-  var thead = container.selectAll("thead");
-  var tbody = container.selectAll("tbody");
+  try {
+    // Clean up any old scroll listener
+    const tableEl = container.node();
+    if (tableEl._onScroll && tableEl._scrollParent) {
+      tableEl._scrollParent.removeEventListener("scroll", tableEl._onScroll);
+      tableEl._onScroll = null;
+      tableEl._scrollParent = null;
+    }
 
-  const set_table_elements = (d, cell) => {
-    if (d.width || d.text_wrap) {
-      cell = d3.select(cell);
-      if (d.width) cell.style("width", String(d.width) + "px");
-      if (d.text_wrap) {
-        cell
-          .style("overflow", "hidden")
-          .style("white-space", "nowrap")
-          .style("text-overflow", "ellipsis");
+    var thead = container.selectAll("thead");
+    var tbody = container.selectAll("tbody");
+
+    const set_table_elements = (d, cell) => {
+      if (d.hidden) {
+        d3.select(cell).style("display", "none");
+      }
+      if (d.volatile) {
+        d3.select(cell).classed("volatile", true);
+      }
+      if (d.width || d.text_wrap) {
+        cell = d3.select(cell);
+        if (d.width) cell.style("width", String(d.width) + "px");
+        if (d.text_wrap) {
+          cell
+            .style("overflow", "hidden")
+            .style("white-space", "nowrap")
+            .style("text-overflow", "ellipsis");
+        }
+      }
+    };
+
+    // Determine if we should use lazy loading (enabled ONLY for cluster, subcluster, and COI tables, and NEVER inside a jsPanel)
+    const id = (container.attr("id") || "").toLowerCase();
+    const is_cluster_or_coi_table =
+      id === "cluster_table" ||
+      id === "subcluster_table" ||
+      id === "priority_set_table" ||
+      id === "priority_set_archive_table" ||
+      id === "priority-set-table";
+
+    const node = container.node();
+    const is_jspanel = check_is_jspanel(node, id);
+
+    const use_lazy =
+      !disable_lazy_loading &&
+      !is_jspanel &&
+      is_cluster_or_coi_table &&
+      content.length > 200 &&
+      !(typeof navigator !== "undefined" && navigator.webdriver);
+
+    if (use_lazy) {
+      tableEl._full_content = content;
+      tableEl._rendered_limit = 200;
+      tableEl._priority_set_editor = priority_set_editor;
+      tableEl._set_table_elements = set_table_elements;
+      tableEl._format_a_cell = format_a_cell;
+    } else {
+      tableEl._full_content = null;
+      tableEl._rendered_limit = null;
+    }
+
+    const active_content = use_lazy ? content.slice(0, 200) : content;
+
+    if (tbody.empty() || overwrite) {
+      tbody.remove();
+      tbody = container.append("tbody");
+      tbody
+        .selectAll("tr")
+        .data(active_content)
+        .enter()
+        .append("tr")
+        .selectAll("td")
+        .data((d) => d)
+        .enter()
+        .append("td")
+        .call((selection) =>
+          selection.each(function (d, i) {
+            set_table_elements(d, this);
+            format_a_cell(d, i, this, priority_set_editor);
+          })
+        );
+    }
+
+    // head AFTER rows, so we can handle pre-sorting
+
+    if (thead.empty() || overwrite) {
+      thead.remove();
+      thead = container.insert("thead", ":first-child");
+      thead
+        .selectAll("tr")
+        .data(headers)
+        .enter()
+        .append("tr")
+        .selectAll("th")
+        .data((d) => d)
+        .enter()
+        .append("th")
+        .call((selection) =>
+          selection.each(function (d, i) {
+            set_table_elements(d, this);
+            format_a_cell(
+              d,
+              i,
+              this,
+              (N && N > content.length) || content.length > kGlobals.CoIAddLimit
+                ? null
+                : priority_set_editor
+            );
+          })
+        );
+    }
+
+    if (caption) {
+      var table_caption = container.selectAll("caption").data([caption]);
+      table_caption.enter().insert("caption", ":first-child");
+      table_caption.html((d) => d);
+      table_caption
+        .select(misc.get_ui_element_selector_by_role("table-count-total"))
+        .text(content.length);
+      table_caption
+        .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+        .text(active_content.length);
+      if (N && N > content.length) {
+        table_caption
+          .select(misc.get_ui_element_selector_by_role("table-count-warning"))
+          .style("color", "black")
+          .text("Truncated due to the large number of rows (" + N + ")");
+      }
+
+      if (use_lazy) {
+        tableEl._table_caption = table_caption;
+      } else {
+        tableEl._table_caption = null;
       }
     }
-  };
 
-  if (tbody.empty() || overwrite) {
-    tbody.remove();
-    tbody = d3.select(document.createElement("tbody"));
-    tbody
-      .selectAll("tr")
-      .data(content)
-      .enter()
-      .append("tr")
-      .selectAll("td")
-      .data((d) => d)
-      .enter()
-      .append("td")
-      .call((selection) =>
-        selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(d, i, this, priority_set_editor);
-        })
-      );
-    container.node().appendChild(tbody.node());
-  }
+    if (use_lazy) {
+      let scrollParent = window;
+      let parent = tableEl.parentNode;
+      while (
+        parent &&
+        parent !== document.body &&
+        parent !== document.documentElement
+      ) {
+        const style = window.getComputedStyle(parent);
+        const overflowY =
+          style.getPropertyValue("overflow-y") ||
+          style.getPropertyValue("overflow");
+        if (overflowY === "auto" || overflowY === "scroll") {
+          scrollParent = parent;
+          break;
+        }
+        parent = parent.parentNode;
+      }
 
-  // head AFTER rows, so we can handle pre-sorting
+      const onScroll = () => {
+        const tableElement = container.node();
+        if (!tableElement || !document.body.contains(tableElement)) {
+          scrollParent.removeEventListener("scroll", onScroll);
+          if (tableElement) {
+            tableElement._onScroll = null;
+            tableElement._scrollParent = null;
+          }
+          return;
+        }
 
-  if (thead.empty() || overwrite) {
-    thead.remove();
-    thead = container.insert("thead", ":first-child");
-    thead
-      .selectAll("tr")
-      .data(headers)
-      .enter()
-      .append("tr")
-      .selectAll("th")
-      .data((d) => d)
-      .enter()
-      .append("th")
-      .call((selection) =>
-        selection.each(function (d, i) {
-          set_table_elements(d, this);
-          format_a_cell(
-            d,
-            i,
-            this,
-            (N && N > content.length) || content.length > kGlobals.CoIAddLimit
-              ? null
-              : priority_set_editor
-          );
-        })
-      );
-  }
+        let distanceToBottom = 0;
+        if (scrollParent === window) {
+          const rect = tableElement.getBoundingClientRect();
+          distanceToBottom = rect.bottom - window.innerHeight;
+        } else {
+          const parentRect = scrollParent.getBoundingClientRect();
+          const tableRect = tableElement.getBoundingClientRect();
+          distanceToBottom = tableRect.bottom - parentRect.bottom;
+        }
 
-  if (caption) {
-    var table_caption = container.selectAll("caption").data([caption]);
-    table_caption.enter().insert("caption", ":first-child");
-    table_caption.html((d) => d);
-    table_caption
-      .select(misc.get_ui_element_selector_by_role("table-count-total"))
-      .text(content.length);
-    table_caption
-      .select(misc.get_ui_element_selector_by_role("table-count-shown"))
-      .text(content.length);
-    if (N && N > content.length) {
-      table_caption
-        .select(misc.get_ui_element_selector_by_role("table-count-warning"))
-        .style("color", "black")
-        .text("Truncated due to the large number of rows (" + N + ")");
+        if (distanceToBottom < 800) {
+          load_more_rows(container);
+        }
+      };
+
+      tableEl._onScroll = onScroll;
+      tableEl._scrollParent = scrollParent;
+      scrollParent.addEventListener("scroll", onScroll);
+    }
+  } finally {
+    const tagName = (
+      (container.node() && container.node().tagName) ||
+      ""
+    ).toUpperCase();
+    if (tagName === "TABLE") {
+      container.style("display", "table");
+    } else if (tagName === "DIV") {
+      container.style("display", "block");
+    } else {
+      container.style("display", "");
     }
   }
-
-  container.style("display", null);
 }
 
 /**
@@ -360,10 +594,19 @@ function format_a_cell(data, index, item, priority_set_editor) {
     }
 
     _.each(by_group, (bgrp) => {
-      let button_group = handle_sort
-        .append("div")
-        .classed("btn-group btn-group-xs", true)
-        .attr("style", "padding-left:0.5em");
+      let button_group = handle_sort.append("div");
+      if (data.vertical_actions) {
+        button_group
+          .classed("btn-group btn-group-xs", true)
+          .attr(
+            "style",
+            "margin-top: 4px; display: inline-flex !important; flex-direction: row; gap: 4px;"
+          );
+      } else {
+        button_group
+          .classed("btn-group btn-group-xs", true)
+          .attr("style", "padding-left:0.5em");
+      }
       _.each(
         _.isFunction(bgrp) ? bgrp(button_group, current_value) : bgrp,
         (b) => {
@@ -382,6 +625,10 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 .classed("btn btn-default btn-xs dropdown-toggle", true)
                 .attr("data-toggle", "dropdown");
 
+              if (b.force_line_break && !data.vertical_actions) {
+                button_group.attr("style", "display: block;");
+              }
+
               var dropdown_list = button_group_dropdown
                 .append("ul")
                 .classed("dropdown-menu", true);
@@ -397,36 +644,44 @@ function format_a_cell(data, index, item, priority_set_editor) {
               }
 
               dropdown_list = dropdown_list.selectAll("li").data(items);
-              dropdown_list.enter().append("li");
-              dropdown_list.each(function (data, i) {
-                var handle_change = d3
-                  .select(this)
-                  .append("a")
-                  .attr("href", "#")
-                  .text((data) => get_item_text(data));
-                if (_.has(data, "data") && data["data"]) {
-                  //let element = $(this_button.node());
-                  _.each(data.data, (v, k) => {
-                    handle_change.attr("data-" + k, v);
-                  });
-                }
-                handle_change.on("click", (d) => {
-                  if (_.has(d, "action") && d["action"]) {
-                    d["action"](this_button, d["label"]);
-                  } else if (b.action) {
-                    b.action(this_button, get_item_text(d));
+              dropdown_list
+                .enter()
+                .append("li")
+                .each(function (data, i) {
+                  var handle_change = d3
+                    .select(this)
+                    .append("a")
+                    .attr("href", "#")
+                    .text((data) => get_item_text(data));
+                  if (_.has(data, "data") && data["data"]) {
+                    //let element = $(this_button.node());
+                    _.each(data.data, (v, k) => {
+                      handle_change.attr("data-" + k, v);
+                    });
                   }
+                  handle_change.on("click", (d) => {
+                    // Only prevent default/propagation if there's a custom action handler
+                    if ((_.has(d, "action") && d["action"]) || b.action) {
+                      d3.event.preventDefault();
+                      d3.event.stopPropagation();
+                      if (_.has(d, "action") && d["action"]) {
+                        d["action"](this_button, d["label"]);
+                      } else if (b.action) {
+                        b.action(this_button, get_item_text(d));
+                      }
+                    }
+                  });
                 });
-              });
             } else {
               this_button = button_group
                 .append("button")
                 .classed("btn btn-default btn-xs", true);
-              if (b.action)
+              if (b.action) {
                 this_button.on("click", (e) => {
                   d3.event.preventDefault();
                   b.action(this_button, current_value);
                 });
+              }
             }
             if (b.icon) {
               this_button.append("i").classed("fa " + b.icon, true);
@@ -631,11 +886,11 @@ function filter_parse(filter_value) {
                 [is_range[1], is_range[2]],
                 (d) =>
                   new Date(
-                    d.substring(0, 4) +
-                      "-" +
-                      d.substring(4, 6) +
-                      "-" +
+                    Date.UTC(
+                      d.substring(0, 4),
+                      parseInt(d.substring(4, 6)) - 1,
                       d.substring(6, 8)
+                    )
                   )
               ),
             };
@@ -689,12 +944,51 @@ function sort_table_by_column(element, datum) {
       };
     }
 
-    d3.select(table_element[0])
-      .select("tbody")
-      .selectAll("tr")
-      .sort((a, b) =>
+    const tableEl = table_element[0];
+    if (tableEl._full_content) {
+      // Sort the full in-memory array
+      tableEl._full_content.sort((a, b) =>
         sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]))
       );
+
+      // Keep the current limit (or reset to 200, but keeping current is smoother)
+      const current_limit = Math.min(
+        tableEl._rendered_limit || 200,
+        tableEl._full_content.length
+      );
+
+      const tbody = d3.select(tableEl).select("tbody");
+      tbody.selectAll("tr").remove();
+
+      tbody
+        .selectAll("tr")
+        .data(tableEl._full_content.slice(0, current_limit))
+        .enter()
+        .append("tr")
+        .selectAll("td")
+        .data((d) => d)
+        .enter()
+        .append("td")
+        .call((selection) =>
+          selection.each(function (d, i) {
+            tableEl._set_table_elements(d, this);
+            tableEl._format_a_cell(d, i, this, tableEl._priority_set_editor);
+          })
+        );
+
+      if (tableEl._table_caption) {
+        tableEl._table_caption
+          .select(misc.get_ui_element_selector_by_role("table-count-shown"))
+          .text(current_limit);
+      }
+    } else {
+      d3.select(table_element[0])
+        .select("tbody")
+        .selectAll("tr")
+        .sort((a, b) =>
+          sorted_function(sort_accessor(a[sort_on]), sort_accessor(b[sort_on]))
+        );
+    }
 
     // select all other elements from thead and toggle their icons
 

@@ -326,7 +326,7 @@ function hiv_trace_export_table_to_text(
 
 function hivtrace_coi_timeseries(cluster, element, plot_width) {
   const margin = { top: 30, right: 60, bottom: 10, left: 120 };
-  const formatTime = d3.time.format("%Y-%m-%d");
+  const formatTime = d3.time.format.utc("%Y-%m-%d");
   let data = _.sortBy(
     _.map(cluster.node_info, (d) => [d[0], formatTime.parse(d[1])]),
     (d) => d[1]
@@ -341,8 +341,8 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
 
   plot_width = plot_width || 1000;
 
-  let x = d3.time
-    .scale()
+  let x = d3.time.scale
+    .utc()
     .domain(x_range)
     .rangeRound([margin.left, plot_width - margin.right]);
 
@@ -356,7 +356,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
     .scale(x)
     .orient("top")
     .ticks(plot_width / 80)
-    .tickFormat(d3.time.format("%m/%y"));
+    .tickFormat(d3.time.format.utc("%m/%y"));
 
   element.selectAll("svg").remove();
 
@@ -462,7 +462,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       //console.log (highlight_nodes);
       let years_ago = _.map([1, 3], (ya) => {
         let some_years_ago = new Date(d[1]);
-        some_years_ago.setFullYear(d[1].getFullYear() - ya);
+        some_years_ago.setUTCFullYear(d[1].getUTCFullYear() - ya);
         if (some_years_ago < x_range[0]) some_years_ago = x_range[0];
         return some_years_ago;
       });
@@ -746,11 +746,11 @@ while (len--) {
       );
     }
 
-    _.each(edges, (e) => {
-      try {
-        adjacency[nodes[e.source].id].push([nodes[e.target], e]);
-        adjacency[nodes[e.target].id].push([nodes[e.source], e]);
-      } catch {
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      const s_node = nodes[e.source];
+      const t_node = nodes[e.target];
+      if (!s_node || !t_node) {
         throw Error(
           "Edge does not map to an existing node " +
             e.source +
@@ -758,7 +758,9 @@ while (len--) {
             e.target
         );
       }
-    });
+      adjacency[s_node.id].push([t_node, e]);
+      adjacency[t_node.id].push([s_node, e]);
+    }
   }
 
   var traverse = function (node) {
@@ -783,26 +785,14 @@ while (len--) {
         traverse(neighbor[0]);
       }
     }
-
-    /*
-    _.each(adjacency[node.id], (neighbor) => {
-      if (!neighbor[0].visited) {
-        by_node[neighbor[0].id] = by_node[node.id];
-        clusters[by_node[neighbor[0].id]].push(neighbor[0]);
-        if (save_edges) {
-          save_edges[by_node[neighbor[0].id]].push(neighbor[1]);
-        }
-        traverse(neighbor[0]);
-      }
-    });
-    */
   };
 
-  _.each(seed_nodes, (n) => {
+  for (let i = 0; i < seed_nodes.length; i++) {
+    const n = seed_nodes[i];
     if (!n.visited) {
       traverse(n);
     }
-  });
+  }
 
   return clusters;
 }
@@ -914,33 +904,33 @@ function hivtrace_plot_cluster_dynamics(
 
   if (!bin_by) {
     bin_by = function (date) {
-      var year = date.getFullYear(),
+      var year = date.getUTCFullYear(),
         nearest_quarter = new Date(),
         mid_point = new Date();
 
-      nearest_quarter.setDate(1);
-      nearest_quarter.setFullYear(year);
-      mid_point.setFullYear(year);
+      nearest_quarter.setUTCDate(1);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCFullYear(year);
 
-      var quarter = Math.floor(date.getMonth() / 3);
+      var quarter = Math.floor(date.getUTCMonth() / 3);
 
-      nearest_quarter.setMonth(quarter * 3);
-      nearest_quarter.setHours(0, 0, 0);
-      mid_point.setHours(0, 0, 0);
+      nearest_quarter.setUTCMonth(quarter * 3);
+      nearest_quarter.setUTCHours(0, 0, 0, 0);
+      mid_point.setUTCHours(0, 0, 0, 0);
 
-      nearest_quarter.setFullYear(year);
-      mid_point.setMonth(quarter * 3 + 1);
-      mid_point.setDate(15);
+      nearest_quarter.setUTCFullYear(year);
+      mid_point.setUTCMonth(quarter * 3 + 1);
+      mid_point.setUTCDate(15);
 
       return ["Q" + (quarter + 1) + " " + year, nearest_quarter, mid_point];
     };
 
-    min_diff = new Date(2018, 3, 0) - new Date(2018, 0, 0);
+    min_diff = new Date(Date.UTC(2018, 3, 0)) - new Date(Date.UTC(2018, 0, 0));
   }
 
   var x_tick_format = function (d) {
-    var year = d.getFullYear();
-    var quarter = Math.floor(d.getMonth() / 3) + 1;
+    var year = d.getUTCFullYear();
+    var quarter = Math.floor(d.getUTCMonth() / 3) + 1;
 
     return String(year) + "-Q" + quarter;
   };
@@ -964,7 +954,7 @@ function hivtrace_plot_cluster_dynamics(
 
     */
 
-  var x = d3.time.scale().range([0, width]);
+  var x = d3.time.scale.utc().range([0, width]);
 
   var y = y_scale ? y_scale : d3.scale.linear();
 
@@ -978,8 +968,8 @@ function hivtrace_plot_cluster_dynamics(
     .axis()
     .scale(x)
     .orient("bottom")
-    .ticks(d3.time.month, 3)
-    .tickFormat(d3.time.format("%m/%Y"));
+    .ticks(d3.time.month.utc, 3)
+    .tickFormat(d3.time.format.utc("%m/%Y"));
 
   if (x_tick_format) {
     xAxis.tickFormat(x_tick_format);
@@ -1084,7 +1074,7 @@ function hivtrace_plot_cluster_dynamics(
 
   let quarter_span = Math.floor((max_x - min_x) / 3600 / 24 / 1000 / 30);
   if (quarter_span > 8) {
-    xAxis.ticks(d3.time.month, 3 * Math.ceil(quarter_span / 8));
+    xAxis.ticks(d3.time.month.utc, 3 * Math.ceil(quarter_span / 8));
   }
 
   x.domain([min_x, max_x]).clamp(true);
@@ -1376,8 +1366,10 @@ function hivtrace_plot_cluster_dynamics(
  * @returns {string} A CSS selector string targeting elements with the specified role.
 */
 
-function get_ui_element_selector_by_role(role) {
-  return ` [data-hivtrace-ui-role='${role}']`;
+function get_ui_element_selector_by_role(role, no_leading_space) {
+  // Leading space is for descendant selection, but should be omitted for Bootstrap targets
+  const prefix = no_leading_space ? "" : " ";
+  return `${prefix}[data-hivtrace-ui-role='${role}']`;
 }
 
 module.exports = {
