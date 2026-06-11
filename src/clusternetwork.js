@@ -4523,7 +4523,11 @@ var hivtrace_cluster_network_graph = function (
       }, 1);
     }
 
-    if (self.isPrimaryGraph) {
+    // The redacted MJC view returns early from `update()` before the deferred
+    // render that clears these placeholders, and it draws neither the network
+    // SVG nor the cluster/subcluster tables, so skip showing the spinners here
+    // (otherwise they stay up forever and the page appears to hang on load).
+    if (self.isPrimaryGraph && !(self.isMJCNetwork && !self.fullMJCNetwork)) {
       const showPlaceholder = (element, message) => {
         if (element && element.node()) {
           element.style("display", "none");
@@ -10214,17 +10218,22 @@ var hivtrace_cluster_network_graph = function (
     .attr("width", self.width + self.margin.left + self.margin.right)
     .attr("height", self.height + self.margin.top + self.margin.bottom);
 
-  self.network_svg
-    .append("text")
-    .classed("svg-loading-placeholder", true)
-    .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
-    .attr("y", self.margin.top + 30)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .style("font-size", "18px")
-    .style("fill", "#666666")
-    .style("font-family", "sans-serif")
-    .text("Loading network visualization...");
+  // Skip the SVG loading placeholder for the redacted MJC view: it returns
+  // early from `update()` without rendering the graph, so the placeholder would
+  // never be cleared and the page would appear to hang on load.
+  if (!(self.isMJCNetwork && !self.fullMJCNetwork)) {
+    self.network_svg
+      .append("text")
+      .classed("svg-loading-placeholder", true)
+      .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
+      .attr("y", self.margin.top + 30)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .style("font-size", "18px")
+      .style("fill", "#666666")
+      .style("font-family", "sans-serif")
+      .text("Loading network visualization...");
+  }
 
   self.network_cluster_dynamics = null;
 
