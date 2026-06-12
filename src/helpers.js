@@ -730,6 +730,17 @@ function initializeLoadingScreen() {
     return;
   }
 
+  // Mark that an initial network load is in progress. Normally the window.init
+  // interceptor creates this, but pages that boot by constructing the cluster
+  // network directly (e.g. the secure app's results/MJC views) never assign a
+  // global `init`. Setting it here lets those pages participate in the loading
+  // UI: the render pipeline shows progress while building and clears the
+  // overlay via finalizeNetworkLoading() when it completes (see clusternetwork
+  // runSteps completion and the redacted-MJC early return).
+  if (typeof window !== "undefined") {
+    window.perfMeasurements = window.perfMeasurements || { done: false };
+  }
+
   // Hide the progress bar immediately on load
   d3.selectAll(".my_progress").style("display", "none");
 

@@ -7847,6 +7847,17 @@ var hivtrace_cluster_network_graph = function (
       d3.select(self.container)
         .selectAll(".my_progress")
         .style("display", "none");
+      // The redacted MJC view renders no network/tables and returns early, so
+      // nothing downstream would clear the generic loading overlay. Tear it
+      // down here so the page does not hang on "Analyzing Network Data".
+      if (typeof window !== "undefined") {
+        if (window.perfMeasurements) {
+          window.perfMeasurements.done = true;
+        }
+        if (window.finalizeNetworkLoading) {
+          window.finalizeNetworkLoading();
+        }
+      }
       return;
     }
 
@@ -7968,6 +7979,17 @@ var hivtrace_cluster_network_graph = function (
             .style("display", "none");
           self.network_svg.selectAll(".svg-loading-placeholder").remove();
           self.draw_attribute_labels();
+          // Network render + layout are complete. Tear down the generic loading
+          // overlay (installed by initializeLoadingScreen) for pages that boot
+          // without the window.init interceptor, e.g. the secure app.
+          if (typeof window !== "undefined") {
+            if (window.perfMeasurements) {
+              window.perfMeasurements.done = true;
+            }
+            if (window.finalizeNetworkLoading) {
+              window.finalizeNetworkLoading();
+            }
+          }
           return;
         }
         setTimeout(() => {
