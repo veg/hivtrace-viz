@@ -78,7 +78,7 @@ function init(self) {
 
  * @description
  * A valid name must:
- *  - Have a length between 1 and 35 characters.
+ *  - Have a length between 1 and 40 characters.
  *  - Not be a duplicate among existing priority groups (excluding itself if editing).
  */
 
@@ -88,7 +88,7 @@ function priority_groups_check_name(
   prior_name
 ) {
   if (string.length) {
-    if (string.length >= 36) return false;
+    if (string.length >= 41) return false;
     return !_.some(
       defined_priority_groups,
       (d) => d.name === string && d.name !== prior_name
@@ -564,13 +564,13 @@ function open_editor(
             save_set_button.attr("disabled", null);
           }
         } else {
-          let too_long = current_text.length >= 36;
+          let too_long = current_text.length >= 41;
           grp_name.classed({
             "has-success": false,
             "has-error": true,
           });
           let error_message = too_long
-            ? "MUST be shorter than 36 characters"
+            ? "MUST be 40 characters or fewer"
             : "MUST be unique";
           grp_name_box_label.text(
             "Name this cluster of interest " + error_message
