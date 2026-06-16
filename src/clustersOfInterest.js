@@ -2301,6 +2301,17 @@ function priority_set_view(self, priority_set, options) {
     )
   );
 
+  // Nothing to render if the CoI has no nodes in the current network at this
+  // distance; bail out instead of opening an empty view that hangs on load.
+  if (!node_set.length) {
+    alert(
+      "This cluster of interest has no nodes connected at a link distance of " +
+        kGlobals.formats.PercentFormatShort(edge_length) +
+        " in the current network, so there is nothing to display."
+    );
+    return;
+  }
+
   let refDate = timeDateUtil.DateViewFormat(reference_date);
 
   let dco = "fee8c8fdbb84e34a33";

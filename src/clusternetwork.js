@@ -1047,13 +1047,15 @@ var hivtrace_cluster_network_graph = function (
       d_clusters.children = all_clusters;
     }
 
+    // d3 calls `.value` on the root when it has no children (empty subcluster);
+    // the root has no `.parent`, so guard against it to avoid crashing the render.
     var treemap = packed
       ? d3.layout
           .pack()
           .size([self.width, self.height])
           //.sticky(true)
           .children((d) => d.children)
-          .value((d) => d.parent.children.length ** 1.5)
+          .value((d) => (d.parent ? d.parent.children.length : 1) ** 1.5)
           .sort((a, b) => b.value - a.value)
           .padding(5)
       : d3.layout
@@ -1061,7 +1063,7 @@ var hivtrace_cluster_network_graph = function (
           .size([self.width, self.height])
           //.sticky(true)
           .children((d) => d.children)
-          .value((d) => d.parent.children.length ** 1.0)
+          .value((d) => (d.parent ? d.parent.children.length : 1) ** 1.0)
           .sort((a, b) => a.value - b.value)
           .ratio(1);
 
