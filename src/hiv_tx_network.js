@@ -1694,7 +1694,36 @@ class HIVTxNetwork {
         return response.json();
       })
       .then((data) => {
-        alert("ClusterOI '" + name + "' added successfully from MJC.");
+        const summary = (data && data.summary) || null;
+        if (summary && typeof summary.added === "number") {
+          const requested =
+            summary.requested != null ? summary.requested : summary.added;
+          let msg =
+            "ClusterOI '" +
+            name +
+            "' created: " +
+            summary.added +
+            " of " +
+            requested +
+            " people added";
+          if (summary.nodes_added != null) {
+            msg += " (" + summary.nodes_added + " nodes)";
+          }
+          msg += ".";
+          if (summary.not_found) {
+            msg +=
+              "\n" +
+              summary.not_found +
+              " person(s) in the MJC clusterOI were not found in your jurisdiction's network and were not added.";
+          }
+          if (summary.added === 0) {
+            msg +=
+              "\nNote: none of the MJC clusterOI's people are in your jurisdiction's network, so this ClusterOI is empty.";
+          }
+          alert(msg);
+        } else {
+          alert("ClusterOI '" + name + "' added successfully from MJC.");
+        }
       })
       .catch((error) => {
         console.error("Error adding ClusterOI from MJC:", error);
