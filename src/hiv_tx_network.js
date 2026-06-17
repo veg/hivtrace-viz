@@ -1888,11 +1888,28 @@ class HIVTxNetwork {
                 person_ident_dt: timeDateUtil.hivtrace_date_or_na_if_missing(
                   entity_to_pg_records[eid][0].added
                 ),
-                sample_dt: d3.min(entity_to_g_records[eid], (g) =>
-                  timeDateUtil.hivtrace_date_or_na_if_missing(
-                    this.attribute_node_value_by_id(g, "sample_dt")
-                  )
-                ),
+                // Earliest sample date across the entity's records. Take the min
+                // over parsed Dates (not formatted strings, which sort wrongly),
+                // and surface "REDACTED" rather than a bogus "N/A" when masked.
+                sample_dt: (() => {
+                  const raw = (entity_to_g_records[eid] || []).map((g) =>
+                    this.attribute_node_value_by_id(g, "sample_dt", false, false, true)
+                  );
+                  const dates = [];
+                  for (const v of raw) {
+                    try {
+                      dates.push(this.parse_dates(v));
+                    } catch {
+                      /* "REDACTED" / missing / unparseable */
+                    }
+                  }
+                  if (dates.length) {
+                    return timeDateUtil.hivtrace_date_or_na_if_missing(
+                      d3.min(dates)
+                    );
+                  }
+                  return raw.some((v) => this.isRedacted(v)) ? "REDACTED" : "N/A";
+                })(),
                 new_linked_case: this.priority_groups_is_new_node(
                   entity_to_pg_records[eid][0]
                 )
@@ -4394,11 +4411,14 @@ class HIVTxNetwork {
     return this.primary_key(node);
   }
 
+  // Canonical redaction-sentinel test. The backend emits two shapes: bare
+  // "REDACTED" for scalar values and "REDACTED_<hmac>" for identifiers.
+  isRedacted(v) {
+    return typeof v === "string" && (v === "REDACTED" || v.startsWith("REDACTED_"));
+  }
+
   cleanRedacted(id) {
-    if (typeof id === "string" && id.startsWith("REDACTED_")) {
-      return "REDACTED";
-    }
-    return id;
+    return this.isRedacted(id) ? "REDACTED" : id;
   }
 
   /**
