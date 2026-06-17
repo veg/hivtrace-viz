@@ -1930,6 +1930,7 @@ class HIVTxNetwork {
                 national_priority: g.meets_priority_def,
                 cluster_current_size: entities.length,
                 cluster_dx_recent12_mo: g.cluster_dx_recent12_mo,
+                cluster_dx_recent36_mo: g.cluster_dx_recent36_mo,
                 ...(this.isMJCNetwork
                   ? {}
                   : { cluster_overlap: (g.overlap || {}).sets }),
