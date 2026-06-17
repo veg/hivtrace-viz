@@ -1047,13 +1047,15 @@ var hivtrace_cluster_network_graph = function (
       d_clusters.children = all_clusters;
     }
 
+    // d3 calls `.value` on the root when it has no children (empty subcluster);
+    // the root has no `.parent`, so guard against it to avoid crashing the render.
     var treemap = packed
       ? d3.layout
           .pack()
           .size([self.width, self.height])
           //.sticky(true)
           .children((d) => d.children)
-          .value((d) => d.parent.children.length ** 1.5)
+          .value((d) => (d.parent ? d.parent.children.length : 1) ** 1.5)
           .sort((a, b) => b.value - a.value)
           .padding(5)
       : d3.layout
@@ -1061,7 +1063,7 @@ var hivtrace_cluster_network_graph = function (
           .size([self.width, self.height])
           //.sticky(true)
           .children((d) => d.children)
-          .value((d) => d.parent.children.length ** 1.0)
+          .value((d) => (d.parent ? d.parent.children.length : 1) ** 1.0)
           .sort((a, b) => a.value - b.value)
           .ratio(1);
 
@@ -7979,6 +7981,22 @@ var hivtrace_cluster_network_graph = function (
             .style("display", "none");
           self.network_svg.selectAll(".svg-loading-placeholder").remove();
           self.draw_attribute_labels();
+          // Empty result (e.g. a cluster of interest that resolves to a single
+          // isolated node at a strict link distance): nothing is drawn, so show a
+          // notice instead of a blank canvas.
+          if (self.network_svg.selectAll(".node").empty()) {
+            self.network_svg
+              .append("text")
+              .classed("svg-empty-placeholder", true)
+              .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
+              .attr("y", self.margin.top + 30)
+              .attr("text-anchor", "middle")
+              .attr("dominant-baseline", "middle")
+              .style("font-size", "18px")
+              .style("fill", "#666666")
+              .style("font-family", "sans-serif")
+              .text("No nodes to display at this link distance.");
+          }
           // Network render + layout are complete. Tear down the generic loading
           // overlay (installed by initializeLoadingScreen) for pages that boot
           // without the window.init interceptor, e.g. the secure app.
