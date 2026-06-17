@@ -2367,7 +2367,7 @@ var hivtrace_cluster_network_graph = function (
         );
         if ($redacted_toggle.data("redacted-hidden")) {
           cluster_nodes = cluster_nodes.filter(
-            (n) => !self.entity_id(n).startsWith("REDACTED_")
+            (n) => !self.isRedacted(self.entity_id(n))
           );
         }
       }
@@ -2660,7 +2660,7 @@ var hivtrace_cluster_network_graph = function (
             ),
             (n) => {
               const eid = self.entity_id(n);
-              if (eid.includes("REDACTED")) {
+              if (self.isRedacted(eid)) {
                 return;
               }
               const overlap =
