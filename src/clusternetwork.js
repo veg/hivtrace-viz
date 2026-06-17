@@ -7981,6 +7981,22 @@ var hivtrace_cluster_network_graph = function (
             .style("display", "none");
           self.network_svg.selectAll(".svg-loading-placeholder").remove();
           self.draw_attribute_labels();
+          // Empty result (e.g. a cluster of interest that resolves to a single
+          // isolated node at a strict link distance): nothing is drawn, so show a
+          // notice instead of a blank canvas.
+          if (self.network_svg.selectAll(".node").empty()) {
+            self.network_svg
+              .append("text")
+              .classed("svg-empty-placeholder", true)
+              .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
+              .attr("y", self.margin.top + 30)
+              .attr("text-anchor", "middle")
+              .attr("dominant-baseline", "middle")
+              .style("font-size", "18px")
+              .style("fill", "#666666")
+              .style("font-family", "sans-serif")
+              .text("No nodes to display at this link distance.");
+          }
           // Network render + layout are complete. Tear down the generic loading
           // overlay (installed by initializeLoadingScreen) for pages that boot
           // without the window.init interceptor, e.g. the secure app.
