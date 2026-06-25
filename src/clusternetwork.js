@@ -118,6 +118,29 @@ var hivtrace_cluster_network_graph = function (
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
   self.schema = self.json[kGlobals.network.GraphAttrbuteID];
+  
+  self._hide_gender_fields = network.check_network_option(
+    options,
+    "hide_gender_fields",
+    false
+  ) || network.check_network_option(
+    options,
+    "no_gender",
+    false
+  ) || network.check_network_option(
+    options,
+    "hide-gender",
+    false
+  );
+
+  if (self._hide_gender_fields && self.schema) {
+    _.each(self.schema, (d, k) => {
+      if (k.toLowerCase().includes("gender")) {
+        d["_hidden_"] = true;
+      }
+    });
+  }
+
   // set initial color schemes
   self.networkColorScheme = kGlobals.PresetColorSchemes;
   self.networkShapeScheme = kGlobals.PresetShapeSchemes;

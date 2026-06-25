@@ -31,6 +31,7 @@ class HIVTxNetwork {
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
+    this._hide_gender_fields = false;
     /** SLKP 20241029
         this function is used to identify which nodes are duplicates
         it converts the name of the node (sequence) into a primary key ID (by default, taking the .id string up to the first pipe)
@@ -2451,6 +2452,9 @@ class HIVTxNetwork {
 
   inject_attribute_description(key, d) {
     if (kGlobals.network.GraphAttrbuteID in this.json) {
+      if (this._hide_gender_fields && key.toLowerCase().includes("gender")) {
+        d["_hidden_"] = true;
+      }
       var new_attr = {};
       new_attr[key] = d;
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
