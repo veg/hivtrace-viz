@@ -118,24 +118,20 @@ var hivtrace_cluster_network_graph = function (
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
   self.schema = self.json[kGlobals.network.GraphAttrbuteID];
-  
-  self._hide_gender_fields = network.check_network_option(
-    options,
-    "hide_gender_fields",
-    false
-  ) || network.check_network_option(
-    options,
-    "no_gender",
-    false
-  ) || network.check_network_option(
-    options,
-    "hide-gender",
-    false
-  );
+
+  self._hide_gender_fields =
+    network.check_network_option(options, "hide_gender_fields", false) ||
+    network.check_network_option(options, "no_gender", false) ||
+    network.check_network_option(options, "hide-gender", false);
 
   if (self._hide_gender_fields && self.schema) {
     _.each(self.schema, (d, k) => {
-      if (k.toLowerCase().includes("gender")) {
+      // Hide the legacy sex/gender fields (gender_identity + birth_sex), but
+      // NOT the new eHARS 4.17 "sex" column or "sex_trans".
+      if (
+        k.toLowerCase().includes("gender") ||
+        k.toLowerCase() === "birth_sex"
+      ) {
         d["_hidden_"] = true;
       }
     });
