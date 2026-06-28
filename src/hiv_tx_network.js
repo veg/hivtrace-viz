@@ -2452,7 +2452,11 @@ class HIVTxNetwork {
 
   inject_attribute_description(key, d) {
     if (kGlobals.network.GraphAttrbuteID in this.json) {
-      if (this._hide_gender_fields && key.toLowerCase().includes("gender")) {
+      if (
+        this._hide_gender_fields &&
+        (key.toLowerCase().includes("gender") ||
+          key.toLowerCase() === "birth_sex")
+      ) {
         d["_hidden_"] = true;
       }
       var new_attr = {};
