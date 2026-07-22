@@ -33,6 +33,7 @@ class HIVTxNetwork {
     this.cluster_attributes = [];
     this.minimum_cluster_size = 0;
     this.isPrimaryGraph = !secondaryGraph;
+    this._hide_gender_fields = false;
     this.nodeFilterObject = null;
     /** SLKP 20241029
         this function is used to identify which nodes are duplicates
@@ -3235,6 +3236,20 @@ class HIVTxNetwork {
 
   inject_attribute_description(key, d) {
     if (kGlobals.network.GraphAttrbuteID in this.json) {
+      // Attributes injected after construction bypass the constructor's
+      // hiding pass, so apply the same rule here (legacy gender_identity +
+      // birth_sex; the eHARS 4.17 "sex"/"sex_trans" columns stay visible).
+      const normalized_key = String(key)
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "_");
+      if (
+        this._hide_gender_fields &&
+        (normalized_key.includes("gender") ||
+          normalized_key === "birth_sex" ||
+          normalized_key === "sex_birth")
+      ) {
+        d["_hidden_"] = true;
+      }
       var new_attr = {};
       new_attr[key] = d;
       _.extend(this.json[kGlobals.network.GraphAttrbuteID], new_attr);
