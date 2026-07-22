@@ -126,6 +126,99 @@ var hivtrace_cluster_network_graph = function (
     false
   );
 
+  self.schema = self.json[kGlobals.network.GraphAttrbuteID];
+
+  self._hide_gender_fields =
+    network.check_network_option(options, "hide_gender_fields", false) ||
+    network.check_network_option(options, "no_gender", false) ||
+    network.check_network_option(options, "hide-gender", false);
+
+  if (self._hide_gender_fields && self.schema) {
+    // Attribute keys vary in case and separator between data sources
+    // (birth_sex / Birth Sex / Birth-Sex / sex_birth), so always compare on a
+    // normalized form; matching literally would silently skip such files.
+    const normalize_attribute_key = (k) =>
+      String(k)
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "_");
+    const birth_sex_keys = ["birth_sex", "sex_birth"];
+    // Raw node attributes hold unformatted source values, so a usable one is
+    // simply a non-blank value (kGlobals.missing.label is a localized display
+    // string produced downstream, not something stored on the node).
+    const has_usable_value = (v) =>
+      v !== null && v !== undefined && String(v).trim().length > 0;
+
+    _.each(self.schema, (d, k) => {
+      // Hide the legacy sex/gender fields (gender_identity + birth_sex), but
+      // NOT the new eHARS 4.17 "sex" column or "sex_trans".
+      const normalized_key = normalize_attribute_key(k);
+      if (
+        normalized_key.includes("gender") ||
+        _.contains(birth_sex_keys, normalized_key)
+      ) {
+        d["_hidden_"] = true;
+      }
+    });
+
+    const sex_schema_key = _.find(
+      _.keys(self.schema),
+      (k) => normalize_attribute_key(k) === "sex"
+    );
+
+    if (sex_schema_key) {
+      const sex_has_data = _.some(self.json.Nodes, (node) => {
+        const v = self.attribute_node_value_by_id(node, sex_schema_key);
+        return v && v !== kGlobals.missing.label;
+      });
+
+      if (!sex_has_data) {
+        // "Sex" is in the schema but no node carries data for it, so fall back
+        // to the legacy birth-sex column instead of rendering a single 100%
+        // "Missing" category.
+        let remapped_from = null;
+        let remapped_nodes = 0;
+
+        _.each(self.json.Nodes, (node) => {
+          const attrs = node[kGlobals.network.NodeAttributeID];
+          if (!attrs) {
+            return;
+          }
+
+          const birth_key = _.find(
+            _.keys(attrs),
+            (k) =>
+              _.contains(birth_sex_keys, normalize_attribute_key(k)) &&
+              has_usable_value(attrs[k])
+          );
+
+          if (birth_key) {
+            attrs[sex_schema_key] = attrs[birth_key];
+            remapped_from = remapped_from || birth_key;
+            remapped_nodes++;
+          }
+        });
+
+        if (remapped_nodes) {
+          // NOTE: values are copied onto the source nodes, so they also surface
+          // under "Sex" in node/attribute exports. Record the provenance so the
+          // substitution is traceable rather than silent.
+          self._sex_remapped_from = remapped_from;
+          console.log(
+            "Remapped " +
+              remapped_nodes +
+              " '" +
+              remapped_from +
+              "' value(s) to '" +
+              sex_schema_key +
+              "' (no data present for the latter)"
+          );
+        }
+      }
+    }
+  }
+
+  // Computed AFTER the gender-field handling above so that the "Sex" value
+  // distribution and badge counts reflect any remapped values.
   console.time("[PERF] helpers.getUniqueValues");
   self.uniqValues = helpers.getUniqueValues(
     self.json.Nodes,
@@ -135,7 +228,6 @@ var hivtrace_cluster_network_graph = function (
 
   self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
-  self.schema = self.json[kGlobals.network.GraphAttrbuteID];
   // set initial color schemes
   self.networkColorScheme = kGlobals.PresetColorSchemes;
   self.networkShapeScheme = kGlobals.PresetShapeSchemes;
