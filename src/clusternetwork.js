@@ -118,12 +118,27 @@ var hivtrace_cluster_network_graph = function (
     network.check_network_option(options, "hide-gender", false);
 
   if (self._hide_gender_fields && self.schema) {
+    // Attribute keys vary in case and separator between data sources
+    // (birth_sex / Birth Sex / Birth-Sex / sex_birth), so always compare on a
+    // normalized form; matching literally would silently skip such files.
+    const normalize_attribute_key = (k) =>
+      String(k)
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "_");
+    const birth_sex_keys = ["birth_sex", "sex_birth"];
+    // Raw node attributes hold unformatted source values, so a usable one is
+    // simply a non-blank value (kGlobals.missing.label is a localized display
+    // string produced downstream, not something stored on the node).
+    const has_usable_value = (v) =>
+      v !== null && v !== undefined && String(v).trim().length > 0;
+
     _.each(self.schema, (d, k) => {
       // Hide the legacy sex/gender fields (gender_identity + birth_sex), but
       // NOT the new eHARS 4.17 "sex" column or "sex_trans".
+      const normalized_key = normalize_attribute_key(k);
       if (
-        k.toLowerCase().includes("gender") ||
-        k.toLowerCase() === "birth_sex"
+        normalized_key.includes("gender") ||
+        _.contains(birth_sex_keys, normalized_key)
       ) {
         d["_hidden_"] = true;
       }
@@ -131,7 +146,7 @@ var hivtrace_cluster_network_graph = function (
 
     const sex_schema_key = _.find(
       _.keys(self.schema),
-      (k) => k.toLowerCase() === "sex"
+      (k) => normalize_attribute_key(k) === "sex"
     );
 
     if (sex_schema_key) {
@@ -141,26 +156,47 @@ var hivtrace_cluster_network_graph = function (
       });
 
       if (!sex_has_data) {
-        const birth_sex_candidate_keys = ["birth_sex", "birth sex", "sex_birth"];
-        _.each(self.json.Nodes, (node) => {
-          if (
-            kGlobals.network.NodeAttributeID in node &&
-            node[kGlobals.network.NodeAttributeID]
-          ) {
-            const attrs = node[kGlobals.network.NodeAttributeID];
-            const birth_key = _.find(
-              birth_sex_candidate_keys,
-              (bk) =>
-                bk in attrs &&
-                attrs[bk] &&
-                attrs[bk] !== kGlobals.missing.label
-            );
+        // "Sex" is in the schema but no node carries data for it, so fall back
+        // to the legacy birth-sex column instead of rendering a single 100%
+        // "Missing" category.
+        let remapped_from = null;
+        let remapped_nodes = 0;
 
-            if (birth_key) {
-              attrs[sex_schema_key] = attrs[birth_key];
-            }
+        _.each(self.json.Nodes, (node) => {
+          const attrs = node[kGlobals.network.NodeAttributeID];
+          if (!attrs) {
+            return;
+          }
+
+          const birth_key = _.find(
+            _.keys(attrs),
+            (k) =>
+              _.contains(birth_sex_keys, normalize_attribute_key(k)) &&
+              has_usable_value(attrs[k])
+          );
+
+          if (birth_key) {
+            attrs[sex_schema_key] = attrs[birth_key];
+            remapped_from = remapped_from || birth_key;
+            remapped_nodes++;
           }
         });
+
+        if (remapped_nodes) {
+          // NOTE: values are copied onto the source nodes, so they also surface
+          // under "Sex" in node/attribute exports. Record the provenance so the
+          // substitution is traceable rather than silent.
+          self._sex_remapped_from = remapped_from;
+          console.log(
+            "Remapped " +
+              remapped_nodes +
+              " '" +
+              remapped_from +
+              "' value(s) to '" +
+              sex_schema_key +
+              "' (no data present for the latter)"
+          );
+        }
       }
     }
   }
