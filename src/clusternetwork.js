@@ -110,13 +110,6 @@ var hivtrace_cluster_network_graph = function (
     false
   );
 
-  self.uniqValues = helpers.getUniqueValues(
-    self.json.Nodes,
-    self.json[kGlobals.network.GraphAttrbuteID]
-  );
-
-  self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
-
   self.schema = self.json[kGlobals.network.GraphAttrbuteID];
 
   self._hide_gender_fields =
@@ -135,7 +128,49 @@ var hivtrace_cluster_network_graph = function (
         d["_hidden_"] = true;
       }
     });
+
+    const sex_schema_key = _.find(
+      _.keys(self.schema),
+      (k) => k.toLowerCase() === "sex"
+    );
+
+    if (sex_schema_key) {
+      const sex_has_data = _.some(self.json.Nodes, (node) => {
+        const v = self.attribute_node_value_by_id(node, sex_schema_key);
+        return v && v !== kGlobals.missing.label;
+      });
+
+      if (!sex_has_data) {
+        const birth_sex_candidate_keys = ["birth_sex", "birth sex", "sex_birth"];
+        _.each(self.json.Nodes, (node) => {
+          if (
+            kGlobals.network.NodeAttributeID in node &&
+            node[kGlobals.network.NodeAttributeID]
+          ) {
+            const attrs = node[kGlobals.network.NodeAttributeID];
+            const birth_key = _.find(
+              birth_sex_candidate_keys,
+              (bk) =>
+                bk in attrs &&
+                attrs[bk] &&
+                attrs[bk] !== kGlobals.missing.label
+            );
+
+            if (birth_key) {
+              attrs[sex_schema_key] = attrs[birth_key];
+            }
+          }
+        });
+      }
+    }
   }
+
+  self.uniqValues = helpers.getUniqueValues(
+    self.json.Nodes,
+    self.json[kGlobals.network.GraphAttrbuteID]
+  );
+
+  self.uniqs = _.mapObject(self.uniqValues, (d) => d.length);
 
   // set initial color schemes
   self.networkColorScheme = kGlobals.PresetColorSchemes;
