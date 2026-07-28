@@ -780,7 +780,7 @@ class HIVTxNetwork {
 
   /** filter the list of CoI to return those which have been automatically expanded */
   priority_groups_expanded() {
-    return _.filter(this.defined_priority_groups, (pg) => pg.expanded).length;
+    return _.filter(this.defined_priority_groups, (pg) => pg.autoexpanded).length;
   }
 
   /** filter the list of CoI to return those which have been created by the system */
@@ -1970,6 +1970,10 @@ class HIVTxNetwork {
             //console.log (pg.name, _.map ([...added_nodes], (n)=>this.json.Nodes[n]));
 
             if (added_nodes.size) {
+              const existing_entities = new Set(
+                this.unique_entity_list(pg.node_objects)
+              );
+              const added_node_objects = [];
               _.each([...added_nodes], (nid) => {
                 const n = this.json.Nodes[nid];
                 pg.nodes.push({
@@ -1979,12 +1983,23 @@ class HIVTxNetwork {
                   autoadded: true,
                 });
                 pg.node_objects.push(n);
+                added_node_objects.push(n);
               });
+
+              const added_entities = this.unique_entity_list(added_node_objects);
+              const new_entities = _.filter(
+                added_entities,
+                (e) => !existing_entities.has(e)
+              );
+
               pg.validated = false;
-              pg.autoexpanded = true;
               pg.pending = true;
-              pg.expanded = added_nodes.size;
               pg.modified = this.get_reference_date();
+
+              if (new_entities.length > 0) {
+                pg.autoexpanded = true;
+                pg.expanded = new_entities.length;
+              }
             }
           }
 

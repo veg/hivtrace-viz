@@ -1369,7 +1369,11 @@ function draw_priority_set_table(self, container, priority_groups) {
             pg.description +
             (pg.pending ? " (new, pending confirmation)" : "") +
             (pg.expanded
-              ? " (" + pg.expanded + " new nodes; pending confirmation)"
+              ? " (" +
+                pg.expanded +
+                " new " +
+                (pg.expanded === 1 ? "person" : "persons") +
+                "; pending confirmation)"
               : ""),
           volatile: true,
           format: (value) =>
