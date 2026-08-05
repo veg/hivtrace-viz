@@ -784,7 +784,8 @@ class HIVTxNetwork {
 
   /** filter the list of CoI to return those which have been automatically expanded */
   priority_groups_expanded() {
-    return _.filter(this.defined_priority_groups, (pg) => pg.autoexpanded).length;
+    return _.filter(this.defined_priority_groups, (pg) => pg.autoexpanded)
+      .length;
   }
 
   /** filter the list of CoI to return those which have been created by the system */
@@ -2071,7 +2072,8 @@ class HIVTxNetwork {
                 added_node_objects.push(n);
               });
 
-              const added_entities = this.unique_entity_list(added_node_objects);
+              const added_entities =
+                this.unique_entity_list(added_node_objects);
               const new_entities = _.filter(
                 added_entities,
                 (e) => !existing_entities.has(e)
