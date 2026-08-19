@@ -1681,9 +1681,9 @@ class HIVTxNetwork {
                     (3) they will be handled in the next step
               */
               if (this.primary_key_list) {
-                let entities =
-                  this.primary_key_list[this.entity_id_from_string(nodeid)];
-                if (entities) {
+                const eid = this.entity_id_from_string(nodeid);
+                let entities = this.primary_key_list[eid];
+                if (entities && (entities.length == 1 || nodeid === eid)) {
                   if (entities.length == 1) {
                     node.name = entities[0].id;
                     pg.node_objects.push(entities[0]);
@@ -3310,7 +3310,7 @@ class HIVTxNetwork {
               if (_.size(unique_values) == 1) {
                 return [k, values[0][kGlobals.network.NodeAttributeID][k]];
               } else {
-                if (proto.type == "Date") {
+                if (proto && proto.type == "Date") {
                   try {
                     return [
                       k,
