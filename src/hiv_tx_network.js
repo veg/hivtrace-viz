@@ -2283,8 +2283,9 @@ class HIVTxNetwork {
                         the sequences belong
                     (3) they will be handled in the next step
               */
-              if (this.has_multiple_sequences) {
-                let entities = this.primary_key_list[nodeid];
+              if (this.primary_key_list) {
+                let entities =
+                  this.primary_key_list[this.entity_id_from_string(nodeid)];
                 if (entities) {
                   if (entities.length == 1) {
                     node.name = entities[0].id;
@@ -2661,7 +2662,7 @@ class HIVTxNetwork {
 
             if (added_nodes.size) {
               const existing_entities = new Set(
-                this.unique_entity_list(pg.node_objects)
+                this.unique_entity_list_from_ids(_.map(pg.nodes, (n) => n.name))
               );
               const added_node_objects = [];
               _.each([...added_nodes], (nid) => {
