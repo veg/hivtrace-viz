@@ -744,10 +744,20 @@ function initializeLoadingScreen() {
   // Hide the progress bar immediately on load
   d3.selectAll(".my_progress").style("display", "none");
 
-  // Enable all tabs so they are clickable
+  // Enable all tabs so they are clickable.
+  //
+  // Only in-page panes get data-toggle="tab". A nav-tab whose href is a real URL
+  // (the secure app's "MJ Clusters of Interest" tab links to /site/<id>/mjc) is a
+  // navigation link, and marking it as a Bootstrap toggle makes the plugin
+  // preventDefault() the click and then look for a pane matching that path —
+  // which does not exist, so the tab silently does nothing.
   d3.selectAll(".nav-tabs li")
     .classed("disabled", false)
     .selectAll("a")
+    .filter(function () {
+      const href = this.getAttribute("href");
+      return !href || href.charAt(0) === "#";
+    })
     .attr("data-toggle", "tab");
 
   // Set up loading placeholders in each tab panel
