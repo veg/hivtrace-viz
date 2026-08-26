@@ -378,8 +378,6 @@ var hivtrace_cluster_network_graph = function (
       "cur_city_name",
     ];
 
-
-
     self.displayed_node_subset = network.check_network_option(
       options,
       "node-attributes",
@@ -2236,10 +2234,12 @@ var hivtrace_cluster_network_graph = function (
         ];
       }
 
-      const has_seq_attributes = _.some(self.json.Nodes, (n) =>
-        n[kGlobals.network.NodeAttributeID] &&
-        (n[kGlobals.network.NodeAttributeID].has_sequence !== undefined ||
-          n[kGlobals.network.NodeAttributeID].poor_quality !== undefined)
+      const has_seq_attributes = _.some(
+        self.json.Nodes,
+        (n) =>
+          n[kGlobals.network.NodeAttributeID] &&
+          (n[kGlobals.network.NodeAttributeID].has_sequence !== undefined ||
+            n[kGlobals.network.NodeAttributeID].poor_quality !== undefined)
       );
 
       if (has_seq_attributes) {
@@ -4595,8 +4595,16 @@ var hivtrace_cluster_network_graph = function (
         self.draw_attribute_labels();
         network_layout.start();
 
-        if (window.hivtrace && window.hivtrace.graphSummary && self.graph_summary_tag) {
-          window.hivtrace.graphSummary(self, self.graph_summary_tag, self.graph_summary_not_CDC);
+        if (
+          window.hivtrace &&
+          window.hivtrace.graphSummary &&
+          self.graph_summary_tag
+        ) {
+          window.hivtrace.graphSummary(
+            self,
+            self.graph_summary_tag,
+            self.graph_summary_not_CDC
+          );
         }
       },
     });
@@ -5985,7 +5993,7 @@ var hivtrace_cluster_network_graph = function (
               d.patient_attributes &&
               d.patient_attributes.poor_quality !== undefined &&
               d.patient_attributes.poor_quality !== null;
-            return d_is_poor ? 0.20 : 0.08;
+            return d_is_poor ? 0.2 : 0.08;
           }
           return 1.0;
         })
@@ -8073,21 +8081,59 @@ var hivtrace_cluster_network_graph = function (
             .style("display", "none");
           self.network_svg.selectAll(".svg-loading-placeholder").remove();
           self.draw_attribute_labels();
-          // Empty result (e.g. a cluster of interest that resolves to a single
-          // isolated node at a strict link distance): nothing is drawn, so show a
-          // notice instead of a blank canvas.
+          // Empty result: nothing is drawn, so show a notice instead of a blank
+          // canvas — and say WHY it is empty. A cluster filter is the usual
+          // cause (large networks default to the last-12-months filter), not the
+          // link distance, and blaming link distance sent testers hunting for a
+          // slider that was never the problem.
           if (self.network_svg.selectAll(".node").empty()) {
+            const active_filters = _.keys(
+              self.cluster_filtering_functions || {}
+            );
+            const filter_labels = {
+              recent: "cases diagnosed in the last 12 months",
+              new: "clusters added since the previous network",
+              size: "the current cluster-size limit",
+            };
+            const named = _.compact(
+              _.map(active_filters, (k) => filter_labels[k])
+            );
+
+            const center =
+              (self.width + self.margin.left + self.margin.right) / 2;
             self.network_svg
               .append("text")
               .classed("svg-empty-placeholder", true)
-              .attr("x", (self.width + self.margin.left + self.margin.right) / 2)
+              .attr("x", center)
               .attr("y", self.margin.top + 30)
               .attr("text-anchor", "middle")
               .attr("dominant-baseline", "middle")
               .style("font-size", "18px")
               .style("fill", "#666666")
               .style("font-family", "sans-serif")
-              .text("No nodes to display at this link distance.");
+              .text(
+                named.length
+                  ? "No nodes to display with the current cluster filters."
+                  : "No nodes to display at this link distance."
+              );
+
+            if (named.length) {
+              self.network_svg
+                .append("text")
+                .classed("svg-empty-placeholder", true)
+                .attr("x", center)
+                .attr("y", self.margin.top + 56)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .style("font-size", "14px")
+                .style("fill", "#888888")
+                .style("font-family", "sans-serif")
+                .text(
+                  "Showing only " +
+                    named.join(" and ") +
+                    " — change this in the Clusters menu."
+                );
+            }
           }
           // Network render + layout are complete. Tear down the generic loading
           // overlay (installed by initializeLoadingScreen) for pages that boot
@@ -8650,14 +8696,16 @@ var hivtrace_cluster_network_graph = function (
       if (id === "sequence_status") {
         let status = "Sequenced";
         if (d[kGlobals.network.NodeAttributeID]) {
-          const has_seq = d[kGlobals.network.NodeAttributeID].has_sequence !== undefined
-            ? d[kGlobals.network.NodeAttributeID].has_sequence
-            : d[kGlobals.network.NodeAttributeID].sequence_status !== "none";
+          const has_seq =
+            d[kGlobals.network.NodeAttributeID].has_sequence !== undefined
+              ? d[kGlobals.network.NodeAttributeID].has_sequence
+              : d[kGlobals.network.NodeAttributeID].sequence_status !== "none";
           const poor_val = d[kGlobals.network.NodeAttributeID].poor_quality;
-          const is_poor = poor_val === 1 ||
-                          poor_val === "1" ||
-                          poor_val === true ||
-                          (typeof poor_val === "string" && poor_val.toLowerCase() === "yes");
+          const is_poor =
+            poor_val === 1 ||
+            poor_val === "1" ||
+            poor_val === true ||
+            (typeof poor_val === "string" && poor_val.toLowerCase() === "yes");
           if (is_poor) {
             status = "Poor Quality";
           } else if (has_seq) {
@@ -9658,11 +9706,8 @@ var hivtrace_cluster_network_graph = function (
       return;
     }
     _.each(
-      self.extract_single_cluster(
-        self.clusters[cidx].children,
-        null,
-        true
-      ).Edges,
+      self.extract_single_cluster(self.clusters[cidx].children, null, true)
+        .Edges,
       (e) => {
         _.each(e.sequences, (s) => {
           if (!(s in sequences)) {
