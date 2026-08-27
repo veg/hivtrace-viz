@@ -8086,7 +8086,20 @@ var hivtrace_cluster_network_graph = function (
           // cause (large networks default to the last-12-months filter), not the
           // link distance, and blaming link distance sent testers hunting for a
           // slider that was never the problem.
-          if (self.network_svg.selectAll(".node").empty()) {
+          // The placeholder is append-only, so a stale one from an earlier
+          // render survived into later ones and accumulated. Clear it first;
+          // it is re-added below only if it still applies.
+          self.network_svg.selectAll(".svg-empty-placeholder").remove();
+
+          // "Empty" means nothing was drawn at all. Testing `.node` alone is
+          // wrong: in the default packed view the canvas shows cluster bubbles
+          // (.cluster-group / .cluster paths) and no `.node` elements, so this
+          // placeholder was being written over a fully populated network.
+          const nothing_drawn =
+            self.network_svg.selectAll(".node").empty() &&
+            self.network_svg.selectAll(".cluster-group, .cluster").empty();
+
+          if (nothing_drawn) {
             const active_filters = _.keys(
               self.cluster_filtering_functions || {}
             );
