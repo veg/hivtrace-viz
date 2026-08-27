@@ -6,44 +6,8 @@
 var d3 = require("d3"),
   _ = require("underscore"),
   clustersOfInterest = require("./clustersOfInterest.js"),
-  kGlobals = require("./globals.js");
-
-/**
-    unpack_compact_json:
-    If the input network JSON is in compact form, i.e. instead of storing 
-        key : value
-    it stores
-        key : integer index of value
-        unique_values: list of values
-    convert it to 
-        key: value 
-        
-    The operation is performed in place on the `json` argument
-*/
-
-function unpack_compact_json(json) {
-  _.each(["Nodes", "Edges"], (key) => {
-    var fields = _.keys(json[key]);
-    var expanded = [];
-    _.each(fields, (f, idx) => {
-      var field_values = json[key][f];
-      if (!_.isArray(field_values) && "values" in field_values) {
-        var expanded_values = [];
-        _.each(field_values["values"], (v) => {
-          expanded_values.push(field_values["keys"][v]);
-        });
-        field_values = expanded_values;
-      }
-      _.each(field_values, (fv, j) => {
-        if (idx === 0) {
-          expanded.push({});
-        }
-        expanded[j][f] = fv;
-      });
-    });
-    json[key] = expanded;
-  });
-}
+  kGlobals = require("./globals.js"),
+  networkUtils = require("./core/networkUtils.js");
 
 /**
     normalize_node_attributes
@@ -285,6 +249,6 @@ module.exports = {
   check_network_option,
   ensure_node_attributes_exist,
   normalize_node_attributes,
-  unpack_compact_json,
+  unpack_compact_json: networkUtils.unpack_compact_json,
   handle_cluster_click,
 };

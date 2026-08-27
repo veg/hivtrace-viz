@@ -2,13 +2,18 @@ const { test, expect } = require("@playwright/test");
 
 let errors = [];
 
-test.beforeEach(({ page }) => {
+test.beforeEach(async ({ page }) => {
   errors = [];
   page.on("console", (msg) => {
     if (msg.type() === "error") {
       console.log(msg.text());
       errors.push(msg.text());
     }
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", {
+      get: () => undefined,
+    });
   });
 });
 

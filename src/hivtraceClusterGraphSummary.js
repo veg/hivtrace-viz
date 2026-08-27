@@ -22,6 +22,10 @@ None
 */
 
 function hivtraceClusterGraphSummary(network, tag, not_CDC) {
+  // Store the container tag and not_CDC setting on the network object so it can re-render itself when async load completes.
+  network.graph_summary_tag = tag;
+  network.graph_summary_not_CDC = not_CDC;
+
   // Select the target element for appending the summary table
   var summary_table = d3.select(tag).select("tbody");
 
@@ -51,6 +55,50 @@ function hivtraceClusterGraphSummary(network, tag, not_CDC) {
         ]);
       }
     });
+
+    // Show breakdown of unlinked nodes (singletons) if they exist
+    let unlinked_nodes = graph.Nodes.filter(
+      (n) => n.cluster === null || n.cluster === undefined
+    );
+    if (unlinked_nodes.length > 0) {
+      let unlinked_with_seq = 0;
+      let unlinked_poor_seq = 0;
+      let unlinked_no_seq = 0;
+      unlinked_nodes.forEach((n) => {
+        let has_seq = true; // Default
+        let is_poor = false;
+        if (n.patient_attributes) {
+          if (n.patient_attributes.has_sequence !== undefined) {
+            has_seq = !!n.patient_attributes.has_sequence;
+          } else if (n.patient_attributes.sequence_status !== undefined) {
+            has_seq = n.patient_attributes.sequence_status !== "none";
+          }
+          is_poor = n.patient_attributes.poor_quality !== undefined && n.patient_attributes.poor_quality !== null;
+        }
+        if (has_seq) {
+          unlinked_with_seq++;
+        } else if (is_poor) {
+          unlinked_poor_seq++;
+        } else {
+          unlinked_no_seq++;
+        }
+      });
+      if (unlinked_poor_seq > 0 || unlinked_no_seq > 0) {
+        table_data.push(["Unlinked nodes (with sequences)", unlinked_with_seq]);
+        if (unlinked_poor_seq > 0) {
+          table_data.push([
+            "Unlinked nodes (with poor quality sequences)",
+            unlinked_poor_seq,
+          ]);
+        }
+        if (unlinked_no_seq > 0) {
+          table_data.push([
+            "Unlinked nodes (without sequences)",
+            unlinked_no_seq,
+          ]);
+        }
+      }
+    }
   }
 
   // Extract degrees from graph and calculate statistics

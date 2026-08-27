@@ -198,11 +198,12 @@
               >
                 Group by ID
               </button>
-              <button type="button" class="btn btn-default btn-small">
-                <i
-                  class="fa fa-download"
-                  data-hivtrace-ui-role="cluster_list_data_export"
-                ></i>
+              <button
+                type="button"
+                class="btn btn-default btn-small"
+                data-hivtrace-ui-role="cluster_list_data_export"
+              >
+                <i class="fa fa-download"></i>
               </button>
             </div>
             <ul
@@ -243,11 +244,12 @@
               </button>
               <h4 class="modal-title">Listing overlap nodes</h4>
 
-              <button type="button" class="btn btn-default btn-small">
-                <i
-                  class="fa fa-download"
-                  data-hivtrace-ui-role="overlap_list_data_export"
-                ></i>
+              <button
+                type="button"
+                class="btn btn-default btn-small"
+                data-hivtrace-ui-role="overlap_list_data_export"
+              >
+                <i class="fa fa-download"></i>
               </button>
             </div>
             <table
@@ -799,9 +801,13 @@
                   id="priority-table-export"
                   style="margin-left: 1em"
                 >
-                  <a target="_blank" id="priority_set_table_download">
-                    <i class="fa fa-download fa-2x"></i>
-                  </a>
+                  <button
+                    class="btn btn-sm btn-info"
+                    id="priority_set_table_download"
+                    title="Export ClusterOI Table to CSV"
+                  >
+                    <i class="fa fa-download"></i> Export Table to CSV
+                  </button>
                 </span>
                 <p class="lead">
                   Priority Node Sets

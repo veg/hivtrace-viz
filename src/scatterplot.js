@@ -15,7 +15,7 @@ var d3 = require("d3");
 
 function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   var _defaultFloatFormat = d3.format(",.2r");
-  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+  var _defaultDateViewFormatShort = d3.time.format.utc("%B %Y");
 
   var margin = {
       top: 10,
@@ -26,11 +26,11 @@ function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
     width = w - margin.left - margin.right,
     height = h - margin.top - margin.bottom;
 
-  var x = (dates ? d3.time.scale() : d3.scale.linear())
+  var x = (dates ? d3.time.scale.utc() : d3.scale.linear())
     .domain(d3.extent(points, (p) => p.x))
     .range([0, width]);
 
-  var y = (dates ? d3.time.scale() : d3.scale.linear())
+  var y = (dates ? d3.time.scale.utc() : d3.scale.linear())
     .domain(d3.extent(points, (p) => p.y))
     .range([height, 0]);
 
