@@ -1380,6 +1380,44 @@ function get_ui_element_selector_by_role(role) {
   return ` [data-hivtrace-ui-role='${role}']`;
 }
 
+/**
+ * The results' Notes as display strings.
+ *
+ * Entries of "Structured Notes" ({code, count, text}) whose code has a
+ * hivtrace-locales key (network_tab.note_<code>, with a _plural form) are
+ * translated and replace the free-text note equal to their `text`. All
+ * other Notes are shown as they are, so older results look the same.
+ *
+ * @param {Object} json - The network JSON (results).
+ * @returns {string[]} The notes to display, translated ones first.
+ */
+function hivtrace_results_notes(json) {
+  const labels = __("network_tab");
+  const replaced = {};
+  const notes = [];
+
+  _.each(json["Structured Notes"] || [], (note) => {
+    if (!note || !_.isNumber(note.count)) {
+      return;
+    }
+    const key = "note_" + note.code;
+    const template =
+      note.count === 1 ? labels[key] : labels[key + "_plural"] || labels[key];
+    if (_.isString(template)) {
+      notes.push(template.replace("{{count}}", note.count));
+      replaced[note.text] = true;
+    }
+  });
+
+  _.each(json.Notes || [], (s) => {
+    if (!_.has(replaced, s)) {
+      notes.push(s);
+    }
+  });
+
+  return notes;
+}
+
 module.exports = {
   edge_typer,
   coi_timeseries: hivtrace_coi_timeseries,
@@ -1393,4 +1431,5 @@ module.exports = {
   hivtrace_cluster_complete_clusters,
   hivtrace_compute_adjacency,
   hivtrace_compute_adjacency_with_edges,
+  results_notes: hivtrace_results_notes,
 };

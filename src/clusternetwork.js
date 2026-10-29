@@ -467,9 +467,10 @@ var hivtrace_cluster_network_graph = function (
     "edge-styler"
   );
 
-  if (self.json.Notes) {
-    _.each(self.json.Notes, (s) => (self.warning_string += s + "<br>"));
-  }
+  _.each(
+    misc.results_notes(self.json),
+    (s) => (self.warning_string += s + "<br>")
+  );
 
   /**
     the true branch is taken if the network JSON contains "Cluster description"
