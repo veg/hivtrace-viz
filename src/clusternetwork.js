@@ -5344,7 +5344,8 @@ var hivtrace_cluster_network_graph = function (
         .classed("hiv-trace-legend", true)
         .append("text")
         .text(
-          "Color: " +
+          __("network_tab")["color"] +
+            ": " +
             self.json[kGlobals.network.GraphAttrbuteID][
               self.colorizer["category_id"]
             ].label
@@ -5718,7 +5719,12 @@ var hivtrace_cluster_network_graph = function (
         });
       d3.select(
         self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])
-      ).html("Color: " + set_attr + ' <span class="caret"></span>');
+      ).html(
+        __("network_tab")["color"] +
+          ": " +
+          set_attr +
+          ' <span class="caret"></span>'
+      );
     });
 
     d3.select(self.get_ui_element_selector_by_role("attributes_invert"))
@@ -6221,7 +6227,12 @@ var hivtrace_cluster_network_graph = function (
         });
       d3.select(
         self.get_ui_element_selector_by_role(lbl[0] + "_label", lbl[1])
-      ).html("Color: " + set_attr + ' <span class="caret"></span>');
+      ).html(
+        __("network_tab")["color"] +
+          ": " +
+          set_attr +
+          ' <span class="caret"></span>'
+      );
     });
 
     self.clusters.forEach((the_cluster) => {
