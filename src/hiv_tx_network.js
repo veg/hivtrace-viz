@@ -3,7 +3,8 @@ var _ = require("underscore"),
   kGlobals = require("./globals.js"),
   misc = require("./misc.js"),
   clustersOfInterest = require("./clustersOfInterest.js"),
-  i18n = require("./i18n.js");
+  i18n = require("./i18n.js"),
+  persistedText = require("./persisted_text.js");
 
 /*------------------------------------------------------------
      define a barebones class for the network object
@@ -2459,10 +2460,7 @@ class HIVTxNetwork {
 
                   this.auto_create_priority_sets.push({
                     name: autoname,
-                    description: i18n.fill(
-                      __("coi")["auto_created_description"],
-                      { name: autoname }
-                    ),
+                    description: persistedText.auto_created_description(autoname),
                     nodes: _.map(subcluster_data.recent_nodes[i], (n) =>
                       this.priority_group_node_record(
                         n,

@@ -13,6 +13,7 @@ import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as misc from "./misc"; // Keep misc import
 import * as kGlobals from "./globals.js";
 import * as i18n from "./i18n.js";
+import * as persistedText from "./persisted_text.js";
 import * as network from "./network.js";
 import * as HTX from "./hiv_tx_network.js";
 import * as columnDefinitions from "./column_definitions.js";
@@ -2543,11 +2544,7 @@ var hivtrace_cluster_network_graph = function (
                 self,
                 [],
                 "",
-                i18n.fill(__("coi")["merged_from"], {
-                  names: [...current_selection].join(
-                    __("coi")["merged_from_joiner"]
-                  ),
-                })
+persistedText.merged_from_description([...current_selection])
               );
               clustersOfInterest
                 .get_editor()

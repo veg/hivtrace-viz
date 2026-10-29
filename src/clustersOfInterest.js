@@ -9,6 +9,7 @@ import * as misc from "./misc.js";
 import { hivtrace_cluster_depthwise_traversal } from "./misc";
 import * as kGlobals from "./globals.js";
 import * as i18n from "./i18n.js";
+import * as persistedText from "./persisted_text.js";
 
 let priority_set_editor = null;
 
@@ -1205,7 +1206,7 @@ function _action_drop_down(self, pg) {
           self,
           copied_node_objects,
           "",
-          i18n.fill(__("coi")["clone_of"], { name: pg.name }),
+          persistedText.clone_of_description(pg.name),
           ref_set.kind
         );
         self.redraw_tables();
@@ -1423,7 +1424,10 @@ function draw_priority_set_table(self, container, priority_groups) {
           value: pg.name,
           width: 325,
           help:
-            pg.description +
+            persistedText.render(
+              pg.description,
+              _.map(priority_groups, (g) => g.name)
+            ) +
             (pg.pending ? __("coi")["pending_new"] : "") +
             (pg.expanded
               ? i18n.plural(__("coi"), "pending_new_persons", pg.expanded)
