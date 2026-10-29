@@ -2307,12 +2307,12 @@ class HIVTxNetwork {
           } else if (memberships.length > 1) {
             return __("general")["multiple"];
           }
-          return "None";
+          return __("network_tab")["none"];
         },
       },
       subcluster_id: {
         depends: [timeDateUtil._networkCDCDateField],
-        label: "Subcluster ID",
+        label: __("clusters_tab")["subcluster_id"],
         type: "String",
         //label_format: d3.format(".2f"),
         map: function (node) {
@@ -2320,7 +2320,7 @@ class HIVTxNetwork {
              console.log (node);
           }*/
           if (node) {
-            return node.subcluster_label || "None";
+            return node.subcluster_label || __("network_tab")["none"];
           }
           return kGlobals.missing.label;
         },
