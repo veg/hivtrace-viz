@@ -1,5 +1,6 @@
 var d3 = require("d3"),
-  _ = require("underscore");
+  _ = require("underscore"),
+  i18n = require("./i18n.js");
 
 /**
  * Renders a histogram for a graph property and displays a descriptive label.
@@ -24,19 +25,16 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
     histogram_tag
   );
 
-  var label =
-    "Network degree distribution is best described by the <strong>" +
-    graph["Degrees"]["Model"] +
-    "</strong> model, with &rho; of " +
-    defaultFloatFormat(graph["Degrees"]["rho"]);
+  var label = i18n.fill(__("statistics")["degree_model"], {
+    model: graph["Degrees"]["Model"],
+    rho: defaultFloatFormat(graph["Degrees"]["rho"]),
+  });
 
   if (graph["Degrees"]["rho CI"] !== undefined) {
-    label +=
-      " (95% CI " +
-      defaultFloatFormat(graph["Degrees"]["rho CI"][0]) +
-      " - " +
-      defaultFloatFormat(graph["Degrees"]["rho CI"][1]) +
-      ")";
+    label += i18n.fill(__("statistics")["degree_model_ci"], {
+      lo: defaultFloatFormat(graph["Degrees"]["rho CI"][0]),
+      hi: defaultFloatFormat(graph["Degrees"]["rho CI"][1]),
+    });
   }
 
   d3.select(histogram_label).html(label);
@@ -168,7 +166,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .attr("y", 0 - margin.left + y_axis_label_width)
       .attr("x", 0 - height / 2)
       .style("text-anchor", "middle")
-      .text("Edges");
+      .text(__("statistics")["edges"]);
 
     var x_axis_label = histogram_svg // eslint-disable-line
       .append("text")
@@ -177,7 +175,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
         "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
       )
       .style("text-anchor", "middle")
-      .text("Genetic Distance");
+      .text(__("statistics")["genetic_distance"]);
 
     var y_axis = histogram_svg // eslint-disable-line
       .append("g")
