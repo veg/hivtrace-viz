@@ -57,18 +57,25 @@ const re_merged = new RegExp("^" + MERGED_FROM + "([\\s\\S]+)$");
 const re_clone = new RegExp("^" + CLONE_OF + "([\\s\\S]+)$");
 const re_auto = new RegExp("^" + AUTO_CREATED + "([\\S]+)$");
 
-function render_base(text, known) {
+/** maximum depth of templates nested inside captured parameters */
+const MAX_DEPTH = 4;
+
+function render_base(text, known, depth) {
+  depth = depth || 0;
   let m;
   const L = __("coi");
+  // a captured parameter may itself be canonical generated text
+  const inner = (s) =>
+    depth < MAX_DEPTH ? render_base(s, known, depth + 1) : s;
   if ((m = re_auto.exec(text))) {
     return fill(L["auto_created_description"], { name: m[1] });
   }
   if ((m = re_clone.exec(text))) {
-    return fill(L["clone_of"], { name: m[1] });
+    return fill(L["clone_of"], { name: inner(m[1]) });
   }
   if ((m = re_merged.exec(text))) {
     return fill(L["merged_from"], {
-      names: split_names(m[1], known).join(L["merged_from_joiner"]),
+      names: split_names(m[1], known).map(inner).join(L["merged_from_joiner"]),
     });
   }
   return text;
