@@ -2897,23 +2897,30 @@ class HIVTxNetwork {
     */
 
   define_attribute_network_update() {
+    // English fallbacks for hivtrace-locales releases without these keys
+    const labels = __("network_tab");
+    const existing = labels["update_existing"] || "Existing";
+    const added = labels["update_new"] || "New";
+    const moved = labels["update_moved"] || "Moved clusters";
     return {
-      label: "Sequence updates compared to previous network",
-      enum: ["Existing", "New", "Moved clusters"],
+      label:
+        labels["update_attribute"] ||
+        "Sequence updates compared to previous network",
+      enum: [existing, added, moved],
       type: "String",
       map: function (node) {
         if (HIVTxNetwork.is_new_node(node)) {
-          return "New";
+          return added;
         }
         if (node.attributes.indexOf("moved_clusters") >= 0) {
-          return "Moved clusters";
+          return moved;
         }
-        return "Existing";
+        return existing;
       },
       color_scale: function () {
         return d3.scale
           .ordinal()
-          .domain(["Existing", "New", "Moved clusters", kGlobals.missing.label])
+          .domain([existing, added, moved, kGlobals.missing.label])
           .range(["#7570b3", "#d95f02", "#1b9e77", "gray"]);
       },
     };
