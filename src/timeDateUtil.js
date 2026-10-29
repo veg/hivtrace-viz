@@ -8,10 +8,68 @@ const DateViewFormatExport = d3.time.format.utc("%m/%d/%Y");
 const DateViewFormatMMDDYYY = d3.time.format("%m%d%Y");
 /** this is currently used to display node addition dates to COI */
 
-const DateViewFormatShort = d3.time.format("%B %Y");
+/** d3 v3 time locales for the formats that show month names; __("lang")
+    is replaced at build time, so each bundle picks its own language */
+const kTimeLocales = {
+  es: {
+    format: d3.locale({
+      decimal: ".",
+      thousands: ",",
+      grouping: [3],
+      currency: ["$", ""],
+      dateTime: "%A, %e de %B de %Y, %X",
+      date: "%d/%m/%Y",
+      time: "%H:%M:%S",
+      periods: ["AM", "PM"],
+      days: [
+        "domingo",
+        "lunes",
+        "martes",
+        "miércoles",
+        "jueves",
+        "viernes",
+        "sábado",
+      ],
+      shortDays: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
+      months: [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+      ],
+      shortMonths: [
+        "ene",
+        "feb",
+        "mar",
+        "abr",
+        "may",
+        "jun",
+        "jul",
+        "ago",
+        "sep",
+        "oct",
+        "nov",
+        "dic",
+      ],
+    }).timeFormat,
+    view: "%d %b %Y",
+  },
+  en: { format: d3.time.format, view: "%b %d, %Y" },
+};
+const kTimeLocale = kTimeLocales[__("lang")] || kTimeLocales.en;
+
+const DateViewFormatShort = kTimeLocale.format("%B %Y");
 /** Used to generate legend labels for date-valued attributes for network displayes*/
 
-const DateViewFormat = d3.time.format("%b %d, %Y");
+const DateViewFormat = kTimeLocale.format(kTimeLocale.view);
 /** Used to generate pop-over labels for node displays, and COI views*/
 
 /** SLKP 20241029; add another acceptable data time format */
