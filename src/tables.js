@@ -146,6 +146,18 @@ function table_get_cell_value(data) {
 }
 
 /**
+ * Plain text of a column header value, which can be a string, markup or a function result.
+ * @param {*} value - The header value of a column.
+ * @returns {string}
+ */
+function header_text(value) {
+  if (_.isFunction(value)) {
+    return "";
+  }
+  return $("<div>").html(String(value === undefined ? "" : value)).text().trim();
+}
+
+/**
  * Formats a cell in a table based on provided data.
 
  * @param {Object} data - The data object representing the table cell. 
@@ -225,8 +237,15 @@ function format_a_cell(data, index, item, priority_set_editor) {
       var clicker = handle_sort.append("a").property("href", "#");
 
       clicker
+        .attr("role", "button")
+        .attr(
+          "aria-label",
+          __("nodes_tab")["filter_on"] + " " + header_text(data.value)
+        );
+      clicker
         .append("i")
         .classed("fa fa-search", true)
+        .attr("aria-hidden", "true")
         .style("margin-left", "0.2em");
 
       var search_form_generator = function () {
@@ -234,8 +253,8 @@ function format_a_cell(data, index, item, priority_set_editor) {
                             <div class="form-group"> 
                                 <div class="input-group">
                                 <input type="text" class="form-control input-sm" data-hivtrace-ui-role = "table-filter-term" placeholder="${__("nodes_tab")["filter_on"]}" style = "min-width: 100px">
-                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle"></i></a> </div>
-                                <div class="input-group-addon"><a data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter"></i></a> </div> 
+                                <div class="input-group-addon"><a href="#" role="button" aria-label="${__("nodes_tab")["filter_reset"]}" data-hivtrace-ui-role = "table-filter-reset"><i class="fa fa-times-circle" aria-hidden="true"></i></a> </div>
+                                <div class="input-group-addon"><a href="#" role="button" aria-label="${__("nodes_tab")["filter_apply"]}" data-hivtrace-ui-role = "table-filter-apply"><i class="fa fa-filter" aria-hidden="true"></i></a> </div> 
                                 <div class="input-group-addon">
                                     <i class="fa fa-question" data-toggle="collapse" data-target="#filter-help-column' +
             index +
@@ -307,11 +326,13 @@ function format_a_cell(data, index, item, priority_set_editor) {
             */
 
           search_click.on("click", (e) => {
+            d3.event.preventDefault();
             update_term(search_box.property("value"));
             filter_table(clicker.node());
           });
 
           reset_click.on("click", (d) => {
+            d3.event.preventDefault();
             search_box.property("value", "");
             update_term("");
             filter_table(clicker.node());
@@ -328,10 +349,18 @@ function format_a_cell(data, index, item, priority_set_editor) {
         sort_table_by_column(this, d);
       })
       .attr("data-sorted", "unsorted")
-      .attr("data-column-id", index);
+      .attr("data-column-id", index)
+      .attr("role", "button")
+      .attr(
+        "aria-label",
+        i18n.fill(__("general")["sort_by"], {
+          name: header_text(data.value),
+        })
+      );
     clicker
       .append("i")
       .classed("fa fa-sort", true)
+      .attr("aria-hidden", "true")
       .style("margin-left", "0.2em");
 
     if ("presort" in data) {
@@ -419,7 +448,14 @@ function format_a_cell(data, index, item, priority_set_editor) {
                 });
             }
             if (b.icon) {
-              this_button.append("i").classed("fa " + b.icon, true);
+              this_button
+                .append("i")
+                .classed("fa " + b.icon, true)
+                .attr("aria-hidden", "true");
+              if (b.help) {
+                // icon-only button: the help text is its accessible name
+                this_button.attr("aria-label", b.help);
+              }
             } else {
               this_button.text(b.text).style("font-size", "12px");
             }

@@ -955,7 +955,9 @@ var hivtrace_cluster_network_graph = function (
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
         .text(__("clusters_main")["collapse_cluster"])
         .on("click", (d) => {
           node.fixed = 0;
@@ -966,7 +968,9 @@ var hivtrace_cluster_network_graph = function (
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
         .text((d) =>
           node.show_label
             ? __("network_tab")["hide_text_label"]
@@ -983,7 +987,9 @@ var hivtrace_cluster_network_graph = function (
         menu_object
           .append("li")
           .append("a")
+          .attr("href", "#")
           .attr("tabindex", "-1")
+          .on("click.prevent-navigation", () => d3.event.preventDefault())
           .text((d) => __("coi")["add_node_to_coi"])
           .on("click", (d) => {
             clustersOfInterest
@@ -3986,7 +3992,10 @@ persistedText.merged_from_description([...current_selection])
         i_span.enter().append("i");
         i_span
           .attr("class", (d) => "fa " + d[1], true)
-          .attr("title", (d) => d[0]);
+          .attr("title", (d) => d[0])
+          .attr("aria-hidden", "true");
+        // the icon is the only content, so the button needs its own name
+        this_e.attr("aria-label", d[0][0]).attr("title", d[0][0]);
       }
     });
   }

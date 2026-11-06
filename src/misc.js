@@ -265,6 +265,12 @@ function hiv_trace_export_table_to_text(
 
   the_button = the_button
     .append("a")
+    .attr("href", "#")
+    .attr("role", "button")
+    .attr(
+      "aria-label",
+      csv ? __("nodes_tab")["export_to_csv"] : __("nodes_tab")["export_to_tsv"]
+    )
     .attr("target", "_blank")
     .attr("data-type", "download-button")
     .on("click", function (data, element) {
@@ -288,7 +294,10 @@ function hiv_trace_export_table_to_text(
     })
     .attr("data-table", table_id);
 
-  the_button.append("i").classed("fa fa-download fa-2x", true);
+  the_button
+    .append("i")
+    .classed("fa fa-download fa-2x", true)
+    .attr("aria-hidden", "true");
   return the_button;
 }
 

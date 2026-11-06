@@ -174,7 +174,9 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
       .text(__("network_tab")["expand_cluster"])
       .on("click", (d) => {
         cluster.fixed = 0;
@@ -185,7 +187,9 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
       .text(__("network_tab")["center_on_screen"])
       .on("click", (d) => {
         cluster.fixed = 0;
@@ -196,7 +200,9 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
       .text((d) => {
         if (cluster.fixed) return __("network_tab")["allow_cluster_float"];
         return __("network_tab")["hold_cluster"];
@@ -210,7 +216,9 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
         .text((d) => __("network_tab")["show_cluster_in_tab"])
         .on("click", (d) => {
           self.open_exclusive_tab_view(
@@ -227,7 +235,9 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
         .text((d) => __("coi")["add_cluster_to_coi"])
         .on("click", (d) => {
           clustersOfInterest
@@ -246,7 +256,9 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
         .text(__("network_tab")["show_on_map"])
         .on("click", (d) => {
           //console.log(cluster)
