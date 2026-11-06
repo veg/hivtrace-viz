@@ -4204,6 +4204,13 @@ persistedText.merged_from_description([...current_selection])
           }
 
           function get_text_label(key) {
+            // the two columns every node table has, in the page language
+            if (key === tables._networkNodeIDField) {
+              return __("computed_attributes")["node_id"];
+            }
+            if (key === "cluster") {
+              return __("general")["cluster"];
+            }
             return key in self.json.patient_attribute_schema
               ? self.json.patient_attribute_schema[key].label
               : format_key(key);
