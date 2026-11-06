@@ -158,6 +158,24 @@ function header_text(value) {
 }
 
 /**
+ * Accessible name of a column: the text of the dropdown button a header callback drew
+ * (the node tables name their columns that way), else the plain header value.
+ * @param {d3.selection} cell - The header cell, after its content was drawn.
+ * @param {*} value - The header value of the column.
+ * @returns {string}
+ */
+function header_label(cell, value) {
+  const toggle = cell.select("button.dropdown-toggle");
+  if (!toggle.empty()) {
+    const text = toggle.text().trim();
+    if (text.length) {
+      return text;
+    }
+  }
+  return header_text(value);
+}
+
+/**
  * Formats a cell in a table based on provided data.
 
  * @param {Object} data - The data object representing the table cell. 
@@ -240,7 +258,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
         .attr("role", "button")
         .attr(
           "aria-label",
-          __("nodes_tab")["filter_on"] + " " + header_text(data.value)
+          __("nodes_tab")["filter_on"] + " " + header_label(this_sel, data.value)
         );
       clicker
         .append("i")
@@ -354,7 +372,7 @@ function format_a_cell(data, index, item, priority_set_editor) {
       .attr(
         "aria-label",
         i18n.fill(__("general")["sort_by"], {
-          name: header_text(data.value),
+          name: header_label(this_sel, data.value),
         })
       );
     clicker
