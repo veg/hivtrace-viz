@@ -2875,7 +2875,7 @@ persistedText.merged_from_description([...current_selection])
             .append("a")
             .text(item[0])
             .attr("href", "#")
-            //.attr("id", item[3])
+            .attr("data-menu-item", item[3])
             .on("click", function (e) {
               handler_callback(this);
               //d3.event.stopPropagation();
@@ -6706,6 +6706,67 @@ persistedText.merged_from_description([...current_selection])
   };
 
   /**
+   * @function show_all_clusters
+   * @description Removes every cluster filter (minimum size, changes since the last update, recent clusters) and redraws.
+   * @returns {void}
+   */
+  self.show_all_clusters = function () {
+    self.minimum_cluster_size = 0;
+    self.showing_diff = false;
+    self.using_time_filter = null;
+    delete self.cluster_filtering_functions["new"];
+    delete self.cluster_filtering_functions["recent"];
+    $(self.get_ui_element_selector_by_role("set_min_cluster_size")).val(0);
+    d3.selectAll(
+      '[data-menu-item="hivtrace-show-network-diff"] .fa-check-square, [data-menu-item="hivtrace-show-using-time-filter"] .fa-check-square'
+    ).remove();
+    self.update(false);
+  };
+
+  /**
+   * @function show_empty_state
+   * @description When the cluster filters hide every cluster, says so next to the graph and offers to show all clusters.
+   * @param {boolean} is_empty - True if nothing is going to be drawn.
+   * @returns {void}
+   */
+  function show_empty_state(is_empty) {
+    if (!self.network_warning_tag) {
+      return;
+    }
+    const box = d3.select(self.network_warning_tag);
+    box.selectAll(".hivtrace-empty-state").remove();
+    if (!is_empty || self.clusters.length === 0) {
+      return;
+    }
+    box.style("display", "block");
+    const note = box
+      .append("div")
+      .classed("hivtrace-empty-state", true)
+      .attr("role", "status");
+    const reasons = [];
+    if ("size" in self.cluster_filtering_functions) {
+      reasons.push(
+        __("network_tab")["min_cluster_size"] +
+          ": " +
+          self.minimum_cluster_size
+      );
+    }
+    note
+      .append("span")
+      .text(
+        i18n.plural(__("network_tab"), "empty_filtered", self.clusters.length) +
+          (reasons.length ? " (" + reasons.join(", ") + ")" : "") +
+          " "
+      );
+    note
+      .append("button")
+      .attr("type", "button")
+      .classed("btn btn-default btn-xs", true)
+      .text(__("network_tab")["show_all_clusters"])
+      .on("click", self.show_all_clusters);
+  }
+
+  /**
    * @function update
    * @description Updates the network visualization, redrawing nodes, links, and clusters.
    * @param {boolean} soft - If true, performs a soft update without re-initializing layout.
@@ -6731,6 +6792,7 @@ persistedText.merged_from_description([...current_selection])
 
       network_layout.nodes(draw_me.all).links(draw_me.edges);
       update_network_string(draw_me.nodes.length, draw_me.edges.length);
+      show_empty_state(draw_me.all.length === 0);
 
       var edge_set = {};
 

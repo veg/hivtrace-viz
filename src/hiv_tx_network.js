@@ -340,7 +340,8 @@ class HIVTxNetwork {
   */
 
   filter_if_added = (cluster) => {
-    return this.cluster_attributes[cluster.cluster_id].type !== "existing";
+    const attributes = this.cluster_attributes[cluster.cluster_id];
+    return !attributes || attributes.type !== "existing";
   };
 
   /**
