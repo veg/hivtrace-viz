@@ -1445,6 +1445,13 @@ var hivtrace_cluster_network_graph = function (
         });
       }
 
+      // The cluster rows of the Clusters table read these two lists; every
+      // cluster starts with empty ones so the columns never see undefined
+      _.each(self.clusters, (c) => {
+        c.priority_score = [];
+        c.recent_nodes = [];
+      });
+
       // extract all clusters at once to avoid inefficiencies of multiple edge-set traversals
 
       var split_clusters = {};
@@ -1498,8 +1505,6 @@ var hivtrace_cluster_network_graph = function (
         //var cluster_nodes       = self.extract_single_cluster (cluster.children, null, true);
 
         var array_index = self.cluster_mapping[cluster_index];
-
-        self.clusters[array_index].priority_score = 0;
 
         var edges = [];
 
@@ -1648,8 +1653,6 @@ var hivtrace_cluster_network_graph = function (
           sub.recent_nodes = [];
 
           const future_date = new Date(start_date.getTime() + 1e13);
-          if (sub.cluster_id == "2211.1")
-            console.log(sub, rr_cluster, subcluster_json);
 
           _.each(rr_cluster, (recent_cluster) => {
             var priority_nodes = _.groupBy(recent_cluster, (n) =>
@@ -1706,8 +1709,11 @@ var hivtrace_cluster_network_graph = function (
             }
           });
 
-          //console.log (sub.recent_nodes);
-          self.clusters[array_index].priority_score = sub.priority_score;
+          // a cluster lists the components of all of its subclusters
+          self.clusters[array_index].priority_score =
+            self.clusters[array_index].priority_score.concat(sub.priority_score);
+          self.clusters[array_index].recent_nodes =
+            self.clusters[array_index].recent_nodes.concat(sub.recent_nodes);
         });
       });
     } catch (err) {
@@ -4597,6 +4603,28 @@ persistedText.merged_from_description([...current_selection])
   };
 
   /**
+   * @function recent_entity_count
+   * @description Number of distinct people, among the given nodes, with a sample date in the last two months.
+   * @param {Array<Object>} nodes - Node objects of a cluster or subcluster.
+   * @returns {number}
+   */
+  function recent_entity_count(nodes) {
+    const now = timeDateUtil.getCurrentDate();
+    return self.unique_entity_list(
+      _.filter(nodes, (child) => {
+        try {
+          return (
+            d3.time.months(child.patient_attributes["sample_dt"], now)
+              .length <= 2
+          );
+        } catch (e) {
+          return false;
+        }
+      })
+    ).length;
+  }
+
+  /**
    * @function draw_cluster_table
    * @description Draws a table of clusters with their attributes.
    * @param {Array} extra_columns - An array of extra columns to add to the table.
@@ -4757,38 +4785,22 @@ persistedText.merged_from_description([...current_selection])
           }
 
           if (self._is_seguro) {
-            this_row.push({
-              value: d,
-              format: function (d) {
-                return _.filter(
-                  d.children,
-                  (child) =>
-                    d3.time.months(
-                      child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
-                    ).length <= 2
-                ).length;
-              },
-            });
+            // Count people (not sequences), like the Size column, so the
+            // recent count can never exceed the cluster size.
+            const recent = recent_entity_count(d.children);
+            const scaled = recent / Math.sqrt(this_row[2].value);
+
+            this_row.push({ value: recent });
 
             this_row.push({
-              value: d,
+              value: scaled,
               // The cell shows two decimals; the table export reads the
               // data-text-export attribute and keeps the unrounded ratio.
-              callback: function (element, d) {
-                const recent = _.filter(
-                  d.children,
-                  (child) =>
-                    d3.time.months(
-                      child.patient_attributes["sample_dt"],
-                      timeDateUtil.getCurrentDate()
-                    ).length <= 2
-                ).length;
-                const scaled = recent / Math.sqrt(d.children.length);
+              callback: function (element, v) {
                 d3.select(element)
                   .append("span")
-                  .attr("data-text-export", scaled)
-                  .text(kGlobals.formats.TwoDecimalFormat(scaled));
+                  .attr("data-text-export", v)
+                  .text(kGlobals.formats.TwoDecimalFormat(v));
               },
             });
           }

@@ -107,7 +107,8 @@ function secure_hiv_trace_subcluster_columns(self) {
                 (e) => self.unique_entity_list_from_ids(e).length
               ).join(", ");
             }
-            return "";
+            // no connected cases in the window: show a zero, not a blank cell
+            return "0";
           },
           actions: function (item, value) {
             if (
@@ -185,7 +186,7 @@ function secure_hiv_trace_subcluster_columns(self) {
               }
               return str;
             }
-            return "";
+            return "0";
           },
         };
 
