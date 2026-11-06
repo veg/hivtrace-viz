@@ -3168,12 +3168,29 @@ class HIVTxNetwork {
             color[attr_desc["label"]] = network.colorizer["category"];
           }
 
-          misc.cluster_dynamics(
+          // only cases with a usable date can be placed on the time axis
+          const time_series = _.filter(
             network.extract_network_time_series(
               timeDateUtil.getClusterTimeScale(),
               attr,
               plot_filter
             ),
+            (point) => _.isDate(point.time) && !isNaN(point.time.getTime())
+          );
+
+          if (time_series.length === 0) {
+            network.network_cluster_dynamics.selectAll("*").remove();
+            network.network_cluster_dynamics
+              .append("text")
+              .attr("x", 0)
+              .attr("y", network.margin.top + 20)
+              .attr("role", "status")
+              .text(__("network_tab")["epicurve_no_dates"]);
+            return;
+          }
+
+          misc.cluster_dynamics(
+            time_series,
             network.network_cluster_dynamics,
             __("network_tab")["plot_quarter_of_dx"],
             __("network_tab")["plot_number_of_cases"],

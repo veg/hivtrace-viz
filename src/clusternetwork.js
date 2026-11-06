@@ -2745,13 +2745,13 @@ persistedText.merged_from_description([...current_selection])
           "hivtrace-allow-to-float",
         ],
         [
-          __("clusters_main")["reset_layout"] + " [packed]",
+          __("clusters_main")["reset_layout_packed"],
           _.partial(layout_reset_handler, true),
           true,
           "hivtrace-reset-layout",
         ],
         [
-          __("clusters_main")["reset_layout"] + " [tiled]",
+          __("clusters_main")["reset_layout_tiled"],
           _.partial(layout_reset_handler, false),
           true,
           "hivtrace-reset-layout",
@@ -4668,7 +4668,7 @@ persistedText.merged_from_description([...current_selection])
             help: __("clusters_tab")["cluster_id_help"],
           },
           {
-            value: __("general")["attributes"],
+            value: __("clusters_tab")["actions"],
             sort: function (c) {
               c = c.value();
               if (c[4]) {
@@ -4843,20 +4843,25 @@ persistedText.merged_from_description([...current_selection])
             });
             this_row.push({
               value: d.distances,
-              format: function (d) {
+              // Distances are shown as percent, like on the statistics tab and
+              // in the edge pop-ups; the table export keeps the fractions.
+              callback: function (element, v) {
+                const summary = (f) =>
+                  f(v["mean"]) +
+                  " [" +
+                  f(v["median"]) +
+                  ", " +
+                  f(v["Q1"]) +
+                  " - " +
+                  f(v["Q3"]) +
+                  "]";
                 try {
-                  return (
-                    kGlobals.formats.FloatFormat(d["mean"]) +
-                    " [" +
-                    kGlobals.formats.FloatFormat(d["median"]) +
-                    ", " +
-                    kGlobals.formats.FloatFormat(d["Q1"]) +
-                    " - " +
-                    kGlobals.formats.FloatFormat(d["Q3"]) +
-                    "]"
-                  );
+                  d3.select(element)
+                    .append("span")
+                    .attr("data-text-export", summary(kGlobals.formats.FloatFormat))
+                    .text(summary(kGlobals.formats.PercentFormat));
                 } catch (e) {
-                  return "";
+                  d3.select(element).selectAll("*").remove();
                 }
               },
             });
@@ -7407,7 +7412,7 @@ persistedText.merged_from_description([...current_selection])
     var str =
       __("network_tab")["info_length"] +
       " <em>" +
-      kGlobals.formats.FloatFormat(n.length) +
+      kGlobals.formats.PercentFormat(n.length) +
       "</em>";
     if ("support" in n) {
       str +=
@@ -7583,6 +7588,12 @@ persistedText.merged_from_description([...current_selection])
     d3.select(
       self.get_ui_element_selector_by_role(id + "_enclosed", true)
     ).style("display", matrix ? null : "none");
+
+    // the hint on the Attributes tab is only needed while no table is shown
+    d3.select(self.get_ui_element_selector_by_role("attributes_hint", true)).style(
+      "display",
+      matrix ? "none" : null
+    );
 
     if (matrix) {
       var fill = self.colorizer["category"];
