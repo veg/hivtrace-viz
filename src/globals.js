@@ -590,6 +590,7 @@ const missing = {
 
 const formats = {
   FloatFormat: d3.format(",.2r"),
+  TwoDecimalFormat: d3.format(".2f"),
   PercentFormat: d3.format(",.3p"),
   PercentFormatShort: d3.format(".2p"),
   DotFormatPadder: d3.format("08d"),

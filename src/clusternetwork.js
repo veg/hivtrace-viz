@@ -4761,7 +4761,9 @@ persistedText.merged_from_description([...current_selection])
 
             this_row.push({
               value: d,
-              format: function (d) {
+              // The cell shows two decimals; the table export reads the
+              // data-text-export attribute and keeps the unrounded ratio.
+              callback: function (element, d) {
                 const recent = _.filter(
                   d.children,
                   (child) =>
@@ -4770,7 +4772,11 @@ persistedText.merged_from_description([...current_selection])
                       timeDateUtil.getCurrentDate()
                     ).length <= 2
                 ).length;
-                return recent / Math.sqrt(d.children.length);
+                const scaled = recent / Math.sqrt(d.children.length);
+                d3.select(element)
+                  .append("span")
+                  .attr("data-text-export", scaled)
+                  .text(kGlobals.formats.TwoDecimalFormat(scaled));
               },
             });
           }
