@@ -2029,7 +2029,9 @@ var hivtrace_cluster_network_graph = function (
       } else {
         self.cluster_sizes[d.cluster - 1]++;
       }
-      cluster_set.add(d.cluster);
+      if (d.cluster !== null && d.cluster !== undefined) {
+        cluster_set.add(d.cluster);
+      }
       if ("is_lanl" in d) {
         d.is_lanl = d.is_lanl === "true";
       }
@@ -2047,11 +2049,21 @@ var hivtrace_cluster_network_graph = function (
     if (self.has_multiple_sequences) {
       let entity_count = 0;
       self.apply_to_entities((entity_id, nodes) => {
-        if (self.cluster_sizes_in_entities[nodes[0].cluster]) {
-          self.cluster_sizes_in_entities[nodes[0].cluster]++;
-        } else {
-          self.cluster_sizes_in_entities[nodes[0].cluster] = 1;
-        }
+        // A person counts once in every cluster that holds one of their
+        // sequences, like the Clusters table does; people with no cluster
+        // (singletons) are not part of any cluster size.
+        _.each(
+          _.uniq(
+            _.filter(
+              _.map(nodes, (n) => n.cluster),
+              (c) => c !== null && c !== undefined
+            )
+          ),
+          (c) => {
+            self.cluster_sizes_in_entities[c] =
+              (self.cluster_sizes_in_entities[c] || 0) + 1;
+          }
+        );
         entity_count++;
       });
       if (self.json["Network Summary"]) {
