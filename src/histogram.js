@@ -106,13 +106,21 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .domain([0, d3.max(_.map(histogram_data, (b) => b.y))])
       .range([height, 0]);
 
+    // room for the y axis title, then the tick marks and their digits
     margin.left +=
-      y_axis_label_width + 10 * Math.ceil(Math.log10(y.domain()[1]));
+      y_axis_label_width +
+      16 +
+      8 * (Math.floor(Math.log10(Math.max(y.domain()[1], 1))) + 1);
     margin.top += x_axis_label_height;
     width -= margin.left;
     x.range([0, width]);
 
-    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+    // the tick labels are rotated, so keep about 50px between ticks
+    var xAxis = d3.svg
+      .axis()
+      .scale(x)
+      .orient("bottom")
+      .ticks(Math.max(2, Math.floor(width / 50)));
 
     var yAxis = d3.svg.axis().scale(y).orient("left");
 
