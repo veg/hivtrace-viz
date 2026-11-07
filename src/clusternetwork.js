@@ -2420,7 +2420,11 @@ var hivtrace_cluster_network_graph = function (
 
           var rows = [];
           var rows_for_export = [
-            ["Overlapping Cluster of Interest", "Node", "Other clusterOI"],
+            [
+              __("coi")["overlap_cluster"] || "Overlapping Cluster of Interest",
+              __("coi")["overlap_node"],
+              __("coi")["overlap_other"],
+            ],
           ];
 
           _.each(
@@ -2443,7 +2447,11 @@ var hivtrace_cluster_network_graph = function (
                       : other_sets,
                 },
               ]);
-              rows_for_export.push([ps.name, eid, other_sets]);
+              rows_for_export.push([
+                ps.name,
+                eid,
+                other_sets === "None" ? __("network_tab")["none"] : other_sets,
+              ]);
             }
           );
 
@@ -3909,7 +3917,7 @@ persistedText.merged_from_description([...current_selection])
       [
         payload[0]
           ? __("clusters_tab")["expand"]
-          : __("clusters_tab")["collapse"],
+          : __("clusters_tab")["collapse"] || "Collapse",
         payload[0] ? "fa-expand" : "fa-compress",
       ],
       0,
