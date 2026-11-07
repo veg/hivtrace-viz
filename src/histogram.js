@@ -1,6 +1,7 @@
 var d3 = require("d3"),
   _ = require("underscore"),
-  i18n = require("./i18n.js");
+  i18n = require("./i18n.js"),
+  distanceUnits = require("./distanceUnits.js");
 
 /**
  * Renders a histogram for a graph property and displays a descriptive label.
@@ -54,7 +55,10 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
   var histogram_w = 300,
     histogram_h = 300;
 
-  var edge_lengths = _.map(graph["Edges"], (edge) => edge.length);
+  // shown in percent, like the distances beside the plot
+  var edge_lengths = distanceUnits.lengthsAsPercent(
+    _.map(graph["Edges"], (edge) => edge.length)
+  );
 
   hivtrace_render_histogram_continuous(
     edge_lengths,
@@ -183,7 +187,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
         "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
       )
       .style("text-anchor", "middle")
-      .text(__("statistics")["genetic_distance"]);
+      .text(__("statistics")["genetic_distance_percent"]);
 
     var y_axis = histogram_svg // eslint-disable-line
       .append("g")

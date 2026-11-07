@@ -1,4 +1,5 @@
 var download = require("downloadjs");
+var csvSafe = require("./csvSafe.js");
 
 const _OTHER = __("general")["other"];
 const CATEGORY_UNIQUE_VALUE_LIMIT = 12;
@@ -48,7 +49,7 @@ function b64toBlob(b64, onsuccess, onerror) {
  */
 
 function datamonkey_export_csv_button(data, name) {
-  data = d3.csv.format(data);
+  data = d3.csv.format(csvSafe.safeRows(data));
   if (data !== null) {
     name = name ? name + ".csv" : "export.csv";
     var pom = document.createElement("a");
@@ -375,9 +376,13 @@ function datamonkey_table_to_text(table_id, sep) {
     });
 
   return (
-    (sep === "," ? d3.csv.format([header_row]) : d3.tsv.format([header_row])) +
+    (sep === ","
+      ? d3.csv.format(csvSafe.safeRows([header_row]))
+      : d3.tsv.format([header_row])) +
     "\n" +
-    (sep === "," ? d3.csv.format(data_rows) : d3.tsv.format(data_rows))
+    (sep === ","
+      ? d3.csv.format(csvSafe.safeRows(data_rows))
+      : d3.tsv.format(data_rows))
     /*data_rows
       .map(function(d) {
         return d.join(sep);
