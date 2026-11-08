@@ -152,7 +152,9 @@ module.exports = (env) => {
         d3: "d3",
         _: "underscore",
       }),
-      new I18nPlugin(languages[language]),
+      // A key missing from the installed hivtrace-locales fails the build
+      // instead of shipping undefined labels.
+      new I18nPlugin(languages[language], { failOnMissing: true }),
       new webpack.IgnorePlugin({ resourceRegExp: /jsdom$/ }),
     ],
   };
