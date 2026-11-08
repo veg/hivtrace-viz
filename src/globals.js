@@ -413,6 +413,39 @@ const CDCCOICreatedManually = "Manual";
     The value of "createdBy" in a COI record when the COI was created manually
 */
 
+const CDCCOIDisplayLabels = {}; // English stored value -> display label
+const L = __("coi");
+CDCCOIDisplayLabels[CDCCOIKind[0]] = L["kind_01"];
+CDCCOIDisplayLabels[CDCCOIKind[1]] = L["kind_02"];
+CDCCOIDisplayLabels[CDCCOIKind[2]] = L["kind_03"];
+CDCCOIDisplayLabels[CDCCOIKind[3]] = L["kind_04"];
+CDCCOIDisplayLabels[CDCCOIKind[4]] = L["kind_05"];
+CDCCOIDisplayLabels[CDCCOIKind[5]] = L["kind_06"];
+CDCCOIDisplayLabels[CDCCOIKind[6]] = L["kind_07"];
+CDCCOIDisplayLabels[CDCCOITrackingOptions[0]] = L["tracking_01"];
+CDCCOIDisplayLabels[CDCCOITrackingOptions[1]] = L["tracking_02"];
+CDCCOIDisplayLabels[CDCCOITrackingOptions[2]] = L["tracking_03"];
+CDCCOIDisplayLabels[CDCCOITrackingOptions[3]] = L["tracking_04"];
+CDCCOIDisplayLabels[CDCCOITrackingOptions[4]] = L["tracking_05"];
+CDCCOIDisplayLabels[CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[0]]] = L["tracking_concise_3y_05"];
+CDCCOIDisplayLabels[CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[1]]] = L["tracking_concise_05"];
+CDCCOIDisplayLabels[CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[2]]] = L["tracking_concise_3y_15"];
+CDCCOIDisplayLabels[CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[3]]] = L["tracking_concise_15"];
+CDCCOIDisplayLabels[CDCCOIConciseTrackingOptions[CDCCOITrackingOptions[4]]] = __("network_tab")["none"];
+CDCCOIDisplayLabels[CDCCOINodeKind[0]] = L["node_kind_01"];
+CDCCOIDisplayLabels[CDCCOINodeKind[1]] = L["node_kind_02"];
+CDCCOIDisplayLabels[CDCCOICreatedBySystem] = L["created_by_system"];
+CDCCOIDisplayLabels[CDCCOICreatedManually] = L["created_manually"];
+
+/**
+    CDCCOIDisplay:
+    The display label of a stored (English) COI value; unknown values are returned as they are
+*/
+
+function CDCCOIDisplay(v) {
+  return _.has(CDCCOIDisplayLabels, v) ? CDCCOIDisplayLabels[v] : v;
+}
+
 const CDCJurisdictionCodes = {
   alabama: "al",
   alaska: "ak",
@@ -537,7 +570,7 @@ const CDCCOINodeKindDefault = CDCCOINodeKind[0];
     The method of node identification used by default (and it automatically created COI)
 */
 
-const CDCNPMember = "Ever in national priority clusterOI?";
+const CDCNPMember = __("computed_attributes")["coi_ever_national_priority"];
 
 /**
     CDCNPMember:
@@ -557,6 +590,7 @@ const missing = {
 
 const formats = {
   FloatFormat: d3.format(",.2r"),
+  TwoDecimalFormat: d3.format(".2f"),
   PercentFormat: d3.format(",.3p"),
   PercentFormatShort: d3.format(".2p"),
   DotFormatPadder: d3.format("08d"),
@@ -570,9 +604,9 @@ const formats = {
 const network = {
   GraphAttrbuteID: "patient_attribute_schema",
   NodeAttributeID: "patient_attributes",
-  ReducedValue: "Different (other) value",
+  ReducedValue: __("network_tab")["reduced_value"],
   ContinuousColorStops: 9,
-  WarnExecutiveMode: "This feature is not available in the executive mode.",
+  WarnExecutiveMode: __("network_tab")["warn_executive_mode"],
   AliasedSequencesID: "aliased_sequences",
 };
 
@@ -592,6 +626,7 @@ const CoIAddLimit = 128;
 */
 
 module.exports = {
+  CDCCOIDisplay,
   Categorical,
   CategoricalBase,
   CDCCOICanAutoExpand,

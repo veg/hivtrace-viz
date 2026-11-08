@@ -1,4 +1,5 @@
 var d3 = require("d3");
+var timeDateUtil = require("./timeDateUtil.js");
 
 /**
  * Renders a scatter plot using D3.js.
@@ -15,7 +16,7 @@ var d3 = require("d3");
 
 function hivtrace_render_scatterplot(points, w, h, id, labels, dates) {
   var _defaultFloatFormat = d3.format(",.2r");
-  var _defaultDateViewFormatShort = d3.time.format("%B %Y");
+  var _defaultDateViewFormatShort = timeDateUtil.DateViewFormatShort;
 
   var margin = {
       top: 10,

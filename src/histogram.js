@@ -1,5 +1,7 @@
 var d3 = require("d3"),
-  _ = require("underscore");
+  _ = require("underscore"),
+  i18n = require("./i18n.js"),
+  distanceUnits = require("./distanceUnits.js");
 
 /**
  * Renders a histogram for a graph property and displays a descriptive label.
@@ -24,19 +26,16 @@ function hivtrace_histogram(graph, histogram_tag, histogram_label) {
     histogram_tag
   );
 
-  var label =
-    "Network degree distribution is best described by the <strong>" +
-    graph["Degrees"]["Model"] +
-    "</strong> model, with &rho; of " +
-    defaultFloatFormat(graph["Degrees"]["rho"]);
+  var label = i18n.fill(__("statistics")["degree_model"], {
+    model: graph["Degrees"]["Model"],
+    rho: defaultFloatFormat(graph["Degrees"]["rho"]),
+  });
 
   if (graph["Degrees"]["rho CI"] !== undefined) {
-    label +=
-      " (95% CI " +
-      defaultFloatFormat(graph["Degrees"]["rho CI"][0]) +
-      " - " +
-      defaultFloatFormat(graph["Degrees"]["rho CI"][1]) +
-      ")";
+    label += i18n.fill(__("statistics")["degree_model_ci"], {
+      lo: defaultFloatFormat(graph["Degrees"]["rho CI"][0]),
+      hi: defaultFloatFormat(graph["Degrees"]["rho CI"][1]),
+    });
   }
 
   d3.select(histogram_label).html(label);
@@ -56,7 +55,10 @@ function hivtrace_histogram_distances(graph, histogram_tag, histogram_label) {
   var histogram_w = 300,
     histogram_h = 300;
 
-  var edge_lengths = _.map(graph["Edges"], (edge) => edge.length);
+  // shown in percent, like the distances beside the plot
+  var edge_lengths = distanceUnits.lengthsAsPercent(
+    _.map(graph["Edges"], (edge) => edge.length)
+  );
 
   hivtrace_render_histogram_continuous(
     edge_lengths,
@@ -108,13 +110,21 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .domain([0, d3.max(_.map(histogram_data, (b) => b.y))])
       .range([height, 0]);
 
+    // room for the y axis title, then the tick marks and their digits
     margin.left +=
-      y_axis_label_width + 10 * Math.ceil(Math.log10(y.domain()[1]));
+      y_axis_label_width +
+      16 +
+      8 * (Math.floor(Math.log10(Math.max(y.domain()[1], 1))) + 1);
     margin.top += x_axis_label_height;
     width -= margin.left;
     x.range([0, width]);
 
-    var xAxis = d3.svg.axis().scale(x).orient("bottom");
+    // the tick labels are rotated, so keep about 50px between ticks
+    var xAxis = d3.svg
+      .axis()
+      .scale(x)
+      .orient("bottom")
+      .ticks(Math.max(2, Math.floor(width / 50)));
 
     var yAxis = d3.svg.axis().scale(y).orient("left");
 
@@ -168,7 +178,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
       .attr("y", 0 - margin.left + y_axis_label_width)
       .attr("x", 0 - height / 2)
       .style("text-anchor", "middle")
-      .text("Edges");
+      .text(__("statistics")["edges"]);
 
     var x_axis_label = histogram_svg // eslint-disable-line
       .append("text")
@@ -177,7 +187,7 @@ function hivtrace_render_histogram_continuous(data, w, h, id) {
         "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
       )
       .style("text-anchor", "middle")
-      .text("Genetic Distance");
+      .text(__("statistics")["genetic_distance_percent"]);
 
     var y_axis = histogram_svg // eslint-disable-line
       .append("g")

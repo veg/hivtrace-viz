@@ -1,6 +1,7 @@
 var d3 = require("d3"),
   _ = require("underscore"),
-  helpers = require("./helpers.js");
+  helpers = require("./helpers.js"),
+  i18n = require("./i18n.js");
 
 var hivtrace_generate_svg_polygon_lookup = {};
 
@@ -264,6 +265,12 @@ function hiv_trace_export_table_to_text(
 
   the_button = the_button
     .append("a")
+    .attr("href", "#")
+    .attr("role", "button")
+    .attr(
+      "aria-label",
+      csv ? __("nodes_tab")["export_to_csv"] : __("nodes_tab")["export_to_tsv"]
+    )
     .attr("target", "_blank")
     .attr("data-type", "download-button")
     .on("click", function (data, element) {
@@ -287,7 +294,10 @@ function hiv_trace_export_table_to_text(
     })
     .attr("data-table", table_id);
 
-  the_button.append("i").classed("fa fa-download fa-2x", true);
+  the_button
+    .append("i")
+    .classed("fa fa-download fa-2x", true)
+    .attr("aria-hidden", "true");
   return the_button;
 }
 
@@ -404,7 +414,7 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
   let time_boxes = [null, null];
   let highlight_nodes = new Set();
 
-  let titles = data.concat([["Nat'l priority", x_range[0]]]);
+  let titles = data.concat([[__("network_tab")["plot_national_priority"], x_range[0]]]);
   let text_labels = svg
     .append("g")
     .attr("font-family", "sans-serif")
@@ -502,19 +512,16 @@ function hivtrace_coi_timeseries(cluster, element, plot_width) {
       const ed = cluster.event_info[d[0]];
       let text = d[0] + ". ";
       if (_.some(ed.national_priority)) {
-        text += "National priority clusterOI. ";
+        text += __("coi")["timeseries_national_priority"];
       }
-      text +=
-        String(d3.sum(ed.connected_componets)) +
-        " nodes in " +
-        ed.connected_componets.length +
-        " components. ";
-      text +=
-        "A total of " +
-        d3.sum(ed.priority_nodes, (d) => d.length) +
-        " nodes dx'ed in the previous 12 months; maximum of " +
-        d3.max(ed.priority_nodes, (d) => d.length) +
-        " in a subcluster";
+      text += i18n.fill(__("coi")["timeseries_components"], {
+        nodes: String(d3.sum(ed.connected_componets)),
+        components: ed.connected_componets.length,
+      });
+      text += i18n.fill(__("coi")["timeseries_recent"], {
+        recent: d3.sum(ed.priority_nodes, (d) => d.length),
+        max: d3.max(ed.priority_nodes, (d) => d.length),
+      });
       return text;
     });
 }
@@ -942,7 +949,10 @@ function hivtrace_plot_cluster_dynamics(
     var year = d.getFullYear();
     var quarter = Math.floor(d.getMonth() / 3) + 1;
 
-    return String(year) + "-Q" + quarter;
+    return i18n.fill(__("network_tab")["plot_quarter_tick"], {
+      year: year,
+      quarter: quarter,
+    });
   };
 
   if (options && options["x-tick-format"]) {
@@ -1197,7 +1207,7 @@ function hivtrace_plot_cluster_dynamics(
       )
       .attr("dx", "0.2em")
       .style("font-size", options.font_size)
-      .text((d) => d)
+      .text((d) => (d === total_id ? __("network_tab")["plot_total"] : d))
       .on("mouseover", (d) => {
         opacity_toggle(prefix + d, true);
       })
@@ -1230,6 +1240,8 @@ function hivtrace_plot_cluster_dynamics(
 
   _.each(plot_types, (plot_key, idx) => {
     var plot_color = color_scale(plot_key);
+    var plot_label =
+      plot_key === total_id ? __("network_tab")["plot_total"] : plot_key;
     var y_accessor = function (d) {
       //console.log ((plot_key in d['y']) ? d['y'][plot_key] : 0);
       if (plot_key in d["y"]) {
@@ -1293,11 +1305,10 @@ function hivtrace_plot_cluster_dynamics(
           .style("fill-opacity", 1)
           .append("title")
           .text(
-            plot_key +
-              " " +
-              new_y +
-              " cases in " +
-              (x_tick_format ? x_tick_format(d["time"]) : d["time"])
+            i18n.plural(__("network_tab"), "plot_bar_tooltip", new_y, {
+              label: plot_label,
+              period: x_tick_format ? x_tick_format(d["time"]) : d["time"],
+            })
           );
 
         d["last_y"] = (d["last_y"] ? d["last_y"] : 0) + new_y;
@@ -1312,7 +1323,7 @@ function hivtrace_plot_cluster_dynamics(
           .classed("node", true)
           .style("fill", plot_color)
           .style("stroke", plot_color)
-          .attr("title", plot_key + " : " + bin_accessor(d));
+          .attr("title", plot_label + " : " + bin_accessor(d));
       });
 
       var curve_year = d3.svg
@@ -1380,6 +1391,44 @@ function get_ui_element_selector_by_role(role) {
   return ` [data-hivtrace-ui-role='${role}']`;
 }
 
+/**
+ * The results' Notes as display strings.
+ *
+ * Entries of "Structured Notes" ({code, count, text}) whose code has a
+ * hivtrace-locales key (network_tab.note_<code>, with a _plural form) are
+ * translated and replace the free-text note equal to their `text`. All
+ * other Notes are shown as they are, so older results look the same.
+ *
+ * @param {Object} json - The network JSON (results).
+ * @returns {string[]} The notes to display, translated ones first.
+ */
+function hivtrace_results_notes(json) {
+  const labels = __("network_tab");
+  const replaced = {};
+  const notes = [];
+
+  _.each(json["Structured Notes"] || [], (note) => {
+    if (!note || !_.isNumber(note.count)) {
+      return;
+    }
+    const key = "note_" + note.code;
+    const template =
+      note.count === 1 ? labels[key] : labels[key + "_plural"] || labels[key];
+    if (_.isString(template)) {
+      notes.push(template.replace("{{count}}", note.count));
+      replaced[note.text] = true;
+    }
+  });
+
+  _.each(json.Notes || [], (s) => {
+    if (!_.has(replaced, s)) {
+      notes.push(s);
+    }
+  });
+
+  return notes;
+}
+
 module.exports = {
   edge_typer,
   coi_timeseries: hivtrace_coi_timeseries,
@@ -1393,4 +1442,5 @@ module.exports = {
   hivtrace_cluster_complete_clusters,
   hivtrace_compute_adjacency,
   hivtrace_compute_adjacency_with_edges,
+  results_notes: hivtrace_results_notes,
 };

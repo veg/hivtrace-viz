@@ -22,15 +22,16 @@ function colorPickerInput(id, colorizer) {
 
  * @param {string} id - The ID for the color picker input element.
  * @param {string} color - The initial color value for the color picker.
+ * @param {string} [label] - The displayed label (defaults to id).
 
  * @returns {string} The HTML markup for the color picker input element with the label.
 */
 
-function colorPickerInputContinuous(id, color) {
+function colorPickerInputContinuous(id, color, label = id) {
   // set onchange event after template is rendered and returned from this function.
   let colorPicker = `<div class="col-lg-2 hivtrace-color-picker">
     <input type="color" name="${id.toLowerCase()}" value="${color}">
-    <label for="${id.toLowerCase()}">${id}</label>
+    <label for="${id.toLowerCase()}">${label}</label>
   </div>`;
 
   return colorPicker;
@@ -45,10 +46,10 @@ function colorPickerInputContinuous(id, color) {
  * @returns {string} The HTML markup for the color stop input element with the label.
 */
 
-function colorStops(id, number) {
+function colorStops(id, number, label = id) {
   // set onchange event after template is rendered and returned from this function.
   let colorStops = `<div class="col-lg-2 hivtrace-color-stops">
-    <label for="color-stop">${id}</label>
+    <label for="color-stop">${label}</label>
     <input type="number" name="color-stop" value="${number}" min="0" max="20"">
   </div>`;
 

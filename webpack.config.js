@@ -67,6 +67,10 @@ module.exports = (env) => {
       path: path.resolve(__dirname, "dist/"),
       filename,
     },
+    resolve: {
+      // the QueryBuilder locale files are UMD modules that require "query-builder"
+      alias: { "query-builder": "jQuery-QueryBuilder" },
+    },
     externals: {
       jsdom: "window",
     },

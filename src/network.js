@@ -6,7 +6,8 @@
 var d3 = require("d3"),
   _ = require("underscore"),
   clustersOfInterest = require("./clustersOfInterest.js"),
-  kGlobals = require("./globals.js");
+  kGlobals = require("./globals.js"),
+  i18n = require("./i18n.js");
 
 /**
     unpack_compact_json:
@@ -173,8 +174,10 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
-      .text("Expand cluster")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
+      .text(__("network_tab")["expand_cluster"])
       .on("click", (d) => {
         cluster.fixed = 0;
         self.expand_cluster_handler(cluster, true);
@@ -184,8 +187,10 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
-      .text("Center on screen")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
+      .text(__("network_tab")["center_on_screen"])
       .on("click", (d) => {
         cluster.fixed = 0;
         center_cluster_handler(self, cluster);
@@ -195,10 +200,12 @@ function handle_cluster_click(self, cluster, release) {
     menu_object
       .append("li")
       .append("a")
+      .attr("href", "#")
       .attr("tabindex", "-1")
+      .on("click.prevent-navigation", () => d3.event.preventDefault())
       .text((d) => {
-        if (cluster.fixed) return "Allow cluster to float";
-        return "Hold cluster at current position";
+        if (cluster.fixed) return __("network_tab")["allow_cluster_float"];
+        return __("network_tab")["hold_cluster"];
       })
       .on("click", (d) => {
         cluster.fixed = !cluster.fixed;
@@ -209,8 +216,10 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
-        .text((d) => "Show this cluster in separate tab")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
+        .text((d) => __("network_tab")["show_cluster_in_tab"])
         .on("click", (d) => {
           self.open_exclusive_tab_view(
             cluster.cluster_id,
@@ -226,8 +235,10 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
-        .text((d) => "Add this cluster to the cluster of interest")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
+        .text((d) => __("coi")["add_cluster_to_coi"])
         .on("click", (d) => {
           clustersOfInterest
             .get_editor()
@@ -245,14 +256,17 @@ function handle_cluster_click(self, cluster, release) {
       menu_object
         .append("li")
         .append("a")
+        .attr("href", "#")
         .attr("tabindex", "-1")
-        .text("Show on map")
+        .on("click.prevent-navigation", () => d3.event.preventDefault())
+        .text(__("network_tab")["show_on_map"])
         .on("click", (d) => {
           //console.log(cluster)
           self.open_exclusive_tab_view(
             cluster.cluster_id,
             null,
-            (cluster_id) => "Map of cluster: " + cluster_id,
+            (cluster_id) =>
+              i18n.fill(__("network_tab")["tab_cluster_map"], { id: cluster_id }),
             { showing_on_map: true }
           );
         });

@@ -6,7 +6,8 @@ var d3 = require("d3"),
   _ = require("underscore"),
   clustersOfInterest = require("./clustersOfInterest.js"),
   HTX = require("./hiv_tx_network.js"),
-  kGlobals = require("./globals.js");
+  kGlobals = require("./globals.js"),
+  i18n = require("./i18n.js");
 
 /**
     Column definitions for rendered tables
@@ -80,7 +81,7 @@ function secure_hiv_trace_subcluster_columns(self) {
        */
     {
       description: {
-        value: "Cases dx within 36 months",
+        value: __("clusters_tab")["cases_dx_36"],
         sort: function (c) {
           return c.value.length
             ? d3.max(
@@ -91,7 +92,7 @@ function secure_hiv_trace_subcluster_columns(self) {
               )
             : 0;
         },
-        help: "Number of cases diagnosed in the past 36 months connected only through cases diagnosed within the past 36 months",
+        help: __("clusters_tab")["cases_dx_36_help"],
       },
       generator: function (cluster) {
         return {
@@ -106,7 +107,8 @@ function secure_hiv_trace_subcluster_columns(self) {
                 (e) => self.unique_entity_list_from_ids(e).length
               ).join(", ");
             }
-            return "";
+            // no connected cases in the window: show a zero, not a blank cell
+            return "0";
           },
           actions: function (item, value) {
             if (
@@ -132,7 +134,7 @@ function secure_hiv_trace_subcluster_columns(self) {
                   }
                   return false;
                 },
-                help: "Add to cluster of interest",
+                help: __("coi")["add_to_coi"],
               };
             });
           },
@@ -149,7 +151,7 @@ function secure_hiv_trace_subcluster_columns(self) {
 
     {
       description: {
-        value: "Cases dx within 12 months",
+        value: __("clusters_tab")["cases_dx_12"],
         //"value",
         sort: function (c) {
           const v = c.value || [];
@@ -160,7 +162,7 @@ function secure_hiv_trace_subcluster_columns(self) {
             : 0;
         },
         presort: "desc",
-        help: "Number of cases diagnosed in the past 12 months connected only through cases diagnosed within the past 36 months",
+        help: __("clusters_tab")["cases_dx_12_help"],
       },
       generator: function (cluster) {
         const definition = {
@@ -184,7 +186,7 @@ function secure_hiv_trace_subcluster_columns(self) {
               }
               return str;
             }
-            return "";
+            return "0";
           },
         };
 
@@ -195,10 +197,9 @@ function secure_hiv_trace_subcluster_columns(self) {
             result = result.concat(
               _.map(cluster.priority_score, (c) => ({
                 icon: "fa-question",
-                help:
-                  "Do some of these " +
-                  c.length +
-                  " nodes belong to a cluster of interest?",
+                help: i18n.fill(__("coi")["membership_check"], {
+                  count: c.length,
+                }),
                 action: function (this_button, cv) {
                   const nodeset = new Set(c);
                   this_button = $(this_button.node());
@@ -247,39 +248,42 @@ function secure_hiv_trace_subcluster_columns(self) {
 
                         if (check_membership.length === 0) {
                           check_membership = [
-                            [
-                              "No nodes belong to any cluster of interest or are linked to any of the clusters of interest.",
-                            ],
+                            [__("coi")["membership_none"]],
                           ];
                         } else {
                           check_membership = _.map(check_membership, (m) => {
-                            let description = "";
+                            const parts = [];
+                            const pct = kGlobals.formats.PercentFormatShort(
+                              self.subcluster_threshold
+                            );
                             if (m[1]) {
-                              description += " " + m[1] + " nodes belong";
+                              parts.push(
+                                i18n.plural(__("coi"), "membership_belong", m[1])
+                              );
                             }
                             if (m[2]) {
-                              description +=
-                                (description.length ? ", " : " ") +
-                                m[2] +
-                                " nodes are directly linked @ " +
-                                kGlobals.formats.PercentFormatShort(
-                                  self.subcluster_threshold
-                                );
+                              parts.push(
+                                i18n.plural(__("coi"), "membership_direct", m[2], {
+                                  pct: pct,
+                                })
+                              );
                             }
                             if (m[3]) {
-                              description +=
-                                (description.length ? ", " : " ") +
-                                m[3] +
-                                " nodes are indirectly linked @ " +
-                                kGlobals.formats.PercentFormatShort(
-                                  self.subcluster_threshold
-                                );
+                              parts.push(
+                                i18n.plural(
+                                  __("coi"),
+                                  "membership_indirect",
+                                  m[3],
+                                  { pct: pct }
+                                )
+                              );
                             }
 
-                            description +=
-                              " to cluster of interest <code>" +
-                              m[0] +
-                              "</code>";
+                            const description =
+                              parts.join(", ") +
+                              i18n.fill(__("coi")["membership_suffix"], {
+                                name: m[0],
+                              });
                             return description;
                           });
                         }
@@ -330,7 +334,7 @@ function secure_hiv_trace_subcluster_columns(self) {
                     }
                     return false;
                   },
-                  help: "Add to cluster of interest",
+                  help: __("coi")["add_to_coi"],
                 };
               })
             );

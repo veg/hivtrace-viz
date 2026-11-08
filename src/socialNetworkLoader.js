@@ -6,7 +6,18 @@ import * as misc from "./misc.js";
 import * as clustersOfInterest from "./clustersOfInterest.js";
 import * as tables from "./tables.js";
 import * as timeDateUtil from "./timeDateUtil.js";
+import * as i18n from "./i18n.js";
 // import * as helpers from "./helpers.js"; // Not directly used in the moved functions, but good to keep if sub-functions might need it
+
+/**
+ * The display label of an annotation; the default annotation "Social" is
+ * translated, any other (user supplied) annotation is shown as it is.
+ */
+function annotation_label(annotation) {
+  return annotation === "Social"
+    ? __("network_tab")["social_annotation"]
+    : annotation;
+}
 
 /**
  * Injects attributes from a source object into a target node object.
@@ -148,7 +159,10 @@ function injected_column_subcluster_button_handler_internal(
   title_fn =
     title_fn ||
     function (id) {
-      return "Subcluster " + payload.cluster_id + "[+ " + annotation + "]";
+      return i18n.fill(__("network_tab")["tab_subcluster_annotated"], {
+        id: payload.cluster_id,
+        annotation: annotation_label(annotation),
+      });
     };
 
   var cv = tx_network.view_subcluster(
@@ -379,8 +393,12 @@ export function load_nodes_edges(
     var injected_column_subcluster = [
       {
         description: {
-          value: annotation + " network",
-          help: "View subclusters with " + annotation + " data",
+          value: i18n.fill(__("network_tab")["social_network_col"], {
+            annotation: annotation_label(annotation),
+          }),
+          help: i18n.fill(__("network_tab")["social_view_help"], {
+            annotation: annotation_label(annotation),
+          }),
         },
         generator: function (cluster) {
           // cluster here is a subcluster object from tx_network.clusters[...].subclusters
@@ -392,7 +410,7 @@ export function load_nodes_edges(
                 .append("button")
                 .classed("btn btn-primary btn-xs pull-right", true)
                 .style("margin-left", "1em")
-                .text("Complete " + annotation)
+                .text(i18n.fill(__("network_tab")["social_complete"], { annotation: annotation_label(annotation) }))
                 .on("click", (e_event) =>
                   injected_column_subcluster_button_handler_internal(
                     tx_network,
@@ -411,7 +429,7 @@ export function load_nodes_edges(
               this_cell
                 .append("button")
                 .classed("btn btn-primary btn-xs pull-right", true)
-                .text("Directly linked " + annotation)
+                .text(i18n.fill(__("network_tab")["social_direct"], { annotation: annotation_label(annotation) }))
                 .on("click", (e_event) =>
                   injected_column_subcluster_button_handler_internal(
                     tx_network,
@@ -420,11 +438,10 @@ export function load_nodes_edges(
                       tx_network.json.Nodes[edge.target].id in node_ids ||
                       tx_network.json.Nodes[edge.source].id in node_ids,
                     (id) =>
-                      "Subcluster " +
-                      payload.cluster_id +
-                      "[+ direct  " +
-                      annotation +
-                      "]"
+                      i18n.fill(__("network_tab")["tab_subcluster_direct"], {
+                        id: payload.cluster_id,
+                        annotation: annotation_label(annotation),
+                      })
                   )
                 );
             },
@@ -436,11 +453,13 @@ export function load_nodes_edges(
     var injected_column = [
       {
         description: {
-          value: annotation + " network",
+          value: i18n.fill(__("network_tab")["social_network_col"], {
+            annotation: annotation_label(annotation),
+          }),
           sort: function (c) {
             return c.value[0];
           },
-          help: "Nodes added and clusters merged through " + annotation,
+          help: i18n.fill(__("network_tab")["social_added_help"], { annotation: annotation_label(annotation) }),
         },
         generator: function (cluster) {
           // cluster here is a main cluster object from tx_network.clusters
@@ -453,7 +472,9 @@ export function load_nodes_edges(
             callback: function (element, payload) {
               var this_cell = d3.select(element);
               this_cell.text(
-                Number(payload[0]) + " " + annotation + " nodes. "
+                i18n.plural(__("network_tab"), "social_nodes", Number(payload[0]), {
+                  annotation: annotation_label(annotation),
+                })
               );
               var other_clusters = [];
               if (payload[1]) {
@@ -463,7 +484,13 @@ export function load_nodes_edges(
                   this_cell
                     .append("span")
                     .classed("label label-info", true)
-                    .text("Bridges to " + other_clusters.length + " clusters")
+                    .text(
+                      i18n.plural(
+                        __("network_tab"),
+                        "social_bridges",
+                        other_clusters.length
+                      )
+                    )
                     .attr("title", other_clusters.join(", "));
                 }
               }
@@ -488,7 +515,7 @@ export function load_nodes_edges(
                 this_cell
                   .append("button")
                   .classed("btn btn-primary btn-xs pull-right", true)
-                  .text("Directly linked " + annotation)
+                  .text(i18n.fill(__("network_tab")["social_direct"], { annotation: annotation_label(annotation) }))
                   .style("margin-left", "1em")
                   .on("click", (e_event) => {
                     var directly_linked_ids = {};
@@ -520,14 +547,18 @@ export function load_nodes_edges(
                       (n) => n.id in directly_linked_ids,
                       labeled_links,
                       shown_types,
-                      (id) => "Cluster " + id + "[+ direct " + annotation + "]"
+                      (id) =>
+                        i18n.fill(__("network_tab")["tab_cluster_direct"], {
+                          id: id,
+                          annotation: annotation_label(annotation),
+                        })
                     );
                   });
 
                 this_cell
                   .append("button")
                   .classed("btn btn-primary btn-xs pull-right", true)
-                  .text("Complete " + annotation)
+                  .text(i18n.fill(__("network_tab")["social_complete"], { annotation: annotation_label(annotation) }))
                   .on("click", (e_event) =>
                     social_view_handler_internal(
                       tx_network,
@@ -536,7 +567,11 @@ export function load_nodes_edges(
                         n.extended_cluster && payload[2] in n.extended_cluster,
                       labeled_links,
                       shown_types,
-                      (id) => "Cluster " + id + "[+ " + annotation + "]",
+                      (id) =>
+                        i18n.fill(__("network_tab")["tab_cluster_annotated"], {
+                          id: id,
+                          annotation: annotation_label(annotation),
+                        }),
                       annotation
                     )
                   );
