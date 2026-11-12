@@ -541,7 +541,19 @@ class HIVTxNetwork {
       _.each(clusters, (cluster, cluster_index) => {
         let entity_list = this.unique_entity_list(cluster);
         if (entity_list.length == 1) {
-          _.each(cluster, (ncn) => {
+          // NWG FIX: Retain one representative node for Nodes Without Genotypes (NWG)
+          // (`has_sequence == 0` or bare `ehars_uid` without `|`) with `cluster = null`
+          // so NWG persons appear in the `Nodes` table, `CLUSTEROI EDITOR`, and Social CSV loader.
+          _.each(cluster, (ncn, idx) => {
+            const hasSeq = this.attribute_node_value_by_id(ncn, "has_sequence");
+            const isNwg =
+              hasSeq === 0 ||
+              hasSeq === "0" ||
+              (typeof ncn.id === "string" && !ncn.id.includes("|"));
+            if (isNwg && idx === 0) {
+              ncn.cluster = null;
+              return;
+            }
             nodes_to_delete.add(ncn.id);
             // these are all null nodes (clusters made of single individual sequences)
           });
@@ -730,7 +742,18 @@ class HIVTxNetwork {
       _.each(clusters, (cluster, cluster_index) => {
         let entity_list = this.unique_entity_list(cluster);
         if (entity_list.length == 1) {
-          _.each(cluster, (ncn) => {
+          // NWG FIX: Retain one representative node for Nodes Without Genotypes (NWG)
+          // (`has_sequence == 0` or bare `ehars_uid` without `|`) with `cluster = null`.
+          _.each(cluster, (ncn, idx) => {
+            const hasSeq = this.attribute_node_value_by_id(ncn, "has_sequence");
+            const isNwg =
+              hasSeq === 0 ||
+              hasSeq === "0" ||
+              (typeof ncn.id === "string" && !ncn.id.includes("|"));
+            if (isNwg && idx === 0) {
+              ncn.cluster = null;
+              return;
+            }
             nodes_to_delete.add(ncn.id);
           });
         }
