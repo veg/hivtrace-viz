@@ -198,6 +198,12 @@ export function load_nodes_edges(
       existing_entities[pk].push(n);
     } else {
       existing_entities[pk] = [n];
+      // NWG FIX: Also index `node_name_2_id` by `primary_key(n)` (`ehars_uid`).
+      // In MSPP networks, `n.id` is the composite `ehars_uid|doc_uid~...` string,
+      // while Partner Services CSVs specify `ehars_uid`. Without this entry,
+      // line 266 (`if (n_info.node in node_name_2_id)`) fails to match existing
+      // patients and injects duplicate phantom `Social` stub nodes.
+      node_name_2_id[pk] = i;
     }
     node_name_2_id[n.id] = i;
   });
